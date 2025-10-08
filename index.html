@@ -562,13 +562,14 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script>
-        // Update API configuration
+        // Updated API and Firebase Configuration
         const API_CONFIG = {
-            // Your Render backend URL
-            BASE_URL: window.location.hostname.includes('localhost') 
-                ? 'http://localhost:3000' 
+            // Points to your Render backend service
+            BASE_URL: window.location.hostname.includes('localhost')
+                ? 'http://localhost:3000'
                 : 'https://eb-tracker-api.onrender.com',
-            // Firebase Web SDK config (public, safe to expose)
+            
+            // Firebase Web SDK config (public, safe to expose on the frontend)
             FIREBASE_CONFIG: {
                 apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U",
                 authDomain: "eb-tracker-ff945.firebaseapp.com",
@@ -579,7 +580,7 @@
             }
         };
 
-        // Initialize Firebase on frontend
+        // Initialize Firebase on the frontend
         firebase.initializeApp(API_CONFIG.FIREBASE_CONFIG);
         const auth = firebase.auth();
         const db = firebase.firestore();
@@ -589,61 +590,62 @@
             coo: ["coo@edanbrook.com", "coo2@edanbrook.com"],
             director: ["director@edanbrook.com", "ajit@edanbrook.com"]
         };
-        let currentUser = null; 
-        let currentUserRole = ''; 
+        let currentUser = null;
+        let currentUserRole = '';
         let authToken = '';
 
         async function apiCall(endpoint, options = {}) {
+            // Use the new BASE_URL from the config object
             const url = `${API_CONFIG.BASE_URL}/api/${endpoint}`;
-            const defaultOptions = { 
-                headers: { 
-                    'Authorization': `Bearer ${authToken}` 
-                } 
+            const defaultOptions = {
+                headers: {
+                    'Authorization': `Bearer ${authToken}`
+                }
             };
             if (!(options.body instanceof FormData)) {
                 defaultOptions.headers['Content-Type'] = 'application/json';
             }
 
             const finalOptions = { ...defaultOptions, ...options, headers: { ...defaultOptions.headers, ...options.headers } };
-            
+
             try {
                 const response = await fetch(url, finalOptions);
                 const responseText = await response.text();
                 if (!response.ok) {
                     let errorData;
-                    try { 
-                        errorData = JSON.parse(responseText); 
-                    } catch (e) { 
-                        throw new Error(`API Error ${response.status}: ${responseText.substring(0, 200)}...`); 
+                    try {
+                        errorData = JSON.parse(responseText);
+                    } catch (e) {
+                        throw new Error(`API Error ${response.status}: ${responseText.substring(0, 200)}...`);
                     }
                     throw new Error(errorData.message || errorData.error || `Request failed`);
                 }
                 return responseText ? JSON.parse(responseText) : {};
-            } catch (error) { 
-                console.error(`API call to ${endpoint} failed:`, error); 
-                throw error; 
+            } catch (error) {
+                console.error(`API call to ${endpoint} failed:`, error);
+                throw error;
             }
         }
 
         function showLoading() { document.getElementById('loadingSpinner').style.display = 'flex'; }
         function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
-        function setActiveNav(navId) { 
-            document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active')); 
-            document.getElementById(navId)?.classList.add('active'); 
+        function setActiveNav(navId) {
+            document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+            document.getElementById(navId)?.classList.add('active');
         }
-        function showMessage(message, type = 'info') { 
-            const c = document.getElementById('authMessages'); 
-            if(c) c.innerHTML = `<div class="${type}-message">${message}</div>`; 
+        function showMessage(message, type = 'info') {
+            const c = document.getElementById('authMessages');
+            if (c) c.innerHTML = `<div class="${type}-message">${message}</div>`;
         }
-        function clearMessages() { 
-            const c = document.getElementById('authMessages'); 
-            if(c) c.innerHTML = ''; 
+        function clearMessages() {
+            const c = document.getElementById('authMessages');
+            if (c) c.innerHTML = '';
         }
-        function closeModal() { 
-            document.querySelector('.modal-overlay')?.remove(); 
+        function closeModal() {
+            document.querySelector('.modal-overlay')?.remove();
         }
-        function formatDate(ts) { 
-            return (ts && ts.seconds) ? new Date(ts.seconds * 1000).toLocaleString() : 'N/A'; 
+        function formatDate(ts) {
+            return (ts && ts.seconds) ? new Date(ts.seconds * 1000).toLocaleString() : 'N/A';
         }
 
         // Helper function to get file access indicator
@@ -651,7 +653,7 @@
             if (!file.fileType || file.fileType === 'project') {
                 return '<span class="file-access-indicator access-full">📁 Project File</span>';
             }
-            
+
             if (file.fileType === 'estimation') {
                 if (currentUserRole === 'bdm') {
                     if (proposalStatus === 'approved' || proposalStatus === 'submitted_to_client') {
@@ -663,7 +665,7 @@
                     return '<span class="file-access-indicator access-full">📊 Estimation File</span>';
                 }
             }
-            
+
             return '';
         }
 
@@ -694,14 +696,14 @@
                             await auth.signOut();
                             showMessage('Your user account was not found in the database. Please contact an administrator.', 'error');
                         }
-                    } catch (error) { 
-                        console.error('Auth state change error:', error); 
-                        showMessage('Failed to initialize session.', 'error'); 
+                    } catch (error) {
+                        console.error('Auth state change error:', error);
+                        showMessage('Failed to initialize session.', 'error');
                     }
                 } else {
-                    currentUser = null; 
-                    currentUserRole = ''; 
-                    authToken = ''; 
+                    currentUser = null;
+                    currentUserRole = '';
+                    authToken = '';
                     showLogin();
                 }
             });
@@ -709,7 +711,7 @@
 
         function setupEventListeners() {
             document.querySelectorAll('.role-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
+                btn.addEventListener('click', function () {
                     document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
                     this.classList.add('active');
                     document.getElementById('selectedRole').value = this.dataset.role;
@@ -730,14 +732,14 @@
         async function handleLogin(e) {
             e.preventDefault();
             try {
-                clearMessages(); 
+                clearMessages();
                 showMessage('Logging in...', 'info');
                 await auth.signInWithEmailAndPassword(
-                    document.getElementById('loginEmail').value, 
+                    document.getElementById('loginEmail').value,
                     document.getElementById('loginPassword').value
                 );
-            } catch (error) { 
-                showMessage(error.code.includes('credential') ? 'Invalid email or password.' : 'Login failed.', 'error'); 
+            } catch (error) {
+                showMessage(error.code.includes('credential') ? 'Invalid email or password.' : 'Login failed.', 'error');
             }
         }
 
@@ -747,57 +749,57 @@
             const email = document.getElementById('registerEmail').value.toLowerCase();
             const password = document.getElementById('registerPassword').value;
             const role = document.getElementById('selectedRole').value;
-            
+
             try {
                 clearMessages();
-                if (role !== 'bdm' && !authorizedUsers[role]?.includes(email)) { 
-                    return showMessage(`Your email is not authorized for the ${role.toUpperCase()} role.`, 'error'); 
+                if (role !== 'bdm' && !authorizedUsers[role]?.includes(email)) {
+                    return showMessage(`Your email is not authorized for the ${role.toUpperCase()} role.`, 'error');
                 }
                 showMessage('Creating account...', 'info');
                 const cred = await auth.createUserWithEmailAndPassword(email, password);
                 await cred.user.updateProfile({ displayName: name });
-                await db.collection('users').doc(cred.user.uid).set({ 
-                    name, email, role, status: 'active', 
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+                await db.collection('users').doc(cred.user.uid).set({
+                    name, email, role, status: 'active',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 });
-                showMessage('Account created! Please log in.', 'success'); 
+                showMessage('Account created! Please log in.', 'success');
                 showTab('login');
-            } catch (error) { 
-                showMessage(error.code.includes('in-use') ? 'An account with this email already exists.' : 'Registration failed.', 'error'); 
+            } catch (error) {
+                showMessage(error.code.includes('in-use') ? 'An account with this email already exists.' : 'Registration failed.', 'error');
             }
         }
 
-        async function logout() { 
-            await auth.signOut(); 
+        async function logout() {
+            await auth.signOut();
         }
-        
+
         function showApp() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('userWelcome').textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
             document.getElementById('userRole').textContent = `${currentUserRole.charAt(0).toUpperCase() + currentUserRole.slice(1)}`;
-            
+
             // Role-based UI updates
             document.getElementById('newProposalNavItem').style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
             document.getElementById('workflowNavItem').style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('reportsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('settingsNavItem').style.display = (currentUserRole === 'director') ? 'block' : 'none';
-            
+
             showDashboard();
         }
 
-        function showLogin() { 
-            document.getElementById('appContainer').style.display = 'none'; 
-            document.getElementById('loginPage').style.display = 'flex'; 
-            clearMessages(); 
+        function showLogin() {
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+            clearMessages();
         }
 
         async function showDashboard() {
             setActiveNav('nav-dashboard');
             const main = document.getElementById('mainContent');
-            showLoading(); 
+            showLoading();
             main.innerHTML = '';
-            
+
             try {
                 const { success, data } = await apiCall('dashboard');
                 if (success && data) {
@@ -805,15 +807,15 @@
                 } else {
                     throw new Error('Invalid dashboard response');
                 }
-            } catch (error) { 
-                main.innerHTML = `<div class="error-message"><h3>Error Loading Dashboard</h3><p>${error.message}</p></div>`; 
-            } finally { 
-                hideLoading(); 
+            } catch (error) {
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Dashboard</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
             }
         }
 
         function renderDashboard(data) {
-             const statsHtml = data.stats ? Object.entries(data.stats).map(([k, v]) => `
+            const statsHtml = data.stats ? Object.entries(data.stats).map(([k, v]) => `
                 <div class="stat-card">
                     <div class="stat-number">${v}</div>
                     <div class="stat-label">${k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</div>
@@ -823,12 +825,12 @@
             let actionsHtml = '';
             if (data.actionItems?.length) {
                 const badges = currentUserRole === 'estimator' ? ['Upload BOQ', 'Enter Manhours'] :
-                                 currentUserRole === 'coo' ? ['Full Edit Access', 'Download Reports'] :
-                                 currentUserRole === 'director' ? ['Override Access', 'Strategic Reports'] :
-                                 currentUserRole === 'bdm' ? ['Upload Files'] : [];
-                
+                    currentUserRole === 'coo' ? ['Full Edit Access', 'Download Reports'] :
+                        currentUserRole === 'director' ? ['Override Access', 'Strategic Reports'] :
+                            currentUserRole === 'bdm' ? ['Upload Files'] : [];
+
                 const badgesHtml = badges.map(badge => `<span class="action-badge">${badge}</span>`).join('');
-                
+
                 actionsHtml = `
                     <h3>Your Action Items</h3>
                     <div class="action-badges">${badgesHtml}</div>
@@ -900,7 +902,7 @@
 
         function getActionButtons(item, role) {
             let actionBtn = '';
-            switch(item.type) {
+            switch (item.type) {
                 case 'estimation_required':
                     if (role === 'estimator') actionBtn = `<button class="btn btn-primary btn-sm" onclick="showEstimationModal('${item.proposalId}')">ENTER MANHOURS</button>`;
                     break;
@@ -911,8 +913,8 @@
                     if (role === 'director') actionBtn = `<button class="btn btn-primary btn-sm" onclick="viewProposal('${item.proposalId}')">EXECUTIVE REVIEW</button>`;
                     break;
                 case 'ready_for_client':
-                     if (role === 'bdm') actionBtn = `<button class="btn btn-success btn-sm" onclick="submitToClient('${item.proposalId}')">SUBMIT TO CLIENT</button>`;
-                     break;
+                    if (role === 'bdm') actionBtn = `<button class="btn btn-success btn-sm" onclick="submitToClient('${item.proposalId}')">SUBMIT TO CLIENT</button>`;
+                    break;
             }
             return `${actionBtn} <button class="btn btn-outline btn-sm" onclick="viewProposal('${item.proposalId}')">VIEW</button>`;
         }
@@ -920,9 +922,9 @@
         async function showProposals() {
             setActiveNav('nav-proposals');
             const main = document.getElementById('mainContent');
-            showLoading(); 
+            showLoading();
             main.innerHTML = '';
-            
+
             try {
                 const { success, data } = await apiCall('proposals');
                 if (success && data) {
@@ -930,10 +932,10 @@
                 } else {
                     throw new Error('Invalid proposals response');
                 }
-            } catch (error) { 
-                main.innerHTML = `<div class="error-message"><h3>Error:</h3><p>${error.message}</p></div>`; 
-            } finally { 
-                hideLoading(); 
+            } catch (error) {
+                main.innerHTML = `<div class="error-message"><h3>Error:</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
             }
         }
 
@@ -943,7 +945,7 @@
                     Create New Proposal
                 </button>
             ` : '';
-            
+
             const proposalsHtml = proposals?.length ? proposals.map(p => `
                 <div class="action-item">
                     <div class="action-content">
@@ -958,7 +960,7 @@
                     </div>
                 </div>
             `).join('') : '<p>No proposals found.</p>';
-            
+
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>All Proposals</h2>
@@ -969,7 +971,6 @@
             `;
         }
         
-        // 1. Update the showCreateProposalModal function to include link upload
         function showCreateProposalModal() {
             const projectTypes = [
                 'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
@@ -1068,30 +1069,27 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.insertAdjacentHTML('beforeend', modalHtml);
             
-            // Setup file upload
             const uploadArea = document.getElementById('uploadArea');
             const fileInput = document.getElementById('fileInput');
             uploadArea.onclick = () => fileInput.click();
-            
+
             let selectedFiles = [];
 
-            fileInput.onchange = function() {
+            fileInput.onchange = function () {
                 selectedFiles = Array.from(this.files);
                 if (selectedFiles.length > 0) {
-                    document.getElementById('filePreview').innerHTML = 
-                        '<h5>Files to Upload:</h5>' + 
+                    document.getElementById('filePreview').innerHTML =
+                        '<h5>Files to Upload:</h5>' +
                         selectedFiles.map(f => `<p>📄 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</p>`).join('');
                 }
             };
-            
-            // Handle form submission
+
             document.getElementById('createProposalForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
-                // Collect project links
+
                 const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
                 const projectLinks = [];
                 linkInputs.forEach(group => {
@@ -1101,7 +1099,7 @@
                         projectLinks.push({ url, title: title || url, description: title });
                     }
                 });
-                
+
                 const formData = {
                     projectName: document.getElementById('projectName').value,
                     clientCompany: document.getElementById('clientCompany').value,
@@ -1112,33 +1110,27 @@
                     scopeOfWork: document.getElementById('scopeOfWork').value,
                     projectLinks: projectLinks
                 };
-                
+
                 try {
                     showLoading();
-                    
-                    // Create the proposal first
                     const response = await apiCall('proposals', {
                         method: 'POST',
                         body: JSON.stringify(formData)
                     });
-                    
+
                     if (response.success && response.data) {
                         const proposalId = response.data.id;
-                        
-                        // Upload files if any
                         if (selectedFiles.length > 0) {
                             const fileFormData = new FormData();
                             selectedFiles.forEach(file => fileFormData.append('files', file));
                             fileFormData.append('proposalId', proposalId);
                             fileFormData.append('fileType', 'project');
-                            
                             await apiCall('files', {
                                 method: 'POST',
                                 body: fileFormData
                             });
                         }
-                        
-                        // Upload links if any
+
                         if (projectLinks.length > 0) {
                             await apiCall('files', {
                                 method: 'POST',
@@ -1149,7 +1141,7 @@
                                 })
                             });
                         }
-                        
+
                         alert('Proposal created successfully!');
                         closeModal();
                         showProposals();
@@ -1162,7 +1154,6 @@
             });
         }
         
-        // 2. Add helper function for adding link fields
         function addLinkField() {
             const container = document.getElementById('linksContainer');
             const newLinkGroup = document.createElement('div');
@@ -1175,16 +1166,13 @@
             container.appendChild(newLinkGroup);
         }
         
-        // View Proposal with file access control
         async function viewProposal(proposalId) {
             try {
                 showLoading();
                 const { success, data } = await apiCall(`proposals?id=${proposalId}`);
                 if (success && data) {
-                    // Also load files for this proposal with access control
                     const filesResponse = await apiCall(`files?proposalId=${proposalId}`);
                     const files = filesResponse.success ? filesResponse.data : [];
-                    
                     renderProposalDetailModal(data, files);
                 } else {
                     throw new Error('Failed to load proposal');
@@ -1195,15 +1183,13 @@
                 hideLoading();
             }
         }
-
-        // 3. Update renderProposalDetailModal to display links
+        
         function renderProposalDetailModal(p, files = []) {
             const projectFiles = files.filter(f => !f.fileType || f.fileType === 'project');
             const estimationFiles = files.filter(f => f.fileType === 'estimation');
             const linkFiles = files.filter(f => f.fileType === 'link');
             let actionsHtml = '';
 
-            // Role-based actions
             if (currentUserRole === 'estimator' && p.status === 'pending_estimation') {
                 actionsHtml = `<button class="btn btn-primary" onclick="showEstimationModal('${p.id}')">Add Estimation</button>`;
             } else if (currentUserRole === 'coo' && p.status === 'pending_pricing') {
@@ -1217,12 +1203,10 @@
                 actionsHtml = `<button class="btn btn-success" onclick="submitToClient('${p.id}')">Submit to Client</button>`;
             }
 
-            // BDM delete button - only for own proposals
             if (currentUserRole === 'bdm' && p.createdByUid === currentUser.uid) {
                 actionsHtml += ` <button class="btn btn-danger btn-sm" onclick="deleteProposal('${p.id}')">Delete Proposal</button>`;
             }
             
-            // Build links section
             let linksHtml = '';
             if (linkFiles.length > 0 || (p.projectLinks && p.projectLinks.length > 0)) {
                 const allLinks = [
@@ -1253,7 +1237,6 @@
                 `;
             }
             
-            // Build estimation files section with access control
             let estimationFilesHtml = '';
             if (estimationFiles.length > 0) {
                 if (canAccessEstimationFile(p.status)) {
@@ -1364,11 +1347,9 @@
                     </div>
                 </div>
             `;
-            
             document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
 
-        // Estimator Manhours Modal (only estimator can upload estimation files)
         function showEstimationModal(id) {
             closeModal();
             const modalHtml = `
@@ -1414,55 +1395,21 @@
                             <div class="form-section">
                                 <h4>Select Services</h4>
                                 <div class="service-grid">
-                                    <label class="service-item">
-                                        <input type="checkbox" name="services" value="Steel Detailing">
-                                        <span>Steel Detailing</span>
-                                    </label>
-                                    <label class="service-item">
-                                        <input type="checkbox" name="services" value="Miscellaneous Steel Detailing">
-                                        <span>Miscellaneous Steel Detailing</span>
-                                    </label>
-                                    <label class="service-item">
-                                        <input type="checkbox" name="services" value="Connection Design">
-                                        <span>Connection Design</span>
-                                    </label>
-                                    <label class="service-item">
-                                        <input type="checkbox" name="services" value="PE Stamping">
-                                        <span>PE Stamping</span>
-                                    </label>
-                                    <label class="service-item">
-                                        <input type="checkbox" name="services" value="Joist Detailing">
-                                        <span>Joist Detailing</span>
-                                    </label>
-                                    <label class="service-item">
-                                        <input type="checkbox" name="services" value="As-built Drawings">
-                                        <span>As-built Drawings</span>
-                                    </label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Steel Detailing"><span>Steel Detailing</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Miscellaneous Steel Detailing"><span>Miscellaneous Steel Detailing</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Connection Design"><span>Connection Design</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="PE Stamping"><span>PE Stamping</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Joist Detailing"><span>Joist Detailing</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="As-built Drawings"><span>As-built Drawings</span></label>
                                 </div>
                             </div>
                             <div class="form-section">
                                 <h4>Quote Details</h4>
                                 <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Quote Type</label>
-                                        <select id="quoteType" class="form-control">
-                                            <option value="Lump Sum">Lump Sum</option>
-                                            <option value="Per Hour">Per Hour</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Delivery Method</label>
-                                        <select id="deliveryMethod" class="form-control">
-                                            <option value="Email Delivery">Email Delivery</option>
-                                            <option value="Cloud Storage">Cloud Storage</option>
-                                            <option value="Physical Media">Physical Media</option>
-                                        </select>
-                                    </div>
+                                    <div class="form-group"><label>Quote Type</label><select id="quoteType" class="form-control"><option value="Lump Sum">Lump Sum</option><option value="Per Hour">Per Hour</option></select></div>
+                                    <div class="form-group"><label>Delivery Method</label><select id="deliveryMethod" class="form-control"><option value="Email Delivery">Email Delivery</option><option value="Cloud Storage">Cloud Storage</option><option value="Physical Media">Physical Media</option></select></div>
                                 </div>
-                                <div class="form-group">
-                                    <label>Notes</label>
-                                    <textarea id="estimationNotes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
-                                </div>
+                                <div class="form-group"><label>Notes</label><textarea id="estimationNotes" class="form-control" rows="3" placeholder="Additional notes..."></textarea></div>
                             </div>
                             <div class="form-section">
                                 <h4>Upload BOQ & Calculation Files (Estimator Only)</h4>
@@ -1482,102 +1429,61 @@
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            // Load project files
             loadProjectFiles(id);
-            
-            // Setup file upload preview
-            document.getElementById('boqFileInput').addEventListener('change', function() {
-                const files = this.files;
-                if (files.length > 0) {
-                    document.getElementById('boqFilePreview').innerHTML = 
-                        '<h5>Files to Upload:</h5>' + 
-                        Array.from(files).map(f => `<p>📄 ${f.name}</p>`).join('');
+            document.getElementById('boqFileInput').addEventListener('change', function () {
+                if (this.files.length > 0) {
+                    document.getElementById('boqFilePreview').innerHTML = '<h5>Files to Upload:</h5>' + Array.from(this.files).map(f => `<p>📄 ${f.name}</p>`).join('');
                 }
             });
-            
-            // Auto-calculate total hours
             const hourInputs = ['designHours', 'detailingHours', 'checkingHours', 'revisionHours', 'pmHours'];
             hourInputs.forEach(id => {
                 document.getElementById(id).addEventListener('input', () => {
-                    const total = hourInputs.reduce((sum, inputId) => {
-                        return sum + (parseFloat(document.getElementById(inputId).value) || 0);
-                    }, 0);
+                    const total = hourInputs.reduce((sum, inputId) => sum + (parseFloat(document.getElementById(inputId).value) || 0), 0);
                     document.getElementById('totalHours').value = total;
                 });
             });
-            
-            // Service checkboxes visual feedback
             document.querySelectorAll('.service-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    if (e.target.tagName !== 'INPUT') {
-                        const checkbox = this.querySelector('input[type="checkbox"]');
-                        checkbox.checked = !checkbox.checked;
-                    }
-                    this.classList.toggle('checked', this.querySelector('input[type="checkbox"]').checked);
+                item.addEventListener('click', function (e) {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    if (e.target.tagName !== 'INPUT') checkbox.checked = !checkbox.checked;
+                    this.classList.toggle('checked', checkbox.checked);
                 });
             });
         }
-
-        // Save Estimation with proper data collection (only estimator can upload estimation files)
+        
         async function saveEstimation(proposalId) {
             const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => cb.value);
-            
-            // Collect all hour values
-            const designHours = document.getElementById('designHours').value || 0;
-            const detailingHours = document.getElementById('detailingHours').value || 0;
-            const checkingHours = document.getElementById('checkingHours').value || 0;
-            const revisionHours = document.getElementById('revisionHours').value || 0;
-            const pmHours = document.getElementById('pmHours').value || 0;
             const totalHours = document.getElementById('totalHours').value || 0;
-            
-            // Validate input
-            if (totalHours == 0) {
-                alert('Please enter manhours before saving.');
-                return;
-            }
-            
-            if (services.length === 0) {
-                alert('Please select at least one service.');
-                return;
-            }
-            
+            if (totalHours == 0) return alert('Please enter manhours before saving.');
+            if (services.length === 0) return alert('Please select at least one service.');
+
             const estimationData = {
-                designHours,
-                detailingHours,
-                checkingHours,
-                revisionHours,
-                pmHours,
+                designHours: document.getElementById('designHours').value || 0,
+                detailingHours: document.getElementById('detailingHours').value || 0,
+                checkingHours: document.getElementById('checkingHours').value || 0,
+                revisionHours: document.getElementById('revisionHours').value || 0,
+                pmHours: document.getElementById('pmHours').value || 0,
                 totalHours,
                 services,
                 quoteType: document.getElementById('quoteType').value,
                 deliveryMethod: document.getElementById('deliveryMethod').value,
                 notes: document.getElementById('estimationNotes')?.value || 'Estimation completed'
             };
-            
+
             try {
                 showLoading();
-                
-                // First upload BOQ files if any (only estimator can upload estimation files)
                 const fileInput = document.getElementById('boqFileInput');
                 if (fileInput.files.length > 0) {
                     const formData = new FormData();
                     Array.from(fileInput.files).forEach(file => formData.append('files', file));
                     formData.append('proposalId', proposalId);
-                    formData.append('fileType', 'estimation'); // Estimator uploads estimation files
-                    
+                    formData.append('fileType', 'estimation');
                     await apiCall('files', { method: 'POST', body: formData });
                 }
-                
-                // Save estimation data
                 const response = await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
-                    body: JSON.stringify({
-                        action: 'add_estimation',
-                        data: estimationData
-                    })
+                    body: JSON.stringify({ action: 'add_estimation', data: estimationData })
                 });
-                
                 if (response.success) {
                     alert('Estimation saved successfully!');
                     closeModal();
@@ -1589,8 +1495,7 @@
                 hideLoading();
             }
         }
-
-        // Load and display project files (accessible to all roles)
+        
         async function loadProjectFiles(proposalId) {
             try {
                 const { success, data } = await apiCall(`files?proposalId=${proposalId}`);
@@ -1600,11 +1505,7 @@
                         <div class="action-item" style="margin-bottom: 1rem; padding: 1rem;">
                             <div class="action-content">
                                 <strong>📄 ${file.originalName}</strong>
-                                <div class="action-meta">
-                                    Type: ${file.mimeType} | 
-                                    Size: ${(file.fileSize / 1024 / 1024).toFixed(2)} MB | 
-                                    Uploaded by: ${file.uploadedByName}
-                                </div>
+                                <div class="action-meta">Type: ${file.mimeType} | Size: ${(file.fileSize / 1024 / 1024).toFixed(2)} MB | Uploaded by: ${file.uploadedByName}</div>
                             </div>
                             <div class="action-buttons">
                                 <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">VIEW</button>
@@ -1612,23 +1513,16 @@
                             </div>
                         </div>
                     `).join('') : '<p>No project files available.</p>';
-                    
                     const projectFilesView = document.getElementById('projectFilesView');
-                    if (projectFilesView) {
-                        projectFilesView.innerHTML = filesHtml;
-                    }
+                    if (projectFilesView) projectFilesView.innerHTML = filesHtml;
                 }
             } catch (error) {
                 const projectFilesView = document.getElementById('projectFilesView');
-                if (projectFilesView) {
-                    projectFilesView.innerHTML = `<p class="error-message">Error loading files: ${error.message}</p>`;
-                }
+                if (projectFilesView) projectFilesView.innerHTML = `<p class="error-message">Error loading files: ${error.message}</p>`;
             }
         }
-
-        // Download file function
+        
         function downloadFile(url, filename) {
-            // Create an anchor element and trigger download
             const link = document.createElement('a');
             link.href = url;
             link.download = filename;
@@ -1637,132 +1531,61 @@
             link.click();
             document.body.removeChild(link);
         }
-
-        // COO Pricing Modal with Edit Services
+        
         function showPricingModal(id) {
             closeModal();
-            
-            // First, load the proposal to get current estimation data
             apiCall(`proposals?id=${id}`).then(response => {
                 const proposal = response.data;
                 const estimation = proposal.estimation || {};
-                
                 const modalHtml = `
                     <div class="modal-overlay">
                         <div class="modal-content" style="max-width: 1200px;">
-                            <div class="modal-header">
-                                <h2>Project Editor - COO Full Access</h2>
-                                <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
-                            </div>
-                            
+                            <div class="modal-header"><h2>Project Editor - COO Full Access</h2><div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div></div>
                             <form id="pricingForm" class="modal-form">
-                                <div class="form-section">
-                                    <h4>Current Estimation Summary</h4>
-                                    <p><strong>Total Hours:</strong> ${estimation.totalHours || 'Not set'}</p>
-                                    <p><strong>Services:</strong> ${estimation.services?.join(', ') || 'None selected'}</p>
-                                    <p><strong>Estimated By:</strong> ${estimation.estimatedBy || 'Not available'}</p>
+                                <div class="form-section"><h4>Current Estimation Summary</h4><p><strong>Total Hours:</strong> ${estimation.totalHours || 'Not set'}</p><p><strong>Services:</strong> ${estimation.services?.join(', ') || 'None selected'}</p><p><strong>Estimated By:</strong> ${estimation.estimatedBy || 'Not available'}</p></div>
+                                <div class="form-section"><h4>Edit Services</h4><div class="service-grid">
+                                    ${['Steel Detailing', 'Miscellaneous Steel Detailing', 'Connection Design', 'PE Stamping', 'Joist Detailing', 'As-built Drawings'].map(service => `
+                                        <label class="service-item ${estimation.services?.includes(service) ? 'checked' : ''}"><input type="checkbox" name="editServices" value="${service}" ${estimation.services?.includes(service) ? 'checked' : ''}><span>${service}</span></label>
+                                    `).join('')}
+                                </div></div>
+                                <div class="form-section"><h4>Pricing Details</h4>
+                                    <div class="form-row"><div class="form-group"><label>Hourly Rate ($)</label><input type="number" id="hourlyRate" class="form-control" placeholder="85.00" step="0.01" required></div><div class="form-group"><label>Profit Margin (%)</label><input type="number" id="profitMargin" class="form-control" placeholder="25.0" step="0.1" required></div></div>
+                                    <div class="form-row"><div class="form-group"><label>Final Quote Value ($)</label><input type="number" id="quoteValue" class="form-control" placeholder="0.00" step="0.01" required></div><div class="form-group"><label>Currency</label><select id="currency" class="form-control"><option value="USD">USD</option><option value="AUD">AUD</option><option value="CAD">CAD</option><option value="EUR">EUR</option><option value="GBP">GBP</option></select></div></div>
                                 </div>
-                                
-                                <div class="form-section">
-                                    <h4>Edit Services</h4>
-                                    <div class="service-grid">
-                                        ${['Steel Detailing', 'Miscellaneous Steel Detailing', 'Connection Design', 'PE Stamping', 'Joist Detailing', 'As-built Drawings'].map(service => `
-                                            <label class="service-item ${estimation.services?.includes(service) ? 'checked' : ''}">
-                                                <input type="checkbox" name="editServices" value="${service}" ${estimation.services?.includes(service) ? 'checked' : ''}>
-                                                <span>${service}</span>
-                                            </label>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                                
-                                <div class="form-section">
-                                    <h4>Pricing Details</h4>
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label>Hourly Rate ($)</label>
-                                            <input type="number" id="hourlyRate" class="form-control" placeholder="85.00" step="0.01" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Profit Margin (%)</label>
-                                            <input type="number" id="profitMargin" class="form-control" placeholder="25.0" step="0.1" required>
-                                        </div>
-                                    </div>
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label>Final Quote Value ($)</label>
-                                            <input type="number" id="quoteValue" class="form-control" placeholder="0.00" step="0.01" required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label>Currency</label>
-                                            <select id="currency" class="form-control">
-                                                <option value="USD">USD</option>
-                                                <option value="AUD">AUD</option>
-                                                <option value="CAD">CAD</option>
-                                                <option value="EUR">EUR</option>
-                                                <option value="GBP">GBP</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-section">
-                                    <h4>Download Reports</h4>
-                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                                        <button type="button" class="btn btn-outline" onclick="downloadEstimationReport('${id}')">Estimation Report</button>
-                                        <button type="button" class="btn btn-outline" onclick="downloadBOMReport('${id}')">BOM Report</button>
-                                        <button type="button" class="btn btn-outline" onclick="downloadCostAnalysis('${id}')">Cost Analysis</button>
-                                    </div>
-                                </div>
-                                
-                                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-                                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                                    <button type="button" onclick="savePricing('${id}')" class="btn btn-primary">Save & Send to Director</button>
-                                </div>
+                                <div class="form-section"><h4>Download Reports</h4><div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;"><button type="button" class="btn btn-outline" onclick="downloadEstimationReport('${id}')">Estimation Report</button><button type="button" class="btn btn-outline" onclick="downloadBOMReport('${id}')">BOM Report</button><button type="button" class="btn btn-outline" onclick="downloadCostAnalysis('${id}')">Cost Analysis</button></div></div>
+                                <div style="display: flex; gap: 1rem; justify-content: flex-end;"><button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button><button type="button" onclick="savePricing('${id}')" class="btn btn-primary">Save & Send to Director</button></div>
                             </form>
                         </div>
                     </div>
                 `;
-                
                 document.body.insertAdjacentHTML('beforeend', modalHtml);
-                
-                // Add auto-calculation for quote value
-                document.getElementById('hourlyRate')?.addEventListener('input', calculateQuote);
-                document.getElementById('profitMargin')?.addEventListener('input', calculateQuote);
-
-                function calculateQuote() {
+                const calculateQuote = () => {
                     const rate = parseFloat(document.getElementById('hourlyRate').value) || 0;
                     const margin = parseFloat(document.getElementById('profitMargin').value) || 0;
                     const hours = estimation.totalHours || 0;
-                    const baseValue = rate * hours;
-                    const quoteValue = baseValue * (1 + margin / 100);
-                    document.getElementById('quoteValue').value = quoteValue.toFixed(2);
-                }
-                
-                // Setup service checkbox interactions
+                    document.getElementById('quoteValue').value = (rate * hours * (1 + margin / 100)).toFixed(2);
+                };
+                document.getElementById('hourlyRate')?.addEventListener('input', calculateQuote);
+                document.getElementById('profitMargin')?.addEventListener('input', calculateQuote);
                 document.querySelectorAll('.service-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        if (e.target.tagName !== 'INPUT') {
-                            const checkbox = this.querySelector('input[type="checkbox"]');
-                            checkbox.checked = !checkbox.checked;
-                        }
-                        this.classList.toggle('checked', this.querySelector('input[type="checkbox"]').checked);
+                    item.addEventListener('click', function (e) {
+                        const checkbox = this.querySelector('input[type="checkbox"]');
+                        if (e.target.tagName !== 'INPUT') checkbox.checked = !checkbox.checked;
+                        this.classList.toggle('checked', checkbox.checked);
                     });
                 });
             });
         }
         
-        // Save pricing with updated services
         async function savePricing(id) {
             const services = Array.from(document.querySelectorAll('input[name="editServices"]:checked')).map(cb => cb.value);
-            
             const data = {
                 hourlyRate: document.getElementById('hourlyRate').value,
                 profitMargin: document.getElementById('profitMargin').value,
                 quoteValue: document.getElementById('quoteValue').value,
                 currency: document.getElementById('currency').value,
-                updatedServices: services // COO can update services
+                updatedServices: services
             };
-            
             try {
                 showLoading();
                 await handleProposalAction(id, 'set_pricing', data, 'Pricing updated and sent to Director for approval!');
@@ -1773,26 +1596,12 @@
             }
         }
 
-        // Download functions for COO
-        async function downloadEstimationReport(proposalId) {
-            alert('Downloading Estimation Report...');
-            // In production, this would generate and download an actual report
-        }
-        async function downloadBOMReport(proposalId) {
-            alert('Downloading BOM Report...');
-            // In production, this would generate and download an actual report
-        }
-        async function downloadCostAnalysis(proposalId) {
-            alert('Downloading Cost Analysis...');
-            // In production, this would generate and download an actual report
-        }
+        async function downloadEstimationReport(proposalId) { alert('Downloading Estimation Report...'); }
+        async function downloadBOMReport(proposalId) { alert('Downloading BOM Report...'); }
+        async function downloadCostAnalysis(proposalId) { alert('Downloading Cost Analysis...'); }
 
-        // Delete Proposal function for BDM
         async function deleteProposal(proposalId) {
-            if (!confirm('Are you sure you want to delete this proposal? This action cannot be undone and will delete all associated files.')) {
-                return;
-            }
-            
+            if (!confirm('Are you sure you want to delete this proposal? This action cannot be undone and will delete all associated files.')) return;
             try {
                 showLoading();
                 const response = await apiCall(`proposals?id=${proposalId}`, { method: 'DELETE' });
@@ -1808,7 +1617,6 @@
             }
         }
         
-        // Delete File function with access control
         async function deleteFile(fileId) {
             if (!confirm('Are you sure you want to delete this file?')) return;
             try {
@@ -1816,11 +1624,9 @@
                 const { success } = await apiCall(`files?id=${fileId}`, { method: 'DELETE' });
                 if (success) {
                     alert('File deleted successfully!');
-                    // Refresh the current view
                     if (document.getElementById('fileListContainer')) {
                         showFileUpload();
                     } else {
-                        // If in proposal view, close and reopen
                         const proposalId = new URLSearchParams(window.location.search).get('proposalId');
                         if (proposalId) {
                             closeModal();
@@ -1828,145 +1634,99 @@
                         }
                     }
                 }
-            } catch(err) { 
-                alert(`Error: ${err.message}`); 
+            } catch (err) {
+                alert(`Error: ${err.message}`);
             } finally {
                 hideLoading();
             }
         }
-
 
         async function handleProposalAction(id, action, data = {}, msg) {
             try {
                 showLoading();
-                const { success } = await apiCall(`proposals?id=${id}`, { 
-                    method: 'PUT', 
-                    body: JSON.stringify({ action, data }) 
+                const { success } = await apiCall(`proposals?id=${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ action, data })
                 });
-                if (success) { 
-                    closeModal(); 
-                    showDashboard(); 
-                    alert(msg); 
+                if (success) {
+                    closeModal();
+                    showDashboard();
+                    alert(msg);
                 }
-            } catch(err) { 
-                alert(`Error: ${err.message}`); 
+            } catch (err) {
+                alert(`Error: ${err.message}`);
             } finally {
                 hideLoading();
             }
         }
 
-        async function approveProposal(id) { 
+        async function approveProposal(id) {
             const comments = prompt("Optional approval comments:");
-            await handleProposalAction(id, 'director_approve', { 
-                comments: comments || 'Approved'
-            }, 'Proposal approved successfully!'); 
+            await handleProposalAction(id, 'director_approve', { comments: comments || 'Approved' }, 'Proposal approved successfully!');
         }
-        
-        async function rejectProposal(id) { 
-            const reason = prompt("Reason for rejection:"); 
+
+        async function rejectProposal(id) {
+            const reason = prompt("Reason for rejection:");
             if (reason) {
-                await handleProposalAction(id, 'director_reject', { 
-                    comments: reason 
-                }, 'Proposal rejected and sent for revision.'); 
-            }
-        }
-        
-        async function submitToClient(id) { 
-            const method = prompt("Submission method:", "email"); 
-            if(method) {
-                await handleProposalAction(id, 'submit_to_client', { 
-                    method 
-                }, 'Proposal submitted to client successfully!'); 
+                await handleProposalAction(id, 'director_reject', { comments: reason }, 'Proposal rejected and sent for revision.');
             }
         }
 
-        // 4. Update showFileUpload to handle links
+        async function submitToClient(id) {
+            const method = prompt("Submission method:", "email");
+            if (method) {
+                await handleProposalAction(id, 'submit_to_client', { method }, 'Proposal submitted to client successfully!');
+            }
+        }
+
         function showFileUpload() {
             setActiveNav('nav-files');
             const content = `
-                <div class="page-header">
-                    <h2>File Manager</h2>
-                    <div class="subtitle">Manage project files, uploads, and downloads</div>
-                </div>
-                
+                <div class="page-header"><h2>File Manager</h2><div class="subtitle">Manage project files, uploads, and downloads</div></div>
                 ${currentUserRole === 'bdm' ? `
                 <div class="action-section">
                     <h3>Upload New Project Files (BDM Only)</h3>
-                    <div class="form-group" style="margin-bottom: 1.5rem;">
-                        <label>Link to Proposal (Optional)</label>
-                        <input type="text" id="fileProposalId" class="form-control" placeholder="Enter Proposal ID">
-                    </div>
-                    
-                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                        <button onclick="showFileUploadTab()" class="btn btn-outline" id="fileTabBtn">Upload Files</button>
-                        <button onclick="showLinkUploadTab()" class="btn btn-outline" id="linkTabBtn">Add Links</button>
-                    </div>
-                    
+                    <div class="form-group" style="margin-bottom: 1.5rem;"><label>Link to Proposal (Optional)</label><input type="text" id="fileProposalId" class="form-control" placeholder="Enter Proposal ID"></div>
+                    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;"><button onclick="showFileUploadTab()" class="btn btn-outline" id="fileTabBtn">Upload Files</button><button onclick="showLinkUploadTab()" class="btn btn-outline" id="linkTabBtn">Add Links</button></div>
                     <div id="fileUploadTab">
-                        <div class="upload-area" id="uploadArea">
-                            <div class="upload-icon">📤</div>
-                            <p>Upload project files, RFQ, tender documents</p>
-                            <div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.5rem;">All formats supported</div>
-                            <input type="file" id="fileInput" multiple style="display: none;">
-                        </div>
+                        <div class="upload-area" id="uploadArea"><div class="upload-icon">📤</div><p>Upload project files, RFQ, tender documents</p><div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.5rem;">All formats supported</div><input type="file" id="fileInput" multiple style="display: none;"></div>
                         <div id="filePreview"></div>
                         <button class="btn btn-primary" onclick="handleFileUpload()" style="margin-top: 1rem; width: auto;">Upload Files</button>
                     </div>
-                    
                     <div id="linkUploadTab" style="display: none;">
-                        <div id="linksUploadContainer">
-                            <div class="link-input-group" style="margin-bottom: 1rem;">
-                                <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
-                                <input type="text" class="form-control" placeholder="Link title/description">
-                            </div>
-                        </div>
+                        <div id="linksUploadContainer"><div class="link-input-group" style="margin-bottom: 1rem;"><input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;"><input type="text" class="form-control" placeholder="Link title/description"></div></div>
                         <button type="button" onclick="addUploadLinkField()" class="btn btn-outline btn-sm" style="width: auto;">+ Add Another Link</button>
                         <button class="btn btn-primary" onclick="handleLinkUpload()" style="margin-top: 1rem; width: auto; margin-left: 1rem;">Save Links</button>
                     </div>
-                </div>
-                ` : ''}
-                
+                </div>` : ''}
                 <div class="action-section">
                     <h3>All Files (Based on Your Access Level)</h3>
-                     <div class="info-message">
-                          <strong>File Access Rules:</strong><br>
-                          • Project Files: ${currentUserRole === 'bdm' ? 'Only your own project files' : 'All project files'}<br>
-                          • Estimation Files: ${currentUserRole === 'bdm' ? 'Your approved proposals only' : 'Full access'}<br>
-                          • Links: ${currentUserRole === 'bdm' ? 'Only links from your proposals' : 'All project links'}
-                     </div>
+                    <div class="info-message"><strong>File Access Rules:</strong><br>• Project Files: ${currentUserRole === 'bdm' ? 'Only your own project files' : 'All project files'}<br>• Estimation Files: ${currentUserRole === 'bdm' ? 'Your approved proposals only' : 'Full access'}<br>• Links: ${currentUserRole === 'bdm' ? 'Only links from your proposals' : 'All project links'}</div>
                     <div id="fileListContainer">Loading files...</div>
-                </div>
-            `;
-            
+                </div>`;
             document.getElementById('mainContent').innerHTML = content;
-            
             if (currentUserRole === 'bdm') {
                 const uploadArea = document.getElementById('uploadArea');
                 const fileInput = document.getElementById('fileInput');
                 uploadArea.onclick = () => fileInput.click();
                 fileInput.onchange = () => {
-                     const preview = document.getElementById('filePreview');
-                     if (fileInput.files.length > 0) {
-                         preview.innerHTML = '<h4>Files to Upload:</h4>' + 
-                              Array.from(fileInput.files).map(f => `<p>📄 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</p>`).join('');
-                     }
+                    if (fileInput.files.length > 0) {
+                        document.getElementById('filePreview').innerHTML = '<h4>Files to Upload:</h4>' + Array.from(fileInput.files).map(f => `<p>📄 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</p>`).join('');
+                    }
                 };
-                showFileUploadTab(); // Show file upload by default
+                showFileUploadTab();
             }
-            
             showFiles();
         }
 
         async function handleFileUpload() {
             const files = document.getElementById('fileInput').files;
             if (!files.length) return alert('Please select files to upload.');
-            
             const formData = new FormData();
             Array.from(files).forEach(file => formData.append('files', file));
             const pId = document.getElementById('fileProposalId').value;
             if (pId) formData.append('proposalId', pId);
-            formData.append('fileType', 'project'); // BDM uploads project files
-            
+            formData.append('fileType', 'project');
             try {
                 showLoading();
                 const { success } = await apiCall('files', { method: 'POST', body: formData });
@@ -1974,8 +1734,8 @@
                     showFileUpload();
                     alert('Files uploaded successfully!');
                 }
-            } catch (error) { 
-                alert(`Upload failed: ${error.message}`); 
+            } catch (error) {
+                alert(`Upload failed: ${error.message}`);
             } finally {
                 hideLoading();
             }
@@ -1989,12 +1749,11 @@
                 } else {
                     throw new Error('Invalid files response');
                 }
-            } catch (error) { 
-                document.getElementById('fileListContainer').innerHTML = `<p class="error-message">${error.message}</p>`; 
+            } catch (error) {
+                document.getElementById('fileListContainer').innerHTML = `<p class="error-message">${error.message}</p>`;
             }
         }
         
-        // 5. Add tab switching functions
         function showFileUploadTab() {
             document.getElementById('fileUploadTab').style.display = 'block';
             document.getElementById('linkUploadTab').style.display = 'none';
@@ -2018,45 +1777,29 @@
             const newLinkGroup = document.createElement('div');
             newLinkGroup.className = 'link-input-group';
             newLinkGroup.style.marginBottom = '1rem';
-            newLinkGroup.innerHTML = `
-                <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
-                <input type="text" class="form-control" placeholder="Link title/description">
-            `;
+            newLinkGroup.innerHTML = `<input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;"><input type="text" class="form-control" placeholder="Link title/description">`;
             container.appendChild(newLinkGroup);
         }
-
-        // 6. Add link upload handler
+        
         async function handleLinkUpload() {
             const linkGroups = document.querySelectorAll('#linksUploadContainer .link-input-group');
             const links = [];
-            
             linkGroups.forEach(group => {
                 const url = group.querySelector('input[type="url"]').value;
                 const title = group.querySelector('input[type="text"]').value;
-                if (url) {
-                    links.push({ url, title: title || url, description: title });
-                }
+                if (url) links.push({ url, title: title || url, description: title });
             });
-            
-            if (links.length === 0) {
-                return alert('Please add at least one link.');
-            }
-            
+            if (links.length === 0) return alert('Please add at least one link.');
             const proposalId = document.getElementById('fileProposalId').value;
-            
             try {
                 showLoading();
                 const { success } = await apiCall('files', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        links: links,
-                        proposalId: proposalId || null,
-                        fileType: 'link'
-                    })
+                    body: JSON.stringify({ links, proposalId: proposalId || null, fileType: 'link' })
                 });
                 if (success) {
                     alert('Links added successfully!');
-                    showFileUpload(); // Refresh the page
+                    showFileUpload();
                 }
             } catch (error) {
                 alert(`Failed to add links: ${error.message}`);
@@ -2065,38 +1808,27 @@
             }
         }
         
-        // 7. Update renderFiles to show links properly
         function renderFiles(files) {
             const filesHtml = files?.length ? files.map(file => {
                 const isLink = file.fileType === 'link';
                 const icon = isLink ? '🔗' : '📄';
-                const fileInfo = isLink ? 
-                    `Link: ${file.originalName}` : 
-                    `File: ${file.originalName} | Size: ${(file.fileSize / 1024 / 1024).toFixed(2)} MB`;
-                
+                const fileInfo = isLink ? `Link: ${file.originalName}` : `File: ${file.originalName} | Size: ${(file.fileSize / 1024 / 1024).toFixed(2)} MB`;
                 return `
                     <div class="action-item">
                         <div class="action-content">
                             <strong>${icon} ${fileInfo}</strong>
-                            <div class="action-meta">
-                                Proposal ID: ${file.proposalId ? file.proposalId : 'General'} | 
-                                Uploaded: ${formatDate(file.uploadedAt)} by ${file.uploadedByName}
-                                ${file.linkDescription ? `<br>Description: ${file.linkDescription}` : ''}
-                            </div>
+                            <div class="action-meta">Proposal ID: ${file.proposalId ? file.proposalId : 'General'} | Uploaded: ${formatDate(file.uploadedAt)} by ${file.uploadedByName}${file.linkDescription ? `<br>Description: ${file.linkDescription}` : ''}</div>
                         </div>
                         <div class="action-buttons">
                             ${file.canView ? `<button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">${isLink ? 'OPEN LINK' : 'VIEW'}</button>` : '<span class="btn-disabled btn-sm">Access Restricted</span>'}
                             ${!isLink && file.canDownload ? `<button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">DOWNLOAD</button>` : ''}
                             ${file.canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}')">Delete</button>` : ''}
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }).join('') : '<p>No files found or accessible with your current role.</p>';
-            
             document.getElementById('fileListContainer').innerHTML = filesHtml;
         }
         
-        // Additional placeholder functions
         function showWorkflow() {
             setActiveNav('nav-workflow');
             document.getElementById('mainContent').innerHTML = `<div class="page-header"><h2>Workflow</h2></div><div class="action-section"><p>Workflow management features are in development.</p></div>`;
@@ -2113,38 +1845,30 @@
         async function showActivities() {
             setActiveNav('nav-activities');
             const main = document.getElementById('mainContent');
-            showLoading(); 
+            showLoading();
             main.innerHTML = '';
-            
             try {
                 const { success, data } = await apiCall('activities');
                 if (success && data) {
                     main.innerHTML = `
-                        <div class="page-header">
-                            <h2>Activity Log</h2>
-                            <div class="subtitle">Track all system activities and changes</div>
-                        </div>
-                        <div class="action-section">
-                            <h3>Recent Activities</h3>
+                        <div class="page-header"><h2>Activity Log</h2><div class="subtitle">Track all system activities and changes</div></div>
+                        <div class="action-section"><h3>Recent Activities</h3>
                             ${data.map(act => `
                                 <div class="action-item">
                                     <div class="action-content">
                                         <strong>${act.details}</strong>
-                                        <div class="action-meta">
-                                            By ${act.performedByName} (${act.performedByRole}) on ${formatDate(act.timestamp)}
-                                        </div>
+                                        <div class="action-meta">By ${act.performedByName} (${act.performedByRole}) on ${formatDate(act.timestamp)}</div>
                                     </div>
                                 </div>
                             `).join('')}
-                        </div>
-                    `;
-                } else { 
-                    throw new Error('Invalid activities response'); 
+                        </div>`;
+                } else {
+                    throw new Error('Invalid activities response');
                 }
-            } catch (error) { 
-                main.innerHTML = `<div class="error-message"><h3>Error:</h3><p>${error.message}</p></div>`; 
-            } finally { 
-                hideLoading(); 
+            } catch (error) {
+                main.innerHTML = `<div class="error-message"><h3>Error:</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
             }
         }
     </script>
