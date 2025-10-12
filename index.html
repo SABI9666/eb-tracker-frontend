@@ -588,11 +588,27 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        function getApiBase() { 
-            return window.location.hostname.includes('localhost') ? 'http://localhost:3000' : 'https://eb-traker.vercel.app'; 
+        // ============================================
+        // COMPLETE FRONTEND FIX
+        // Replace these sections in your index.html
+        // ============================================
+
+        // SECTION 1: API Configuration (around line 477)
+        // Replace the getApiBase function with this:
+        function getApiBase() {
+            // Check if we're in development
+            if (window.location.hostname === 'localhost' || 
+                window.location.hostname === '127.0.0.1') {
+                return 'http://localhost:3000';
+            }
+            
+            // CRITICAL: Replace with your actual Render backend URL
+            // Get this from your Render dashboard after deployment
+            // It looks like: https://eb-tracker-backend-xyz.onrender.com
+            return 'https://eb-tracker-backend.onrender.com';  // UPDATE THIS URL!
         }
         const API_BASE = getApiBase();
-
+        
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
             coo: ["coo@edanbrook.com", "coo2@edanbrook.com"],
@@ -605,34 +621,94 @@
         let currentUserRole = ''; 
         let authToken = '';
 
+        // SECTION 2: Enhanced API Call Function (around line 481)
+        // Replace the entire apiCall function with this:
         async function apiCall(endpoint, options = {}) {
             const url = `${API_BASE}/api/${endpoint}`;
-            const defaultOptions = { 
-                headers: { 
-                    'Authorization': `Bearer ${authToken}` 
-                } 
-            };
-            if (!(options.body instanceof FormData)) {
-                defaultOptions.headers['Content-Type'] = 'application/json';
+            
+            // Ensure we have a valid auth token
+            if (!authToken && currentUser) {
+                try {
+                    authToken = await currentUser.getIdToken(true);
+                    console.log('Token refreshed for API call');
+                } catch (error) {
+                    console.error('Failed to refresh token:', error);
+                    throw new Error('Authentication token expired. Please log in again.');
+                }
             }
-
-            const finalOptions = { ...defaultOptions, ...options, headers: { ...defaultOptions.headers, ...options.headers } };
+            
+            // Build headers
+            const defaultHeaders = {};
+            
+            // Add Authorization header if we have a token
+            if (authToken) {
+                defaultHeaders['Authorization'] = `Bearer ${authToken}`;
+            }
+            
+            // Don't add Content-Type for FormData
+            if (!(options.body instanceof FormData)) {
+                defaultHeaders['Content-Type'] = 'application/json';
+            }
+        
+            const finalOptions = { 
+                ...options,
+                headers: { 
+                    ...defaultHeaders, 
+                    ...(options.headers || {})
+                }
+            };
             
             try {
+                console.log(`API Call: ${options.method || 'GET'} ${url}`);
+                console.log('Auth token present:', !!authToken);
+                
                 const response = await fetch(url, finalOptions);
                 const responseText = await response.text();
+                
                 if (!response.ok) {
                     let errorData;
                     try { 
                         errorData = JSON.parse(responseText); 
                     } catch (e) { 
-                        throw new Error(`API Error ${response.status}: ${responseText.substring(0, 200)}...`); 
+                        throw new Error(`API Error ${response.status}: ${responseText.substring(0, 200)}`); 
                     }
-                    throw new Error(errorData.message || errorData.error || `Request failed`);
+                    
+                    // Handle specific error cases
+                    if (response.status === 401) {
+                        console.error('Authentication failed. Token may be invalid or expired.');
+                        // Try to refresh token once
+                        if (currentUser) {
+                            try {
+                                authToken = await currentUser.getIdToken(true);
+                                console.log('Token refreshed, retrying request...');
+                                // Retry the request with new token
+                                finalOptions.headers['Authorization'] = `Bearer ${authToken}`;
+                                const retryResponse = await fetch(url, finalOptions);
+                                const retryText = await retryResponse.text();
+                                if (retryResponse.ok) {
+                                    return retryText ? JSON.parse(retryText) : {};
+                                }
+                            } catch (refreshError) {
+                                console.error('Token refresh failed:', refreshError);
+                                await auth.signOut();
+                                throw new Error('Your session has expired. Please log in again.');
+                            }
+                        }
+                        throw new Error('Authentication failed. Please log in again.');
+                    }
+                    
+                    throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
                 }
+                
                 return responseText ? JSON.parse(responseText) : {};
             } catch (error) { 
                 console.error(`API call to ${endpoint} failed:`, error); 
+                
+                // Check if it's a network error
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    throw new Error('Cannot connect to server. Please check:\n1. Backend is running on Render\n2. Your internet connection\n3. CORS is properly configured');
+                }
+                
                 throw error; 
             }
         }
@@ -690,34 +766,69 @@
             return false;
         }
 
-
+        // SECTION 3: Enhanced Auth State Handler (around line 580)
+        // Replace the auth.onAuthStateChanged with this:
         document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
+            testBackendConnection();
+            
             auth.onAuthStateChanged(async (user) => {
+                console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+                
                 if (user) {
                     currentUser = user;
                     try {
+                        // Force token refresh on auth state change
+                        console.log('Getting fresh auth token...');
                         authToken = await user.getIdToken(true);
+                        console.log('Auth token obtained successfully');
+                        console.log('Token preview:', authToken.substring(0, 20) + '...');
+                        
+                        // Verify user document exists
+                        console.log('Fetching user document from Firestore...');
                         const userDoc = await db.collection('users').doc(user.uid).get();
+                        
                         if (userDoc.exists) {
                             currentUserRole = userDoc.data().role;
+                            console.log('User role:', currentUserRole);
+                            console.log('User email:', user.email);
                             showApp();
                         } else {
+                            console.error('User document not found in Firestore');
                             await auth.signOut();
-                            showMessage('Your user account was not found in the database. Please contact an administrator.', 'error');
+                            showMessage('Your user account was not found. Please contact an administrator.', 'error');
                         }
                     } catch (error) { 
-                        console.error('Auth state change error:', error); 
-                        showMessage('Failed to initialize session.', 'error'); 
+                        console.error('Auth initialization error:', error); 
+                        showMessage('Failed to initialize session: ' + error.message, 'error'); 
+                        await auth.signOut();
                     }
                 } else {
                     currentUser = null; 
                     currentUserRole = ''; 
                     authToken = ''; 
+                    console.log('User logged out');
                     showLogin();
                 }
             });
         });
+
+        // SECTION 4: Add Token Refresh Timer (add this after auth.onAuthStateChanged)
+        // Add this new code after the auth.onAuthStateChanged block:
+        // Refresh token every 50 minutes (tokens expire after 1 hour)
+        setInterval(async () => {
+            if (currentUser) {
+                try {
+                    const oldToken = authToken ? authToken.substring(0, 20) : 'none';
+                    authToken = await currentUser.getIdToken(true);
+                    console.log('Auth token auto-refreshed');
+                    console.log('Old token preview:', oldToken + '...');
+                    console.log('New token preview:', authToken.substring(0, 20) + '...');
+                } catch (error) {
+                    console.error('Token refresh failed:', error);
+                }
+            }
+        }, 50 * 60 * 1000); // 50 minutes
 
         function setupEventListeners() {
             document.querySelectorAll('.role-btn').forEach(btn => {
@@ -739,17 +850,35 @@
             clearMessages();
         }
 
+        // SECTION 5: Enhanced Login Handler (around line 657)
+        // Replace handleLogin function:
         async function handleLogin(e) {
             e.preventDefault();
             try {
                 clearMessages(); 
                 showMessage('Logging in...', 'info');
-                await auth.signInWithEmailAndPassword(
-                    document.getElementById('loginEmail').value, 
-                    document.getElementById('loginPassword').value
-                );
+                
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                console.log('Attempting login for:', email);
+                
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Login successful, user:', userCredential.user.uid);
+                
+                // Get fresh token
+                authToken = await userCredential.user.getIdToken(true);
+                console.log('Fresh token obtained');
+                
+                // Auth state changed will handle the rest
             } catch (error) { 
-                showMessage(error.code.includes('credential') ? 'Invalid email or password.' : 'Login failed.', 'error'); 
+                console.error('Login error:', error);
+                showMessage(
+                    error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' 
+                        ? 'Invalid email or password.' 
+                        : 'Login failed: ' + error.message, 
+                    'error'
+                ); 
             }
         }
 
@@ -3244,6 +3373,32 @@
                 alert('Error: ' + error.message);
             } finally {
                 hideLoading();
+            }
+        }
+
+        // SECTION 6: Test Connection Function (add this new function)
+        // Add this helper function to test your backend connection:
+        async function testBackendConnection() {
+            console.log('Testing backend connection...');
+            console.log('API Base URL:', API_BASE);
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                console.log('Backend health check:', data);
+                
+                if (data.status === 'OK') {
+                    console.log('✓ Backend is running and accessible');
+                    console.log('✓ Firebase:', data.firebase);
+                    return true;
+                } else {
+                    console.error('✗ Backend health check failed');
+                    return false;
+                }
+            } catch (error) {
+                console.error('✗ Cannot connect to backend:', error);
+                console.error('Make sure your backend URL is correct:', API_BASE);
+                return false;
             }
         }
     </script>
