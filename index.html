@@ -624,92 +624,130 @@
 
         // SECTION 2: Enhanced API Call Function (around line 481)
         // Replace the entire apiCall function with this:
-        async function apiCall(endpoint, options = {}) {
+        async function apiCall(endpoint, options = {}, retryCount = 0) {
+            const MAX_RETRIES = 2;
+            const RETRY_DELAY = 2000; // 2 seconds
+
             const url = `${API_BASE}/api/${endpoint}`;
-            // Ensure we have a valid auth token
-            if (!authToken && currentUser) {
+
+            // Ensure we have a valid auth token for authenticated requests
+            if (!authToken && currentUser && !endpoint.includes('health')) {
                 try {
                     authToken = await currentUser.getIdToken(true);
-                    console.log('Token refreshed for API call');
+                    console.log('🔑 Token refreshed for API call');
                 } catch (error) {
-                    console.error('Failed to refresh token:', error);
-                    hideLoading(); // ADDED: Clear loading on error
+                    console.error('❌ Failed to refresh token:', error);
                     throw new Error('Authentication token expired. Please log in again.');
                 }
             }
+
             // Build headers
             const defaultHeaders = {};
+
             // Add Authorization header if we have a token
             if (authToken) {
                 defaultHeaders['Authorization'] = `Bearer ${authToken}`;
             }
-            // Don't add Content-Type for FormData
+
+            // Don't add Content-Type for FormData (browser sets it with boundary)
             if (!(options.body instanceof FormData)) {
                 defaultHeaders['Content-Type'] = 'application/json';
             }
             const finalOptions = {
+                method: options.method || 'GET',
                 ...options,
                 headers: {
                     ...defaultHeaders,
                     ...(options.headers || {})
                 },
-                credentials: 'include' // ADDED: Include credentials
+                credentials: 'include',
+                mode: 'cors'
             };
+
             try {
-                console.log(`🔄 API Call: ${options.method || 'GET'} ${url}`);
-                console.log('Auth token present:', !!authToken);
-                console.log('Request body type:', options.body instanceof FormData ? 'FormData' : typeof options.body);
+                console.log(`📤 API Call [${finalOptions.method}]: ${url}`);
+                console.log('   Auth:', authToken ? '✅ Token present' : '❌ No token');
+                console.log('   Body type:', options.body instanceof FormData ? 'FormData' : typeof options.body);
+
                 const response = await fetch(url, finalOptions);
-                console.log(`📥 Response status: ${response.status} ${response.statusText}`);
-                const responseText = await response.text();
-                console.log('Response preview:', responseText.substring(0, 200));
-                if (!response.ok) {
-                    let errorData;
+
+                console.log(`📥 Response: ${response.status} ${response.statusText}`);
+
+                // Try to read response
+                const contentType = response.headers.get('content-type');
+                let responseData;
+
+                if (contentType && contentType.includes('application/json')) {
+                    const responseText = await response.text();
+                    console.log('   Response preview:', responseText.substring(0, 200));
+
                     try {
-                        errorData = JSON.parse(responseText);
-                    } catch (e) {
-                        console.error('Failed to parse error response:', responseText);
-                        hideLoading(); // ADDED: Clear loading on error
-                        throw new Error(`API Error ${response.status}: ${responseText.substring(0, 200)}`);
+                        responseData = responseText ? JSON.parse(responseText) : {};
+                    } catch (parseError) {
+                        console.error('❌ JSON parse error:', parseError);
+                        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
                     }
-                    // Handle specific error cases
+                } else {
+                    responseData = await response.text();
+                    console.log('   Non-JSON response:', responseData.substring(0, 200));
+                }
+
+                // Handle error responses
+                if (!response.ok) {
+                    // Handle 401 Unauthorized
                     if (response.status === 401) {
-                        console.error('❌ Authentication failed. Token may be invalid or expired.');
+                        console.error('❌ 401 Unauthorized - Token may be invalid');
+
                         // Try to refresh token once
-                        if (currentUser) {
+                        if (currentUser && retryCount === 0) {
+                            console.log('🔄 Attempting token refresh...');
                             try {
                                 authToken = await currentUser.getIdToken(true);
-                                console.log('✓ Token refreshed, retrying request...');
-                                // Retry the request with new token
-                                finalOptions.headers['Authorization'] = `Bearer ${authToken}`;
-                                const retryResponse = await fetch(url, finalOptions);
-                                const retryText = await retryResponse.text();
-                                if (retryResponse.ok) {
-                                    return retryText ? JSON.parse(retryText) : {};
-                                }
+                                console.log('✅ Token refreshed, retrying request...');
+                                // Retry with new token
+                                return await apiCall(endpoint, options, retryCount + 1);
                             } catch (refreshError) {
                                 console.error('❌ Token refresh failed:', refreshError);
                                 await auth.signOut();
-                                hideLoading(); // ADDED: Clear loading on error
-                                throw new Error('Your session has expired. Please log in again.');
+                                throw new Error('Session expired. Please log in again.');
                             }
                         }
-                        hideLoading(); // ADDED: Clear loading on error
+
                         throw new Error('Authentication failed. Please log in again.');
                     }
-                    hideLoading(); // ADDED: Clear loading on error
-                    throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
+
+                    // Handle other errors
+                    const errorMessage = responseData.message || responseData.error || `Request failed with status ${response.status}`;
+                    throw new Error(errorMessage);
                 }
+
                 console.log('✅ API call successful');
-                return responseText ? JSON.parse(responseText) : {};
+                return responseData;
+
             } catch (error) {
                 console.error(`❌ API call to ${endpoint} failed:`, error);
-                // Check if it's a network error
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    hideLoading(); // ADDED: Clear loading on error
-                    throw new Error('Cannot connect to server. Please check:\n1. Backend is running\n2. Your internet connection\n3. CORS is properly configured\n\nBackend URL: ' + API_BASE);
+
+                // Handle network errors with retry
+                if ((error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) && retryCount < MAX_RETRIES) {
+                    console.warn(`⚠️  Network error, retrying in ${RETRY_DELAY}ms... (Attempt ${retryCount + 1}/${MAX_RETRIES})`);
+
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                    return await apiCall(endpoint, options, retryCount + 1);
                 }
-                hideLoading(); // ADDED: Clear loading on error
+
+                // If all retries failed or other error
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    throw new Error(
+                        `Cannot connect to backend at:\n${API_BASE}\n\n` +
+                        `Possible causes:\n` +
+                        `• Backend is not running or deployed\n` +
+                        `• Backend URL is incorrect\n` +
+                        `• CORS is blocking the request\n` +
+                        `• Network/firewall issues\n\n` +
+                        `Try opening ${API_BASE}/health in a new tab to test.`
+                    );
+                }
+
                 throw error;
             }
         }
@@ -960,20 +998,32 @@
         async function showDashboard() {
             setActiveNav('nav-dashboard');
             const main = document.getElementById('mainContent');
-            showLoading(); 
-            main.innerHTML = '';
-            
+            showLoading();
             try {
-                const { success, data } = await apiCall('dashboard');
-                if (success && data) {
-                    renderDashboard(data);
+                console.log('📊 Loading dashboard...');
+                const response = await apiCall('dashboard');
+
+                console.log('Dashboard response:', response);
+
+                if (response.success && response.data) {
+                    renderDashboard(response.data);
                 } else {
-                    throw new Error('Invalid dashboard response');
+                    throw new Error('Invalid dashboard response: ' + JSON.stringify(response));
                 }
-            } catch (error) { 
-                main.innerHTML = `<div class="error-message"><h3>Error Loading Dashboard</h3><p>${error.message}</p></div>`; 
-            } finally { 
-                hideLoading(); 
+            } catch (error) {
+                console.error('❌ Dashboard error:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Dashboard Error</h3>
+                        <p>${error.message}</p>
+                        <div style="margin-top: 1rem;">
+                            <button onclick="showDashboard()" class="btn btn-primary">Retry</button>
+                            <button onclick="runDiagnostics()" class="btn btn-outline">Run Diagnostics</button>
+                        </div>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
             }
         }
 
@@ -2266,15 +2316,29 @@
 
 
         async function showFiles() {
+            const container = document.getElementById('fileListContainer');
+            if (!container) {
+                console.error('❌ fileListContainer not found in DOM');
+                return;
+            }
+            container.innerHTML = '<p>Loading files...</p>';
             try {
-                const { success, data } = await apiCall('files');
-                if (success && data) {
-                    renderFiles(data);
+                console.log('📁 Loading files...');
+                const response = await apiCall('files');
+                console.log('Files response:', response);
+                if (response.success && response.data) {
+                    renderFiles(response.data);
                 } else {
                     throw new Error('Invalid files response');
                 }
-            } catch (error) { 
-                document.getElementById('fileListContainer').innerHTML = `<p class="error-message">${error.message}</p>`; 
+            } catch (error) {
+                console.error('❌ Files error:', error);
+                container.innerHTML = `
+                    <div class="error-message">
+                        <p>${error.message}</p>
+                        <button onclick="showFiles()" class="btn btn-primary btn-sm">Retry</button>
+                    </div>
+                `;
             }
         }
         
@@ -3458,6 +3522,94 @@
                 console.error('Make sure your backend URL is correct:', API_BASE);
                 return false;
             }
+        }
+
+        async function runDiagnostics() {
+            console.log('🔧 Starting comprehensive diagnostics...');
+            const results = [];
+            
+            // Test 1: Frontend info
+            results.push('=== FRONTEND INFO ===');
+            results.push(`URL: ${window.location.origin}`);
+            results.push(`Backend URL: ${API_BASE}`);
+            results.push(`Logged in: ${!!currentUser}`);
+            results.push(`Has token: ${!!authToken}`);
+            results.push('');
+            
+            // Test 2: Can reach backend root?
+            results.push('=== TEST 1: Backend Root ===');
+            try {
+                const response = await fetch(API_BASE, { mode: 'cors' });
+                const data = await response.json();
+                results.push(`✅ Status: ${response.status}`);
+                results.push(`✅ Response: ${JSON.stringify(data)}`);
+            } catch (error) {
+                results.push(`❌ FAILED: ${error.message}`);
+            }
+            results.push('');
+            
+            // Test 3: Can reach health endpoint?
+            results.push('=== TEST 2: Health Endpoint ===');
+            try {
+                const response = await fetch(`${API_BASE}/health`, { mode: 'cors' });
+                const data = await response.json();
+                results.push(`✅ Status: ${response.status}`);
+                results.push(`✅ Response: ${JSON.stringify(data)}`);
+            } catch (error) {
+                results.push(`❌ FAILED: ${error.message}`);
+            }
+            results.push('');
+            
+            // Test 4: Can reach API with auth?
+            if (authToken) {
+                results.push('=== TEST 3: Authenticated API Call ===');
+                try {
+                    const response = await fetch(`${API_BASE}/api/dashboard`, {
+                        mode: 'cors',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    results.push(`✅ Status: ${response.status}`);
+                    results.push(`✅ Response: ${JSON.stringify(data).substring(0, 100)}...`);
+                } catch (error) {
+                    results.push(`❌ FAILED: ${error.message}`);
+                }
+            } else {
+                results.push('=== TEST 3: SKIPPED (Not logged in) ===');
+            }
+            results.push('');
+            
+            // Test 5: CORS preflight
+            results.push('=== TEST 4: CORS Preflight ===');
+            try {
+                const response = await fetch(`${API_BASE}/api/dashboard`, {
+                    method: 'OPTIONS',
+                    mode: 'cors',
+                    headers: {
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'content-type,authorization',
+                        'Origin': window.location.origin
+                    }
+                });
+                results.push(`✅ Status: ${response.status}`);
+                results.push(`✅ CORS headers:`);
+                results.push(`   - Access-Control-Allow-Origin: ${response.headers.get('access-control-allow-origin')}`);
+                results.push(`   - Access-Control-Allow-Methods: ${response.headers.get('access-control-allow-methods')}`);
+                results.push(`   - Access-Control-Allow-Headers: ${response.headers.get('access-control-allow-headers')}`);
+            } catch (error) {
+                results.push(`❌ FAILED: ${error.message}`);
+            }
+            
+            // Display results
+            const output = results.join('\n');
+            console.log(output);
+            
+            alert('Diagnostics Complete!\n\n' + output + '\n\nFull details in console (F12)');
+            
+            return output;
         }
     </script>
 </body>
