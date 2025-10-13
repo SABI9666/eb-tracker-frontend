@@ -622,10 +622,10 @@
         let authToken = '';
 
         // SECTION 2: Enhanced API Call Function (around line 481)
-        // Replace the entire apiCall function with this:
+        // Enhanced apiCall function with file upload debugging
         async function apiCall(endpoint, options = {}) {
             const url = `${API_BASE}/api/${endpoint}`;
-            
+        
             // Ensure we have a valid auth token
             if (!authToken && currentUser) {
                 try {
@@ -636,20 +636,20 @@
                     throw new Error('Authentication token expired. Please log in again.');
                 }
             }
-            
+        
             // Build headers
             const defaultHeaders = {};
-            
+        
             // Add Authorization header if we have a token
             if (authToken) {
                 defaultHeaders['Authorization'] = `Bearer ${authToken}`;
             }
-            
+        
             // Don't add Content-Type for FormData
-            if (!(options.body instanceof FormData)) {
+            const isFormData = options.body instanceof FormData;
+            if (!isFormData) {
                 defaultHeaders['Content-Type'] = 'application/json';
             }
-        
             const finalOptions = { 
                 ...options,
                 headers: { 
@@ -657,22 +657,38 @@
                     ...(options.headers || {})
                 }
             };
-            
+        
             try {
-                console.log(`API Call: ${options.method || 'GET'} ${url}`);
-                console.log('Auth token present:', !!authToken);
-                
+                console.log(`🌐 API Call: ${options.method || 'GET'} ${url}`);
+                console.log('   Auth token present:', !!authToken);
+                console.log('   Is FormData:', isFormData);
+        
+                if (isFormData) {
+                    console.log('   FormData entries:');
+                    for (let pair of options.body.entries()) {
+                        if (pair[1] instanceof File) {
+                            console.log(`   - ${pair[0]}: File(${pair[1].name}, ${pair[1].size} bytes)`);
+                        } else {
+                            console.log(`   - ${pair[0]}:`, pair[1]);
+                        }
+                    }
+                }
+        
                 const response = await fetch(url, finalOptions);
                 const responseText = await response.text();
-                
+        
+                console.log(`📥 Response status: ${response.status} ${response.statusText}`);
+                console.log(`📥 Response body preview:`, responseText.substring(0, 200));
+        
                 if (!response.ok) {
                     let errorData;
                     try { 
                         errorData = JSON.parse(responseText); 
                     } catch (e) { 
+                        console.error('Failed to parse error response as JSON:', responseText);
                         throw new Error(`API Error ${response.status}: ${responseText.substring(0, 200)}`); 
                     }
-                    
+        
                     // Handle specific error cases
                     if (response.status === 401) {
                         console.error('Authentication failed. Token may be invalid or expired.');
@@ -696,20 +712,74 @@
                         }
                         throw new Error('Authentication failed. Please log in again.');
                     }
-                    
+        
                     throw new Error(errorData.message || errorData.error || `Request failed with status ${response.status}`);
                 }
-                
-                return responseText ? JSON.parse(responseText) : {};
+        
+                const result = responseText ? JSON.parse(responseText) : {};
+                console.log('✅ API call successful, result:', result);
+                return result;
+        
             } catch (error) { 
-                console.error(`API call to ${endpoint} failed:`, error); 
-                
+                console.error(`❌ API call to ${endpoint} failed:`, error); 
+        
                 // Check if it's a network error
                 if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
                     throw new Error('Cannot connect to server. Please check:\n1. Backend is running on Render\n2. Your internet connection\n3. CORS is properly configured');
                 }
-                
+        
                 throw error; 
+            }
+        }
+        
+        async function testFileUploadEndpoint() {
+            console.log('🧪 Testing file upload endpoint...');
+        
+            try {
+                // Create a tiny test file
+                const testFile = new File(['test content'], 'test.txt', { type: 'text/plain' });
+                const formData = new FormData();
+                formData.append('files', testFile);
+                formData.append('proposalId', 'test-proposal-id');
+                formData.append('fileType', 'project');
+        
+                const response = await apiCall('files', {
+                    method: 'POST',
+                    body: formData
+                });
+        
+                console.log('✅ File upload endpoint is working:', response);
+                return true;
+            } catch (error) {
+                console.error('❌ File upload endpoint test failed:', error);
+                return false;
+            }
+        }
+        
+        async function checkBackendCapabilities() {
+            console.log('🔍 Checking backend capabilities...');
+        
+            try {
+                const health = await fetch(`${API_BASE}/health`);
+                const healthData = await health.json();
+                console.log('Backend health:', healthData);
+        
+                // Check if file upload endpoint exists
+                const fileEndpointCheck = await fetch(`${API_BASE}/api/files`, {
+                    method: 'OPTIONS'
+                });
+                console.log('File endpoint OPTIONS:', fileEndpointCheck.status);
+        
+                return {
+                    healthy: healthData.status === 'OK',
+                    fileUploadSupported: fileEndpointCheck.ok
+                };
+            } catch (error) {
+                console.error('Backend check failed:', error);
+                return {
+                    healthy: false,
+                    fileUploadSupported: false
+                };
             }
         }
 
@@ -767,10 +837,19 @@
         }
 
         // SECTION 3: Enhanced Auth State Handler (around line 580)
-        // Replace the auth.onAuthStateChanged with this:
         document.addEventListener('DOMContentLoaded', () => {
             setupEventListeners();
             testBackendConnection();
+        
+            // Add backend capability check
+            setTimeout(async () => {
+                const capabilities = await checkBackendCapabilities();
+                console.log('Backend capabilities:', capabilities);
+        
+                if (!capabilities.fileUploadSupported) {
+                    console.warn('⚠️ File upload endpoint may not be properly configured');
+                }
+            }, 1000);
             
             auth.onAuthStateChanged(async (user) => {
                 console.log('Auth state changed:', user ? 'User logged in' : 'No user');
@@ -814,7 +893,6 @@
         });
 
         // SECTION 4: Add Token Refresh Timer (add this after auth.onAuthStateChanged)
-        // Add this new code after the auth.onAuthStateChanged block:
         // Refresh token every 50 minutes (tokens expire after 1 hour)
         setInterval(async () => {
             if (currentUser) {
@@ -851,7 +929,6 @@
         }
 
         // SECTION 5: Enhanced Login Handler (around line 657)
-        // Replace handleLogin function:
         async function handleLogin(e) {
             e.preventDefault();
             try {
@@ -1316,7 +1393,7 @@
             // Handle form submission
             document.getElementById('createProposalForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                
+            
                 // Collect project links
                 const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
                 const projectLinks = [];
@@ -1327,7 +1404,7 @@
                         projectLinks.push({ url, title: title || url, description: title });
                     }
                 });
-                
+            
                 const formData = {
                     projectName: document.getElementById('projectName').value,
                     clientCompany: document.getElementById('clientCompany').value,
@@ -1338,35 +1415,74 @@
                     scopeOfWork: document.getElementById('scopeOfWork').value,
                     projectLinks: projectLinks
                 };
-                
+            
+                console.log('📤 Starting proposal creation with data:', formData);
+                console.log('📎 Files to upload:', selectedFiles.length);
+                console.log('🔗 Links to upload:', projectLinks.length);
+            
                 try {
                     showLoading();
-                    
-                    // Create the proposal first
+            
+                    // STEP 1: Create the proposal first
+                    console.log('Step 1: Creating proposal...');
                     const response = await apiCall('proposals', {
                         method: 'POST',
                         body: JSON.stringify(formData)
                     });
-                    
-                    if (response.success && response.data) {
-                        const proposalId = response.data.id;
-                        
-                        // Upload files if any
-                        if (selectedFiles.length > 0) {
-                            const fileFormData = new FormData();
-                            selectedFiles.forEach(file => fileFormData.append('files', file));
-                            fileFormData.append('proposalId', proposalId);
-                            fileFormData.append('fileType', 'project');
-                            
-                            await apiCall('files', {
+            
+                    console.log('✅ Proposal creation response:', response);
+            
+                    if (!response.success || !response.data || !response.data.id) {
+                        throw new Error('Failed to create proposal: Invalid response from server');
+                    }
+            
+                    const proposalId = response.data.id;
+                    console.log('✅ Proposal created with ID:', proposalId);
+            
+                    // STEP 2: Upload files if any
+                    if (selectedFiles.length > 0) {
+                        console.log('Step 2: Uploading files...');
+                        console.log('Files:', selectedFiles.map(f => ({ name: f.name, size: f.size, type: f.type })));
+            
+                        const fileFormData = new FormData();
+            
+                        // Add each file to FormData
+                        selectedFiles.forEach((file, index) => {
+                            fileFormData.append('files', file);
+                            console.log(`  - Added file ${index + 1}:`, file.name, `(${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+                        });
+            
+                        fileFormData.append('proposalId', proposalId);
+                        fileFormData.append('fileType', 'project');
+            
+                        console.log('📤 Sending file upload request...');
+            
+                        try {
+                            const fileResponse = await apiCall('files', {
                                 method: 'POST',
                                 body: fileFormData
                             });
+            
+                            console.log('✅ File upload response:', fileResponse);
+            
+                            if (!fileResponse.success) {
+                                console.error('⚠️ File upload failed but continuing:', fileResponse);
+                                alert('⚠️ Proposal created but file upload failed: ' + (fileResponse.error || 'Unknown error'));
+                            }
+                        } catch (fileError) {
+                            console.error('❌ File upload error:', fileError);
+                            alert('⚠️ Proposal created but file upload failed: ' + fileError.message + '\nYou can upload files later from the File Manager.');
                         }
-                        
-                        // Upload links if any
-                        if (projectLinks.length > 0) {
-                            await apiCall('files', {
+                    } else {
+                        console.log('Step 2: No files to upload, skipping...');
+                    }
+            
+                    // STEP 3: Upload links if any
+                    if (projectLinks.length > 0) {
+                        console.log('Step 3: Uploading links...');
+            
+                        try {
+                            const linkResponse = await apiCall('files', {
                                 method: 'POST',
                                 body: JSON.stringify({
                                     links: projectLinks,
@@ -1374,14 +1490,53 @@
                                     fileType: 'link'
                                 })
                             });
+            
+                            console.log('✅ Link upload response:', linkResponse);
+            
+                            if (!linkResponse.success) {
+                                console.error('⚠️ Link upload failed but continuing:', linkResponse);
+                            }
+                        } catch (linkError) {
+                            console.error('❌ Link upload error:', linkError);
+                            // Don't alert for link errors, they're less critical
                         }
-                        
-                        alert('Proposal created successfully!');
-                        closeModal();
-                        showProposals();
+                    } else {
+                        console.log('Step 3: No links to upload, skipping...');
                     }
+            
+                    console.log('✅ All steps completed successfully!');
+                    alert('✅ Proposal created successfully!');
+                    closeModal();
+                    showProposals();
+            
                 } catch (error) {
-                    alert(`Creation failed: ${error.message}`);
+                    console.error('❌ Proposal creation failed:', error);
+                    console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack,
+                        name: error.name
+                    });
+            
+                    let errorMessage = `Creation failed: ${error.message}`;
+            
+                    // Add specific guidance based on error type
+                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                        errorMessage += '\n\n🔧 Backend connection issue. Please check:\n' +
+                                      '1. Backend server is running\n' +
+                                      '2. Backend URL is correct in the code\n' +
+                                      '3. CORS is configured properly';
+                    } else if (error.message.includes('401') || error.message.includes('Authentication')) {
+                        errorMessage += '\n\n🔧 Authentication issue. Try:\n' +
+                                      '1. Logging out and back in\n' +
+                                      '2. Checking your token is valid';
+                    } else if (error.message.includes('413') || error.message.includes('too large')) {
+                        errorMessage += '\n\n🔧 Files are too large. Try:\n' +
+                                      '1. Uploading smaller files\n' +
+                                      '2. Compressing files first\n' +
+                                      '3. Uploading files separately after creating the proposal';
+                    }
+            
+                    alert(errorMessage);
                 } finally {
                     hideLoading();
                 }
