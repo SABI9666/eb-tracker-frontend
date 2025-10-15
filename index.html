@@ -60,7 +60,7 @@
             display: block;
         }
         
-        /* Login styles */
+        /* Login Page */
         .login-page { 
             min-height: 100vh; 
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); 
@@ -112,6 +112,7 @@
             justify-content: center; 
         }
         
+        /* Form Elements */
         .form-group { margin-bottom: 1.5rem; }
         .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-dark); }
         .form-control { 
@@ -128,6 +129,7 @@
             box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1); 
         }
         
+        /* Buttons */
         .btn { 
             padding: 0.8rem 2rem; 
             border: none; 
@@ -145,6 +147,7 @@
         .btn-primary:hover { background: var(--dark-blue); }
         .btn-outline { background: transparent; color: var(--primary-blue); border: 2px solid var(--primary-blue); }
         
+        /* Messages */
         .error-message, .success-message, .info-message { 
             padding: 1rem; 
             border-radius: 8px; 
@@ -155,7 +158,7 @@
         .success-message { background: #d4edda; color: #155724; }
         .info-message { background: #d1ecf1; color: #0c5460; }
         
-        /* Loading spinner */
+        /* Loading Spinner */
         .loading { 
             position: fixed; 
             top: 0; 
@@ -182,9 +185,10 @@
             100% { transform: rotate(360deg); } 
         }
         
+        /* App Container */
         .app-container { display: none; }
         
-        /* Diagnostic panel */
+        /* Diagnostic Panel */
         .diagnostic-panel {
             background: white;
             border-radius: 15px;
@@ -210,11 +214,23 @@
             background: #fff3cd;
             border-color: #F39C12;
         }
+        .diagnostic-item pre {
+            margin-top: 0.5rem;
+            white-space: pre-wrap;
+            font-size: 0.85rem;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .login-container { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
+    <!-- Connection Status Banner -->
     <div id="connectionBanner" class="connection-banner"></div>
     
+    <!-- Login Page -->
     <div id="loginPage" class="login-page">
         <div class="login-container">
             <div class="login-left">
@@ -223,43 +239,41 @@
                 <p class="company-subtitle">Project Management System</p>
             </div>
             <div class="login-right">
-                <h2 style="margin-bottom: 1rem;">Login</h2>
+                <h2 style="margin-bottom: 1rem; color: var(--text-dark);">Login</h2>
                 <div id="authMessages"></div>
                 
                 <form id="loginForm">
                     <div class="form-group">
                         <label for="loginEmail">Email</label>
-                        <input type="email" id="loginEmail" class="form-control" required>
+                        <input type="email" id="loginEmail" class="form-control" required 
+                               placeholder="your.email@edanbrook.com">
                     </div>
                     <div class="form-group">
                         <label for="loginPassword">Password</label>
-                        <input type="password" id="loginPassword" class="form-control" required>
+                        <input type="password" id="loginPassword" class="form-control" required
+                               placeholder="Enter your password">
                     </div>
                     <button type="submit" class="btn btn-primary">Login</button>
                 </form>
                 
+                <!-- Diagnostic Panel (hidden by default) -->
                 <div id="diagnosticPanel" class="diagnostic-panel" style="display: none;">
-                    <h3 style="margin-bottom: 1rem;">Connection Diagnostics</h3>
+                    <h3 style="margin-bottom: 1rem; color: var(--text-dark);">🔧 Connection Diagnostics</h3>
                     <div id="diagnosticResults"></div>
                     <button onclick="runDiagnostics()" class="btn btn-outline" style="margin-top: 1rem;">
-                        🔧 Run Diagnostics
+                        Run Diagnostics
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- App Container (shown after login) -->
     <div id="appContainer" class="app-container">
-        <div class="loading" id="loadingSpinner">
-            <div class="spinner"></div>
-            <p>Loading...</p>
-        </div>
-        <div id="mainContent" style="padding: 2rem;">
-            <h1>Welcome to EBTracker!</h1>
-            <p>Your dashboard will load here...</p>
-        </div>
+        <!-- App content will be dynamically inserted by app.js -->
     </div>
     
+    <!-- Load JavaScript -->
     <script src="app.js"></script>
 </body>
 </html>
