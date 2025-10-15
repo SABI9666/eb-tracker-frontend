@@ -98,56 +98,94 @@ async function apiCall(endpoint, options = {}, retryCount = 0) {
     const MAX_RETRIES = 2;
     const url = `${BACKEND_URL}/api/${endpoint}`;
 
+    // Get fresh token if needed
     if (!authToken && currentUser && !endpoint.includes('health')) {
         try {
+            console.log('🔑 Getting fresh auth token...');
             authToken = await currentUser.getIdToken(true);
+            console.log('✅ Token obtained:', authToken.substring(0, 20) + '...');
         } catch (error) {
+            console.error('❌ Token error:', error);
             throw new Error('Authentication token expired. Please log in again.');
         }
     }
 
+    // Build headers carefully
     const defaultHeaders = {};
-    if (authToken) defaultHeaders['Authorization'] = `Bearer ${authToken}`;
-    if (!(options.body instanceof FormData)) defaultHeaders['Content-Type'] = 'application/json';
+    
+    // Add auth token if available
+    if (authToken) {
+        defaultHeaders['Authorization'] = `Bearer ${authToken}`;
+        console.log('🔐 Auth header added');
+    } else {
+        console.warn('⚠️ No auth token available');
+    }
+    
+    // Add content-type for non-FormData
+    if (!(options.body instanceof FormData)) {
+        defaultHeaders['Content-Type'] = 'application/json';
+    }
 
     const finalOptions = {
         method: options.method || 'GET',
         ...options,
         headers: { ...defaultHeaders, ...(options.headers || {}) },
-        credentials: 'include',
         mode: 'cors'
+        // ✅ Removed credentials: 'include' to match CORS config
     };
 
     try {
-        console.log(`📤 API [${finalOptions.method}]: ${url}`);
+        console.log(`📤 API Call [${finalOptions.method}]: ${url}`);
+        console.log('📋 Headers:', JSON.stringify(finalOptions.headers, null, 2));
+        
         const response = await fetch(url, finalOptions);
-        console.log(`📥 Response: ${response.status}`);
+        
+        console.log(`📥 Response: ${response.status} ${response.statusText}`);
+        console.log('📋 Response Headers:', {
+            'content-type': response.headers.get('content-type'),
+            'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+        });
 
         const contentType = response.headers.get('content-type');
         let responseData;
 
         if (contentType?.includes('application/json')) {
             const text = await response.text();
+            console.log('📄 Response text preview:', text.substring(0, 200));
             responseData = text ? JSON.parse(text) : {};
         } else {
             responseData = await response.text();
         }
 
         if (!response.ok) {
+            console.error('❌ Response not OK:', response.status, responseData);
+            
             if (response.status === 401 && currentUser && retryCount === 0) {
+                console.log('🔄 401 error - refreshing token...');
                 authToken = await currentUser.getIdToken(true);
                 return await apiCall(endpoint, options, retryCount + 1);
             }
+            
             throw new Error(responseData.message || responseData.error || `Request failed: ${response.status}`);
         }
 
+        console.log('✅ API call successful');
         return responseData;
+        
     } catch (error) {
         console.error(`❌ API call failed:`, error);
+        console.error('Error details:', {
+            message: error.message,
+            name: error.name,
+            stack: error.stack?.substring(0, 200)
+        });
+        
         if (error.message.includes('Failed to fetch') && retryCount < MAX_RETRIES) {
+            console.log(`🔄 Retrying... (${retryCount + 1}/${MAX_RETRIES})`);
             await new Promise(resolve => setTimeout(resolve, 2000));
             return await apiCall(endpoint, options, retryCount + 1);
         }
+        
         throw error;
     }
 }
@@ -216,25 +254,56 @@ async function logout() {
 
 async function showDashboard() {
     const main = document.getElementById('mainContent');
-    if (!main) return;
+    if (!main) {
+        console.error('❌ mainContent element not found!');
+        return;
+    }
     
     showLoading();
+    
     try {
         console.log('📊 Loading dashboard...');
+        console.log('🔐 Current user:', currentUser?.email);
+        console.log('🔑 Auth token exists:', !!authToken);
+        console.log('👤 Current role:', currentUserRole);
+        
+        // First, test if backend is reachable at all
+        console.log('🧪 Testing backend health first...');
+        try {
+            const healthResponse = await fetch(`${BACKEND_URL}/health`);
+            const healthData = await healthResponse.json();
+            console.log('✅ Backend health check:', healthData);
+        } catch (healthError) {
+            console.error('❌ Backend health check failed:', healthError);
+            throw new Error('Cannot reach backend server');
+        }
+        
+        // Now call the dashboard API
+        console.log('📞 Calling dashboard API...');
         const response = await apiCall('dashboard');
+        console.log('✅ Dashboard response received:', response);
 
         if (response.success && response.data) {
+            console.log('📊 Rendering dashboard with data');
             renderDashboard(response.data);
         } else {
-            throw new Error('Invalid dashboard response');
+            console.error('❌ Invalid dashboard response:', response);
+            throw new Error('Invalid dashboard response: ' + JSON.stringify(response));
         }
     } catch (error) {
         console.error('❌ Dashboard error:', error);
         main.innerHTML = `
             <div class="error-message">
-                <h3>⚠️ Dashboard Error</h3>
-                <p>${error.message}</p>
-                <button onclick="showDashboard()" class="btn btn-primary">Retry</button>
+                <h3>⚠️ Dashboard Load Error</h3>
+                <p><strong>Error:</strong> ${error.message}</p>
+                <details style="margin-top: 1rem;">
+                    <summary style="cursor: pointer;">Technical Details</summary>
+                    <pre style="margin-top: 0.5rem; background: #f5f5f5; padding: 1rem; border-radius: 5px; overflow-x: auto;">${error.stack || 'No stack trace available'}</pre>
+                </details>
+                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
+                    <button onclick="showDashboard()" class="btn btn-primary">Retry</button>
+                    <button onclick="logout()" class="btn btn-outline">Logout</button>
+                </div>
             </div>
         `;
     } finally {
@@ -443,26 +512,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // Auth state listener
     auth.onAuthStateChanged(async (user) => {
+        console.log('🔄 Auth state changed');
+        console.log('👤 User:', user ? user.email : 'Not logged in');
+        
         if (user) {
             currentUser = user;
             try {
+                console.log('🔑 Getting auth token...');
                 authToken = await user.getIdToken(true);
+                console.log('✅ Token obtained successfully');
+                console.log('📋 Token preview:', authToken.substring(0, 30) + '...');
+                console.log('📏 Token length:', authToken.length);
+                
+                console.log('📄 Fetching user document from Firestore...');
                 const userDoc = await db.collection('users').doc(user.uid).get();
                 
                 if (userDoc.exists) {
-                    currentUserRole = userDoc.data().role;
-                    console.log('✅ User:', user.email, '| Role:', currentUserRole);
+                    const userData = userDoc.data();
+                    currentUserRole = userData.role;
+                    console.log('✅ User role loaded:', currentUserRole);
+                    console.log('👤 User data:', userData);
+                    
+                    // Small delay to ensure everything is ready
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    console.log('🎨 Showing app...');
                     showApp();
                 } else {
+                    console.error('❌ User document not found in Firestore');
                     await auth.signOut();
-                    showMessage('User account not found', 'error');
+                    showMessage('User account not found. Please contact administrator.', 'error');
                 }
             } catch (error) { 
-                console.error('Auth error:', error); 
-                showMessage('Session error: ' + error.message, 'error'); 
+                console.error('❌ Auth initialization error:', error);
+                console.error('Error stack:', error.stack);
+                showMessage('Failed to initialize session: ' + error.message, 'error'); 
                 await auth.signOut();
             }
         } else {
+            console.log('👋 User logged out');
             currentUser = null; 
             currentUserRole = ''; 
             authToken = ''; 
