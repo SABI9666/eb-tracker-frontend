@@ -427,7 +427,7 @@
         .status-priced { background: #fed7aa; color: #9a3412; }
         .status-approved { background: #d4edda; color: #155724; }
         .status-rejected { background: #f8d7da; color: #721c24; }
-        .status-submitted { background: #cce5ff; color: #0066cc; }
+        .status-submitted, .status-submitted-to-client { background: #cce5ff; color: #0066cc; }
         .status-won { background: #a7f3d0; color: #064e3b; }
         .status-lost { background: #fecaca; color: #991b1b; }
         .status-assigned { background: #ddd6fe; color: #5b21b6; }
@@ -812,6 +812,7 @@
                 return true;
             }
             if (currentUserRole === 'bdm') {
+                // ✅ FIXED: Check for correct status name
                 return proposalStatus === 'approved' || proposalStatus === 'submitted_to_client';
             }
             return false;
@@ -1124,7 +1125,6 @@
             `;
         }
 
-        // ✅ UPDATED: Action buttons based on new workflow statuses
         function getActionButtons(item, role) {
             let actionBtn = '';
             switch(item.type) {
@@ -1141,8 +1141,16 @@
                         actionBtn = `<button class="btn btn-primary btn-sm" onclick="viewProposal('${item.proposalId}')">EXECUTIVE REVIEW</button>`;
                     break;
                 case 'ready_for_client': // Triggered by APPROVED status
-                     if (role === 'bdm')  
+                     if (role === 'bdm') 
                         actionBtn = `<button class="btn btn-success btn-sm" onclick="submitToClient('${item.proposalId}')">SUBMIT TO CLIENT</button>`;
+                     break;
+                // ✅ ADD THIS NEW CASE for submitted proposals
+                case 'client_decision_pending': // Triggered by submitted_to_client status
+                     if (role === 'bdm') 
+                        actionBtn = `
+                            <button class="btn btn-success btn-sm" onclick="markProposalWon('${item.proposalId}')">✅ WON</button>
+                            <button class="btn btn-danger btn-sm" onclick="markProposalLost('${item.proposalId}')">❌ LOST</button>
+                        `;
                      break;
                 case 'project_allocation': // Triggered by pending_setup status
                     if (role === 'design_lead' || role === 'coo') 
@@ -1204,11 +1212,11 @@
                 </button>
             ` : '';
         
-            // ✅ FIXED: Separate by status
-            const approvedProposals = proposals.filter(p => p.status === 'APPROVED');
-            const submittedProposals = proposals.filter(p => p.status === 'SUBMITTED');
-            const wonProposals = proposals.filter(p => p.status === 'WON');
-            const otherProposals = proposals.filter(p => !['APPROVED', 'SUBMITTED', 'WON'].includes(p.status));
+            // ✅ FIXED: Use correct status names (lowercase with underscores)
+            const approvedProposals = proposals.filter(p => p.status === 'approved');
+            const submittedProposals = proposals.filter(p => p.status === 'submitted_to_client'); // ✅ FIXED
+            const wonProposals = proposals.filter(p => p.status === 'won');
+            const otherProposals = proposals.filter(p => !['approved', 'submitted_to_client', 'won'].includes(p.status)); // ✅ FIXED
         
             // ✅ APPROVED Section
             let approvedSection = '';
@@ -1240,7 +1248,7 @@
                 `;
             }
         
-            // ✅ SUBMITTED Section (NEW!)
+            // ✅ SUBMITTED Section
             let submittedSection = '';
             if (currentUserRole === 'bdm' && submittedProposals.length > 0) {
                 submittedSection = `
@@ -1309,7 +1317,7 @@
                         <div class="action-meta">Client: ${p.clientCompany} | Created: ${formatDate(p.createdAt)}</div>
                     </div>
                     <div>
-                        <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">${p.status}</span>
+                        <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">${p.status.toUpperCase().replace(/_/g, ' ')}</span>
                     </div>
                     <div class="action-buttons">
                         <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
@@ -1668,11 +1676,10 @@
                             <h2>${p.projectName}</h2>
                             <div class="subtitle">${p.clientCompany}</div>
                         </div>
-                        // ✅ UPDATED: Display new status names
                         <div style="margin-bottom: 2rem;">
                             <strong>Status:</strong> 
                             <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">
-                                ${p.status}
+                                ${p.status.replace(/_/g, ' ').toUpperCase()}
                             </span>
                         </div>
                         <div style="display: grid; gap: 2rem;">
