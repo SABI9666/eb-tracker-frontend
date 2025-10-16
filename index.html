@@ -1186,37 +1186,41 @@
             }
         }
 
-        // REPLACE THE EXISTING renderProposals FUNCTION IN index.html
         function renderProposals(proposals) {
             const createButton = currentUserRole === 'bdm' ? `
                 <button onclick="showCreateProposalModal()" class="btn btn-primary" style="margin-bottom: 2rem; width: auto;">
                     Create New Proposal
                 </button>
             ` : '';
-            // ✅ UPDATED: Separate proposals by NEW status names
-            const approvedProposals = proposals.filter(p => p.status === 'APPROVED');
-            const wonProposals = proposals.filter(p => p.status === 'WON');
-            const otherProposals = proposals.filter(p => !['APPROVED', 'WON'].includes(p.status));
         
-            // ✅ UPDATED: Show APPROVED proposals with submit to client option
+            // ✅ FIXED: Separate by status
+            const approvedProposals = proposals.filter(p => p.status === 'APPROVED');
+            const submittedProposals = proposals.filter(p => p.status === 'SUBMITTED');
+            const wonProposals = proposals.filter(p => p.status === 'WON');
+            const otherProposals = proposals.filter(p => !['APPROVED', 'SUBMITTED', 'WON'].includes(p.status));
+        
+            // ✅ APPROVED Section
             let approvedSection = '';
             if (currentUserRole === 'bdm' && approvedProposals.length > 0) {
                 approvedSection = `
-                    <div class="action-section" style="margin-bottom: 2rem;">
-                        <h3>✅ APPROVED Proposals - Submit to Client or Mark as WON/LOST</h3>
+                    <div class="action-section" style="margin-bottom: 2rem; background: #E8F5E9;">
+                        <h3>✅ APPROVED Proposals - Ready for Client Submission</h3>
+                        <p style="color: #2E7D32; margin-bottom: 1rem;">
+                            <strong>Options:</strong> Submit to client first, OR directly mark as WON/LOST if deal is already closed
+                        </p>
                         ${approvedProposals.map(p => `
-                            <div class="action-item">
+                            <div class="action-item" style="background: white;">
                                 <div class="action-content">
                                     <strong>${p.projectName}</strong>
-                                    <div class="action-meta">Client: ${p.clientCompany} | Created: ${formatDate(p.createdAt)}</div>
+                                    <div class="action-meta">Client: ${p.clientCompany} | Approved: ${formatDate(p.directorApproval?.approvedAt || p.createdAt)}</div>
                                 </div>
                                 <div>
                                     <span class="proposal-status status-approved">APPROVED</span>
                                 </div>
                                 <div class="action-buttons">
-                                    <button onclick="submitToClient('${p.id}')" class="btn btn-success btn-sm">SUBMIT TO CLIENT</button>
-                                    <button onclick="markProposalWon('${p.id}')" class="btn btn-success btn-sm">MARK WON</button>
-                                    <button onclick="markProposalLost('${p.id}')" class="btn btn-danger btn-sm">MARK LOST</button>
+                                    <button onclick="submitToClient('${p.id}')" class="btn btn-primary btn-sm">📧 SUBMIT TO CLIENT</button>
+                                    <button onclick="markProposalWon('${p.id}')" class="btn btn-success btn-sm">✅ MARK WON</button>
+                                    <button onclick="markProposalLost('${p.id}')" class="btn btn-danger btn-sm">❌ MARK LOST</button>
                                     <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View</button>
                                 </div>
                             </div>
@@ -1225,18 +1229,52 @@
                 `;
             }
         
+            // ✅ SUBMITTED Section (NEW!)
+            let submittedSection = '';
+            if (currentUserRole === 'bdm' && submittedProposals.length > 0) {
+                submittedSection = `
+                    <div class="action-section" style="margin-bottom: 2rem; background: #E3F2FD;">
+                        <h3>📧 SUBMITTED Proposals - Awaiting Client Decision</h3>
+                        <p style="color: #1565C0; margin-bottom: 1rem;">
+                            <strong>Action Required:</strong> Mark as WON or LOST after receiving client response
+                        </p>
+                        ${submittedProposals.map(p => `
+                            <div class="action-item" style="background: white;">
+                                <div class="action-content">
+                                    <strong>${p.projectName}</strong>
+                                    <div class="action-meta">
+                                        Client: ${p.clientCompany} |
+                                         Submitted: ${formatDate(p.updatedAt)} |
+                                        ⏳ Awaiting client response
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="proposal-status status-submitted">SUBMITTED</span>
+                                </div>
+                                <div class="action-buttons">
+                                    <button onclick="markProposalWon('${p.id}')" class="btn btn-success btn-sm">✅ MARK WON</button>
+                                    <button onclick="markProposalLost('${p.id}')" class="btn btn-danger btn-sm">❌ MARK LOST</button>
+                                    <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+        
+            // ✅ WON Section
             let wonSection = '';
             if (wonProposals.length > 0) {
                 wonSection = `
                     <div class="action-section" style="margin-bottom: 2rem; background: #D5F4E6;">
-                        <h3>🏆 Won Proposals</h3>
+                        <h3>🏆 WON Proposals</h3>
                         ${wonProposals.map(p => `
                             <div class="action-item" style="background: white;">
                                 <div class="action-content">
                                     <strong>${p.projectName}</strong>
                                     <div class="action-meta">
                                         Client: ${p.clientCompany} |
-                                         Won Date: ${formatDate({seconds: new Date(p.wonDate).getTime() / 1000})} |
+                                        Won Date: ${formatDate({seconds: new Date(p.wonDate).getTime() / 1000})} |
                                         ${p.projectCreated ? '✅ Project Created' : '⏳ Pending Project Creation'}
                                     </div>
                                 </div>
@@ -1252,6 +1290,7 @@
                 `;
             }
         
+            // ✅ Other Proposals Section
             const proposalsHtml = otherProposals?.length ? otherProposals.map(p => `
                 <div class="action-item">
                     <div class="action-content">
@@ -1259,7 +1298,7 @@
                         <div class="action-meta">Client: ${p.clientCompany} | Created: ${formatDate(p.createdAt)}</div>
                     </div>
                     <div>
-                         <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">${p.status}</span>
+                        <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">${p.status}</span>
                     </div>
                     <div class="action-buttons">
                         <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
@@ -1267,6 +1306,7 @@
                 </div>
             `).join('') : '';
         
+            // ✅ Render Everything
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>All Proposals</h2>
@@ -1274,6 +1314,7 @@
                 </div>
                 ${createButton}
                 ${approvedSection}
+                ${submittedSection}
                 ${wonSection}
                 <div class="action-section">
                     <h3>All Other Proposals</h3>
