@@ -1173,14 +1173,25 @@
             main.innerHTML = '';
             
             try {
-                const { success, data } = await apiCall('proposals');
-                if (success && data) {
-                    renderProposals(data);
+                console.log('🔄 Fetching proposals...');
+                const response = await apiCall('proposals');
+                console.log('📦 API Response:', response);
+                        
+                if (response.success && response.data) {
+                    console.log('✅ Got proposals:', response.data.length);
+                    renderProposals(response.data);
                 } else {
                     throw new Error('Invalid proposals response');
                 }
             } catch (error) { 
-                main.innerHTML = `<div class="error-message"><h3>Error:</h3><p>${error.message}</p></div>`; 
+                console.error('❌ Error fetching proposals:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>Error Loading Proposals</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showProposals()" class="btn btn-primary">Retry</button>
+                    </div>
+                `; 
             } finally { 
                 hideLoading(); 
             }
@@ -2242,61 +2253,101 @@
             }
         }
         
-        // ✅ This will change status from APPROVED → SUBMITTED
-        async function submitToClient(id) { 
-            const method = prompt("Submission method:", "email"); 
-            if(method) {
-                await handleProposalAction(id, 'submit_to_client', { 
-                    method 
-                }, 'Proposal SUBMITTED to client successfully!'); 
+        async function submitToClient(id) {
+            const method = prompt("Submission method:", "email");
+            if (!method) return;
+        
+            try {
+                showLoading();
+                console.log('📧 Submitting proposal:', id);
+        
+                const response = await apiCall(`proposals?id=${id}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'submit_to_client',
+                        data: { method }
+                    })
+                });
+        
+                console.log('✅ Submit response:', response);
+        
+                if (response.success) {
+                    alert('✅ Proposal submitted to client!\n\nNow refresh to see WON/LOST buttons.');
+                    closeModal();
+        
+                    // Force refresh
+                    setTimeout(() => {
+                        showProposals();
+                    }, 1000);
+                } else {
+                    throw new Error(response.error || 'Submit failed');
+                }
+            } catch (error) {
+                console.error('❌ Submit error:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
             }
         }
 
-        // ✅ NEW FUNCTION: Mark Proposal as WON (changes SUBMITTED/APPROVED → WON)
         async function markProposalWon(proposalId) {
             if (!confirm('Mark this proposal as WON? This will create a project.')) return;
             try {
                 showLoading();
-                // Update proposal status to WON
-                await apiCall(`proposals?id=${proposalId}`, {
+                console.log('✅ Marking proposal as WON:', proposalId);
+                const response = await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
                     body: JSON.stringify({
                         action: 'mark_won',
                         data: { wonDate: new Date().toISOString() }
                     })
                 });
-                // Create project from won proposal
-                await apiCall('projects?action=create_from_proposal', {
-                    method: 'POST',
-                    body: JSON.stringify({ proposalId })
-                });
-                alert('✅ Proposal marked as WON and project created! COO will allocate to Design Manager.');
-                closeModal();
-                showProposals();
+        
+                console.log('Response:', response);
+                if (response.success) {
+                    await apiCall('projects?action=create_from_proposal', {
+                        method: 'POST',
+                        body: JSON.stringify({ proposalId })
+                    });
+                    alert('✅ Proposal marked as WON! Project created.');
+                    closeModal();
+                    showProposals();
+                } else {
+                    throw new Error(response.error || 'Failed to mark as WON');
+                }
             } catch (error) {
+                console.error('❌ Error:', error);
                 alert('❌ Error: ' + error.message);
             } finally {
                 hideLoading();
             }
         }
-        
-        // ✅ NEW FUNCTION: Mark Proposal as LOST (changes SUBMITTED/APPROVED → LOST)
+
         async function markProposalLost(proposalId) {
             const reason = prompt('Reason for losing this proposal:');
             if (!reason) return;
             try {
                 showLoading();
-                await apiCall(`proposals?id=${proposalId}`, {
+                console.log('❌ Marking proposal as LOST:', proposalId);
+        
+                const response = await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
                     body: JSON.stringify({
                         action: 'mark_lost',
                         data: { lostDate: new Date().toISOString(), reason }
                     })
                 });
-                alert('Proposal marked as LOST. Director has been notified.');
-                closeModal();
-                showProposals();
+        
+                console.log('Response:', response);
+                if (response.success) {
+                    alert('Proposal marked as LOST.\n\nReason: ' + reason);
+                    closeModal();
+                    showProposals();
+                } else {
+                    throw new Error(response.error || 'Failed to mark as LOST');
+                }
             } catch (error) {
+                console.error('❌ Error:', error);
                 alert('❌ Error: ' + error.message);
             } finally {
                 hideLoading();
@@ -2876,63 +2927,6 @@
         // ADDED FUNCTIONS
         // ============================================
 
-        // Mark Proposal as WON
-        async function markProposalWon(proposalId) {
-            if (!confirm('Mark this proposal as WON?')) return;
-        
-                try {
-                showLoading();
-        
-                // Update proposal status
-                await apiCall(`proposals?id=${proposalId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({
-                        action: 'mark_won',
-                        data: { wonDate: new Date().toISOString() }
-                    })
-                });
-        
-                // Create project from won proposal
-                await apiCall('projects?action=create_from_proposal', {
-                    method: 'POST',
-                    body: JSON.stringify({ proposalId })
-                });
-        
-                        alert('Proposal marked as WON and project created!');
-                closeModal();
-                showProposals();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-        
-        // Mark Proposal as LOST
-        async function markProposalLost(proposalId) {
-            const reason = prompt('Reason for losing this proposal:');
-            if (!reason) return;
-        
-                try {
-                showLoading();
-                await apiCall(`proposals?id=${proposalId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({
-                        action: 'mark_lost',
-                        data: { lostDate: new Date().toISOString(), reason }
-                    })
-                });
-        
-                        alert('Proposal marked as LOST');
-                closeModal();
-                showProposals();
-            } catch (error) {
-                alert('Error: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-        
         // Allocate Project to Design Manager (COO function)
         function showAllocateProjectModal(projectId) {
             const modalHtml = `
