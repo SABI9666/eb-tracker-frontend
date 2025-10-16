@@ -414,7 +414,7 @@
             100% { transform: rotate(360deg); } 
         }
         
-        /* Status badges */
+        /* ✅ UPDATED: Status badges with new workflow status names */
         .proposal-status { 
             padding: 0.5rem 1rem; 
             border-radius: 25px; 
@@ -422,13 +422,21 @@
             font-weight: 600; 
             text-transform: uppercase; 
         }
-        .status-pending-estimation { background: #d1ecf1; color: #0c5460; }
-        .status-pending-pricing { background: #fff3cd; color: #856404; }
-        .status-pending-director-approval { background: #f0d0ff; color: #6f42c1; }
+        .status-draft { background: #e0e7ff; color: #4c1d95; }
+        .status-estimated { background: #dbeafe; color: #1e3a8a; }
+        .status-priced { background: #fed7aa; color: #9a3412; }
         .status-approved { background: #d4edda; color: #155724; }
-        .status-rejected, .status-revision-required { background: #f8d7da; color: #721c24; }
-        .status-submitted-to-client { background: #cce5ff; color: #0066cc; }
-        
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-submitted { background: #cce5ff; color: #0066cc; }
+        .status-won { background: #a7f3d0; color: #064e3b; }
+        .status-lost { background: #fecaca; color: #991b1b; }
+        .status-assigned { background: #ddd6fe; color: #5b21b6; }
+        .status-pending-setup { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #bbf7d0; color: #14532d; }
+        .status-in-progress { background: #bfdbfe; color: #1e40af; }
+        .status-not-started { background: #f3f4f6; color: #6b7280; }
+        .status-revision-required { background: #fecaca; color: #7f1d1d; }
+
         /* Responsive design */
         @media (max-width: 768px) {
             .main-layout { flex-direction: column; }
@@ -447,13 +455,17 @@
                 <h1 class="company-title">EDANBROOK</h1>
                 <p class="company-subtitle">Project Management System</p>
                 <div class="info-box">
-                    <h4>Workflow Process</h4>
+                    <h4>✅ Updated Workflow Process</h4>
                     <ul>
-                        <li><strong>Step 1:</strong> BDM creates proposal & uploads project files</li>
-                        <li><strong>Step 2:</strong> Estimator adds manhours & BOQ files</li>
-                        <li><strong>Step 3:</strong> COO sets pricing & reviews estimation</li>
-                        <li><strong>Step 4:</strong> Director approves or rejects proposal</li>
-                        <li><strong>Step 5:</strong> BDM submits approved proposal to client</li>
+                        <li><strong>Step 1:</strong> BDM creates proposal (DRAFT) & uploads files</li>
+                        <li><strong>Step 2:</strong> Estimator adds manhours (ESTIMATED) & BOQ</li>
+                        <li><strong>Step 3:</strong> COO sets pricing (PRICED)</li>
+                        <li><strong>Step 4:</strong> Director approves (APPROVED) or rejects (REJECTED)</li>
+                        <li><strong>Step 5:</strong> BDM submits to client (SUBMITTED)</li>
+                        <li><strong>Step 6:</strong> BDM marks as WON/LOST → Project created</li>
+                        <li><strong>Step 7:</strong> COO allocates → Design Lead assigns tasks</li>
+                        <li><strong>Step 8:</strong> Designer uploads → Design sent to client</li>
+                        <li><strong>Step 9:</strong> Accounts prepares invoice → Payment tracking</li>
                     </ul>
                 </div>
             </div>
@@ -1099,7 +1111,7 @@
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>Dashboard</h2>
-                    <div class="subtitle">Manage your project workflow efficiently</div>
+                    <div class="subtitle">✅ Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>
                 </div>
                 
                 <div class="dashboard-stats">${statsHtml}</div>
@@ -1112,32 +1124,41 @@
             `;
         }
 
+        // ✅ UPDATED: Action buttons based on new workflow statuses
         function getActionButtons(item, role) {
             let actionBtn = '';
             switch(item.type) {
-                case 'estimation_required':
-                    if (role === 'estimator') actionBtn = `<button class="btn btn-primary btn-sm" onclick="showEstimationModal('${item.proposalId}')">ENTER MANHOURS</button>`;
+                case 'estimation_required': // Triggered by DRAFT status
+                    if (role === 'estimator') 
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showEstimationModal('${item.proposalId}')">ENTER MANHOURS</button>`;
                     break;
-                case 'pricing_required':
-                    if (role === 'coo') actionBtn = `<button class="btn btn-primary btn-sm" onclick="showPricingModal('${item.proposalId}')">SET PRICING</button>`;
+                case 'pricing_required': // Triggered by ESTIMATED status
+                    if (role === 'coo') 
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showPricingModal('${item.proposalId}')">SET PRICING</button>`;
                     break;
-                case 'approval_required':
-                    if (role === 'director') actionBtn = `<button class="btn btn-primary btn-sm" onclick="viewProposal('${item.proposalId}')">EXECUTIVE REVIEW</button>`;
+                case 'approval_required': // Triggered by PRICED status
+                    if (role === 'director') 
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="viewProposal('${item.proposalId}')">EXECUTIVE REVIEW</button>`;
                     break;
-                case 'ready_for_client':
-                     if (role === 'bdm') actionBtn = `<button class="btn btn-success btn-sm" onclick="submitToClient('${item.proposalId}')">SUBMIT TO CLIENT</button>`;
+                case 'ready_for_client': // Triggered by APPROVED status
+                     if (role === 'bdm')  
+                        actionBtn = `<button class="btn btn-success btn-sm" onclick="submitToClient('${item.proposalId}')">SUBMIT TO CLIENT</button>`;
                      break;
-                case 'design_assignment':
+                case 'project_allocation': // Triggered by pending_setup status
+                    if (role === 'design_lead' || role === 'coo') 
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showAllocateProjectModal('${item.projectId}')">ALLOCATE PROJECT</button>`;
+                    break;
+                case 'task_assignment': // Triggered by ASSIGNED status
                     if (role === 'design_lead') 
-                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="assignTask('${item.projectId}')">ASSIGN TASK</button>`;
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showAssignTaskModal('${item.projectId}')">ASSIGN TASK</button>`;
                     break;
-                case 'task_assigned':
-                    if (role === 'designer') 
-                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="viewTask('${item.taskId}')">VIEW TASK</button>`;
-                    break;
-                case 'payment_required':
+                case 'invoice_required': // Triggered by design submitted to client
                     if (role === 'accounts') 
-                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="createInvoice('${item.projectId}')">CREATE INVOICE</button>`;
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showCreateInvoiceModal('${item.projectId}')">CREATE INVOICE</button>`;
+                    break;
+                case 'follow_up_required': // Triggered by payment overdue
+                    if (role === 'bdm') 
+                        actionBtn = `<button class="btn btn-warning btn-sm" onclick="viewPayment('${item.paymentId}')">FOLLOW UP</button>`;
                     break;
             }
             const viewId = item.proposalId || item.projectId;
@@ -1172,16 +1193,17 @@
                     Create New Proposal
                 </button>
             ` : '';
-                // Separate proposals by status
-            const approvedProposals = proposals.filter(p => p.status === 'approved');
-            const wonProposals = proposals.filter(p => p.status === 'won');
-            const otherProposals = proposals.filter(p => !['approved', 'won'].includes(p.status));
+            // ✅ UPDATED: Separate proposals by NEW status names
+            const approvedProposals = proposals.filter(p => p.status === 'APPROVED');
+            const wonProposals = proposals.filter(p => p.status === 'WON');
+            const otherProposals = proposals.filter(p => !['APPROVED', 'WON'].includes(p.status));
         
+            // ✅ UPDATED: Show APPROVED proposals with submit to client option
             let approvedSection = '';
             if (currentUserRole === 'bdm' && approvedProposals.length > 0) {
                 approvedSection = `
                     <div class="action-section" style="margin-bottom: 2rem;">
-                        <h3>✅ Approved Proposals - Mark as WON or LOST</h3>
+                        <h3>✅ APPROVED Proposals - Submit to Client or Mark as WON/LOST</h3>
                         ${approvedProposals.map(p => `
                             <div class="action-item">
                                 <div class="action-content">
@@ -1189,9 +1211,10 @@
                                     <div class="action-meta">Client: ${p.clientCompany} | Created: ${formatDate(p.createdAt)}</div>
                                 </div>
                                 <div>
-                                    <span class="proposal-status status-${p.status.replace(/_/g, '-')}">${p.status.replace(/_/g, ' ')}</span>
+                                    <span class="proposal-status status-approved">APPROVED</span>
                                 </div>
                                 <div class="action-buttons">
+                                    <button onclick="submitToClient('${p.id}')" class="btn btn-success btn-sm">SUBMIT TO CLIENT</button>
                                     <button onclick="markProposalWon('${p.id}')" class="btn btn-success btn-sm">MARK WON</button>
                                     <button onclick="markProposalLost('${p.id}')" class="btn btn-danger btn-sm">MARK LOST</button>
                                     <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View</button>
@@ -1236,7 +1259,7 @@
                         <div class="action-meta">Client: ${p.clientCompany} | Created: ${formatDate(p.createdAt)}</div>
                     </div>
                     <div>
-                         <span class="proposal-status status-${p.status.replace(/_/g, '-')}">${p.status.replace(/_/g, ' ')}</span>
+                         <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">${p.status}</span>
                     </div>
                     <div class="action-buttons">
                         <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
@@ -1247,7 +1270,7 @@
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>All Proposals</h2>
-                    <div class="subtitle">View and manage project proposals</div>
+                    <div class="subtitle">Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>
                 </div>
                 ${createButton}
                 ${approvedSection}
@@ -1593,10 +1616,11 @@
                             <h2>${p.projectName}</h2>
                             <div class="subtitle">${p.clientCompany}</div>
                         </div>
+                        // ✅ UPDATED: Display new status names
                         <div style="margin-bottom: 2rem;">
                             <strong>Status:</strong> 
-                            <span class="proposal-status status-${p.status.replace(/_/g, '-')}">
-                                ${p.status.replace(/_/g, ' ').toUpperCase()}
+                            <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">
+                                ${p.status}
                             </span>
                         </div>
                         <div style="display: grid; gap: 2rem;">
@@ -1871,6 +1895,7 @@
                     await apiCall('files', { method: 'POST', body: formData });
                 }
                 
+                // ✅ This will change status from DRAFT → ESTIMATED and notify COO
                 // Save estimation data
                 const response = await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
@@ -2065,6 +2090,7 @@
                 updatedServices: services // COO can update services
             };
             
+            // ✅ This will change status from ESTIMATED → PRICED and notify Director
             try {
                 showLoading();
                 await handleProposalAction(id, 'set_pricing', data, 'Pricing updated and sent to Director for approval!');
@@ -2157,28 +2183,82 @@
             }
         }
 
+        // ✅ This will change status from PRICED → APPROVED and notify BDM, Estimator, COO
         async function approveProposal(id) { 
             const comments = prompt("Optional approval comments:");
             await handleProposalAction(id, 'director_approve', { 
                 comments: comments || 'Approved'
-            }, 'Proposal approved successfully!'); 
+            }, 'Proposal APPROVED successfully! BDM can now submit to client.'); 
         }
         
+        // ✅ This will change status from PRICED → REJECTED and notify responsible party
         async function rejectProposal(id) { 
             const reason = prompt("Reason for rejection:"); 
             if (reason) {
                 await handleProposalAction(id, 'director_reject', { 
                     comments: reason 
-                }, 'Proposal rejected and sent for revision.'); 
+                }, 'Proposal REJECTED and sent for revision.'); 
             }
         }
         
+        // ✅ This will change status from APPROVED → SUBMITTED
         async function submitToClient(id) { 
             const method = prompt("Submission method:", "email"); 
             if(method) {
                 await handleProposalAction(id, 'submit_to_client', { 
                     method 
-                }, 'Proposal submitted to client successfully!'); 
+                }, 'Proposal SUBMITTED to client successfully!'); 
+            }
+        }
+
+        // ✅ NEW FUNCTION: Mark Proposal as WON (changes SUBMITTED/APPROVED → WON)
+        async function markProposalWon(proposalId) {
+            if (!confirm('Mark this proposal as WON? This will create a project.')) return;
+            try {
+                showLoading();
+                // Update proposal status to WON
+                await apiCall(`proposals?id=${proposalId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'mark_won',
+                        data: { wonDate: new Date().toISOString() }
+                    })
+                });
+                // Create project from won proposal
+                await apiCall('projects?action=create_from_proposal', {
+                    method: 'POST',
+                    body: JSON.stringify({ proposalId })
+                });
+                alert('✅ Proposal marked as WON and project created! COO will allocate to Design Manager.');
+                closeModal();
+                showProposals();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ✅ NEW FUNCTION: Mark Proposal as LOST (changes SUBMITTED/APPROVED → LOST)
+        async function markProposalLost(proposalId) {
+            const reason = prompt('Reason for losing this proposal:');
+            if (!reason) return;
+            try {
+                showLoading();
+                await apiCall(`proposals?id=${proposalId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'mark_lost',
+                        data: { lostDate: new Date().toISOString(), reason }
+                    })
+                });
+                alert('Proposal marked as LOST. Director has been notified.');
+                closeModal();
+                showProposals();
+            } catch (error) {
+                alert('❌ Error: ' + error.message);
+            } finally {
+                hideLoading();
             }
         }
 
@@ -2551,8 +2631,9 @@
                 </button>
             ` : '';
         
-                // Filter projects based on status
+            // ✅ UPDATED: Filter projects by new status names
             const pendingSetup = projects.filter(p => p.status === 'pending_setup');
+            const assignedProjects = projects.filter(p => p.status === 'ASSIGNED'); // NEW
             const activeProjects = projects.filter(p => p.status === 'active');
             const completedProjects = projects.filter(p => p.status === 'completed');
         
@@ -2588,6 +2669,31 @@
                         `).join('')}
                     </div>
                 ` : ''}
+                
+                ${assignedProjects.length > 0 ? `
+                    <div class="action-section">
+                        <h3>📋 ASSIGNED Projects - Ready for Task Assignment</h3>
+                        ${assignedProjects.map(p => `
+                            <div class="action-item">
+                                <div class="action-content">
+                                    <strong>${p.projectName}</strong>
+                                    <div class="action-meta">
+                                        Client: ${p.clientCompany} |
+                                        Code: ${p.projectCode} |
+                                        Design Lead: ${p.assignedDesignLead || 'Not assigned'}
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="proposal-status status-assigned">ASSIGNED</span>
+                                </div>
+                                <div class="action-buttons">
+                                    ${['design_lead', 'coo', 'director'].includes(currentUserRole) ?
+                                        `<button onclick="showAssignTaskModal('${p.id}')" class="btn btn-primary btn-sm">ASSIGN TASK</button>` : ''}
+                                    <button onclick="viewProject('${p.id}')" class="btn btn-outline btn-sm">View</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>` : ''}
         
                 ${activeProjects.length > 0 ? `
                     <div class="action-section">
