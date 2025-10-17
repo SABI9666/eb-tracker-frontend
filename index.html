@@ -2306,11 +2306,15 @@
             }
         }
 
+        // ============================================
+        // UPDATED FUNCTION
+        // ============================================
         async function markProposalWon(proposalId) {
-            if (!confirm('Mark this proposal as WON? This will create a project.')) return;
+            if (!confirm('Mark this proposal as WON? COO will create the project.')) return;
             try {
                 showLoading();
                 console.log('✅ Marking proposal as WON:', proposalId);
+                // BDM can mark as won
                 const response = await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
                     body: JSON.stringify({
@@ -2318,14 +2322,10 @@
                         data: { wonDate: new Date().toISOString() }
                     })
                 });
-        
                 console.log('Response:', response);
                 if (response.success) {
-                    await apiCall('projects?action=create_from_proposal', {
-                        method: 'POST',
-                        body: JSON.stringify({ proposalId })
-                    });
-                    alert('✅ Proposal marked as WON! Project created.');
+                    // DON'T automatically create project - let COO do it
+                    alert('✅ Proposal marked as WON!\n\nCOO will be notified to create the project.');
                     closeModal();
                     showProposals();
                 } else {
@@ -2338,6 +2338,10 @@
                 hideLoading();
             }
         }
+        // ============================================
+        // END OF UPDATED FUNCTION
+        // ============================================
+
 
         async function markProposalLost(proposalId) {
             const reason = prompt('Reason for losing this proposal:');
