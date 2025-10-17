@@ -977,28 +977,37 @@
             await auth.signOut(); 
         }
         
+        // ============================================
+        // UPDATE showApp() TO HANDLE DIFFERENT ROLES
+        // ============================================
+        // Replace your existing showApp() function with this enhanced version:
         function showApp() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
             document.getElementById('userWelcome').textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
             document.getElementById('userRole').textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
-            
+
             // Role-based UI updates
             document.getElementById('newProposalNavItem').style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
             document.getElementById('workflowNavItem').style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('reportsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('settingsNavItem').style.display = (currentUserRole === 'director') ? 'block' : 'none';
-            
+
             document.getElementById('projectsNavItem').style.display = 
                 (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
-
             document.getElementById('tasksNavItem').style.display = 
                 (currentUserRole === 'designer') ? 'block' : 'none';
-
             document.getElementById('paymentsNavItem').style.display = 
                 (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
-            
-            showDashboard();
+
+            // Show role-specific dashboard
+            if (currentUserRole === 'designer') {
+                showDesignerDashboard();
+            } else if (currentUserRole === 'design_lead') {
+                showDesignLeadDashboard();
+            } else {
+                showDashboard();
+            }
         }
 
         function showLogin() { 
@@ -3758,6 +3767,733 @@
             
             return output;
         }
+
+        // ============================================
+        // DESIGNER FUNCTIONS
+        // ============================================
+
+        // Designer Dashboard - shows only assigned projects
+        async function showDesignerDashboard() {
+            setActiveNav('nav-dashboard');
+            showLoading();
+            
+            try {
+                const { success, data } = await apiCall('projects');
+                
+                if (success && data) {
+                    const myProjects = data.filter(p => 
+                        p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)
+                    );
+                    
+                    document.getElementById('mainContent').innerHTML = `
+                        <div class="page-header">
+                            <h2>My Projects</h2>
+                            <div class="subtitle">Projects assigned to you</div>
+                        </div>
+                        
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <div class="stat-number">${myProjects.length}</div>
+                                <div class="stat-label">Assigned Projects</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${myProjects.filter(p => p.designStatus === 'in_progress').length}</div>
+                                <div class="stat-label">In Progress</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${myProjects.filter(p => p.designStatus === 'submitted').length}</div>
+                                <div class="stat-label">Submitted</div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-section">
+                            <h3>My Assigned Projects</h3>
+                            ${myProjects.length > 0 ? myProjects.map(p => `
+                                <div class="action-item">
+                                    <div class="action-content">
+                                        <strong>${p.projectName}</strong>
+                                        <div class="action-meta">
+                                            Client: ${p.clientCompany} |
+                                             Code: ${p.projectCode} |
+                                            Design Lead: ${p.designLeadName || 'Not assigned'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="proposal-status status-${p.designStatus.replace(/_/g, '-')}">
+                                            ${p.designStatus.replace(/_/g, ' ').toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button onclick="viewDesignerProject('${p.id}')" class="btn btn-outline btn-sm">View</button>
+                                        <button onclick="showUploadDeliverablesModal('${p.id}')" class="btn btn-primary btn-sm">Upload Files</button>
+                                    </div>
+                                </div>
+                            `).join('') : '<p>No projects assigned to you yet.</p>'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="error-message">Error loading projects: ${error.message}</div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // View project details for designer (read-only project info + upload interface)
+        async function viewDesignerProject(projectId) {
+            try {
+                showLoading();
+                const { success, data } = await apiCall(`projects?id=${projectId}`);
+                
+                if (success && data) {
+                    // Load deliverables for this project
+                    const deliverablesResponse = await apiCall(`deliverables?projectId=${projectId}`);
+                    const deliverables = deliverablesResponse.success ? deliverablesResponse.data : [];
+                    
+                    const modalHtml = `
+                        <div class="modal-overlay">
+                            <div class="modal-content" style="max-width: 1100px;">
+                                <div class="modal-header">
+                                    <h2>${data.projectName}</h2>
+                                    <div class="subtitle">${data.projectCode} - ${data.clientCompany}</div>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4>Project Information (Read-Only)</h4>
+                                    <p><strong>Scope:</strong> ${data.scopeOfWork}</p>
+                                    <p><strong>Timeline:</strong> ${data.timeline}</p>
+                                    <p><strong>Design Lead:</strong> ${data.designLeadName || 'Not assigned'}</p>
+                                    <p><strong>Status:</strong> ${data.designStatus}</p>
+                                    ${data.targetCompletionDate ? `<p><strong>Target Date:</strong> ${formatDate(data.targetCompletionDate)}</p>` : ''}
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4>My Uploaded Deliverables (${deliverables.length})</h4>
+                                    ${deliverables.length > 0 ? deliverables.map(d => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 10px; margin-bottom: 1rem;">
+                                            <div style="flex: 1;">
+                                                <strong>${d.deliverableType === 'link' ? '🔗' : '📄'} ${d.originalName}</strong>
+                                                <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">
+                                                    Version: ${d.versionNumber} |
+                                                     Uploaded: ${formatDate(d.uploadedAt)} |
+                                                    Status: <span class="proposal-status status-${d.reviewStatus}">${d.reviewStatus.toUpperCase()}</span>
+                                                </div>
+                                                ${d.uploadNotes ? `<div style="font-size: 0.85rem; margin-top: 0.5rem;"><em>Notes: ${d.uploadNotes}</em></div>` : ''}
+                                                ${d.reviewComments ? `<div style="font-size: 0.85rem; margin-top: 0.5rem; color: #E74C3C;"><strong>Review: ${d.reviewComments}</strong></div>` : ''}
+                                            </div>
+                                            <div style="display: flex; gap: 0.5rem;">
+                                                <button onclick="window.open('${d.url}', '_blank')" class="btn btn-outline btn-sm">
+                                                    ${d.deliverableType === 'link' ? 'Open Link' : 'View'}
+                                                </button>
+                                                ${d.deliverableType === 'file' ? `<button onclick="downloadFile('${d.url}', '${d.originalName}')" class="btn btn-primary btn-sm">Download</button>` : ''}
+                                                <button onclick="deleteDeliverable('${d.id}'); closeModal(); viewDesignerProject('${projectId}');" class="btn btn-danger btn-sm">Delete</button>
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p style="color: var(--text-light);">No deliverables uploaded yet.</p>'}
+                                </div>
+                                
+                                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                    <button onclick="closeModal()" class="btn btn-outline">Close</button>
+                                    <button onclick="closeModal(); showUploadDeliverablesModal('${projectId}')" class="btn btn-success">Upload New Files</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                }
+            } catch (error) {
+                alert('Error loading project: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Upload deliverables modal for designers
+        function showUploadDeliverablesModal(projectId) {
+            const modalHtml = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 900px;">
+                        <div class="modal-header">
+                            <h2>Upload Project Deliverables</h2>
+                            <div class="subtitle">Upload design files, images, or add links</div>
+                        </div>
+                        
+                        <form id="uploadDeliverablesForm">
+                            <div class="form-section">
+                                <h4>Upload Type</h4>
+                                <div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
+                                    <button type="button" onclick="switchUploadTab('files')" class="btn btn-primary" id="filesTabBtn">📄 Upload Files</button>
+                                    <button type="button" onclick="switchUploadTab('links')" class="btn btn-outline" id="linksTabBtn">🔗 Add Links</button>
+                                </div>
+                            </div>
+                            
+                            <div id="filesUploadTab">
+                                <div class="form-section">
+                                    <h4>Select Files to Upload</h4>
+                                    <div class="upload-area" id="deliverableUploadArea" onclick="document.getElementById('deliverableFileInput').click()">
+                                        <div class="upload-icon">📤</div>
+                                        <p>Click to upload design files</p>
+                                        <div style="font-size: 0.9rem; color: var(--text-light); margin-top: 0.5rem;">
+                                            Supported: PDF, JPG, PNG, TIFF, DWG, DXF, ZIP (Max 100MB each)
+                                        </div>
+                                        <input type="file" id="deliverableFileInput" multiple accept=".pdf,.jpg,.jpeg,.png,.tiff,.dwg,.dxf,.zip" style="display: none;">
+                                    </div>
+                                    <div id="deliverableFilePreview"></div>
+                                </div>
+                            </div>
+                            
+                            <div id="linksUploadTab" style="display: none;">
+                                <div class="form-section">
+                                    <h4>Add External Links</h4>
+                                    <div id="deliverableLinksContainer">
+                                        <div class="link-input-group" style="margin-bottom: 1rem;">
+                                            <input type="url" class="form-control" placeholder="Enter URL (Google Drive, Dropbox, etc.)" style="margin-bottom: 0.5rem;">
+                                            <input type="text" class="form-control" placeholder="Link title/description">
+                                        </div>
+                                    </div>
+                                    <button type="button" onclick="addDeliverableLinkField()" class="btn btn-outline btn-sm" style="width: auto;">+ Add Another Link</button>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h4>Version Information</h4>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Version Number</label>
+                                        <input type="text" id="versionNumber" class="form-control" placeholder="e.g., 1.0, 2.1, Rev A" value="1.0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Upload Notes</label>
+                                        <input type="text" id="uploadNotes" class="form-control" placeholder="e.g., Initial submission, Revised per feedback">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="uploadDeliverables('${projectId}')" class="btn btn-success">Upload</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+            // Setup file input preview
+            document.getElementById('deliverableFileInput').addEventListener('change', function() {
+                const files = this.files;
+                const preview = document.getElementById('deliverableFilePreview');
+                
+                if (files.length > 0) {
+                    preview.innerHTML = '<h5>Files to Upload:</h5>' + 
+                        Array.from(files).map(f => `
+                            <div style="padding: 0.5rem; background: #f8fafc; border-radius: 5px; margin-bottom: 0.5rem;">
+                                📄 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)
+                            </div>
+                        `).join('');
+                }
+            });
+        }
+
+        // Switch between files and links tabs
+        function switchUploadTab(tab) {
+            if (tab === 'files') {
+                document.getElementById('filesUploadTab').style.display = 'block';
+                document.getElementById('linksUploadTab').style.display = 'none';
+                document.getElementById('filesTabBtn').classList.add('btn-primary');
+                document.getElementById('filesTabBtn').classList.remove('btn-outline');
+                document.getElementById('linksTabBtn').classList.add('btn-outline');
+                document.getElementById('linksTabBtn').classList.remove('btn-primary');
+            } else {
+                document.getElementById('filesUploadTab').style.display = 'none';
+                document.getElementById('linksUploadTab').style.display = 'block';
+                document.getElementById('linksTabBtn').classList.add('btn-primary');
+                document.getElementById('linksTabBtn').classList.remove('btn-outline');
+                document.getElementById('filesTabBtn').classList.add('btn-outline');
+                document.getElementById('filesTabBtn').classList.remove('btn-primary');
+            }
+        }
+
+        // Add link field for deliverables
+        function addDeliverableLinkField() {
+            const container = document.getElementById('deliverableLinksContainer');
+            const newLinkGroup = document.createElement('div');
+            newLinkGroup.className = 'link-input-group';
+            newLinkGroup.style.marginBottom = '1rem';
+            newLinkGroup.innerHTML = `
+                <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
+                <input type="text" class="form-control" placeholder="Link title/description">
+            `;
+            container.appendChild(newLinkGroup);
+        }
+
+        // Upload deliverables function
+        async function uploadDeliverables(projectId) {
+            const versionNumber = document.getElementById('versionNumber').value;
+            const uploadNotes = document.getElementById('uploadNotes').value;
+            
+            try {
+                showLoading();
+                
+                // Check which tab is active
+                const isFilesTab = document.getElementById('filesUploadTab').style.display !== 'none';
+                
+                if (isFilesTab) {
+                    // Handle file uploads
+                    const fileInput = document.getElementById('deliverableFileInput');
+                    const files = fileInput.files;
+                    
+                    if (files.length === 0) {
+                        alert('Please select files to upload');
+                        return;
+                    }
+                    
+                    // Validate file sizes
+                    const maxSize = 100 * 1024 * 1024; // 100MB
+                    for (let file of files) {
+                        if (file.size > maxSize) {
+                            alert(`File "${file.name}" is too large. Maximum size is 100MB.`);
+                            return;
+                        }
+                    }
+                    
+                    const formData = new FormData();
+                    Array.from(files).forEach(file => {
+                        formData.append('files', file);
+                    });
+                    formData.append('projectId', projectId);
+                    formData.append('versionNumber', versionNumber);
+                    formData.append('uploadNotes', uploadNotes);
+                    
+                    const result = await apiCall('deliverables', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (result.success) {
+                        alert(`Successfully uploaded ${files.length} file(s)!`);
+                        closeModal();
+                        showDesignerDashboard();
+                    }
+                } else {
+                    // Handle link uploads
+                    const linkGroups = document.querySelectorAll('#deliverableLinksContainer .link-input-group');
+                    const links = [];
+                    
+                    linkGroups.forEach(group => {
+                        const url = group.querySelector('input[type="url"]').value;
+                        const title = group.querySelector('input[type="text"]').value;
+                        if (url) {
+                            links.push({ url, title: title || url, description: title });
+                        }
+                    });
+                    
+                    if (links.length === 0) {
+                        alert('Please add at least one link');
+                        return;
+                    }
+                    
+                    const result = await apiCall('deliverables', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            projectId,
+                            links,
+                            versionNumber,
+                            uploadNotes
+                        })
+                    });
+                    
+                    if (result.success) {
+                        alert(`Successfully added ${links.length} link(s)!`);
+                        closeModal();
+                        showDesignerDashboard();
+                    }
+                }
+            } catch (error) {
+                alert('Upload failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete deliverable
+        async function deleteDeliverable(deliverableId) {
+            if (!confirm('Are you sure you want to delete this deliverable?')) return;
+            
+            try {
+                showLoading();
+                const { success } = await apiCall(`deliverables?id=${deliverableId}`, { method: 'DELETE' });
+                
+                if (success) {
+                    alert('Deliverable deleted successfully');
+                }
+            } catch (error) {
+                alert('Delete failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // DESIGN LEAD / DESIGN MANAGER FUNCTIONS
+        // ============================================
+
+        // Design Lead Dashboard
+        async function showDesignLeadDashboard() {
+            setActiveNav('nav-dashboard');
+            showLoading();
+            
+            try {
+                const { success, data } = await apiCall('projects');
+                
+                if (success && data) {
+                    const myProjects = data.filter(p => p.designLeadUid === currentUser.uid);
+                    const pendingReview = await getDeliverablesNeedingReview();
+                    
+                    document.getElementById('mainContent').innerHTML = `
+                        <div class="page-header">
+                            <h2>Design Lead Dashboard</h2>
+                            <div class="subtitle">Manage your assigned projects and team</div>
+                        </div>
+                        
+                        <div class="dashboard-stats">
+                            <div class="stat-card">
+                                <div class="stat-number">${myProjects.length}</div>
+                                <div class="stat-label">My Projects</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${myProjects.filter(p => p.status === 'in_progress').length}</div>
+                                <div class="stat-label">In Progress</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number">${pendingReview.length}</div>
+                                <div class="stat-label">Pending Review</div>
+                            </div>
+                        </div>
+                        
+                        ${pendingReview.length > 0 ? `
+                            <div class="action-section" style="background: #FFF3CD;">
+                                <h3>⚠️ Deliverables Pending Review</h3>
+                                ${pendingReview.map(d => `
+                                    <div class="action-item" style="background: white;">
+                                        <div class="action-content">
+                                            <strong>${d.originalName}</strong>
+                                            <div class="action-meta">
+                                                Project: ${d.projectName} |
+                                                 Designer: ${d.designerName} |
+                                                Version: ${d.versionNumber} |
+                                                Uploaded: ${formatDate(d.uploadedAt)}
+                                            </div>
+                                            ${d.uploadNotes ? `<div style="font-style: italic; margin-top: 0.5rem;">Notes: ${d.uploadNotes}</div>` : ''}
+                                        </div>
+                                        <div class="action-buttons">
+                                            <button onclick="window.open('${d.url}', '_blank')" class="btn btn-outline btn-sm">View</button>
+                                            <button onclick="showReviewDeliverableModal('${d.id}')" class="btn btn-primary btn-sm">Review</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                        
+                        <div class="action-section">
+                            <h3>My Projects</h3>
+                            ${myProjects.length > 0 ? myProjects.map(p => `
+                                <div class="action-item">
+                                    <div class="action-content">
+                                        <strong>${p.projectName}</strong>
+                                        <div class="action-meta">
+                                            Client: ${p.clientCompany} |
+                                             Code: ${p.projectCode} |
+                                            Designers: ${p.assignedDesignerNames?.join(', ') || 'None assigned'}
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="proposal-status status-${p.designStatus.replace(/_/g, '-')}">
+                                            ${p.designStatus.replace(/_/g, ' ').toUpperCase()}
+                                        </span>
+                                    </div>
+                                    <div class="action-buttons">
+                                        ${!p.assignedDesigners || p.assignedDesigners.length === 0 ? 
+                                             `<button onclick="showAssignDesignersModal('${p.id}')" class="btn btn-primary btn-sm">Assign Designers</button>` : ''}
+                                        <button onclick="viewDesignLeadProject('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
+                                    </div>
+                                </div>
+                            `).join('') : '<p>No projects assigned to you yet.</p>'}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="error-message">Error loading dashboard: ${error.message}</div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Get deliverables needing review
+        async function getDeliverablesNeedingReview() {
+            try {
+                const { success, data } = await apiCall('deliverables');
+                if (success && data) {
+                    return data.filter(d => d.reviewStatus === 'pending');
+                }
+                return [];
+            } catch (error) {
+                console.error('Error loading deliverables:', error);
+                return [];
+            }
+        }
+
+        // Assign designers to project
+        function showAssignDesignersModal(projectId) {
+            // In a real implementation, you would fetch the list of designers from the users collection
+            const modalHtml = `
+                <div class="modal-overlay">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Assign Designers to Project</h2>
+                        </div>
+                        
+                        <form id="assignDesignersForm">
+                            <div class="form-section">
+                                <h4>Select Designers</h4>
+                                <p style="color: var(--text-light); margin-bottom: 1rem;">
+                                    Hold Ctrl/Cmd to select multiple designers
+                                </p>
+                                <select id="designerSelect" class="form-control" multiple size="6" style="height: auto;">
+                                    <option value="designer1@edanbrook.com|Alex Johnson">Alex Johnson</option>
+                                    <option value="designer2@edanbrook.com|Maria Garcia">Maria Garcia</option>
+                                    <option value="designer3@edanbrook.com|David Kim">David Kim</option>
+                                    <option value="designer4@edanbrook.com|Sarah Chen">Sarah Chen</option>
+                                    <option value="designer5@edanbrook.com|Mike Brown">Mike Brown</option>
+                                </select>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="assignDesigners('${projectId}')" class="btn btn-primary">Assign</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Assign designers
+        async function assignDesigners(projectId) {
+            const select = document.getElementById('designerSelect');
+            const selectedOptions = Array.from(select.selectedOptions);
+            
+            if (selectedOptions.length === 0) {
+                alert('Please select at least one designer');
+                return;
+            }
+            
+            const designerUids = selectedOptions.map(opt => opt.value.split('|')[0]);
+            const designerNames = selectedOptions.map(opt => opt.value.split('|')[1]);
+            
+            try {
+                showLoading();
+                const { success } = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'assign_designers',
+                        data: {
+                            designerUids,
+                            designerNames
+                        }
+                    })
+                });
+                
+                if (success) {
+                    alert(`Successfully assigned ${designerNames.length} designer(s)!`);
+                    closeModal();
+                    showDesignLeadDashboard();
+                }
+            } catch (error) {
+                alert('Assignment failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Review deliverable modal
+        function showReviewDeliverableModal(deliverableId) {
+            const modalHtml = `
+                <div class="modal-overlay">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Review Deliverable</h2>
+                        </div>
+                        
+                        <form id="reviewDeliverableForm">
+                            <div class="form-group">
+                                <label>Review Decision *</label>
+                                <select id="reviewStatus" class="form-control" required>
+                                    <option value="">Select Decision</option>
+                                    <option value="approved">✅ Approve</option>
+                                    <option value="revision_required">🔄 Request Revision</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Review Comments</label>
+                                <textarea id="reviewComments" class="form-control" rows="4"
+                                           placeholder="Provide feedback to the designer..."></textarea>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="submitReview('${deliverableId}')" class="btn btn-primary">Submit Review</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Submit deliverable review
+        async function submitReview(deliverableId) {
+            const reviewStatus = document.getElementById('reviewStatus').value;
+            const reviewComments = document.getElementById('reviewComments').value;
+            
+            if (!reviewStatus) {
+                alert('Please select a review decision');
+                return;
+            }
+            
+            try {
+                showLoading();
+                const { success } = await apiCall(`deliverables?id=${deliverableId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'review',
+                        data: {
+                            reviewStatus,
+                            reviewComments
+                        }
+                    })
+                });
+                
+                if (success) {
+                    alert('Review submitted successfully!');
+                    closeModal();
+                    showDesignLeadDashboard();
+                }
+            } catch (error) {
+                alert('Review submission failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // View project for Design Lead
+        async function viewDesignLeadProject(projectId) {
+            try {
+                showLoading();
+                const { success, data } = await apiCall(`projects?id=${projectId}`);
+                
+                if (success && data) {
+                    const deliverablesResponse = await apiCall(`deliverables?projectId=${projectId}`);
+                    const deliverables = deliverablesResponse.success ? deliverablesResponse.data : [];
+                    
+                    const modalHtml = `
+                        <div class="modal-overlay">
+                            <div class="modal-content" style="max-width: 1100px;">
+                                <div class="modal-header">
+                                    <h2>${data.projectName}</h2>
+                                    <div class="subtitle">${data.projectCode} - ${data.clientCompany}</div>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4>Project Details</h4>
+                                    <p><strong>Scope:</strong> ${data.scopeOfWork}</p>
+                                    <p><strong>Timeline:</strong> ${data.timeline}</p>
+                                    <p><strong>BDM:</strong> ${data.bdmName}</p>
+                                    <p><strong>Status:</strong> ${data.status}</p>
+                                    <p><strong>Design Status:</strong> ${data.designStatus}</p>
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4>Assigned Designers</h4>
+                                    ${data.assignedDesignerNames?.length > 0 ? `
+                                        <ul>
+                                            ${data.assignedDesignerNames.map(name => `<li>${name}</li>`).join('')}
+                                        </ul>
+                                    ` : '<p>No designers assigned yet</p>'}
+                                </div>
+                                
+                                <div class="form-section">
+                                    <h4>Deliverables (${deliverables.length})</h4>
+                                    ${deliverables.length > 0 ? deliverables.map(d => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f8fafc; border-radius: 10px; margin-bottom: 1rem;">
+                                            <div>
+                                                <strong>${d.deliverableType === 'link' ? '🔗' : '📄'} ${d.originalName}</strong>
+                                                <div style="font-size: 0.85rem; color: var(--text-light);">
+                                                    Designer: ${d.designerName} | Version: ${d.versionNumber} |
+                                                     Status: <span class="proposal-status status-${d.reviewStatus}">${d.reviewStatus.toUpperCase()}</span>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; gap: 0.5rem;">
+                                                <button onclick="window.open('${d.url}', '_blank')" class="btn btn-outline btn-sm">View</button>
+                                                ${d.reviewStatus === 'pending' ? `<button onclick="closeModal(); showReviewDeliverableModal('${d.id}')" class="btn btn-primary btn-sm">Review</button>` : ''}
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p>No deliverables uploaded yet</p>'}
+                                </div>
+                                
+                                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                    <button onclick="closeModal()" class="btn btn-outline">Close</button>
+                                    ${data.designStatus === 'in_progress' && deliverables.filter(d => d.reviewStatus === 'approved').length > 0 ?
+                                         `<button onclick="closeModal(); markDesignReadyForClient('${projectId}')" class="btn btn-success">Mark Ready for Client</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                }
+            } catch (error) {
+                alert('Error loading project: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Mark design ready for client submission
+        async function markDesignReadyForClient(projectId) {
+            if (!confirm('Mark this project as ready for client submission?')) return;
+            
+            try {
+                showLoading();
+                const { success } = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'update_design_status',
+                        data: {
+                            designStatus: 'submitted',
+                            remarks: 'Design reviewed and ready for client submission'
+                        }
+                    })
+                });
+                
+                if (success) {
+                    alert('Project marked as ready for client submission!');
+                    showDesignLeadDashboard();
+                }
+            } catch (error) {
+                alert('Update failed: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
     </script>
 </body>
 </html>
