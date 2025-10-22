@@ -2797,11 +2797,9 @@
                         alert('Please select a proposal and enter a project code.');
                         return;
                     }
-                    const selectedOption = proposalSelect.options[proposalSelect.selectedIndex];
-                    const proposalName = selectedOption.dataset.name;
-                    const clientName = selectedOption.dataset.client;
                     
-                    createProjectFromProposal(proposalId, projectCode, proposalName, clientName);
+                    // MODIFIED: Call function with no parameters
+                    createProjectFromProposal();
                 });
 
             } catch (error) {
@@ -2810,29 +2808,53 @@
             }
         }
 
-        // REPLACED IMPLEMENTATION
-        async function createProjectFromProposal(proposalId, projectCode, proposalName, clientName) {
+        // REPLACED IMPLEMENTATION (FIXED AS PER YOUR REQUEST)
+        async function createProjectFromProposal() {
+            // Get values from the form, as per the new 0-argument function structure
+            const proposalSelect = document.getElementById('wonProposalSelect');
+            const proposalId = proposalSelect.value;
+            const projectCode = document.getElementById('projectCode').value;
+
+            if (!proposalId) {
+                alert('Please select a proposal');
+                return;
+            }
+            if (!projectCode) {
+                alert('Please enter a project code');
+                return;
+            }
+            
+            // Get other data from the selected option
+            const selectedOption = proposalSelect.options[proposalSelect.selectedIndex];
+            const proposalName = selectedOption.dataset.name;
+            const clientName = selectedOption.dataset.client;
+
             try {
                 showLoading();
+                
+                // FIXED: Send action in the request body, as per user's instruction
                 const response = await apiCall('projects', {
                     method: 'POST',
-                    body: JSON.stringify({
-                        proposalId,
-                        projectCode,
-                        projectName: proposalName,
-                        clientCompany: clientName
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'create_from_proposal', // User's key change
+                        proposalId: proposalId,
+                        projectCode: projectCode,       // Retained from old logic
+                        projectName: proposalName,    // Retained from old logic
+                        clientCompany: clientName     // Retained from old logic
                     })
                 });
 
-                if (response.success && response.data) {
-                    alert('Project created successfully! You can now allocate it.');
+                if (response.success) {
                     closeModal();
-                    showProjects(); // Refresh the projects list
+                    showNotification('Project created successfully!', 'success');
+                    showProjects();
                 } else {
                     throw new Error(response.error || 'Failed to create project');
                 }
             } catch (error) {
-                alert(`Error creating project: ${error.message}`);
+                console.error('Create project error:', error);
+                alert('Error creating project: ' + error.message);
             } finally {
                 hideLoading();
             }
