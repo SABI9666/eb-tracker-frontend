@@ -424,7 +424,7 @@
         }
         .status-draft { background: #e0e7ff; color: #4c1d95; }
         .status-estimated { background: #dbeafe; color: #1e3a8a; }
-        .status-priced, .status-pending-director-approval { background: #fed7aa; color: #9a3412; } /* Combined */
+        .status-priced, .status-pending-director-approval, .status-pricing_complete { background: #fed7aa; color: #9a3412; } /* Combined */
         .status-approved { background: #d4edda; color: #155724; }
         .status-rejected { background: #f8d7da; color: #721c24; }
         .status-submitted, .status-submitted-to-client { background: #cce5ff; color: #0066cc; }
@@ -1429,7 +1429,8 @@
                     break;
                 case 'pricing_required':
                     if (role === 'coo')
-                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showPricingModal('${item.proposalId}')">SET PRICING</button>`;
+                        // MODIFIED: Use new pricing form
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showCOOPricingForm('${item.proposalId}')">SET PRICING</button>`;
                     break;
                 case 'approval_required':
                     if (role === 'director')
@@ -1449,7 +1450,8 @@
                 case 'project_allocation':
                     // ** UPDATED to use new function name **
                     if (role === 'coo' || role === 'director')
-                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showAllocateProjectModal('${item.projectId}')">ALLOCATE PROJECT</button>`;
+                        // MODIFIED: Use new allocation modal
+                        actionBtn = `<button class="btn btn-primary btn-sm" onclick="showProjectAllocationModal('${item.proposalId}')">ALLOCATE PROJECT</button>`;
                     break;
                 case 'task_assignment':
                     // This is for DESIGN LEAD to assign DESIGNERS
@@ -1574,6 +1576,7 @@
                                 </div>
                                 <span class="proposal-status status-won">WON</span>
                                 <div class="action-buttons">
+                                    ${(currentUserRole === 'coo' || currentUserRole === 'director') ? getProposalAllocationButton(p) : ''}
                                     <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View</button>
                                 </div>
                             </div>
@@ -1590,6 +1593,7 @@
                     </div>
                     <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">${p.status.toUpperCase().replace(/_/g, ' ')}</span>
                     <div class="action-buttons">
+                        ${(currentUserRole === 'coo' || currentUserRole === 'director') ? getProposalAllocationButton(p) : ''}
                         <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
                     </div>
                 </div>
@@ -1818,15 +1822,23 @@
             // Role-based actions
             if (currentUserRole === 'estimator' && p.status === 'draft') {
                 actionsHtml = `<button class="btn btn-primary" onclick="showEstimationModal('${p.id}')">Add Estimation</button>`;
-            } else if (currentUserRole === 'coo' && p.status === 'estimated') {
-                actionsHtml = `<button class="btn btn-primary" onclick="showPricingModal('${p.id}')">Set Pricing</button>`;
-            }
-            // ✅ CORRECTED CONDITION HERE
-            else if (currentUserRole === 'director' && p.status === 'pending_director_approval') {
-                actionsHtml = `
-                    <button class="btn btn-danger" onclick="rejectProposal('${p.id}')">Reject</button>
-                    <button class="btn btn-success" onclick="approveProposal('${p.id}')">Approve</button>
-                `;
+            
+            // MODIFIED: Use new button logic for COO
+            } else if (currentUserRole === 'coo' && (p.status === 'estimated' || p.status === 'won' || (p.estimation && !p.pricing) || p.status === 'pricing_complete')) {
+                actionsHtml = getProposalAllocationButton(p);
+            
+            // MODIFIED: Use new button logic for Director
+            } else if (currentUserRole === 'director') { 
+                if (p.status === 'pending_director_approval') {
+                    actionsHtml = `
+                        <button class="btn btn-danger" onclick="rejectProposal('${p.id}')">Reject</button>
+                        <button class="btn btn-success" onclick="approveProposal('${p.id}')">Approve</button>
+                    `;
+                } else {
+                    // Get allocation/view buttons if status is 'won' etc.
+                    actionsHtml = getProposalAllocationButton(p);
+                }
+            
             } else if (currentUserRole === 'bdm' && p.status === 'approved') {
                 actionsHtml = `<button class="btn btn-success" onclick="submitToClient('${p.id}')">Submit to Client</button>`;
                  // BDM can also directly mark as WON/LOST if approved
@@ -1957,6 +1969,7 @@
                             ${p.pricing ? `
                                 <div class="form-section">
                                     <h4>Pricing Information</h4>
+                                    <p><strong>Project Number:</strong> ${p.pricing.projectNumber || 'N/A'}</p>
                                     <p><strong>Quote Value:</strong> ${p.pricing.quoteValue || 'N/A'} ${p.pricing.currency || ''}</p>
                                     <p><strong>Profit Margin:</strong> ${p.pricing.profitMargin || 'N/A'}%</p>
                                     <p><strong>Hourly Rate:</strong> ${p.pricing.hourlyRate || 'N/A'}</p>
@@ -2183,7 +2196,7 @@
         }
 
         function showPricingModal(id) {
-            // ... (This function remains unchanged)
+            // ... (This function remains unchanged, though it is no longer called by the modal)
             closeModal();
             apiCall(`proposals?id=${id}`).then(response => {
                 const proposal = response.data;
@@ -2254,7 +2267,7 @@
         }
 
         async function savePricing(id) {
-            // ... (This function remains unchanged)
+            // ... (This function remains unchanged, though it is no longer called by the modal)
             const services = Array.from(document.querySelectorAll('input[name="editServices"]:checked')).map(cb => cb.value);
             const data = {
                 hourlyRate: document.getElementById('hourlyRate').value,
@@ -2401,6 +2414,530 @@
             }
         }
 
+        // ============================================
+        // NEW FUNCTIONS ADDED FROM PROMPT
+        // ============================================
+        
+        // ============================================
+        // COO PRICING FORM WITH PROJECT NUMBER CREATION
+        // ============================================
+        async function showCOOPricingForm(proposalId) {
+            try {
+                showLoading();
+                const response = await apiCall(`proposals?id=${proposalId}`);
+                        
+                if (!response.success || !response.data) {
+                    throw new Error('Failed to load proposal');
+                }
+                        
+                const proposal = response.data;
+                        
+                // Check if proposal has estimation
+                if (!proposal.estimation) {
+                    alert('Please complete estimation before adding pricing');
+                    hideLoading();
+                    return;
+                }
+                        
+                const modalHtml = `
+                    <div class="modal-overlay">
+                        <div class="modal-content" style="max-width: 800px;">
+                            <div class="modal-header">
+                                <div>
+                                    <h2>COO Pricing Form</h2>
+                                    <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
+                                </div>
+                                <span class="close-modal" onclick="closeModal()">&times;</span>
+                            </div>
+                                                
+                            <div class="modal-body">
+                                <div class="form-section" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                                    <h4>Estimation Summary</h4>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                                        <div><strong>Total Hours:</strong> ${proposal.estimation.manhours || proposal.estimation.totalHours || 0}</div>
+                                        <div><strong>Estimated By:</strong> ${proposal.estimation.estimatorName || 'N/A'}</div>
+                                        <div><strong>Services:</strong> ${proposal.estimation.services?.join(', ') || 'N/A'}</div>
+                                    </div>
+                                </div>
+                                                        
+                                <form id="cooPricingForm">
+                                    <div class="form-section">
+                                        <h4>Project Number</h4>
+                                        <div class="form-group">
+                                            <label>Generate Project Number <span class="required">*</span></label>
+                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                                <input type="text" id="projectNumber" class="form-control"
+                                                     placeholder="Click Generate to create project number" readonly required>
+                                                <button type="button" onclick="generateProjectNumber('${proposal.clientCompany}')"
+                                                     class="btn btn-outline" style="width: auto; white-space: nowrap;">
+                                                    Generate Number
+                                                </button>
+                                            </div>
+                                            <small class="form-text">Project number will be auto-generated based on client name and year</small>
+                                        </div>
+                                    </div>
+                                                                
+                                    <div class="form-section">
+                                        <h4>Pricing Information</h4>
+                                                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Quote Value <span class="required">*</span></label>
+                                                <input type="number" id="quoteValue" class="form-control"
+                                                     placeholder="Enter quote value" step="0.01" required>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Currency <span class="required">*</span></label>
+                                                <select id="currency" class="form-control" required>
+                                                    <option value="USD">USD ($)</option>
+                                                    <option value="AUD">AUD (A$)</option>
+                                                    <option value="CAD">CAD (C$)</option>
+                                                    <option value="GBP">GBP (£)</option>
+                                                    <option value="EUR">EUR (€)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                                                        
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Hourly Rate</label>
+                                                <input type="number" id="hourlyRate" class="form-control"
+                                                     placeholder="Enter hourly rate" step="0.01">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Profit Margin (%)</label>
+                                                <input type="number" id="profitMargin" class="form-control"
+                                                     placeholder="Enter profit margin" step="0.01" min="0" max="100">
+                                            </div>
+                                        </div>
+                                                                        
+                                        <div class="form-group">
+                                            <label>Pricing Notes</label>
+                                            <textarea id="pricingNotes" class="form-control" rows="3"
+                                                 placeholder="Add any pricing notes or special conditions..."></textarea>
+                                        </div>
+                                    </div>
+                                                                
+                                    <div class="form-section">
+                                        <h4>Cost Breakdown (Optional)</h4>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Material Costs</label>
+                                                <input type="number" id="materialCosts" class="form-control"
+                                                     placeholder="0.00" step="0.01">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Labor Costs</label>
+                                                <input type="number" id="laborCosts" class="form-control"
+                                                     placeholder="0.00" step="0.01">
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label>Overhead Costs</label>
+                                                <input type="number" id="overheadCosts" class="form-control"
+                                                     placeholder="0.00" step="0.01">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Other Costs</label>
+                                                <input type="number" id="otherCosts" class="form-control"
+                                                     placeholder="0.00" step="0.01">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                                                
+                            <div class="modal-footer">
+                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="submitCOOPricing('${proposalId}')" class="btn btn-primary">
+                                    Save Pricing
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                        
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                hideLoading();
+            
+            } catch (error) {
+                console.error('Error loading pricing form:', error);
+                alert('Error loading pricing form: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Generate Project Number
+        async function generateProjectNumber(clientCompany) {
+            try {
+                showLoading();
+                        
+                // Call backend to generate project number
+                const response = await apiCall('projects/generate-number', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientCompany })
+                });
+                        
+                if (response.success && response.data.projectNumber) {
+                    document.getElementById('projectNumber').value = response.data.projectNumber;
+                    showNotification('Project number generated successfully!', 'success');
+                } else {
+                    throw new Error(response.error || 'Failed to generate project number');
+                }
+                    
+            } catch (error) {
+                console.error('Error generating project number:', error);
+                        
+                // Fallback: Generate locally if backend fails
+                const year = new Date().getFullYear().toString().slice(-2);
+                const clientPrefix = (clientCompany || 'GEN').substring(0, 3).toUpperCase();
+                const random = Math.floor(Math.random() * 900) + 100;
+                const projectNumber = `${clientPrefix}${year}-${random}`;
+                        
+                document.getElementById('projectNumber').value = projectNumber;
+                showNotification('Project number generated (local)', 'warning');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Submit COO Pricing
+        async function submitCOOPricing(proposalId) {
+            const projectNumber = document.getElementById('projectNumber').value;
+            const quoteValue = document.getElementById('quoteValue').value;
+            const currency = document.getElementById('currency').value;
+            const hourlyRate = document.getElementById('hourlyRate').value;
+            const profitMargin = document.getElementById('profitMargin').value;
+            const pricingNotes = document.getElementById('pricingNotes').value;
+                
+            // Optional cost breakdown
+            const materialCosts = document.getElementById('materialCosts').value || 0;
+            const laborCosts = document.getElementById('laborCosts').value || 0;
+            const overheadCosts = document.getElementById('overheadCosts').value || 0;
+            const otherCosts = document.getElementById('otherCosts').value || 0;
+                
+            // Validation
+            if (!projectNumber) {
+                alert('Please generate a project number');
+                return;
+            }
+                
+            if (!quoteValue || parseFloat(quoteValue) <= 0) {
+                alert('Please enter a valid quote value');
+                return;
+            }
+                
+            try {
+                showLoading();
+                        
+                const pricingData = {
+                    projectNumber: projectNumber,
+                    quoteValue: parseFloat(quoteValue),
+                    currency: currency,
+                    hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+                    profitMargin: profitMargin ? parseFloat(profitMargin) : null,
+                    notes: pricingNotes,
+                    costBreakdown: {
+                        material: parseFloat(materialCosts),
+                        labor: parseFloat(laborCosts),
+                        overhead: parseFloat(overheadCosts),
+                        other: parseFloat(otherCosts),
+                        total: parseFloat(materialCosts) + parseFloat(laborCosts) +
+                                parseFloat(overheadCosts) + parseFloat(otherCosts)
+                    }
+                };
+                        
+                const response = await apiCall(`proposals?id=${proposalId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'add_pricing',
+                        data: pricingData
+                    })
+                });
+                        
+                if (response.success) {
+                    closeModal();
+                    showNotification('Pricing added successfully!', 'success');
+                                
+                    // Refresh proposals list or show allocation option
+                    showProposals();
+                } else {
+                    throw new Error(response.error || 'Failed to add pricing');
+                }
+                    
+            } catch (error) {
+                console.error('Error submitting pricing:', error);
+                alert('Error submitting pricing: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // PROJECT ALLOCATION TO DESIGN MANAGER
+        // ============================================
+        async function showProjectAllocationModal(proposalId) {
+            try {
+                showLoading();
+                        
+                // Load proposal details
+                const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+                if (!proposalResponse.success || !proposalResponse.data) {
+                    throw new Error('Failed to load proposal');
+                }
+                const proposal = proposalResponse.data;
+                        
+                // Check if proposal is WON
+                if (proposal.status !== 'won') {
+                    alert('Only WON proposals can be allocated to Design Managers');
+                    hideLoading();
+                    return;
+                }
+                        
+                // Load design managers (users with role='design_lead')
+                const usersResponse = await apiCall('users?role=design_lead');
+                        
+                let designManagers = [];
+                if (usersResponse.success && usersResponse.data) {
+                    designManagers = usersResponse.data;
+                }
+                        
+                if (designManagers.length === 0) {
+                    alert('No Design Managers found in the system. Please create Design Manager users first.');
+                    hideLoading();
+                    return;
+                }
+                        
+                const modalHtml = `
+                    <div class="modal-overlay">
+                        <div class="modal-content" style="max-width: 700px;">
+                            <div class="modal-header">
+                                <div>
+                                    <h2>Allocate Project to Design Manager</h2>
+                                    <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
+                                </div>
+                                <span class="close-modal" onclick="closeModal()">&times;</span>
+                            </div>
+                                                
+                            <div class="modal-body">
+                                <div class="form-section" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                                    <h4>Project Information</h4>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                                        <div>
+                                            <strong>Project Number:</strong>
+                                             <span style="color: var(--primary-blue); font-weight: 600;">
+                                                ${proposal.pricing?.projectNumber || 'Not Set'}
+                                            </span>
+                                        </div>
+                                        <div><strong>Quote Value:</strong> ${proposal.pricing?.currency || ''} ${proposal.pricing?.quoteValue || 'N/A'}</div>
+                                        <div><strong>Status:</strong> <span class="proposal-status status-won">WON</span></div>
+                                        <div><strong>BDM:</strong> ${proposal.createdByName || 'N/A'}</div>
+                                    </div>
+                                </div>
+                                                        
+                                <form id="allocationForm">
+                                    <div class="form-group">
+                                        <label>Select Design Manager <span class="required">*</span></label>
+                                        <select id="designManagerSelect" class="form-control" required>
+                                            <option value="">Choose a Design Manager...</option>
+                                            ${designManagers.map(dm => `
+                                                <option value="${dm.uid}" data-name="${dm.name}" data-email="${dm.email}">
+                                                    ${dm.name} (${dm.email})
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                        <small class="form-text">Select the Design Manager who will oversee this project</small>
+                                    </div>
+                                                                
+                                    <div class="form-group">
+                                        <label>Target Completion Date</label>
+                                        <input type="date" id="targetCompletionDate" class="form-control"
+                                             min="${new Date().toISOString().split('T')[0]}">
+                                        <small class="form-text">Expected project completion date</small>
+                                    </div>
+                                                                
+                                    <div class="form-group">
+                                        <label>Project Priority</label>
+                                        <select id="projectPriority" class="form-control">
+                                            <option value="Normal">Normal</option>
+                                            <option value="High">High</option>
+                                            <option value="Urgent">Urgent</option>
+                                            <option value="Low">Low</option>
+                                        </select>
+                                    </div>
+                                                                
+                                    <div class="form-group">
+                                        <label>Allocation Comments <span class="required">*</span></label>
+                                        <textarea id="allocationComments" class="form-control" rows="4"
+                                             placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
+                                        <small class="form-text">Provide clear guidance and expectations for this project</small>
+                                    </div>
+                                                                
+                                    <div class="form-group">
+                                        <label>Special Instructions</label>
+                                        <textarea id="specialInstructions" class="form-control" rows="3"
+                                             placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                                                
+                            <div class="modal-footer">
+                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="submitProjectAllocation('${proposalId}')" class="btn btn-success">
+                                    Allocate Project
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                        
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                hideLoading();
+            
+            } catch (error) {
+                console.error('Error showing allocation modal:', error);
+                alert('Error loading allocation form: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Submit Project Allocation
+        async function submitProjectAllocation(proposalId) {
+            const designManagerSelect = document.getElementById('designManagerSelect');
+            const designManagerUid = designManagerSelect.value;
+            const targetCompletionDate = document.getElementById('targetCompletionDate').value;
+            const projectPriority = document.getElementById('projectPriority').value;
+            const allocationComments = document.getElementById('allocationComments').value.trim();
+            const specialInstructions = document.getElementById('specialInstructions').value.trim();
+                
+            // Validation
+            if (!designManagerUid) {
+                alert('Please select a Design Manager');
+                return;
+            }
+                
+            if (!allocationComments) {
+                alert('Please add allocation comments');
+                return;
+            }
+                
+            try {
+                showLoading();
+                        
+                // Get design manager details
+                const selectedOption = designManagerSelect.options[designManagerSelect.selectedIndex];
+                const designManagerName = selectedOption.getAttribute('data-name');
+                const designManagerEmail = selectedOption.getAttribute('data-email');
+                        
+                // First, create the project if not already created
+                const createProjectResponse = await apiCall('projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create_from_proposal',
+                        proposalId: proposalId
+                    })
+                });
+                        
+                if (!createProjectResponse.success) {
+                    // Project might already exist, try to get it
+                    const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+                    if (!proposalResponse.data.projectId) {
+                        throw new Error('Failed to create project: ' + (createProjectResponse.error || 'Unknown error'));
+                    }
+                }
+                        
+                // Get the project ID
+                const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+                const projectId = proposalResponse.data.projectId;
+                        
+                if (!projectId) {
+                    throw new Error('Project ID not found');
+                }
+                        
+                // Now allocate to design manager
+                const allocationData = {
+                    designLeadUid: designManagerUid,
+                    targetCompletionDate: targetCompletionDate || null,
+                    priority: projectPriority,
+                    allocationNotes: allocationComments,
+                    specialInstructions: specialInstructions
+                };
+                        
+                const response = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'allocate_design_lead',
+                        data: allocationData
+                    })
+                });
+                        
+                if (response.success) {
+                    closeModal();
+                    showSuccessModal(
+                        'Project Allocated Successfully!',
+                        `Project has been allocated to ${designManagerName}. They will be notified immediately.`
+                    );
+                                
+                    // Refresh proposals list
+                    setTimeout(() => {
+                        closeSuccessModal();
+                        showProposals();
+                    }, 2000);
+                } else {
+                    throw new Error(response.error || 'Failed to allocate project');
+                }
+                    
+            } catch (error) {
+                console.error('Error allocating project:', error);
+                alert('Error allocating project: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // HELPER: Update Proposal View to Show Allocation Button
+        // ============================================
+        // Add this to your viewProposal function or proposals rendering
+        // Insert this button for WON proposals when COO is viewing
+        function getProposalAllocationButton(proposal) {
+            if (currentUserRole !== 'coo' && currentUserRole !== 'director') {
+                return '';
+            }
+                
+            if (proposal.status === 'won' && !proposal.projectCreated) {
+                return `
+                    <button onclick="showProjectAllocationModal('${proposal.id}')" class="btn btn-success">
+                        🎯 Allocate to Design Manager
+                    </button>
+                `;
+            }
+                
+            if (proposal.status === 'won' && proposal.projectCreated && proposal.projectId) {
+                return `
+                    <button onclick="viewProject('${proposal.projectId}')" class="btn btn-outline">
+                        View Allocated Project
+                    </button>
+                `;
+            }
+                
+            // Show pricing button if pricing not yet added
+            if (proposal.status === 'pricing_complete' || (proposal.estimation && !proposal.pricing) || proposal.status === 'estimated') {
+                return `
+                    <button onclick="showCOOPricingForm('${proposal.id}')" class="btn btn-primary">
+                        💰 Add Pricing & Project Number
+                    </button>
+                `;
+            }
+                
+            return '';
+        }
+        
         // ============================================
         // FILE MANAGER
         // ============================================
@@ -3386,9 +3923,9 @@
                        modal.style.display = 'none';
                     }
                     // For original modals, use the existing closeModal logic if needed
-                    // else if (modal.classList.contains('modal-overlay')){
-                    //    closeModal(); // Call your original close function if it exists
-                    // }
+                    else if (event.target.classList.contains('modal-overlay')){
+                       closeModal(); // Call your original close function if it exists
+                    }
                 }
             });
         });
