@@ -796,6 +796,669 @@
             color: white;
             border-color: #00bcd4;
         }
+        
+        /* ================================================================================
+           NEW CSS ADDED BELOW
+           ================================================================================ */
+
+        /* ==============================================================================
+           CSS VARIABLES - Add these if not already defined in your main CSS
+           ============================================================================== */
+        :root {
+            --primary-blue: #00BFFF;
+            --dark-blue: #0099CC;
+            --light-blue: #E6F7FF;
+            --text-dark: #2C3E50;
+            --text-light: #7F8C8D;
+            --background: #F8FAFB;
+            --success: #27AE60;
+            --danger: #E74C3C;
+            --warning: #F39C12;
+            --border: #E1E8ED;
+        }
+
+        /* ==============================================================================
+           PROJECT NUMBER BADGE STYLES
+           ============================================================================== */
+
+        .project-number-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            background: var(--primary-blue);
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0, 191, 255, 0.2);
+        }
+
+        /* ==============================================================================
+           STATUS BADGE STYLES
+           ============================================================================== */
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            white-space: nowrap;
+            letter-spacing: 0.3px;
+            transition: all 0.2s ease;
+        }
+
+        /* Status Badge Variations */
+        .status-needs-number {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .status-pending {
+            background: #cfe2ff;
+            color: #084298;
+            border: 1px solid #0d6efd;
+        }
+
+        .status-approved {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #198754;
+        }
+
+        .status-rejected {
+            background: #f8d7da;
+            color: #842029;
+            border: 1px solid #dc3545;
+        }
+
+        .status-needs-allocation {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffc107;
+        }
+
+        .status-allocated {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #198754;
+        }
+
+        .status-project-won {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+
+        /* ==============================================================================
+           ALLOCATION MODAL STYLES
+           ============================================================================== */
+
+        .allocation-modal-large .modal-content {
+            max-width: 800px;
+            width: 95%;
+        }
+
+        .allocation-details-section {
+            background: var(--light-blue);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(0, 191, 255, 0.2);
+        }
+
+        .allocation-details-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 0.5rem;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        .detail-item label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-item .detail-value {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 1rem;
+        }
+
+        .detail-item.highlight {
+            grid-column: span 2;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-blue);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ==============================================================================
+           FORM SECTION STYLES
+           ============================================================================== */
+
+        .form-section {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .form-section h3 {
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* ==============================================================================
+           INFO SECTION STYLES
+           ============================================================================== */
+
+        .info-section {
+            background: var(--light-blue);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .info-section h4 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .info-section p {
+            margin: 0.5rem 0;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .info-section strong {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        /* ==============================================================================
+           BUTTON STYLES
+           ============================================================================== */
+
+        .btn-large {
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            min-width: 180px;
+        }
+
+        .btn-icon {
+            margin-right: 0.5rem;
+            font-size: 1.2rem;
+            vertical-align: middle;
+        }
+
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+            border: none;
+        }
+
+        .btn-cancel:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* ==============================================================================
+           FILTER BAR STYLES
+           ============================================================================== */
+
+        .filters-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            min-width: 200px;
+        }
+
+        .filter-select:hover {
+            border-color: var(--primary-blue);
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1);
+        }
+
+        /* ==============================================================================
+           TABLE ENHANCEMENTS
+           ============================================================================== */
+
+        .data-table tbody tr:hover {
+            background: var(--light-blue);
+            transition: background 0.2s ease;
+            cursor: pointer;
+        }
+
+        .data-table tbody tr {
+            transition: background 0.2s ease;
+        }
+
+        /* ==============================================================================
+           UTILITY CLASSES
+           ============================================================================== */
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-muted {
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .text-bold {
+            font-weight: 600;
+        }
+
+        /* ==============================================================================
+           FORM HELPERS
+           ============================================================================== */
+
+        .required {
+            color: var(--danger);
+            font-weight: bold;
+            margin-left: 2px;
+        }
+
+        .form-text {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        /* ==============================================================================
+           LOADING & EMPTY STATES
+           ============================================================================== */
+
+        .loading-row {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .empty-state-subtext {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        /* ==============================================================================
+           MODAL ENHANCEMENTS
+           ============================================================================== */
+
+        .new-modal {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1.5rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            background: #f8f9fa;
+        }
+
+        .close-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: color 0.2s ease;
+            border: none;
+            background: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        /* ==============================================================================
+           CARD STYLES
+           ============================================================================== */
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            background: var(--light-blue);
+            border-bottom: 2px solid var(--primary-blue);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* ==============================================================================
+           PAGE HEADER STYLES
+           ============================================================================== */
+
+        .page-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .page-header h2 {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .page-header .subtitle {
+            color: var(--text-light);
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        /* ==============================================================================
+           RESPONSIVE DESIGN - MOBILE & TABLET
+           ============================================================================== */
+
+        @media (max-width: 768px) {
+            /* Grid adjustments */
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .detail-item.highlight {
+                grid-column: span 1;
+            }
+            
+            /* Modal adjustments */
+            .allocation-modal-large .modal-content {
+                max-width: 95%;
+                margin: 1rem;
+            }
+            
+            /* Button adjustments */
+            .btn-large {
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+                min-width: 140px;
+            }
+            
+            /* Filter bar adjustments */
+            .filters-bar {
+                flex-direction: column;
+            }
+            
+            .filter-select {
+                width: 100%;
+                min-width: auto;
+            }
+            
+            /* Table adjustments */
+            .data-table {
+                font-size: 0.85rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 0.5rem;
+            }
+            
+            /* Badge adjustments */
+            .project-number-badge {
+                font-size: 0.8rem;
+                padding: 0.3rem 0.6rem;
+            }
+            
+            .status-badge {
+                font-size: 0.75rem;
+                padding: 0.3rem 0.6rem;
+            }
+            
+            /* Page header adjustments */
+            .page-header h2 {
+                font-size: 1.5rem;
+            }
+            
+            /* Modal adjustments */
+            .modal-body {
+                padding: 1rem;
+                max-height: 60vh;
+            }
+            
+            .modal-footer {
+                flex-direction: column-reverse;
+            }
+            
+            .modal-footer button {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Further mobile optimizations */
+            .allocation-details-section {
+                padding: 1rem;
+            }
+            
+            .info-section {
+                padding: 1rem;
+            }
+            
+            .page-header {
+                margin-bottom: 1rem;
+            }
+            
+            .page-header h2 {
+                font-size: 1.3rem;
+            }
+        }
+
+        /* ==============================================================================
+           PRINT STYLES
+           ============================================================================== */
+
+        @media print {
+            .filters-bar,
+            .btn,
+            .modal,
+            .close-modal {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #ddd;
+            }
+            
+            .page-header {
+                border-bottom: 2px solid #000;
+            }
+        }
+
+        /* ==============================================================================
+           ACCESSIBILITY ENHANCEMENTS
+           ============================================================================== */
+
+        /* Focus styles for keyboard navigation */
+        .btn:focus,
+        .filter-select:focus,
+        .form-control:focus {
+            outline: 3px solid var(--primary-blue);
+            outline-offset: 2px;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .status-badge {
+                border-width: 2px;
+            }
+            
+            .project-number-badge {
+                border: 2px solid white;
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ==============================================================================
+           DARK MODE SUPPORT (Optional - Uncomment if needed)
+           ============================================================================== */
+
+        /*
+        @media (prefers-color-scheme: dark) {
+            .card,
+            .modal-content,
+            .filters-bar {
+                background: #1a1a1a;
+                color: #e0e0e0;
+            }
+            
+            .page-header {
+                border-bottom-color: #333;
+            }
+            
+            .data-table tbody tr:hover {
+                background: #2a2a2a;
+            }
+        }
+        */
+
+        /* ==============================================================================
+           END OF STYLESHEET
+           ============================================================================== */
     </style>
 </head>
 <body>
