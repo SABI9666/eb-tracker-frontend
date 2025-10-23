@@ -1,4 +1,23 @@
+/* ================================================================================
+   EBTracker - COO Project Number & Allocation Workflow Styles
+   Version: 1.0.1 - FIXED
+   ================================================================================ */
 
+/* ==============================================================================
+   CSS VARIABLES - Add these if not already defined in your main CSS
+   ============================================================================== */
+:root {
+    --primary-blue: #00BFFF;
+    --dark-blue: #0099CC;
+    --light-blue: #E6F7FF;
+    --text-dark: #2C3E50;
+    --text-light: #7F8C8D;
+    --background: #F8FAFB;
+    --success: #27AE60;
+    --danger: #E74C3C;
+    --warning: #F39C12;
+    --border: #E1E8ED;
+}
 
 /* ==============================================================================
    PROJECT NUMBER BADGE STYLES
