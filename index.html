@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="stylesheet" href="workflow-styles.css">
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0d47a1">
     <meta charset="UTF-8">
@@ -3932,39 +3933,235 @@
 
     </script>
 
-    <div id="allocationModal" class="modal" style="display: none;">
+    <div id="cooProjectNumberSection" style="display: none;">
+        <div class="page-header">
+            <h2>Pricing & Project Number Management</h2>
+            <p class="subtitle">Review pricing and assign project numbers</p>
+        </div>
+        <div class="filters-bar">
+            <select id="projectNumberFilter" class="filter-select" onchange="filterProjectNumberProposals()">
+                <option value="all">All Proposals</option>
+                <option value="needs_number">Needs Project Number</option>
+                <option value="pending">Pending Approval</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+            </select>
+        </div>
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Client</th>
+                        <th>BDM</th>
+                        <th>Quote Value</th>
+                        <th>Project Number</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="projectNumberTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="projectNumberModal" class="modal" style="display: none;">
         <div class="modal-content new-modal">
+            <div class="modal-header">
+                <h2>Set Project Number</h2>
+                <span class="close-modal" onclick="closeProjectNumberModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="pnProposalId" />
+                <div class="info-section">
+                    <h4 id="pnProjectName"></h4>
+                    <p><strong>Client:</strong> <span id="pnClientName"></span></p>
+                    <p><strong>BDM:</strong> <span id="pnBdmName"></span></p>
+                    <p><strong>Quote Value:</strong> <span id="pnQuoteValue"></span></p>
+                </div>
+                <div class="form-group">
+                    <label for="projectNumberInput">Project Number <span class="required">*</span></label>
+                    <input type="text" id="projectNumberInput" class="form-control" placeholder="e.g., ABC25-001"
+                        required />
+                    <small class="form-text">Enter a unique project number for tracking</small>
+                </div>
+                <div class="warning-message">
+                    <strong>Note:</strong> This project number will be sent to the Director for approval before being
+                    finalized.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeProjectNumberModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitProjectNumber()">Save & Submit for
+                    Approval</button>
+            </div>
+        </div>
+    </div>
+    <div id="directorApprovalSection" style="display: none;">
+        <div class="page-header">
+            <h2>Project Number Approvals</h2>
+            <p class="subtitle">Review and approve project numbers set by COO</p>
+        </div>
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Client</th>
+                        <th>Project Number</th>
+                        <th>Set By</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="approvalTableBody">
+                    <tr>
+                        <td colspan="6" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="rejectionReasonModal" class="modal" style="display: none;">
+        <div class="modal-content new-modal">
+            <div class="modal-header">
+                <h2>Reject Project Number</h2>
+                <span class="close-modal" onclick="closeRejectionModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="rejectProposalId" />
+                <input type="hidden" id="rejectProjectNumber" />
+                <p>You are about to reject project number: <strong id="rejectProjectNumberDisplay"></strong></p>
+                <div class="form-group">
+                    <label for="rejectionReason">Reason for Rejection <span class="required">*</span></label>
+                    <textarea id="rejectionReason" class="form-control" rows="4"
+                        placeholder="Please provide a reason for rejection..." required></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeRejectionModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" onclick="confirmRejection()">Reject</button>
+            </div>
+        </div>
+    </div>
+    <div id="allocationSection" style="display: none;">
+        <div class="page-header">
+            <h2>Allocate Won Projects</h2>
+            <p class="subtitle">Assign won projects to Design Managers</p>
+        </div>
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Client</th>
+                        <th>BDM</th>
+                        <th>Value</th>
+                        <th>Project Number</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="allocationProposalsTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div id="allocationModal" class="modal" style="display: none;">
+        <div class="modal-content new-modal allocation-modal-large">
             <div class="modal-header">
                 <h2>Allocate Project to Design Manager</h2>
                 <span class="close-modal" onclick="closeAllocationModal()">&times;</span>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="projectIdField" />
-                <div class="form-group">
-                    <label for="designLeadSelect">Design Manager <span class="required">*</span></label>
-                    <select id="designLeadSelect" class="form-control" required>
-                        <option value="">Loading...</option>
-                    </select>
-                    <small class="form-text">Select the Design Lead for this project</small>
+                <input type="hidden" id="allocationProposalId" />
+                <div class="allocation-details-section">
+                    <h3>Project Details</h3>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <label>Project Name:</label>
+                            <span id="allocProjectName" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Client:</label>
+                            <span id="allocClientName" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>BDM:</label>
+                            <span id="allocBdmName" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Quote Value:</label>
+                            <span id="allocQuoteValue" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item highlight">
+                            <label>Project Number:</label>
+                            <span id="allocProjectNumber" class="detail-value project-number-badge"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Location:</label>
+                            <span id="allocLocation" class="detail-value"></span>
+                        </div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="targetCompletionDate">Target Completion Date</label>
-                    <input type="date" id="targetCompletionDate" class="form-control" />
-                    <small class="form-text">Expected project completion date</small>
-                </div>
-                <div class="form-group">
-                    <label for="allocationNotes">Allocation Notes</label>
-                    <textarea id="allocationNotes" class="form-control" rows="4"
-                        placeholder="Add any special instructions..."></textarea>
+                <div class="form-section">
+                    <h3>Allocation Details</h3>
+                    <div class="form-group">
+                        <label for="allocDesignLead">Design Manager / Lead <span class="required">*</span></label>
+                        <select id="allocDesignLead" class="form-control" required>
+                            <option value="">-- Select Design Manager --</option>
+                        </select>
+                        <small class="form-text">Select the Design Manager who will oversee this project</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="allocationComments">Allocation Comments</label>
+                        <textarea id="allocationComments" class="form-control" rows="4"
+                            placeholder="Add any special instructions, priorities, or notes for the Design Manager..."></textarea>
+                        <small class="form-text">These comments will be visible to the Design Manager</small>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-cancel" onclick="closeAllocationModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitAllocation()">Allocate</button>
+                <button type="button" class="btn btn-primary btn-large" onclick="submitAllocation()">
+                    <span class="btn-icon">✓</span> Allocate Project
+                </button>
             </div>
         </div>
     </div>
-
+    <div id="allocatedProjectsSection" style="display: none;">
+        <div class="page-header">
+            <h2>My Allocated Projects</h2>
+            <p class="subtitle">Projects assigned to you by management</p>
+        </div>
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Project #</th>
+                        <th>Project Name</th>
+                        <th>Client</th>
+                        <th>Allocated By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="allocatedProjectsTableBody">
+                    <tr>
+                        <td colspan="7" class="text-center">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
     <div id="designerAssignmentModal" class="modal" style="display: none;">
         <div class="modal-content new-modal">
             <div class="modal-header">
