@@ -1457,6 +1457,106 @@
         */
 
         /* ==============================================================================
+           ENHANCED FEATURES - PROJECT NUMBER & ALL PROJECTS VIEW
+           ============================================================================== */
+        /* Project Number Creation Section */
+        .project-number-section {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 2px solid var(--primary-blue);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .project-number-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .project-number-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 1rem;
+            align-items: end;
+        }
+        .project-number-preview {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border-left: 4px solid var(--success);
+        }
+        /* Project Status Filter Tabs */
+        .project-filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .filter-tab {
+            padding: 0.8rem 1.5rem;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--text-dark);
+        }
+        .filter-tab:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+        .filter-tab.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+        .filter-tab .count {
+            display: inline-block;
+            background: rgba(0,0,0,0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            margin-left: 0.5rem;
+            font-size: 0.85rem;
+        }
+        /* Projects Summary Cards */
+        .projects-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .summary-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            text-align: center;
+            border-top: 4px solid var(--primary-blue);
+        }
+        .summary-card.won { border-top-color: var(--success); }
+        .summary-card.loss { border-top-color: var(--danger); }
+        .summary-card.pending { border-top-color: var(--warning); }
+        .summary-card.allocated { border-top-color: #17a2b8; }
+        .summary-card h4 {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+        .summary-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        @media (max-width: 768px) {
+            .project-number-form { grid-template-columns: 1fr; }
+            .project-filter-tabs { overflow-x: auto; flex-wrap: nowrap; }
+        }
+
+        /* ==============================================================================
            END OF STYLESHEET
            ============================================================================== */
     </style>
@@ -1569,6 +1669,9 @@
                         <span class="nav-icon">➕</span>New Proposal</a></li>
                     <li><a href="#" onclick="showProposals()" id="nav-proposals">
                         <span class="nav-icon">📋</span>All Proposals</a></li>
+                    <li id="allProjectsNavItem" style="display: none;">
+                        <a href="#" onclick="showAllProjects()" id="nav-all-projects">
+                        <span class="nav-icon">📁</span>All Projects</a></li>
                     <li><a href="#" onclick="showFileUpload()" id="nav-files">
                         <span class="nav-icon">📁</span>File Manager</a></li>
                     <li id="workflowNavItem" style="display: none;">
@@ -1876,6 +1979,7 @@
             document.getElementById('workflowNavItem').style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('reportsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('settingsNavItem').style.display = (currentUserRole === 'director') ? 'block' : 'none';
+            document.getElementById('allProjectsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('projectsNavItem').style.display =
                 (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('tasksNavItem').style.display =
@@ -2276,6 +2380,159 @@
                     ${proposalsHtml || '<p>No other proposals found.</p>'}
                 </div>
             `;
+        }
+
+        // ============================================
+        // ALL PROJECTS VIEW (COO & DIRECTOR)
+        // ============================================
+        let currentProjectFilter = 'all';
+        let allProjectsData = [];
+        async function showAllProjects() {
+            setActiveNav('nav-all-projects');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            main.innerHTML = '';
+            try {
+                console.log('🔄 Fetching all projects...');
+                const response = await apiCall('proposals');
+                if (response.success && response.data) {
+                    allProjectsData = response.data;
+                    renderAllProjects();
+                } else {
+                    throw new Error('Invalid proposals response');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching all projects:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Projects</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+        function renderAllProjects() {
+            const wonProjects = allProjectsData.filter(p => p.status === 'won');
+            const lostProjects = allProjectsData.filter(p => p.status === 'lost');
+            const pendingProjects = allProjectsData.filter(p => p.status === 'pending' || p.status === 'draft');
+            const approvedProjects = allProjectsData.filter(p => p.status === 'approved');
+            const allocatedProjects = wonProjects.filter(p => p.projectCreated && p.designLeadAssigned);
+            const toBeAllocatedProjects = wonProjects.filter(p => !p.designLeadAssigned);
+            // Filter projects based on current filter
+            let filteredProjects = allProjectsData;
+            switch(currentProjectFilter) {
+                case 'won': filteredProjects = wonProjects; break;
+                case 'loss': filteredProjects = lostProjects; break;
+                case 'pending': filteredProjects = pendingProjects; break;
+                case 'approved': filteredProjects = approvedProjects; break;
+                case 'toBeAllocated': filteredProjects = toBeAllocatedProjects; break;
+                case 'allocated': filteredProjects = allocatedProjects; break;
+            }
+            const projectsHtml = filteredProjects.map(p => {
+                const allocationStatus = p.designLeadAssigned ? 
+                    '<span class="proposal-status status-allocated">Allocated</span>' : 
+                    (p.status === 'won' ? '<span class="proposal-status status-needs-allocation">To Be Allocated</span>' : 
+                    '<span class="proposal-status status-pending">-</span>');
+                
+                let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
+                
+                // Add allocation button for won projects not yet allocated (COO only)
+                if (currentUserRole === 'coo' && p.status === 'won' && !p.designLeadAssigned && p.pricing?.projectNumber) {
+                    actionButtons = `
+                        <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-primary btn-sm">🎯 Allocate</button>
+                        ${actionButtons}
+                    `;
+                }
+                
+                return `
+                    <tr>
+                        <td><strong>${p.projectName}</strong></td>
+                        <td>${p.clientCompany}</td>
+                        <td>${p.createdByName || 'N/A'}</td>
+                        <td>${p.pricing?.currency || ''} ${p.pricing?.quoteValue || 'N/A'}</td>
+                        <td>${p.pricing?.projectNumber ? 
+                            `<span class="project-number-badge" style="font-size: 0.9rem;">${p.pricing.projectNumber}</span>` : 
+                            '<span class="proposal-status status-pending">Not Assigned</span>'}</td>
+                        <td><span class="proposal-status status-${p.status}">${p.status.toUpperCase()}</span></td>
+                        <td>${allocationStatus}</td>
+                        <td><div class="action-buttons">${actionButtons}</div></td>
+                    </tr>
+                `;
+            }).join('');
+            document.getElementById('mainContent').innerHTML = `
+                <div class="page-header">
+                    <h2>All Projects Overview</h2>
+                    <div class="subtitle">Complete view of all projects across all statuses</div>
+                </div>
+                
+                <div class="projects-summary">
+                    <div class="summary-card won">
+                        <h4>Won Projects</h4>
+                        <div class="number">${wonProjects.length}</div>
+                    </div>
+                    <div class="summary-card loss">
+                        <h4>Lost Projects</h4>
+                        <div class="number">${lostProjects.length}</div>
+                    </div>
+                    <div class="summary-card pending">
+                        <h4>Pending Approval</h4>
+                        <div class="number">${pendingProjects.length}</div>
+                    </div>
+                    <div class="summary-card allocated">
+                        <h4>Allocated</h4>
+                        <div class="number">${allocatedProjects.length}</div>
+                    </div>
+                    <div class="summary-card">
+                        <h4>To Be Allocated</h4>
+                        <div class="number">${toBeAllocatedProjects.length}</div>
+                    </div>
+                </div>
+                
+                <div class="project-filter-tabs">
+                    <div class="filter-tab ${currentProjectFilter === 'all' ? 'active' : ''}" onclick="filterAllProjects('all')">
+                        All Projects <span class="count">${allProjectsData.length}</span>
+                    </div>
+                    <div class="filter-tab ${currentProjectFilter === 'won' ? 'active' : ''}" onclick="filterAllProjects('won')">
+                        Won <span class="count">${wonProjects.length}</span>
+                    </div>
+                    <div class="filter-tab ${currentProjectFilter === 'loss' ? 'active' : ''}" onclick="filterAllProjects('loss')">
+                        Loss <span class="count">${lostProjects.length}</span>
+                    </div>
+                    <div class="filter-tab ${currentProjectFilter === 'pending' ? 'active' : ''}" onclick="filterAllProjects('pending')">
+                        Pending <span class="count">${pendingProjects.length}</span>
+                    </div>
+                    <div class="filter-tab ${currentProjectFilter === 'approved' ? 'active' : ''}" onclick="filterAllProjects('approved')">
+                        Approved <span class="count">${approvedProjects.length}</span>
+                    </div>
+                    <div class="filter-tab ${currentProjectFilter === 'toBeAllocated' ? 'active' : ''}" onclick="filterAllProjects('toBeAllocated')">
+                        To Be Allocated <span class="count">${toBeAllocatedProjects.length}</span>
+                    </div>
+                    <div class="filter-tab ${currentProjectFilter === 'allocated' ? 'active' : ''}" onclick="filterAllProjects('allocated')">
+                        Allocated <span class="count">${allocatedProjects.length}</span>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>BDM</th>
+                                <th>Value</th>
+                                <th>Project Number</th>
+                                <th>Status</th>
+                                <th>Allocation Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${projectsHtml || '<tr><td colspan="8" class="text-center">No projects found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+        function filterAllProjects(filterType) {
+            currentProjectFilter = filterType;
+            renderAllProjects();
         }
 
         function showCreateProposalModal() {
@@ -3127,16 +3384,17 @@
                                     <div class="form-section">
                                         <h4>Project Number</h4>
                                         <div class="form-group">
-                                            <label>Generate Project Number <span class="required">*</span></label>
-                                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                            <label>Project Number <span class="required">*</span></label>
+                                            <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
                                                 <input type="text" id="projectNumber" class="form-control"
-                                                     placeholder="Click Generate to create project number" readonly required>
+                                                       placeholder="Enter manually or click Generate" 
+                                                       required>
                                                 <button type="button" onclick="generateProjectNumber('${proposal.clientCompany}')"
-                                                     class="btn btn-outline" style="width: auto; white-space: nowrap;">
-                                                    Generate Number
+                                                        class="btn btn-outline" style="width: auto; white-space: nowrap;">
+                                                    🔢 Auto Generate
                                                 </button>
                                             </div>
-                                            <small class="form-text">Project number will be auto-generated based on client name and year</small>
+                                            <small class="form-text">You can enter a project number manually or auto-generate one based on client name and year</small>
                                         </div>
                                     </div>
                                                                 
@@ -3386,22 +3644,36 @@
                             </div>
                                                 
                             <div class="modal-body">
-                                <div class="form-section" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                                    <h4>Project Information</h4>
-                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                                        <div>
-                                            <strong>Project Number:</strong>
-                                             <span style="color: var(--primary-blue); font-weight: 600;">
+                                <div class="allocation-details-section">
+                                    <h3>📋 Project Information</h3>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                                        <div style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">🔢 Project Number:</label>
+                                            <span class="project-number-badge" style="font-size: 1.3rem; padding: 0.7rem 1.2rem;">
                                                 ${proposal.pricing?.projectNumber || 'Not Set'}
                                             </span>
                                         </div>
-                                        <div><strong>Quote Value:</strong> ${proposal.pricing?.currency || ''} ${proposal.pricing?.quoteValue || 'N/A'}</div>
-                                        <div><strong>Status:</strong> <span class="proposal-status status-won">WON</span></div>
-                                        <div><strong>BDM:</strong> ${proposal.createdByName || 'N/A'}</div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Quote Value:</label>
+                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">${proposal.pricing?.currency || ''} ${proposal.pricing?.quoteValue?.toLocaleString() || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Status:</label>
+                                            <span class="proposal-status status-won">WON</span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">BDM:</label>
+                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">${proposal.createdByName || 'N/A'}</span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Client:</label>
+                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">${proposal.clientCompany || 'N/A'}</span>
+                                        </div>
                                     </div>
                                 </div>
-                                                        
-                                <form id="allocationForm">
+                                    <div style="margin-top: 2rem;">
+                                    <h3 style="color: var(--text-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">👤 Allocation Details</h3>
+                                    <form id="allocationForm">
                                     <div class="form-group">
                                         <label>Select Design Manager <span class="required">*</span></label>
                                         <select id="designManagerSelect" class="form-control" required>
