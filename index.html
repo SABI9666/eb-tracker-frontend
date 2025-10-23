@@ -1561,10 +1561,67 @@
            ============================================================================== */
     
 
-/* ========== ADDITIONAL STYLES ========== */
-.allocation-modal-large {    max-width: 800px;}.allocation-details-section {    background: var(--light-blue);    padding: 1.5rem;    border-radius: 12px;    margin-bottom: 2rem;    border: 1px solid rgba(0, 191, 255, 0.2);}.allocation-details-section h3 {    color: var(--primary-blue);    margin-bottom: 1rem;    font-size: 1.2rem;    font-weight: 600;    border-bottom: 2px solid var(--primary-blue);    padding-bottom: 0.5rem;}.project-number-badge {    background: var(--success);    color: white;    padding: 0.5rem 1rem;    border-radius: 8px;    display: inline-block;    font-weight: 700;}.allocation-status {    display: inline-block;    padding: 0.5rem 1rem;    border-radius: 20px;    background: #d4edda;    font-size: 0.9rem;}.btn-large {    padding: 1rem 2rem;    font-size: 1.1rem;}.btn-icon {    margin-right: 0.5rem;}.required {    color: var(--danger);    font-weight: bold;}.form-text {    display: block;    margin-top: 0.5rem;    font-size: 0.85rem;    color: var(--text-light);}
+/* ==================== ADDITIONAL STYLES ==================== */
+.allocation-modal-large {
+    max-width: 800px;
+}
 
-</style>
+.allocation-details-section {
+    background: var(--light-blue);
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 191, 255, 0.2);
+}
+
+.allocation-details-section h3 {
+    color: var(--primary-blue);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-bottom: 2px solid var(--primary-blue);
+    padding-bottom: 0.5rem;
+}
+
+.project-number-badge {
+    background: var(--success);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+    font-weight: 700;
+}
+
+.allocation-status {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background: #d4edda;
+    font-size: 0.9rem;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn-icon {
+    margin-right: 0.5rem;
+}
+
+.required {
+    color: var(--danger);
+    font-weight: bold;
+}
+
+.form-text {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+    </style>
 </head>
 <body>
     <div id="loginPage" class="login-page">
@@ -4872,11 +4929,416 @@
 
     
 
-// ========== ADDITIONAL FUNCTIONS ==========
+// ==================== DIRECTOR APPROVAL & ALLOCATION FUNCTIONS ====================
 
-function generateProposalActionButtons(proposal) {    const actions = [];        // ===== DIRECTOR APPROVE/REJECT BUTTONS =====    if (currentUserRole === 'director') {        // Show approve/reject for proposals that need approval        const needsApprovalStatuses = ['pricing_complete', 'pending_approval', 'estimation_complete'];        if (needsApprovalStatuses.includes(proposal.status) && proposal.status !== 'approved' && proposal.status !== 'rejected') {            actions.push(`                <button onclick="showDirectorApprovalModal('${proposal.id}', 'approve')" class="btn btn-success btn-sm">                    ✅ Approve                </button>            `);            actions.push(`                <button onclick="showDirectorApprovalModal('${proposal.id}', 'reject')" class="btn btn-danger btn-sm">                    ❌ Reject                </button>            `);        }    }        // ===== COO & DIRECTOR ALLOCATION BUTTON =====    if (['coo', 'director'].includes(currentUserRole)) {        // Show allocate button for WON proposals with project number        if (proposal.status === 'won' &&             proposal.pricing?.projectNumber &&             !proposal.projectCreated &&             proposal.allocationStatus !== 'allocated') {            actions.push(`                <button onclick="showAllocationModal('${proposal.id}')" class="btn btn-primary btn-sm">                    🎯 Allocate to Design Manager                </button>            `);        }                // Show allocation status if already allocated        if (proposal.allocationStatus === 'allocated' && proposal.designLeadName) {            actions.push(`                <span class="allocation-status" style="color: var(--success); font-weight: 600;">                    ✅ Allocated to: ${proposal.designLeadName}                </span>            `);        }    }        // Always show view button    actions.push(`        <button onclick="viewProposal('${proposal.id}')" class="btn btn-outline btn-sm">            👁️ View Details        </button>    `);        return `<div class="action-buttons">${actions.join('')}</div>`;}// ============================================// 2. DIRECTOR APPROVAL/REJECTION MODAL// ============================================function showDirectorApprovalModal(proposalId, actionType) {    const isApprove = actionType === 'approve';    const title = isApprove ? 'Approve Proposal' : 'Reject Proposal';    const buttonClass = isApprove ? 'btn-success' : 'btn-danger';    const buttonText = isApprove ? '✅ Approve' : '❌ Reject';        const modalHtml = `        <div class="modal-overlay">            <div class="modal-content" style="max-width: 600px;">                <div class="modal-header">                    <h2>${title}</h2>                    <span class="close-modal" onclick="closeModal()">&times;</span>                </div>                                <div class="modal-body">                    <div class="form-section" style="background: ${isApprove ? 'var(--light-blue)' : '#fff3cd'}; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">                        <h4 style="color: ${isApprove ? 'var(--primary-blue)' : 'var(--warning)'};">                            ${isApprove ? '✅ Approve this proposal?' : '⚠️ Reject this proposal?'}                        </h4>                        <p style="margin-top: 0.5rem;">                            ${isApprove                                 ? 'Approving will allow the BDM to submit this proposal to the client.'                                 : 'Rejecting will send this proposal back with your feedback.'}                        </p>                    </div>                                        <form id="directorApprovalForm">                        <input type="hidden" id="approvalProposalId" value="${proposalId}">                        <input type="hidden" id="approvalAction" value="${actionType}">                                                ${!isApprove ? `                            <div class="form-group">                                <label for="rejectionReason">Rejection Reason <span class="required">*</span></label>                                <textarea id="rejectionReason" class="form-control" rows="3"                                     placeholder="Please provide a clear reason for rejection..." required></textarea>                                <small class="form-text">This will be sent to the BDM and COO</small>                            </div>                        ` : ''}                                                <div class="form-group">                            <label for="approvalComments">Additional Comments ${!isApprove ? '(Optional)' : ''}</label>                            <textarea id="approvalComments" class="form-control" rows="3"                                 placeholder="Add any additional notes or instructions..."></textarea>                        </div>                    </form>                </div>                                <div class="modal-footer">                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>                    <button type="button" onclick="submitDirectorApproval()" class="btn ${buttonClass}">                        ${buttonText}                    </button>                </div>            </div>        </div>    `;        document.body.insertAdjacentHTML('beforeend', modalHtml);}async function submitDirectorApproval() {    const proposalId = document.getElementById('approvalProposalId').value;    const actionType = document.getElementById('approvalAction').value;    const comments = document.getElementById('approvalComments').value;        const isApprove = actionType === 'approve';        // Validation for rejection    if (!isApprove) {        const reason = document.getElementById('rejectionReason').value.trim();        if (!reason) {            alert('Please provide a reason for rejection');            return;        }    }        try {        showLoading();                const requestData = {            action: isApprove ? 'approve_proposal' : 'reject_proposal',            data: {                comments: comments            }        };                if (!isApprove) {            requestData.data.reason = document.getElementById('rejectionReason').value.trim();        }                const response = await apiCall(`proposals?id=${proposalId}`, {            method: 'PUT',            headers: { 'Content-Type': 'application/json' },            body: JSON.stringify(requestData)        });                if (response.success) {            closeModal();            showSuccessModal(                isApprove ? 'Proposal Approved!' : 'Proposal Rejected',                isApprove                     ? 'The proposal has been approved and BDM has been notified.'                     : 'The proposal has been rejected and BDM has been notified with your feedback.'            );                        // Refresh proposals list            setTimeout(() => {                showProposals();            }, 1500);        } else {            throw new Error(response.error || 'Failed to process approval/rejection');        }            } catch (error) {        console.error('Error processing approval/rejection:', error);        alert('Error: ' + error.message);    } finally {        hideLoading();    }}// ============================================// 3. ALLOCATION MODAL FOR WON PROJECTS// ============================================async function showAllocationModal(proposalId) {    try {        showLoading();                // Load proposal details        const proposalResponse = await apiCall(`proposals?id=${proposalId}`);        if (!proposalResponse.success || !proposalResponse.data) {            throw new Error('Failed to load proposal');        }        const proposal = proposalResponse.data;                // Check if proposal is WON        if (proposal.status !== 'won') {            alert('Only WON proposals can be allocated to Design Managers');            hideLoading();            return;        }                // Check if has project number        if (!proposal.pricing?.projectNumber) {            alert('This proposal does not have a project number yet. Please assign a project number first.');            hideLoading();            return;        }                // Load design managers (users with role='design_lead')        const usersResponse = await apiCall('users?role=design_lead');                let designManagers = [];        if (usersResponse.success && usersResponse.data) {            designManagers = usersResponse.data;        }                if (designManagers.length === 0) {            alert('No Design Managers found in the system. Please create Design Manager users first.');            hideLoading();            return;        }                const modalHtml = `            <div class="modal-overlay">                <div class="modal-content allocation-modal-large" style="max-width: 800px;">                    <div class="modal-header">                        <div>                            <h2>🎯 Allocate Project to Design Manager</h2>                            <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>                        </div>                        <span class="close-modal" onclick="closeModal()">&times;</span>                    </div>                                        <div class="modal-body">                        <!-- Project Information Section -->                        <div class="allocation-details-section">                            <h3>📋 Project Information</h3>                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">                                <div style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">                                        🔢 Project Number:                                    </label>                                    <span class="project-number-badge" style="font-size: 1.3rem; padding: 0.7rem 1.2rem;">                                        ${proposal.pricing.projectNumber}                                    </span>                                </div>                                <div>                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Quote Value:</label>                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">                                        ${proposal.pricing.currency} ${proposal.pricing.quoteValue?.toLocaleString()}                                    </span>                                </div>                                <div>                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Status:</label>                                    <span class="proposal-status status-won">WON</span>                                </div>                                <div>                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">BDM:</label>                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">                                        ${proposal.createdByName || 'N/A'}                                    </span>                                </div>                                <div>                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Client:</label>                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">                                        ${proposal.clientCompany}                                    </span>                                </div>                            </div>                        </div>                                                <!-- Allocation Form Section -->                        <div style="margin-top: 2rem;">                            <h3 style="color: var(--text-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">                                👤 Allocation Details                            </h3>                                                        <form id="allocationForm">                                <input type="hidden" id="allocationProposalId" value="${proposalId}">                                                                <div class="form-group">                                    <label for="designManagerSelect">Select Design Manager <span class="required">*</span></label>                                    <select id="designManagerSelect" class="form-control" required>                                        <option value="">Choose a Design Manager...</option>                                        ${designManagers.map(dm => `                                            <option value="${dm.uid}" data-name="${dm.name}" data-email="${dm.email}">                                                ${dm.name} (${dm.email})                                            </option>                                        `).join('')}                                    </select>                                    <small class="form-text">Select the Design Manager who will oversee this project</small>                                </div>                                                                <div class="form-group">                                    <label for="targetCompletionDate">Target Completion Date</label>                                    <input type="date" id="targetCompletionDate" class="form-control"                                         min="${new Date().toISOString().split('T')[0]}">                                    <small class="form-text">Expected project completion date</small>                                </div>                                                                <div class="form-group">                                    <label for="projectPriority">Project Priority</label>                                    <select id="projectPriority" class="form-control">                                        <option value="Normal">Normal</option>                                        <option value="High">High</option>                                        <option value="Urgent">Urgent</option>                                        <option value="Low">Low</option>                                    </select>                                </div>                                                                <div class="form-group">                                    <label for="allocationComments">Allocation Comments <span class="required">*</span></label>                                    <textarea id="allocationComments" class="form-control" rows="4"                                         placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>                                    <small class="form-text">Provide clear guidance and expectations for this project</small>                                </div>                                                                <div class="form-group">                                    <label for="specialInstructions">Special Instructions</label>                                    <textarea id="specialInstructions" class="form-control" rows="3"                                         placeholder="Add any special client requirements, constraints, or important notes..."></textarea>                                </div>                            </form>                        </div>                    </div>                                        <div class="modal-footer">                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>                        <button type="button" onclick="submitAllocation()" class="btn btn-success btn-large">                            <span class="btn-icon">✓</span> Allocate Project                        </button>                    </div>                </div>            </div>        `;                document.body.insertAdjacentHTML('beforeend', modalHtml);        hideLoading();            } catch (error) {        console.error('Error showing allocation modal:', error);        alert('Error loading allocation form: ' + error.message);        hideLoading();    }}async function submitAllocation() {    const proposalId = document.getElementById('allocationProposalId').value;    const designManagerSelect = document.getElementById('designManagerSelect');    const designManagerUid = designManagerSelect.value;    const targetCompletionDate = document.getElementById('targetCompletionDate').value;    const projectPriority = document.getElementById('projectPriority').value;    const allocationComments = document.getElementById('allocationComments').value.trim();    const specialInstructions = document.getElementById('specialInstructions').value.trim();        // Validation    if (!designManagerUid) {        alert('Please select a Design Manager');        return;    }        if (!allocationComments) {        alert('Please add allocation comments');        return;    }        try {        showLoading();                // Get design manager details        const selectedOption = designManagerSelect.options[designManagerSelect.selectedIndex];        const designManagerName = selectedOption.getAttribute('data-name');        const designManagerEmail = selectedOption.getAttribute('data-email');                // First, create the project if not already created        const createProjectResponse = await apiCall('projects', {            method: 'POST',            headers: { 'Content-Type': 'application/json' },            body: JSON.stringify({                action: 'create_from_proposal',                proposalId: proposalId            })        });                if (!createProjectResponse.success) {            // Project might already exist, try to get it            const proposalResponse = await apiCall(`proposals?id=${proposalId}`);            if (!proposalResponse.data.projectId) {                throw new Error('Failed to create project: ' + (createProjectResponse.error || 'Unknown error'));            }        }                // Get the project ID        const proposalResponse = await apiCall(`proposals?id=${proposalId}`);        const projectId = proposalResponse.data.projectId;                if (!projectId) {            throw new Error('Project ID not found');        }                // Now allocate to design manager        const allocationData = {            designLeadUid: designManagerUid,            targetCompletionDate: targetCompletionDate || null,            priority: projectPriority,            allocationNotes: allocationComments,            specialInstructions: specialInstructions        };                const response = await apiCall(`projects?id=${projectId}`, {            method: 'PUT',            headers: { 'Content-Type': 'application/json' },            body: JSON.stringify({                action: 'allocate_design_lead',                data: allocationData            })        });                if (response.success) {            // Update proposal allocation status            await apiCall(`proposals?id=${proposalId}`, {                method: 'PUT',                headers: { 'Content-Type': 'application/json' },                body: JSON.stringify({                    action: 'update_allocation_status',                    data: {                        allocationStatus: 'allocated',                        designLeadName: designManagerName,                        designLeadUid: designManagerUid,                        allocatedAt: new Date().toISOString()                    }                })            });                        closeModal();            showSuccessModal(                'Project Allocated Successfully! 🎉',                `Project has been allocated to ${designManagerName}. They will be notified immediately.`            );                        // Refresh proposals list or all projects view            setTimeout(() => {                if (document.getElementById('allProjectsSection')?.style.display !== 'none') {                    showAllProjects();                } else {                    showProposals();                }            }, 1500);        } else {            throw new Error(response.error || 'Failed to allocate project');        }            } catch (error) {        console.error('Error allocating project:', error);        alert('Error allocating project: ' + error.message);    } finally {        hideLoading();    }}// ============================================// 4. ADD CSS STYLES (Add to <style> section)// ============================================
+function generateProposalActionButtons(proposal) {
+    const actions = [];
+    
+    // ===== DIRECTOR APPROVE/REJECT BUTTONS =====
+    if (currentUserRole === 'director') {
+        const needsApprovalStatuses = ['pricing_complete', 'pending_approval', 'estimation_complete'];
+        if (needsApprovalStatuses.includes(proposal.status) && 
+            proposal.status !== 'approved' && proposal.status !== 'rejected') {
+            actions.push(`
+                <button onclick="showDirectorApprovalModal('${proposal.id}', 'approve')" class="btn btn-success btn-sm">
+                    ✅ Approve
+                </button>
+            `);
+            actions.push(`
+                <button onclick="showDirectorApprovalModal('${proposal.id}', 'reject')" class="btn btn-danger btn-sm">
+                    ❌ Reject
+                </button>
+            `);
+        }
+    }
+    
+    // ===== COO & DIRECTOR ALLOCATION BUTTON =====
+    if (['coo', 'director'].includes(currentUserRole)) {
+        if (proposal.status === 'won' && 
+            proposal.pricing?.projectNumber && 
+            !proposal.projectCreated && 
+            proposal.allocationStatus !== 'allocated') {
+            actions.push(`
+                <button onclick="showAllocationModal('${proposal.id}')" class="btn btn-primary btn-sm">
+                    🎯 Allocate to Design Manager
+                </button>
+            `);
+        }
+        
+        if (proposal.allocationStatus === 'allocated' && proposal.designLeadName) {
+            actions.push(`
+                <span class="allocation-status" style="color: var(--success); font-weight: 600;">
+                    ✅ Allocated to: ${proposal.designLeadName}
+                </span>
+            `);
+        }
+    }
+    
+    actions.push(`
+        <button onclick="viewProposal('${proposal.id}')" class="btn btn-outline btn-sm">
+            👁️ View Details
+        </button>
+    `);
+    
+    return `<div class="action-buttons">${actions.join('')}</div>`;
+}
 
-</script>
+function showDirectorApprovalModal(proposalId, actionType) {
+    const isApprove = actionType === 'approve';
+    const title = isApprove ? 'Approve Proposal' : 'Reject Proposal';
+    const buttonClass = isApprove ? 'btn-success' : 'btn-danger';
+    const buttonText = isApprove ? '✅ Approve' : '❌ Reject';
+    
+    const modalHtml = `
+        <div class="modal-overlay">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>${title}</h2>
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <div class="form-section" style="background: ${isApprove ? 'var(--light-blue)' : '#fff3cd'}; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <h4 style="color: ${isApprove ? 'var(--primary-blue)' : 'var(--warning)'};">
+                            ${isApprove ? '✅ Approve this proposal?' : '⚠️ Reject this proposal?'}
+                        </h4>
+                        <p style="margin-top: 0.5rem;">
+                            ${isApprove 
+                                ? 'Approving will allow the BDM to submit this proposal to the client.' 
+                                : 'Rejecting will send this proposal back with your feedback.'}
+                        </p>
+                    </div>
+                    <form id="directorApprovalForm">
+                        <input type="hidden" id="approvalProposalId" value="${proposalId}">
+                        <input type="hidden" id="approvalAction" value="${actionType}">
+                        ${!isApprove ? `
+                            <div class="form-group">
+                                <label for="rejectionReason">Rejection Reason <span class="required">*</span></label>
+                                <textarea id="rejectionReason" class="form-control" rows="3" 
+                                    placeholder="Please provide a clear reason for rejection..." required></textarea>
+                                <small class="form-text">This will be sent to the BDM and COO</small>
+                            </div>
+                        ` : ''}
+                        <div class="form-group">
+                            <label for="approvalComments">Additional Comments ${!isApprove ? '(Optional)' : ''}</label>
+                            <textarea id="approvalComments" class="form-control" rows="3" 
+                                placeholder="Add any additional notes or instructions..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                    <button type="button" onclick="submitDirectorApproval()" class="btn ${buttonClass}">
+                        ${buttonText}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+async function submitDirectorApproval() {
+    const proposalId = document.getElementById('approvalProposalId').value;
+    const actionType = document.getElementById('approvalAction').value;
+    const comments = document.getElementById('approvalComments').value;
+    const isApprove = actionType === 'approve';
+    
+    if (!isApprove) {
+        const reason = document.getElementById('rejectionReason').value.trim();
+        if (!reason) {
+            alert('Please provide a reason for rejection');
+            return;
+        }
+    }
+    
+    try {
+        showLoading();
+        const requestData = {
+            action: isApprove ? 'approve_proposal' : 'reject_proposal',
+            data: { comments: comments }
+        };
+        
+        if (!isApprove) {
+            requestData.data.reason = document.getElementById('rejectionReason').value.trim();
+        }
+        
+        const response = await apiCall(`proposals?id=${proposalId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (response.success) {
+            closeModal();
+            showSuccessModal(
+                isApprove ? 'Proposal Approved!' : 'Proposal Rejected',
+                isApprove 
+                    ? 'The proposal has been approved and BDM has been notified.' 
+                    : 'The proposal has been rejected and BDM has been notified with your feedback.'
+            );
+            setTimeout(() => { showProposals(); }, 1500);
+        } else {
+            throw new Error(response.error || 'Failed to process approval/rejection');
+        }
+    } catch (error) {
+        console.error('Error processing approval/rejection:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+async function showAllocationModal(proposalId) {
+    try {
+        showLoading();
+        const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+        if (!proposalResponse.success || !proposalResponse.data) {
+            throw new Error('Failed to load proposal');
+        }
+        const proposal = proposalResponse.data;
+        
+        if (proposal.status !== 'won') {
+            alert('Only WON proposals can be allocated to Design Managers');
+            hideLoading();
+            return;
+        }
+        
+        if (!proposal.pricing?.projectNumber) {
+            alert('This proposal does not have a project number yet. Please assign a project number first.');
+            hideLoading();
+            return;
+        }
+        
+        const usersResponse = await apiCall('users?role=design_lead');
+        let designManagers = [];
+        if (usersResponse.success && usersResponse.data) {
+            designManagers = usersResponse.data;
+        }
+        
+        if (designManagers.length === 0) {
+            alert('No Design Managers found in the system. Please create Design Manager users first.');
+            hideLoading();
+            return;
+        }
+        
+        const modalHtml = `
+            <div class="modal-overlay">
+                <div class="modal-content allocation-modal-large" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <div>
+                            <h2>🎯 Allocate Project to Design Manager</h2>
+                            <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
+                        </div>
+                        <span class="close-modal" onclick="closeModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="allocation-details-section">
+                            <h3>📋 Project Information</h3>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                                <div style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">
+                                        🔢 Project Number:
+                                    </label>
+                                    <span class="project-number-badge" style="font-size: 1.3rem; padding: 0.7rem 1.2rem;">
+                                        ${proposal.pricing.projectNumber}
+                                    </span>
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Quote Value:</label>
+                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
+                                        ${proposal.pricing.currency} ${proposal.pricing.quoteValue?.toLocaleString()}
+                                    </span>
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Status:</label>
+                                    <span class="proposal-status status-won">WON</span>
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">BDM:</label>
+                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
+                                        ${proposal.createdByName || 'N/A'}
+                                    </span>
+                                </div>
+                                <div>
+                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Client:</label>
+                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
+                                        ${proposal.clientCompany}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 2rem;">
+                            <h3 style="color: var(--text-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">
+                                👤 Allocation Details
+                            </h3>
+                            <form id="allocationForm">
+                                <input type="hidden" id="allocationProposalId" value="${proposalId}">
+                                <div class="form-group">
+                                    <label for="designManagerSelect">Select Design Manager <span class="required">*</span></label>
+                                    <select id="designManagerSelect" class="form-control" required>
+                                        <option value="">Choose a Design Manager...</option>
+                                        ${designManagers.map(dm => `
+                                            <option value="${dm.uid}" data-name="${dm.name}" data-email="${dm.email}">
+                                                ${dm.name} (${dm.email})
+                                            </option>
+                                        `).join('')}
+                                    </select>
+                                    <small class="form-text">Select the Design Manager who will oversee this project</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="targetCompletionDate">Target Completion Date</label>
+                                    <input type="date" id="targetCompletionDate" class="form-control"
+                                         min="${new Date().toISOString().split('T')[0]}">
+                                    <small class="form-text">Expected project completion date</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="projectPriority">Project Priority</label>
+                                    <select id="projectPriority" class="form-control">
+                                        <option value="Normal">Normal</option>
+                                        <option value="High">High</option>
+                                        <option value="Urgent">Urgent</option>
+                                        <option value="Low">Low</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="allocationComments">Allocation Comments <span class="required">*</span></label>
+                                    <textarea id="allocationComments" class="form-control" rows="4"
+                                         placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
+                                    <small class="form-text">Provide clear guidance and expectations for this project</small>
+                                </div>
+                                <div class="form-group">
+                                    <label for="specialInstructions">Special Instructions</label>
+                                    <textarea id="specialInstructions" class="form-control" rows="3"
+                                         placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                        <button type="button" onclick="submitAllocation()" class="btn btn-success btn-large">
+                            <span class="btn-icon">✓</span> Allocate Project
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        hideLoading();
+    } catch (error) {
+        console.error('Error showing allocation modal:', error);
+        alert('Error loading allocation form: ' + error.message);
+        hideLoading();
+    }
+}
+
+async function submitAllocation() {
+    const proposalId = document.getElementById('allocationProposalId').value;
+    const designManagerSelect = document.getElementById('designManagerSelect');
+    const designManagerUid = designManagerSelect.value;
+    const targetCompletionDate = document.getElementById('targetCompletionDate').value;
+    const projectPriority = document.getElementById('projectPriority').value;
+    const allocationComments = document.getElementById('allocationComments').value.trim();
+    const specialInstructions = document.getElementById('specialInstructions').value.trim();
+    
+    if (!designManagerUid) {
+        alert('Please select a Design Manager');
+        return;
+    }
+    
+    if (!allocationComments) {
+        alert('Please add allocation comments');
+        return;
+    }
+    
+    try {
+        showLoading();
+        const selectedOption = designManagerSelect.options[designManagerSelect.selectedIndex];
+        const designManagerName = selectedOption.getAttribute('data-name');
+        const designManagerEmail = selectedOption.getAttribute('data-email');
+        
+        const createProjectResponse = await apiCall('projects', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'create_from_proposal',
+                proposalId: proposalId
+            })
+        });
+        
+        if (!createProjectResponse.success) {
+            const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+            if (!proposalResponse.data.projectId) {
+                throw new Error('Failed to create project: ' + (createProjectResponse.error || 'Unknown error'));
+            }
+        }
+        
+        const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+        const projectId = proposalResponse.data.projectId;
+        
+        if (!projectId) {
+            throw new Error('Project ID not found');
+        }
+        
+        const allocationData = {
+            designLeadUid: designManagerUid,
+            targetCompletionDate: targetCompletionDate || null,
+            priority: projectPriority,
+            allocationNotes: allocationComments,
+            specialInstructions: specialInstructions
+        };
+        
+        const response = await apiCall(`projects?id=${projectId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'allocate_design_lead',
+                data: allocationData
+            })
+        });
+        
+        if (response.success) {
+            await apiCall(`proposals?id=${proposalId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'update_allocation_status',
+                    data: {
+                        allocationStatus: 'allocated',
+                        designLeadName: designManagerName,
+                        designLeadUid: designManagerUid,
+                        allocatedAt: new Date().toISOString()
+                    }
+                })
+            });
+            
+            closeModal();
+            showSuccessModal(
+                'Project Allocated Successfully! 🎉',
+                `Project has been allocated to ${designManagerName}. They will be notified immediately.`
+            );
+            
+            setTimeout(() => {
+                if (document.getElementById('allProjectsSection')?.style.display !== 'none') {
+                    showAllProjects();
+                } else {
+                    showProposals();
+                }
+            }, 1500);
+        } else {
+            throw new Error(response.error || 'Failed to allocate project');
+        }
+    } catch (error) {
+        console.error('Error allocating project:', error);
+        alert('Error allocating project: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+    </script>
 
     <div id="cooProjectNumberSection" style="display: none;">
         <div class="page-header">
