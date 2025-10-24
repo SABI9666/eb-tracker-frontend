@@ -5448,14 +5448,14 @@ async function showAllocationModal(proposalId) {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="allocationComments">Allocation Comments <span class="required">*</span></label>
-                                    <textarea id="allocationComments" class="form-control" rows="4"
+                                    <label for="allocationComments2">Allocation Comments <span class="required">*</span></label>
+                                    <textarea id="allocationComments2" class="form-control" rows="4"
                                          placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
                                     <small class="form-text">Provide clear guidance and expectations for this project</small>
                                 </div>
                                 <div class="form-group">
-                                    <label for="specialInstructions">Special Instructions</label>
-                                    <textarea id="specialInstructions" class="form-control" rows="3"
+                                    <label for="specialInstructions2">Special Instructions</label>
+                                    <textarea id="specialInstructions2" class="form-control" rows="3"
                                          placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
                                 </div>
                             </form>
@@ -5487,8 +5487,8 @@ async function submitAllocation() {
     const designManagerUid = designManagerSelect.value;
     const targetCompletionDate = document.getElementById('targetCompletionDate').value;
     const projectPriority = document.getElementById('projectPriority').value;
-    const allocationComments = document.getElementById('allocationComments').value.trim();
-    const specialInstructions = document.getElementById('specialInstructions').value.trim();
+    const allocationComments = document.getElementById('allocationComments2').value.trim();
+    const specialInstructions = document.getElementById('specialInstructions2').value.trim();
     
     // FIXED: Proper validation
     if (!designManagerUid) {
@@ -5500,7 +5500,7 @@ async function submitAllocation() {
     // FIXED: Better validation message with minimum character requirement
     if (!allocationComments || allocationComments.length < 10) {
         alert('⚠️ Please add allocation comments (at least 10 characters)');
-        document.getElementById('allocationComments').focus();
+        document.getElementById('allocationComments2').focus();
         return;
     }
     
@@ -5776,8 +5776,8 @@ async function submitAllocation() {
                         <small class="form-text">Select the Design Manager who will oversee this project</small>
                     </div>
                     <div class="form-group">
-                        <label for="allocationComments">Allocation Comments</label>
-                        <textarea id="allocationComments" class="form-control" rows="4"
+                        <label for="allocationComments3">Allocation Comments</label>
+                        <textarea id="allocationComments3" class="form-control" rows="4"
                             placeholder="Add any special instructions, priorities, or notes for the Design Manager..."></textarea>
                         <small class="form-text">These comments will be visible to the Design Manager</small>
                     </div>
