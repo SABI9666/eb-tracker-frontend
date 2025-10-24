@@ -3367,11 +3367,11 @@
             
             try {
                 showLoading();
-                const response = await apiCall(`proposals?id=${id}`, {
+           const response = await apiCall(`proposals?id=${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'director_approve',
+                        action: 'approve_proposal', // <-- CORRECT
                         data: { comments: comments || 'Approved by Director' }
                     })
                 });
@@ -3447,8 +3447,8 @@
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        action: 'director_reject',
-                        data: { comments: reason }
+                        action: 'reject_proposal', // <-- CORRECT
+                        data: { reason: reason } // Also fix the data key from 'comments' to 'reason'
                     })
                 });
                 
