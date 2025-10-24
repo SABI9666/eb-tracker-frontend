@@ -4912,7 +4912,7 @@
                         <button onclick="viewProject('${project.id}')">View Details</button>
                         ${project.status === 'active' ?
                             `<button onclick="assignDesigners('${project.id}')">Assign Designers</button>` : ''}
-                        <button onclick="viewBDMFiles('${project.id}')">View BDM Files</button>
+                        <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
                     </div>
                 </div>
             `;
