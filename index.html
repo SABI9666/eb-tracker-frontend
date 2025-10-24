@@ -2510,6 +2510,77 @@
                 hideLoading();
             }
         }
+         // ============================================
+        // EXECUTIVE MONITORING & TIMESHEET FUNCTIONS
+        // ============================================
+        
+        async function showExecutiveMonitoring() {
+            setActiveNav('nav-executive');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            
+            try {
+                console.log('📊 Loading Executive Monitoring...');
+                
+                // Get the template content
+                const templateContent = document.getElementById('executiveTimesheetMonitoring');
+                if (!templateContent) {
+                    throw new Error('Executive Monitoring template not found');
+                }
+                
+                // Clone and insert into main content
+                main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
+                
+                // Load the data
+                await loadExecutiveMonitoring();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Executive Monitoring error:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Error Loading Executive Monitoring</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showExecutiveMonitoring()" class="btn btn-primary">Retry</button>
+                    </div>
+                `;
+                hideLoading();
+            }
+        }
+
+        async function showTimesheet() {
+            setActiveNav('nav-timesheet');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            
+            try {
+                console.log('⏱️ Loading Timesheet...');
+                
+                // Get the template content
+                const templateContent = document.getElementById('timesheetSection');
+                if (!templateContent) {
+                    throw new Error('Timesheet template not found');
+                }
+                
+                // Clone and insert into main content
+                main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
+                
+                // Load the data
+                await loadTimesheets();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Timesheet error:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Error Loading Timesheet</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showTimesheet()" class="btn btn-primary">Retry</button>
+                    </div>
+                `;
+                hideLoading();
+            }
+        }
         function renderAllProjects() {
             const wonProjects = allProjectsData.filter(p => p.status === 'won');
             const lostProjects = allProjectsData.filter(p => p.status === 'lost');
