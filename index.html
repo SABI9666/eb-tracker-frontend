@@ -5013,16 +5013,15 @@
         }
 
         // Function to view BDM uploaded files
-        async function viewBDMFiles(projectId) {
+              async function viewBDMFiles(projectId, proposalId) { // <-- Added proposalId
             try {
                 showLoading();
-                const response = await apiCall(`projects?id=${projectId}`);
-                if (!response.success) throw new Error('Failed to fetch project details');
-
-                const project = response.data;
+                // const response = await apiCall(`projects?id=${projectId}`); // <-- REMOVED THIS FAILING CALL
+                // if (!response.success) throw new Error('Failed to fetch project details');
+                // const project = response.data;
 
                 // Use apiCall to get files related to the original proposal
-                const filesResponse = await apiCall(`files?proposalId=${project.proposalId}`); // Use proposalId stored in project
+                const filesResponse = await apiCall(`files?proposalId=${proposalId}`); // <-- Use passed-in proposalId
                 const allFiles = filesResponse.success ? filesResponse.data : [];
                 // Filter for original project/BDM files (type 'project' or null/undefined)
                 const bdmFiles = allFiles.filter(f => f.fileType === 'project' || !f.fileType);
