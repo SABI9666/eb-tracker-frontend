@@ -5416,6 +5416,7 @@ async function showAllocationModal(proposalId) {
     }
 }
 
+// Submit Allocation - FIXED VERSION
 async function submitAllocation() {
     const proposalId = document.getElementById('allocationProposalId').value;
     const designManagerSelect = document.getElementById('designManagerSelect');
@@ -5425,13 +5426,17 @@ async function submitAllocation() {
     const allocationComments = document.getElementById('allocationComments').value.trim();
     const specialInstructions = document.getElementById('specialInstructions').value.trim();
     
+    // FIXED: Proper validation
     if (!designManagerUid) {
-        alert('Please select a Design Manager');
+        alert('⚠️ Please select a Design Manager');
+        document.getElementById('designManagerSelect').focus();
         return;
     }
     
-    if (!allocationComments) {
-        alert('Please add allocation comments');
+    // FIXED: Better validation message with minimum character requirement
+    if (!allocationComments || allocationComments.length < 10) {
+        alert('⚠️ Please add allocation comments (at least 10 characters)');
+        document.getElementById('allocationComments').focus();
         return;
     }
     
@@ -5441,6 +5446,7 @@ async function submitAllocation() {
         const designManagerName = selectedOption.getAttribute('data-name');
         const designManagerEmail = selectedOption.getAttribute('data-email');
         
+        // Create project from proposal
         const createProjectResponse = await apiCall('projects', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -5457,6 +5463,7 @@ async function submitAllocation() {
             }
         }
         
+        // Get the project ID
         const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
         const projectId = proposalResponse.data.projectId;
         
@@ -5464,6 +5471,7 @@ async function submitAllocation() {
             throw new Error('Project ID not found');
         }
         
+        // Allocate to design lead
         const allocationData = {
             designLeadUid: designManagerUid,
             targetCompletionDate: targetCompletionDate || null,
@@ -5476,12 +5484,13 @@ async function submitAllocation() {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                action: 'allocate_design_lead',
+                action: 'allocate_to_design_lead',
                 data: allocationData
             })
         });
         
         if (response.success) {
+            // Update proposal allocation status
             await apiCall(`proposals?id=${proposalId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
@@ -5497,27 +5506,21 @@ async function submitAllocation() {
             });
             
             closeModal();
-            showSuccessModal(
-                'Project Allocated Successfully! 🎉',
-                `Project has been allocated to ${designManagerName}. They will be notified immediately.`
-            );
+            alert(`✅ Project Allocated Successfully!\n\nProject has been allocated to ${designManagerName}. They will be notified immediately.`);
             
             setTimeout(() => {
-                if (document.getElementById('allProjectsSection')?.style.display !== 'none') {
-                    showAllProjects();
-                } else {
-                    showProposals();
-                }
-            }, 1500);
+                showProposals();
+            }, 1000);
         } else {
             throw new Error(response.error || 'Failed to allocate project');
         }
     } catch (error) {
         console.error('Error allocating project:', error);
-        alert('Error allocating project: ' + error.message);
+        alert('❌ Error allocating project: ' + error.message);
     } finally {
         hideLoading();
     }
+}
 }
 
     </script>
