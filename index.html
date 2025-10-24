@@ -1785,14 +1785,9 @@
         // API & AUTH CONFIGURATION
         // ============================================
 
-        function getApiBase() {
-            if (window.location.hostname === 'localhost' ||
-                window.location.hostname === '127.0.0.1') {
-                return 'http://localhost:3000';
-            }
-            return 'https://eb-tracker-backend.onrender.com';  // UPDATE THIS URL!
-        }
-        const API_BASE = getApiBase();
+        // FIXED: Direct backend URL configuration
+        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        console.log('🔧 Backend URL configured:', API_BASE);
 
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
@@ -1838,7 +1833,8 @@
                 method: options.method || 'GET',
                 ...options,
                 headers: { ...defaultHeaders, ...(options.headers || {}) },
-                mode: 'cors'
+                mode: 'cors',
+                credentials: 'omit' // FIXED: Don't send credentials with origin: '*'
             };
 
             try {
