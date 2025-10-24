@@ -4430,7 +4430,7 @@
             if (currentUserRole === 'design_lead') {
                 relevantProjects = projects.filter(p => p.designLeadUid === currentUser.uid);
             } else if (currentUserRole === 'designer') {
-                relevantProjects = projects.filter(p => p.assignedDesignerUids?.includes(currentUser.uid));
+               relevantProjects = projects.filter(p => p.assignedDesigners?.includes(currentUser.uid));
             }
             // COO/Director see all
 
