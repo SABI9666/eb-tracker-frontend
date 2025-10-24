@@ -1,3 +1,6 @@
+Index corrected · HTML
+Copy
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -28,7 +31,7 @@
             line-height: 1.6;
         }
 
-        /* Login styles */
+        /* Login styles remain the same */
         .login-page { min-height: 100vh; background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); display: flex; align-items: center; justify-content: center; padding: 2rem; }
         .login-container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; display: flex; min-width: 1000px; min-height: 600px; }
         .login-left { flex: 1; background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 3rem; text-align: center; }
@@ -68,7 +71,6 @@
         .btn-warning { background: var(--warning); color: white; }
         .btn-sm { padding: 0.6rem 1.2rem; font-size: 0.85rem; width: auto; }
         .btn-disabled { background: #ccc; color: #666; cursor: not-allowed; }
-        .btn-cancel { background: #6c757d; color: white; }
 
         .role-selector { margin-bottom: 1.5rem; }
         .role-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
@@ -161,41 +163,54 @@
         .stat-card:hover {
             transform: translateY(-5px);
         }
-        .stat-card .stat-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: var(--primary-blue);
-        }
-        .stat-card .stat-value {
+        .stat-number {
             font-size: 3rem;
             font-weight: bold;
             color: var(--primary-blue);
+            display: block;
             margin-bottom: 0.5rem;
         }
-        .stat-card .stat-label {
+        .stat-label {
             color: var(--text-light);
-            font-weight: 600;
+            font-size: 1.1rem;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 0.9rem;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
-        /* Card */
-        .card {
+        /* Recent Activity */
+        .activity-section, .recent-projects {
             background: white;
             padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
             margin-bottom: 2rem;
         }
-        .card-title {
+        .activity-section h3, .recent-projects h3 {
             font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--text-dark);
             margin-bottom: 1.5rem;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--light-blue);
+            padding-bottom: 0.5rem;
+        }
+        .activity-item {
+            padding: 1rem;
+            border-left: 3px solid var(--primary-blue);
+            margin-bottom: 1rem;
+            background: var(--light-blue);
+            border-radius: 0 8px 8px 0;
+        }
+        .activity-item strong {
+            color: var(--primary-blue);
+        }
+        .activity-time {
+            display: block;
+            color: var(--text-light);
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
         }
 
-        /* Data table */
+        /* Data table styling */
         .data-table {
             width: 100%;
             border-collapse: collapse;
@@ -207,38 +222,28 @@
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
             color: white;
         }
-        .data-table th {
-            padding: 1.2rem;
+        .data-table th, .data-table td {
+            padding: 1rem;
             text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table th {
             font-weight: 600;
             text-transform: uppercase;
             font-size: 0.85rem;
             letter-spacing: 0.5px;
         }
-        .data-table td {
-            padding: 1.2rem;
-            border-bottom: 1px solid var(--border);
+        .data-table tbody tr {
+            transition: background 0.2s ease;
         }
         .data-table tbody tr:hover {
             background: var(--light-blue);
         }
-        .text-center { text-align: center; }
-
-        /* Status badges */
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            display: inline-block;
+        .data-table tbody tr:last-child td {
+            border-bottom: none;
         }
-        .status-pending { background: #fff3cd; color: #856404; }
-        .status-in-progress { background: #cfe2ff; color: #084298; }
-        .status-completed { background: #d1e7dd; color: #0f5132; }
-        .status-approved { background: #d1e7dd; color: #0f5132; }
-        .status-rejected { background: #f8d7da; color: #842029; }
 
-        /* Modal */
+        /* Enhanced Modal */
         .modal {
             display: none;
             position: fixed;
@@ -247,23 +252,40 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(5px);
+            animation: fadeIn 0.3s ease;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .modal-content {
             background: white;
-            margin: 2% auto;
+            margin: 3% auto;
             padding: 0;
             border-radius: 20px;
             width: 90%;
-            max-width: 800px;
+            max-width: 700px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             animation: slideDown 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
         }
+
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-50px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
+
         .modal-header {
             background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
             color: white;
@@ -273,119 +295,702 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .modal-header h2 {
+            margin: 0;
             font-size: 1.8rem;
-            font-weight: 600;
         }
+
         .close-modal {
             color: white;
             font-size: 2rem;
             font-weight: bold;
             cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.3s;
-        }
-        .close-modal:hover {
-            opacity: 1;
-        }
-        .modal-body {
-            padding: 2rem;
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-        .modal-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
+            transition: transform 0.2s ease;
+            line-height: 1;
         }
 
-        /* Form elements */
+        .close-modal:hover {
+            transform: scale(1.2);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            background: var(--background);
+            border-radius: 0 0 20px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .modal-footer .btn {
+            width: auto;
+            min-width: 120px;
+        }
+
+        /* Status badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-approved {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-rejected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-active {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-in-progress {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        /* Card styling */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        /* Form enhancements */
         .form-row {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        .required { color: var(--danger); }
-        .form-text {
-            display: block;
-            margin-top: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-light);
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 120px;
         }
 
-        /* File upload */
-        .file-upload-area {
+        select.form-control {
+            cursor: pointer;
+        }
+
+        /* File upload styling */
+        .file-upload {
             border: 2px dashed var(--border);
-            border-radius: 12px;
+            border-radius: 8px;
             padding: 2rem;
             text-align: center;
-            cursor: pointer;
             transition: all 0.3s ease;
-            background: var(--background);
+            cursor: pointer;
         }
-        .file-upload-area:hover {
+
+        .file-upload:hover {
             border-color: var(--primary-blue);
             background: var(--light-blue);
         }
-        .file-upload-icon {
-            font-size: 3rem;
-            color: var(--primary-blue);
-            margin-bottom: 1rem;
+
+        .file-upload input[type="file"] {
+            display: none;
         }
+
+        .file-label {
+            color: var(--primary-blue);
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         .file-list {
             margin-top: 1rem;
         }
+
         .file-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
             padding: 0.8rem;
             background: var(--light-blue);
             border-radius: 8px;
             margin-bottom: 0.5rem;
         }
-        .file-item .file-name {
-            font-weight: 600;
-            color: var(--text-dark);
+
+        .file-item-name {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .file-item .file-size {
-            color: var(--text-light);
-            font-size: 0.85rem;
+
+        .file-icon {
+            width: 24px;
+            height: 24px;
+            color: var(--primary-blue);
         }
-        .file-item .remove-file {
+
+        .remove-file {
             color: var(--danger);
             cursor: pointer;
             font-weight: bold;
         }
 
-        /* Checkbox list */
-        .checkbox-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 1rem;
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
         }
-        .checkbox-item {
+
+        /* Enhanced dropdown */
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 200px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .dropdown-content a {
+            color: var(--text-dark);
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+            transition: background 0.2s ease;
+        }
+
+        .dropdown-content a:hover {
+            background-color: var(--light-blue);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        /* Loading spinner */
+        .spinner {
+            border: 4px solid var(--light-blue);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .login-container {
+                flex-direction: column;
+                min-width: 100%;
+            }
+
+            .login-left {
+                padding: 2rem;
+            }
+
+            .company-title {
+                font-size: 2rem;
+            }
+
+            .main-layout {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                min-height: auto;
+            }
+
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 5% auto;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .sidebar, .header, .btn, .action-buttons {
+                display: none;
+            }
+
+            .main-content {
+                padding: 0;
+            }
+
+            .card, .data-table {
+                box-shadow: none;
+                page-break-inside: avoid;
+            }
+        }
+
+        /* Accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Focus styles for keyboard navigation */
+        button:focus, a:focus, input:focus, select:focus, textarea:focus {
+            outline: 2px solid var(--primary-blue);
+            outline-offset: 2px;
+        }
+
+        /* Tooltips */
+        [data-tooltip] {
+            position: relative;
+        }
+
+        [data-tooltip]:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--text-dark);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            white-space: nowrap;
+            z-index: 1000;
+            font-size: 0.875rem;
+        }
+
+        /* Progress bar */
+        .progress-bar {
+            background: var(--border);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, var(--primary-blue), var(--dark-blue));
+            height: 100%;
+            transition: width 0.3s ease;
             display: flex;
             align-items: center;
-            padding: 1rem;
-            background: var(--light-blue);
+            justify-content: center;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Tabs enhancement */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+
+        .tab:hover {
+            color: var(--primary-blue);
+        }
+
+        .tab.active {
+            color: var(--primary-blue);
+            border-bottom-color: var(--primary-blue);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Alert box */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-icon {
+            font-size: 1.5rem;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-light);
+        }
+
+        .breadcrumb a {
+            color: var(--primary-blue);
+            text-decoration: none;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumb-separator {
+            color: var(--text-light);
+        }
+
+        /* Search bar enhancement */
+        .search-container {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid var(--border);
+            border-radius: 50px;
+            font-size: 1rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        /* Filter buttons */
+        .filter-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-btn {
+            padding: 0.6rem 1.2rem;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .page-btn {
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border);
+            background: white;
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-        }
-        .checkbox-item:hover {
-            background: var(--primary-blue);
-            color: white;
-        }
-        .checkbox-item input[type="checkbox"] {
-            margin-right: 0.8rem;
-            cursor: pointer;
+            min-width: 40px;
+            text-align: center;
         }
 
-        /* Success icon */
+        .page-btn:hover {
+            border-color: var(--primary-blue);
+            color: var(--primary-blue);
+        }
+
+        .page-btn.active {
+            background: var(--primary-blue);
+            color: white;
+            border-color: var(--primary-blue);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .timeline-item:nth-child(odd) {
+            flex-direction: row-reverse;
+        }
+
+        .timeline-content {
+            flex: 1;
+            padding: 1.5rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin: 0 2rem;
+        }
+
+        .timeline-marker {
+            width: 20px;
+            height: 20px;
+            background: var(--primary-blue);
+            border: 4px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px var(--primary-blue);
+        }
+
+        /* Enhanced form validation */
+        .form-control.invalid {
+            border-color: var(--danger);
+        }
+
+        .form-control.valid {
+            border-color: var(--success);
+        }
+
+        .validation-message {
+            color: var(--danger);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        .required::after {
+            content: '*';
+            color: var(--danger);
+            margin-left: 0.25rem;
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            /* Add dark mode styles if needed */
+        }
+
+        /* Animation utilities */
+        .fade-in {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .slide-in-left {
+            animation: slideInLeft 0.5s ease;
+        }
+
+        .slide-in-right {
+            animation: slideInRight 0.5s ease;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Utility classes */
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .text-left { text-align: left; }
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+        .p-1 { padding: 0.5rem; }
+        .p-2 { padding: 1rem; }
+        .p-3 { padding: 1.5rem; }
+        .flex { display: flex; }
+        .flex-column { flex-direction: column; }
+        .justify-center { justify-content: center; }
+        .items-center { align-items: center; }
+        .gap-1 { gap: 0.5rem; }
+        .gap-2 { gap: 1rem; }
+        .gap-3 { gap: 1.5rem; }
+        .grid { display: grid; }
+        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+        /* New Modal Styles */
+        .new-modal {
+            max-width: 600px;
+        }
+
+        .new-modal .modal-body {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        /* Confirm Modal */
+        .confirm-modal {
+            max-width: 500px;
+        }
+
+        .confirm-icon {
+            font-size: 4rem;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .confirm-icon.danger {
+            color: var(--danger);
+        }
+
+        .confirm-message {
+            text-align: center;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .confirm-details {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Success Modal */
+        .modal-success {
+            max-width: 450px;
+        }
+
         .success-icon {
             width: 80px;
             height: 80px;
@@ -399,93 +1004,42 @@
             margin: 0 auto 1.5rem;
         }
 
-        /* Manhour section */
-        .manhour-section {
-            background: var(--light-blue);
-            padding: 2rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-        }
-        .manhour-section h3 {
-            color: var(--primary-blue);
-            margin-bottom: 1.5rem;
-        }
-        .manhour-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .manhour-input-group {
-            background: white;
+        /* Checkbox list */
+        .checkbox-list {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             padding: 1rem;
-            border-radius: 8px;
-        }
-        .manhour-input-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
-        }
-        .manhour-input-group input {
-            width: 100%;
-            padding: 0.8rem;
-            border: 2px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-        }
-        .manhour-total-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-top: 1.5rem;
-        }
-        .manhour-total-item {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 8px;
-            text-align: center;
-        }
-        .manhour-total-item label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            color: var(--text-dark);
-        }
-        .total-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-blue);
-        }
-        .validation-message {
-            background: #f8d7da;
-            color: #721c24;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            font-weight: 600;
         }
 
-        /* Filters */
-        .filters {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
+        .checkbox-item {
             display: flex;
-            gap: 1rem;
             align-items: center;
-            flex-wrap: wrap;
-        }
-        .filter-item {
-            flex: 1;
-            min-width: 200px;
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            background: var(--light-blue);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        /* Action buttons in table */
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
+        .checkbox-item:hover {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            margin-right: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Form text helper */
+        .form-text {
+            display: block;
+            margin-top: 0.5rem;
+            color: var(--text-light);
+            font-size: 0.875rem;
         }
 
         /* Files list */
@@ -494,69 +1048,187 @@
             overflow-y: auto;
         }
 
-        /* New modal styles */
-        .new-modal {
-            max-width: 600px;
-        }
-        .confirm-modal {
-            max-width: 500px;
-        }
-        .confirm-icon {
-            font-size: 4rem;
-            text-align: center;
-            margin-bottom: 1rem;
-        }
-        .confirm-icon.danger {
-            color: var(--danger);
-        }
-        .confirm-message {
-            text-align: center;
-            color: var(--text-dark);
-            margin-bottom: 1rem;
-        }
-        .confirm-details {
-            text-align: center;
-            color: var(--text-light);
-        }
-        .modal-success {
-            max-width: 500px;
+        /* Button variations */
+        .btn-large {
+            padding: 1rem 2.5rem;
+            font-size: 1.1rem;
         }
 
-        /* Responsive */
-        @media (max-width: 768px) {
-            .login-container {
-                flex-direction: column;
-                min-width: auto;
-            }
-            .login-left {
-                padding: 2rem;
-            }
-            .main-layout {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                min-height: auto;
-            }
-            .dashboard-stats {
-                grid-template-columns: 1fr;
-            }
+        .btn-cancel {
+            background: var(--text-light);
+            color: white;
         }
 
-        /* Loader */
-        .loader {
-            border: 4px solid var(--border);
+        .btn-cancel:hover {
+            background: var(--text-dark);
+        }
+
+        .btn-icon {
+            margin-right: 0.5rem;
+        }
+
+        /* Enhanced table */
+        .data-table .text-center {
+            text-align: center;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-primary {
+            background: var(--primary-blue);
+            color: white;
+        }
+
+        .badge-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .badge-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .badge-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            text-align: center;
+        }
+
+        .loading-spinner {
+            border: 4px solid var(--light-blue);
             border-top: 4px solid var(--primary-blue);
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 2rem auto;
+            margin: 0 auto 1rem;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        /* Info text */
+        .info-text {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-top: 0.5rem;
         }
+
+        /* Divider */
+        .divider {
+            height: 1px;
+            background: var(--border);
+            margin: 2rem 0;
+        }
+
+        /* Section title */
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            font-weight: 600;
+            border-left: 4px solid var(--primary-blue);
+            padding-left: 1rem;
+        }
+
+        /* Estimator specific styles */
+        .manhour-section {
+            background: var(--light-blue);
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .manhour-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .manhour-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .manhour-input-group {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .manhour-input-group label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .manhour-input-group input {
+            width: 100%;
+            padding: 0.6rem;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .manhour-total-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px solid var(--border);
+        }
+
+        .manhour-total-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .manhour-total-item label {
+            display: block;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .total-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
     </style>
 </head>
 <body>
@@ -566,73 +1238,66 @@
             <div class="login-left">
                 <div class="logo-circle">EB</div>
                 <h1 class="company-title">EDANBROOK</h1>
-                <p class="company-subtitle">Project Tracking System</p>
+                <p class="company-subtitle">Project Management System</p>
                 <div class="info-box">
-                    <h4>🎯 System Features</h4>
+                    <h4>Welcome to EBTracker</h4>
                     <ul>
-                        <li>Real-time project tracking</li>
-                        <li>Role-based access control</li>
-                        <li>Document management</li>
-                        <li>Team collaboration</li>
+                        <li>Streamlined project workflow</li>
+                        <li>Real-time collaboration</li>
                         <li>Comprehensive reporting</li>
+                        <li>Secure data management</li>
                     </ul>
                 </div>
             </div>
             <div class="login-right">
                 <div class="auth-tabs">
                     <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
-                    <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+                    <button class="auth-tab" onclick="switchAuthTab('signup')">Sign Up</button>
                 </div>
 
-                <!-- LOGIN FORM -->
-                <div id="loginContent" class="auth-content active">
-                    <h2 style="margin-bottom: 2rem; color: var(--text-dark);">Welcome Back</h2>
+                <div id="loginForm" class="auth-content active">
+                    <h2 style="margin-bottom: 1.5rem; color: var(--text-dark);">Welcome Back!</h2>
                     <div id="loginMessage"></div>
                     <form onsubmit="handleLogin(event)">
                         <div class="form-group">
-                            <label>Email Address</label>
-                            <input type="email" class="form-control" id="loginEmail" required>
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" required placeholder="Enter your email">
                         </div>
                         <div class="form-group">
                             <label>Password</label>
-                            <input type="password" class="form-control" id="loginPassword" required>
+                            <input type="password" name="password" class="form-control" required placeholder="Enter your password">
                         </div>
                         <button type="submit" class="btn btn-primary">Login</button>
                     </form>
                 </div>
 
-                <!-- REGISTRATION FORM (INSIDE LOGIN PAGE) -->
-                <div id="registerContent" class="auth-content">
-                    <h2 style="margin-bottom: 2rem; color: var(--text-dark);">Create Account</h2>
-                    <div id="registerMessage"></div>
-                    <form onsubmit="handleRegister(event)">
+                <div id="signupForm" class="auth-content">
+                    <h2 style="margin-bottom: 1.5rem; color: var(--text-dark);">Create Account</h2>
+                    <div id="signupMessage"></div>
+                    <form onsubmit="handleSignup(event)">
                         <div class="form-group">
-                            <label>Full Name <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="registerName" required>
+                            <label>Full Name</label>
+                            <input type="text" name="name" class="form-control" required placeholder="Enter your full name">
                         </div>
                         <div class="form-group">
-                            <label>Email Address <span class="required">*</span></label>
-                            <input type="email" class="form-control" id="registerEmail" required>
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" required placeholder="Enter your email">
                         </div>
                         <div class="form-group">
-                            <label>Password <span class="required">*</span></label>
-                            <input type="password" class="form-control" id="registerPassword" required minlength="6">
-                            <small class="form-text">Minimum 6 characters</small>
+                            <label>Password</label>
+                            <input type="password" name="password" class="form-control" required placeholder="Create a password" minlength="6">
                         </div>
-                        <div class="form-group">
-                            <label>Select Role <span class="required">*</span></label>
+                        <div class="role-selector">
+                            <label>Select Your Role</label>
                             <div class="role-buttons">
-                                <div class="role-btn" onclick="selectRole('bdm', this)">BDM</div>
-                                <div class="role-btn" onclick="selectRole('estimation', this)">Estimation</div>
-                                <div class="role-btn" onclick="selectRole('coo', this)">COO</div>
-                                <div class="role-btn" onclick="selectRole('director', this)">Director</div>
-                                <div class="role-btn" onclick="selectRole('designmanager', this)">Design Manager</div>
-                                <div class="role-btn" onclick="selectRole('designer', this)">Designer</div>
-                                <div class="role-btn" onclick="selectRole('accounts', this)">Accounts</div>
+                                <div class="role-btn" onclick="selectRole(this, 'BDM')">BDM</div>
+                                <div class="role-btn" onclick="selectRole(this, 'Estimator')">Estimator</div>
+                                <div class="role-btn" onclick="selectRole(this, 'Management')">Management</div>
+                                <div class="role-btn" onclick="selectRole(this, 'Designer')">Designer</div>
                             </div>
-                            <input type="hidden" id="selectedRole" required>
+                            <input type="hidden" name="role" id="selectedRole" required>
                         </div>
-                        <button type="submit" class="btn btn-primary">Register</button>
+                        <button type="submit" class="btn btn-primary">Sign Up</button>
                     </form>
                 </div>
             </div>
@@ -641,425 +1306,86 @@
 
     <!-- APP CONTAINER -->
     <div id="appContainer" class="app-container">
-        <div class="header">
+        <header class="header">
             <div class="header-content">
                 <div class="logo">
                     <div class="logo-circle">EB</div>
                     <div class="company-info">
                         <h1>EDANBROOK</h1>
-                        <div class="subtitle">Project Management System</div>
+                        <p class="subtitle">Project Management System</p>
                     </div>
                 </div>
                 <div class="user-info">
-                    <div id="userDisplay"></div>
-                    <button class="btn-logout" onclick="handleLogout()">Logout</button>
+                    <span id="userName" style="margin-right: 1rem;"></span>
+                    <span id="userRole" style="opacity: 0.8;"></span>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
                 </div>
             </div>
-        </div>
+        </header>
 
         <div class="main-layout">
             <aside class="sidebar">
                 <ul class="nav-menu" id="navMenu">
-                    <!-- Navigation will be populated by JavaScript -->
+                    <!-- Navigation will be dynamically loaded based on role -->
                 </ul>
             </aside>
 
-            <main class="main-content">
-                <!-- Dashboard Section -->
-                <div id="dashboardSection">
-                    <div class="page-header">
-                        <h2>Dashboard</h2>
-                        <p class="subtitle">Welcome to your project management dashboard</p>
-                    </div>
-                    <div class="dashboard-stats">
-                        <div class="stat-card">
-                            <div class="stat-icon">📊</div>
-                            <div class="stat-value" id="totalProjects">0</div>
-                            <div class="stat-label">Total Projects</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">⏳</div>
-                            <div class="stat-value" id="pendingProjects">0</div>
-                            <div class="stat-label">Pending</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon">✅</div>
-                            <div class="stat-value" id="completedProjects">0</div>
-                            <div class="stat-label">Completed</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- All Proposals Section (For Index 32: BDM, ESTIMATION, COO, DIRECTOR) -->
-                <div id="allProposalsSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>All Proposals</h2>
-                        <p class="subtitle">View all proposals in the system</p>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client Name</th>
-                                    <th>BDM</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="allProposalsTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- My Proposals Section (BDM Only) -->
-                <div id="myProposalsSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>My Proposals</h2>
-                        <p class="subtitle">Manage your submitted proposals</p>
-                        <button class="btn btn-primary btn-sm" style="margin-top: 1rem;" onclick="openProposalModal()">+ New Proposal</button>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client Name</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="myProposalsTableBody">
-                                <tr>
-                                    <td colspan="6" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Estimation Portal Section (For ESTIMATION role) -->
-                <div id="estimationPortalSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>Estimation Portal</h2>
-                        <p class="subtitle">Update estimation details for proposals</p>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>BDM</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="estimationPortalTableBody">
-                                <tr>
-                                    <td colspan="6" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Portal Section (For COO, DIRECTOR - View Only) -->
-                <div id="portalSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>Portal</h2>
-                        <p class="subtitle">View all project details</p>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>BDM</th>
-                                    <th>Manhours</th>
-                                    <th>Tonnage</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="portalTableBody">
-                                <tr>
-                                    <td colspan="8" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- My Projects Section (For DESIGN MANAGER) -->
-                <div id="myProjectsSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>My Projects</h2>
-                        <p class="subtitle">Projects allocated to you for team management</p>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>Allocated By</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="myProjectsTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Allocated Projects Section (For DESIGNER) -->
-                <div id="allocatedProjectsSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>My Allocated Projects</h2>
-                        <p class="subtitle">Projects assigned to you by management</p>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>Allocated By</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="allocatedProjectsTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Accounts Section -->
-                <div id="accountsSection" style="display: none;">
-                    <div class="page-header">
-                        <h2>Accounts Portal</h2>
-                        <p class="subtitle">Financial overview and project accounting</p>
-                    </div>
-                    <div class="card">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project #</th>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>Manhours</th>
-                                    <th>Tonnage</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="accountsTableBody">
-                                <tr>
-                                    <td colspan="7" class="text-center">Loading...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <main class="main-content" id="mainContent">
+                <!-- Content will be dynamically loaded based on navigation -->
             </main>
         </div>
     </div>
 
-    <!-- PROPOSAL MODAL -->
-    <div id="proposalModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Create New Proposal</h2>
-                <span class="close-modal" onclick="closeProposalModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="proposalForm">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Project Name <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="projectName" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Client Name <span class="required">*</span></label>
-                            <input type="text" class="form-control" id="clientName" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Upload Files</label>
-                        <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-                            <div class="file-upload-icon">📁</div>
-                            <p>Click to upload files</p>
-                            <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileSelect(event)">
-                        </div>
-                        <div id="fileList" class="file-list"></div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" onclick="closeProposalModal()">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="submitProposal()">Submit Proposal</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- DESIGNER ASSIGNMENT MODAL -->
-    <div id="designerAssignmentModal" class="modal" style="display: none;">
-        <div class="modal-content new-modal">
-            <div class="modal-header">
-                <h2>Assign Designers to Project</h2>
-                <span class="close-modal" onclick="closeDesignerAssignmentModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="assignProjectId" />
-                <div class="form-group">
-                    <label>Select Designers <span class="required">*</span></label>
-                    <div id="designersList" class="checkbox-list"></div>
-                    <small class="form-text">Select one or more designers</small>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" onclick="closeDesignerAssignmentModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitDesignerAssignment()">Assign Designers</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- BDM FILES MODAL -->
-    <div id="bdmFilesModal" class="modal" style="display: none;">
-        <div class="modal-content new-modal">
-            <div class="modal-header">
-                <h2>BDM Uploaded Files</h2>
-                <span class="close-modal" onclick="closeBDMFilesModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div id="bdmFilesList" class="files-list"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="closeBDMFilesModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- SUCCESS MODAL -->
-    <div id="successModal" class="modal" style="display: none;">
-        <div class="modal-content new-modal modal-success">
-            <div class="modal-body text-center">
-                <div class="success-icon">✓</div>
-                <h3 id="successMessage">Operation Successful!</h3>
-                <p id="successDetails"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-primary" onclick="closeSuccessModal()">OK</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- DELETE CONFIRMATION MODAL -->
-    <div id="deleteConfirmModal" class="modal">
-        <div class="modal-content confirm-modal">
-            <div class="modal-header">
-                <h2>Confirm Delete</h2>
-                <span class="close-modal" onclick="closeDeleteConfirmModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="confirm-icon danger">⚠️</div>
-                <h3 class="confirm-message">Are you sure you want to delete this project?</h3>
-                <p class="confirm-details" id="deleteProjectDetails"></p>
-                <p style="color: var(--danger); margin-top: 1rem; font-weight: 600;">This action cannot be undone!</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeDeleteConfirmModal()">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmDeleteProject()">Delete Project</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ESTIMATOR FORM MODAL -->
-    <div id="estimatorFormModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Update Estimation Details</h2>
-                <span class="close-modal" onclick="closeEstimatorModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="estimatorProposalId" />
-                <div class="manhour-section">
-                    <h3>Manhour Breakdown *</h3>
-                    <div class="manhour-grid">
-                        <div class="manhour-input-group">
-                            <label>Design Hours</label>
-                            <input type="number" id="designHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
-                        </div>
-                        <div class="manhour-input-group">
-                            <label>Detailing Hours</label>
-                            <input type="number" id="detailingHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
-                        </div>
-                        <div class="manhour-input-group">
-                            <label>Checking Hours</label>
-                            <input type="number" id="checkingHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
-                        </div>
-                        <div class="manhour-input-group">
-                            <label>Revision Hours</label>
-                            <input type="number" id="revisionHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
-                        </div>
-                        <div class="manhour-input-group">
-                            <label>PM Hours</label>
-                            <input type="number" id="pmHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
-                        </div>
-                    </div>
-                    <div class="manhour-total-row">
-                        <div class="manhour-total-item">
-                            <label>Total Hours</label>
-                            <div class="total-value" id="totalHoursDisplay">0</div>
-                        </div>
-                        <div class="manhour-input-group">
-                            <label>Tonnage (tons)</label>
-                            <input type="number" id="tonnage" min="0" step="0.1" value="0">
-                        </div>
-                    </div>
-                    <div id="validationMessage" class="validation-message" style="display: none;">
-                        Either Total Hours or Tonnage must be greater than 0.
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" onclick="closeEstimatorModal()">Cancel</button>
-                <button type="button" class="btn btn-success" onclick="submitEstimatorData()">Save Estimation</button>
-            </div>
-        </div>
-    </div>
-
     <script>
-        const API_BASE_URL = 'https://eb-tracker-backend.onrender.com';
+        // Global state
         let currentUser = null;
-        let selectedFiles = [];
-        let projectToDelete = null;
 
-        // Authentication Tab Switching
+        // LocalStorage keys
+        const STORAGE_KEYS = {
+            USERS: 'ebtracker_users',
+            CURRENT_USER: 'ebtracker_current_user',
+            PROPOSALS: 'ebtracker_proposals',
+            PROJECTS: 'ebtracker_projects'
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            initializeStorage();
+        });
+
+        // Initialize storage with sample data if empty
+        function initializeStorage() {
+            if (!localStorage.getItem(STORAGE_KEYS.USERS)) {
+                const sampleUsers = [
+                    { id: 1, name: 'John BDM', email: 'bdm@test.com', password: '123456', role: 'BDM' },
+                    { id: 2, name: 'Sarah Estimator', email: 'estimator@test.com', password: '123456', role: 'Estimator' },
+                    { id: 3, name: 'Mike Manager', email: 'management@test.com', password: '123456', role: 'Management' },
+                    { id: 4, name: 'Lisa Designer', email: 'designer@test.com', password: '123456', role: 'Designer' }
+                ];
+                localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(sampleUsers));
+            }
+
+            if (!localStorage.getItem(STORAGE_KEYS.PROPOSALS)) {
+                localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify([]));
+            }
+
+            if (!localStorage.getItem(STORAGE_KEYS.PROJECTS)) {
+                localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify([]));
+            }
+        }
+
+        // Auth functions
+        function checkAuth() {
+            const savedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showApp();
+            } else {
+                showLogin();
+            }
+        }
+
         function switchAuthTab(tab) {
             const tabs = document.querySelectorAll('.auth-tab');
             const contents = document.querySelectorAll('.auth-content');
@@ -1067,161 +1393,138 @@
             tabs.forEach(t => t.classList.remove('active'));
             contents.forEach(c => c.classList.remove('active'));
             
-            if (tab === 'login') {
-                tabs[0].classList.add('active');
-                document.getElementById('loginContent').classList.add('active');
-            } else {
-                tabs[1].classList.add('active');
-                document.getElementById('registerContent').classList.add('active');
-            }
+            document.querySelector(`[onclick="switchAuthTab('${tab}')"]`).classList.add('active');
+            document.getElementById(`${tab}Form`).classList.add('active');
         }
 
-        // Role Selection
-        function selectRole(role, element) {
+        function selectRole(element, role) {
             document.querySelectorAll('.role-btn').forEach(btn => btn.classList.remove('active'));
             element.classList.add('active');
             document.getElementById('selectedRole').value = role;
         }
 
-        // Handle Registration
-        async function handleRegister(event) {
+        function handleLogin(event) {
             event.preventDefault();
-            const messageDiv = document.getElementById('registerMessage');
-            
-            const name = document.getElementById('registerName').value.trim();
-            const email = document.getElementById('registerEmail').value.trim();
-            const password = document.getElementById('registerPassword').value;
-            const role = document.getElementById('selectedRole').value;
+            const form = event.target;
+            const email = form.email.value;
+            const password = form.password.value;
+
+            const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+            const user = users.find(u => u.email === email && u.password === password);
+
+            if (user) {
+                currentUser = user;
+                localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+                showMessage('loginMessage', 'Login successful!', 'success');
+                setTimeout(() => showApp(), 1000);
+            } else {
+                showMessage('loginMessage', 'Invalid email or password', 'error');
+            }
+        }
+
+        function handleSignup(event) {
+            event.preventDefault();
+            const form = event.target;
+            const name = form.name.value;
+            const email = form.email.value;
+            const password = form.password.value;
+            const role = form.role.value;
 
             if (!role) {
-                messageDiv.innerHTML = '<div class="error-message">Please select a role</div>';
+                showMessage('signupMessage', 'Please select a role', 'error');
                 return;
             }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, email, password, role })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    messageDiv.innerHTML = '<div class="success-message">Registration successful! Please login.</div>';
-                    setTimeout(() => {
-                        switchAuthTab('login');
-                        document.getElementById('registerMessage').innerHTML = '';
-                    }, 2000);
-                } else {
-                    messageDiv.innerHTML = `<div class="error-message">${data.message || 'Registration failed'}</div>`;
-                }
-            } catch (error) {
-                messageDiv.innerHTML = '<div class="error-message">Network error. Please try again.</div>';
-            }
-        }
-
-        // Handle Login
-        async function handleLogin(event) {
-            event.preventDefault();
-            const messageDiv = document.getElementById('loginMessage');
+            const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
             
-            const email = document.getElementById('loginEmail').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    currentUser = data.user;
-                    localStorage.setItem('ebtracker_user', JSON.stringify(data.user));
-                    showApp();
-                } else {
-                    messageDiv.innerHTML = `<div class="error-message">${data.message || 'Login failed'}</div>`;
-                }
-            } catch (error) {
-                messageDiv.innerHTML = '<div class="error-message">Network error. Please try again.</div>';
+            if (users.some(u => u.email === email)) {
+                showMessage('signupMessage', 'Email already exists', 'error');
+                return;
             }
+
+            const newUser = {
+                id: users.length + 1,
+                name,
+                email,
+                password,
+                role
+            };
+
+            users.push(newUser);
+            localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
+            
+            showMessage('signupMessage', 'Account created successfully! Please login.', 'success');
+            setTimeout(() => switchAuthTab('login'), 2000);
         }
 
-        // Handle Logout
-        function handleLogout() {
-            localStorage.removeItem('ebtracker_user');
+        function logout() {
+            localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
             currentUser = null;
+            showLogin();
+        }
+
+        function showLogin() {
             document.getElementById('loginPage').style.display = 'flex';
             document.getElementById('appContainer').style.display = 'none';
         }
 
-        // Show App
         function showApp() {
             document.getElementById('loginPage').style.display = 'none';
             document.getElementById('appContainer').style.display = 'block';
-            document.getElementById('userDisplay').innerHTML = `
-                <strong>${currentUser.name}</strong><br>
-                <small>${currentUser.role.toUpperCase()}</small>
-            `;
-            setupNavigation();
-            loadDashboard();
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userRole').textContent = currentUser.role;
+            
+            loadNavigation();
+            loadDefaultPage();
         }
 
-        // Setup Navigation Based on Role
-        function setupNavigation() {
+        function showMessage(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            const className = type === 'success' ? 'success-message' : 'error-message';
+            element.innerHTML = `<div class="${className}">${message}</div>`;
+            setTimeout(() => element.innerHTML = '', 5000);
+        }
+
+        // Navigation
+        function loadNavigation() {
             const navMenu = document.getElementById('navMenu');
-            const role = currentUser.role.toLowerCase();
-            
             let menuItems = [];
 
-            // Index 32: BDM, ESTIMATION, COO, DIRECTOR - All see "All Proposals"
-            if (['bdm', 'estimation', 'coo', 'director'].includes(role)) {
-                menuItems = [
-                    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-                    { id: 'allProposals', label: 'All Proposals', icon: '📋' }
-                ];
-
-                // BDM gets additional "My Proposals"
-                if (role === 'bdm') {
-                    menuItems.push({ id: 'myProposals', label: 'My Proposals', icon: '📝' });
-                }
-
-                // ESTIMATION gets additional "Estimation Portal"
-                if (role === 'estimation') {
-                    menuItems.push({ id: 'estimationPortal', label: 'Estimation Portal', icon: '⚙️' });
-                }
-
-                // COO and DIRECTOR get additional "Portal" (view only)
-                if (['coo', 'director'].includes(role)) {
-                    menuItems.push({ id: 'portal', label: 'Portal', icon: '🔍' });
-                }
-            }
-            // Index 33: DESIGN MANAGER, DESIGNER, ACCOUNTS - Different menus
-            else if (role === 'designmanager') {
-                menuItems = [
-                    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-                    { id: 'myProjects', label: 'My Projects', icon: '📁' }
-                ];
-            }
-            else if (role === 'designer') {
-                menuItems = [
-                    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-                    { id: 'allocatedProjects', label: 'My Allocated Projects', icon: '🎨' }
-                ];
-            }
-            else if (role === 'accounts') {
-                menuItems = [
-                    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-                    { id: 'accounts', label: 'Accounts Portal', icon: '💰' }
-                ];
+            switch(currentUser.role) {
+                case 'BDM':
+                    menuItems = [
+                        { icon: '📊', label: 'Dashboard', page: 'bdm-dashboard' },
+                        { icon: '📝', label: 'Create Proposal', page: 'create-proposal' },
+                        { icon: '📋', label: 'My Proposals', page: 'my-proposals' }
+                    ];
+                    break;
+                case 'Estimator':
+                    menuItems = [
+                        { icon: '📊', label: 'Dashboard', page: 'estimator-dashboard' },
+                        { icon: '📋', label: 'Pending Estimations', page: 'pending-estimations' },
+                        { icon: '✅', label: 'Completed Estimations', page: 'completed-estimations' }
+                    ];
+                    break;
+                case 'Management':
+                    menuItems = [
+                        { icon: '📊', label: 'Dashboard', page: 'management-dashboard' },
+                        { icon: '📋', label: 'Pending Approvals', page: 'pending-approvals' },
+                        { icon: '🗂️', label: 'All Projects', page: 'all-projects' },
+                        { icon: '👥', label: 'Allocate Projects', page: 'allocate-projects' }
+                    ];
+                    break;
+                case 'Designer':
+                    menuItems = [
+                        { icon: '📊', label: 'Dashboard', page: 'designer-dashboard' },
+                        { icon: '📋', label: 'My Projects', page: 'allocated-projects' }
+                    ];
+                    break;
             }
 
             navMenu.innerHTML = menuItems.map(item => `
                 <li>
-                    <a href="#" onclick="navigateTo('${item.id}'); return false;">
+                    <a href="#" onclick="navigateTo('${item.page}'); return false;">
                         <span class="nav-icon">${item.icon}</span>
                         ${item.label}
                     </a>
@@ -1229,333 +1532,219 @@
             `).join('');
         }
 
-        // Navigate To Section
-        function navigateTo(section) {
-            // Hide all sections
-            document.querySelectorAll('.main-content > div').forEach(div => div.style.display = 'none');
-            
+        function navigateTo(page) {
             // Remove active class from all nav links
-            document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+            document.querySelectorAll('.nav-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
             
-            // Show selected section
-            const sectionMap = {
-                'dashboard': 'dashboardSection',
-                'allProposals': 'allProposalsSection',
-                'myProposals': 'myProposalsSection',
-                'estimationPortal': 'estimationPortalSection',
-                'portal': 'portalSection',
-                'myProjects': 'myProjectsSection',
-                'allocatedProjects': 'allocatedProjectsSection',
-                'accounts': 'accountsSection'
+            // Add active class to clicked link
+            event.target.closest('a').classList.add('active');
+            
+            // Load the appropriate content
+            loadPage(page);
+        }
+
+        function loadDefaultPage() {
+            const defaultPages = {
+                'BDM': 'bdm-dashboard',
+                'Estimator': 'estimator-dashboard',
+                'Management': 'management-dashboard',
+                'Designer': 'designer-dashboard'
             };
             
-            const sectionId = sectionMap[section];
-            if (sectionId) {
-                document.getElementById(sectionId).style.display = 'block';
-                
-                // Add active class to clicked nav link
-                event.target.closest('a').classList.add('active');
-                
-                // Load data for the section
-                switch(section) {
-                    case 'dashboard':
-                        loadDashboard();
-                        break;
-                    case 'allProposals':
-                        loadAllProposals();
-                        break;
-                    case 'myProposals':
-                        loadMyProposals();
-                        break;
-                    case 'estimationPortal':
-                        loadEstimationPortal();
-                        break;
-                    case 'portal':
-                        loadPortal();
-                        break;
-                    case 'myProjects':
-                        loadMyProjects();
-                        break;
-                    case 'allocatedProjects':
-                        loadAllocatedProjects();
-                        break;
-                    case 'accounts':
-                        loadAccounts();
-                        break;
-                }
-            }
+            loadPage(defaultPages[currentUser.role]);
         }
 
-        // Load Dashboard
-        async function loadDashboard() {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals?userId=${currentUser._id}`);
-                const proposals = await response.json();
-                
-                document.getElementById('totalProjects').textContent = proposals.length;
-                document.getElementById('pendingProjects').textContent = proposals.filter(p => p.status === 'pending').length;
-                document.getElementById('completedProjects').textContent = proposals.filter(p => p.status === 'completed').length;
-            } catch (error) {
-                console.error('Error loading dashboard:', error);
-            }
-        }
-
-        // Load All Proposals (For Index 32: BDM, ESTIMATION, COO, DIRECTOR)
-        async function loadAllProposals() {
-            const tbody = document.getElementById('allProposalsTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
+        function loadPage(page) {
+            const mainContent = document.getElementById('mainContent');
             
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals`);
-                const proposals = await response.json();
+            switch(page) {
+                case 'bdm-dashboard':
+                    mainContent.innerHTML = getBDMDashboard();
+                    break;
+                case 'create-proposal':
+                    mainContent.innerHTML = getCreateProposalForm();
+                    break;
+                case 'my-proposals':
+                    mainContent.innerHTML = getMyProposals();
+                    break;
+                case 'estimator-dashboard':
+                    mainContent.innerHTML = getEstimatorDashboard();
+                    break;
+                case 'pending-estimations':
+                    mainContent.innerHTML = getPendingEstimations();
+                    break;
+                case 'completed-estimations':
+                    mainContent.innerHTML = getCompletedEstimations();
+                    break;
+                case 'management-dashboard':
+                    mainContent.innerHTML = getManagementDashboard();
+                    break;
+                case 'pending-approvals':
+                    mainContent.innerHTML = getPendingApprovals();
+                    break;
+                case 'all-projects':
+                    mainContent.innerHTML = getAllProjects();
+                    break;
+                case 'allocate-projects':
+                    mainContent.innerHTML = getAllocateProjects();
+                    loadEstimators();
+                    break;
+                case 'designer-dashboard':
+                    mainContent.innerHTML = getDesignerDashboard();
+                    break;
+                case 'allocated-projects':
+                    mainContent.innerHTML = getAllocatedProjects();
+                    loadAllocatedProjects();
+                    break;
+            }
+        }
+
+        // BDM Pages
+        function getBDMDashboard() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const myProposals = proposals.filter(p => p.bdmId === currentUser.id);
+            
+            return `
+                <div class="page-header">
+                    <h2>BDM Dashboard</h2>
+                    <p class="subtitle">Overview of your proposals and activities</p>
+                </div>
                 
-                if (proposals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No proposals found</td></tr>';
-                    return;
-                }
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">${myProposals.length}</span>
+                        <span class="stat-label">Total Proposals</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${myProposals.filter(p => p.status === 'Pending Estimation').length}</span>
+                        <span class="stat-label">Pending</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${myProposals.filter(p => p.status === 'Approved').length}</span>
+                        <span class="stat-label">Approved</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${myProposals.filter(p => p.status === 'Rejected').length}</span>
+                        <span class="stat-label">Rejected</span>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <h3>Recent Activity</h3>
+                    ${getRecentActivity(myProposals)}
+                </div>
+            `;
+        }
+
+        function getRecentActivity(proposals) {
+            if (proposals.length === 0) {
+                return '<p class="empty-state">No activity yet. Create your first proposal!</p>';
+            }
+            
+            return proposals.slice(0, 5).map(p => `
+                <div class="activity-item">
+                    <strong>${p.projectName}</strong> - ${p.clientName}
+                    <span class="status-badge status-${p.status.toLowerCase().replace(' ', '-')}">${p.status}</span>
+                    <span class="activity-time">${new Date(p.createdAt).toLocaleDateString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function getCreateProposalForm() {
+            return `
+                <div class="page-header">
+                    <h2>Create New Proposal</h2>
+                    <p class="subtitle">Submit a new project proposal for estimation</p>
+                </div>
                 
-                tbody.innerHTML = proposals.map(proposal => `
-                    <tr>
-                        <td>${proposal.projectNumber || 'N/A'}</td>
-                        <td>${proposal.projectName}</td>
-                        <td>${proposal.clientName}</td>
-                        <td>${proposal.bdmName}</td>
-                        <td>${new Date(proposal.createdAt).toLocaleDateString()}</td>
-                        <td><span class="status-badge status-${proposal.status}">${proposal.status}</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-sm btn-primary" onclick="viewBDMFiles('${proposal._id}')">View Files</button>
-                                ${currentUser.role === 'estimation' ? `<button class="btn btn-sm btn-success" onclick="openEstimatorModal('${proposal._id}')">Update</button>` : ''}
+                <div class="card">
+                    <form onsubmit="submitProposal(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Project Name <span class="required">*</span></label>
+                                <input type="text" name="projectName" class="form-control" required>
                             </div>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading proposals</td></tr>';
-            }
-        }
-
-        // Load My Proposals (BDM Only)
-        async function loadMyProposals() {
-            const tbody = document.getElementById('myProposalsTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals?userId=${currentUser._id}`);
-                const proposals = await response.json();
-                
-                if (proposals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No proposals found</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = proposals.map(proposal => `
-                    <tr>
-                        <td>${proposal.projectNumber || 'N/A'}</td>
-                        <td>${proposal.projectName}</td>
-                        <td>${proposal.clientName}</td>
-                        <td>${new Date(proposal.createdAt).toLocaleDateString()}</td>
-                        <td><span class="status-badge status-${proposal.status}">${proposal.status}</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-sm btn-primary" onclick="viewBDMFiles('${proposal._id}')">View</button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteProposal('${proposal._id}', '${proposal.projectName}')">Delete</button>
+                            <div class="form-group">
+                                <label>Client Name <span class="required">*</span></label>
+                                <input type="text" name="clientName" class="form-control" required>
                             </div>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Error loading proposals</td></tr>';
-            }
-        }
-
-        // Load Estimation Portal (For ESTIMATION role)
-        async function loadEstimationPortal() {
-            const tbody = document.getElementById('estimationPortalTableBody');
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center">Loading...</td></tr>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals`);
-                const proposals = await response.json();
-                
-                if (proposals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No proposals found</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = proposals.map(proposal => `
-                    <tr>
-                        <td>${proposal.projectNumber || 'N/A'}</td>
-                        <td>${proposal.projectName}</td>
-                        <td>${proposal.clientName}</td>
-                        <td>${proposal.bdmName}</td>
-                        <td><span class="status-badge status-${proposal.status}">${proposal.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-success" onclick="openEstimatorModal('${proposal._id}')">Update Estimation</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center">Error loading proposals</td></tr>';
-            }
-        }
-
-        // Load Portal (For COO, DIRECTOR - View Only)
-        async function loadPortal() {
-            const tbody = document.getElementById('portalTableBody');
-            tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals`);
-                const proposals = await response.json();
-                
-                if (proposals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">No proposals found</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = proposals.map(proposal => `
-                    <tr>
-                        <td>${proposal.projectNumber || 'N/A'}</td>
-                        <td>${proposal.projectName}</td>
-                        <td>${proposal.clientName}</td>
-                        <td>${proposal.bdmName}</td>
-                        <td>${proposal.estimationData?.totalHours || 'N/A'}</td>
-                        <td>${proposal.estimationData?.tonnage || 'N/A'}</td>
-                        <td><span class="status-badge status-${proposal.status}">${proposal.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="viewBDMFiles('${proposal._id}')">View Files</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Error loading proposals</td></tr>';
-            }
-        }
-
-        // Load My Projects (For DESIGN MANAGER)
-        async function loadMyProjects() {
-            const tbody = document.getElementById('myProjectsTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals/allocated/${currentUser._id}`);
-                const projects = await response.json();
-                
-                if (projects.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No projects allocated yet</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = projects.map(project => `
-                    <tr>
-                        <td>${project.projectNumber || 'N/A'}</td>
-                        <td>${project.projectName}</td>
-                        <td>${project.clientName}</td>
-                        <td>${project.allocatedBy || 'N/A'}</td>
-                        <td>${new Date(project.createdAt).toLocaleDateString()}</td>
-                        <td><span class="status-badge status-${project.status}">${project.status}</span></td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-sm btn-primary" onclick="openDesignerAssignment('${project._id}')">Assign Designers</button>
-                                <button class="btn btn-sm btn-success" onclick="viewBDMFiles('${project._id}')">View Files</button>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Client Email <span class="required">*</span></label>
+                                <input type="email" name="clientEmail" class="form-control" required>
                             </div>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading projects</td></tr>';
-            }
+                            <div class="form-group">
+                                <label>Client Phone</label>
+                                <input type="tel" name="clientPhone" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Project Description <span class="required">*</span></label>
+                            <textarea name="projectDescription" class="form-control" rows="4" required></textarea>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Project Type</label>
+                                <select name="projectType" class="form-control">
+                                    <option value="Residential">Residential</option>
+                                    <option value="Commercial">Commercial</option>
+                                    <option value="Industrial">Industrial</option>
+                                    <option value="Infrastructure">Infrastructure</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Expected Start Date</label>
+                                <input type="date" name="expectedStartDate" class="form-control">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Upload Files (Optional)</label>
+                            <div class="file-upload" onclick="document.getElementById('proposalFiles').click()">
+                                <input type="file" id="proposalFiles" multiple accept=".pdf,.doc,.docx,.xls,.xlsx,.dwg,.jpg,.png" onchange="handleFileUpload(event)">
+                                <p class="file-label">📁 Click to upload files</p>
+                                <p class="info-text">Supported formats: PDF, DOC, DOCX, XLS, XLSX, DWG, JPG, PNG</p>
+                            </div>
+                            <div id="fileList" class="file-list"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Additional Notes</label>
+                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-large">Submit Proposal</button>
+                    </form>
+                </div>
+            `;
         }
 
-        // Load Allocated Projects (For DESIGNER)
-        async function loadAllocatedProjects() {
-            const tbody = document.getElementById('allocatedProjectsTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals/designer/${currentUser._id}`);
-                const projects = await response.json();
-                
-                if (projects.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No projects assigned yet</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = projects.map(project => `
-                    <tr>
-                        <td>${project.projectNumber || 'N/A'}</td>
-                        <td>${project.projectName}</td>
-                        <td>${project.clientName}</td>
-                        <td>${project.allocatedBy || 'N/A'}</td>
-                        <td>${new Date(project.createdAt).toLocaleDateString()}</td>
-                        <td><span class="status-badge status-${project.status}">${project.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="viewBDMFiles('${project._id}')">View Files</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading projects</td></tr>';
-            }
-        }
+        let uploadedFiles = [];
 
-        // Load Accounts (For ACCOUNTS role)
-        async function loadAccounts() {
-            const tbody = document.getElementById('accountsTableBody');
-            tbody.innerHTML = '<tr><td colspan="7" class="text-center">Loading...</td></tr>';
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals`);
-                const proposals = await response.json();
-                
-                if (proposals.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="text-center">No proposals found</td></tr>';
-                    return;
-                }
-                
-                tbody.innerHTML = proposals.map(proposal => `
-                    <tr>
-                        <td>${proposal.projectNumber || 'N/A'}</td>
-                        <td>${proposal.projectName}</td>
-                        <td>${proposal.clientName}</td>
-                        <td>${proposal.estimationData?.totalHours || 'N/A'}</td>
-                        <td>${proposal.estimationData?.tonnage || 'N/A'}</td>
-                        <td><span class="status-badge status-${proposal.status}">${proposal.status}</span></td>
-                        <td>
-                            <button class="btn btn-sm btn-primary" onclick="viewBDMFiles('${proposal._id}')">View Details</button>
-                        </td>
-                    </tr>
-                `).join('');
-            } catch (error) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">Error loading proposals</td></tr>';
-            }
-        }
-
-        // Proposal Modal Functions
-        function openProposalModal() {
-            document.getElementById('proposalModal').style.display = 'flex';
-        }
-
-        function closeProposalModal() {
-            document.getElementById('proposalModal').style.display = 'none';
-            document.getElementById('proposalForm').reset();
-            selectedFiles = [];
-            document.getElementById('fileList').innerHTML = '';
-        }
-
-        function handleFileSelect(event) {
-            selectedFiles = Array.from(event.target.files);
+        function handleFileUpload(event) {
+            const files = Array.from(event.target.files);
+            uploadedFiles = uploadedFiles.concat(files);
             displayFileList();
         }
 
         function displayFileList() {
             const fileList = document.getElementById('fileList');
-            fileList.innerHTML = selectedFiles.map((file, index) => `
+            if (uploadedFiles.length === 0) {
+                fileList.innerHTML = '';
+                return;
+            }
+            
+            fileList.innerHTML = uploadedFiles.map((file, index) => `
                 <div class="file-item">
-                    <div>
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-size">${(file.size / 1024).toFixed(2)} KB</div>
+                    <div class="file-item-name">
+                        <span class="file-icon">📄</span>
+                        <span>${file.name}</span>
                     </div>
                     <span class="remove-file" onclick="removeFile(${index})">✕</span>
                 </div>
@@ -1563,81 +1752,676 @@
         }
 
         function removeFile(index) {
-            selectedFiles.splice(index, 1);
+            uploadedFiles.splice(index, 1);
             displayFileList();
         }
 
-        async function submitProposal() {
-            const projectName = document.getElementById('projectName').value.trim();
-            const clientName = document.getElementById('clientName').value.trim();
+        function submitProposal(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            
+            const proposal = {
+                id: Date.now(),
+                projectNumber: 'PRJ-' + Date.now().toString().slice(-6),
+                projectName: formData.get('projectName'),
+                clientName: formData.get('clientName'),
+                clientEmail: formData.get('clientEmail'),
+                clientPhone: formData.get('clientPhone'),
+                projectDescription: formData.get('projectDescription'),
+                projectType: formData.get('projectType'),
+                expectedStartDate: formData.get('expectedStartDate'),
+                notes: formData.get('notes'),
+                files: uploadedFiles.map(f => ({ name: f.name, size: f.size })),
+                bdmId: currentUser.id,
+                bdmName: currentUser.name,
+                status: 'Pending Estimation',
+                createdAt: new Date().toISOString(),
+                estimationData: null,
+                managementApproval: null
+            };
+            
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            proposals.push(proposal);
+            localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
+            
+            uploadedFiles = [];
+            form.reset();
+            document.getElementById('fileList').innerHTML = '';
+            
+            showSuccessModal('Proposal Submitted!', 'Your proposal has been submitted successfully and is now pending estimation.');
+            setTimeout(() => navigateTo('my-proposals'), 2000);
+        }
 
-            if (!projectName || !clientName) {
-                alert('Please fill in all required fields');
+        function getMyProposals() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const myProposals = proposals.filter(p => p.bdmId === currentUser.id);
+            
+            return `
+                <div class="page-header">
+                    <h2>My Proposals</h2>
+                    <p class="subtitle">Track and manage your submitted proposals</p>
+                </div>
+                
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${myProposals.length > 0 ? myProposals.map(p => `
+                                <tr>
+                                    <td>${p.projectNumber}</td>
+                                    <td><strong>${p.projectName}</strong></td>
+                                    <td>${p.clientName}</td>
+                                    <td>${p.projectType}</td>
+                                    <td><span class="status-badge status-${p.status.toLowerCase().replace(/ /g, '-')}">${p.status}</span></td>
+                                    <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary" onclick="viewProposal(${p.id})">View</button>
+                                            ${p.files && p.files.length > 0 ? `<button class="btn btn-sm btn-outline" onclick="viewFiles(${p.id})">Files (${p.files.length})</button>` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="7" class="text-center">No proposals found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function viewProposal(id) {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposal = proposals.find(p => p.id === id);
+            
+            if (!proposal) return;
+            
+            const modalContent = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Proposal Details</h2>
+                        <span class="close-modal" onclick="closeViewModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <h3>${proposal.projectName}</h3>
+                        <p><strong>Project Number:</strong> ${proposal.projectNumber}</p>
+                        <p><strong>Client:</strong> ${proposal.clientName}</p>
+                        <p><strong>Email:</strong> ${proposal.clientEmail}</p>
+                        ${proposal.clientPhone ? `<p><strong>Phone:</strong> ${proposal.clientPhone}</p>` : ''}
+                        <p><strong>Project Type:</strong> ${proposal.projectType}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-${proposal.status.toLowerCase().replace(/ /g, '-')}">${proposal.status}</span></p>
+                        <div class="divider"></div>
+                        <h4>Description</h4>
+                        <p>${proposal.projectDescription}</p>
+                        ${proposal.notes ? `<h4>Additional Notes</h4><p>${proposal.notes}</p>` : ''}
+                        ${proposal.estimationData ? `
+                            <div class="divider"></div>
+                            <h4>Estimation Details</h4>
+                            <p><strong>Total Hours:</strong> ${proposal.estimationData.totalHours}</p>
+                            <p><strong>Tonnage:</strong> ${proposal.estimationData.tonnage} tons</p>
+                            <p><strong>Estimated By:</strong> ${proposal.estimationData.estimatorName}</p>
+                        ` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="closeViewModal()">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalContent);
+        }
+
+        function viewFiles(id) {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposal = proposals.find(p => p.id === id);
+            
+            if (!proposal || !proposal.files || proposal.files.length === 0) return;
+            
+            const modalContent = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Uploaded Files</h2>
+                        <span class="close-modal" onclick="closeViewModal()">&times;</span>
+                    </div>
+                    <div class="modal-body">
+                        <div class="files-list">
+                            ${proposal.files.map(file => `
+                                <div class="file-item">
+                                    <div class="file-item-name">
+                                        <span class="file-icon">📄</span>
+                                        <span>${file.name}</span>
+                                    </div>
+                                    <span class="badge badge-primary">${(file.size / 1024).toFixed(2)} KB</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="closeViewModal()">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalContent);
+        }
+
+        // Estimator Pages
+        function getEstimatorDashboard() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const pendingEstimations = proposals.filter(p => p.status === 'Pending Estimation');
+            const completedEstimations = proposals.filter(p => p.status !== 'Pending Estimation' && p.estimationData && p.estimationData.estimatorId === currentUser.id);
+            
+            return `
+                <div class="page-header">
+                    <h2>Estimator Dashboard</h2>
+                    <p class="subtitle">Manage project estimations</p>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">${pendingEstimations.length}</span>
+                        <span class="stat-label">Pending Estimations</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${completedEstimations.length}</span>
+                        <span class="stat-label">Completed</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${completedEstimations.filter(p => p.status === 'Approved').length}</span>
+                        <span class="stat-label">Approved</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${completedEstimations.filter(p => p.status === 'Rejected').length}</span>
+                        <span class="stat-label">Rejected</span>
+                    </div>
+                </div>
+
+                <div class="recent-projects">
+                    <h3>Recent Estimations</h3>
+                    ${getRecentEstimations(completedEstimations)}
+                </div>
+            `;
+        }
+
+        function getRecentEstimations(estimations) {
+            if (estimations.length === 0) {
+                return '<p class="empty-state">No estimations yet</p>';
+            }
+            
+            return estimations.slice(0, 5).map(p => `
+                <div class="activity-item">
+                    <strong>${p.projectName}</strong> - ${p.clientName}
+                    <span class="status-badge status-${p.status.toLowerCase().replace(' ', '-')}">${p.status}</span>
+                    <span class="activity-time">${new Date(p.estimationData.updatedAt).toLocaleDateString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function getPendingEstimations() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const pendingEstimations = proposals.filter(p => p.status === 'Pending Estimation');
+            
+            return `
+                <div class="page-header">
+                    <h2>Pending Estimations</h2>
+                    <p class="subtitle">Proposals awaiting your estimation</p>
+                </div>
+                
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>Type</th>
+                                <th>Submitted By</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingEstimations.length > 0 ? pendingEstimations.map(p => `
+                                <tr>
+                                    <td>${p.projectNumber}</td>
+                                    <td><strong>${p.projectName}</strong></td>
+                                    <td>${p.clientName}</td>
+                                    <td>${p.projectType}</td>
+                                    <td>${p.bdmName}</td>
+                                    <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary" onclick="viewProposal(${p.id})">View</button>
+                                            <button class="btn btn-sm btn-success" onclick="openEstimatorForm(${p.id})">Estimate</button>
+                                            ${p.files && p.files.length > 0 ? `<button class="btn btn-sm btn-outline" onclick="viewFiles(${p.id})">Files</button>` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="7" class="text-center">No pending estimations</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ESTIMATOR FORM MODAL -->
+                <div id="estimatorFormModal" class="modal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h2>Update Estimation Details</h2>
+                            <span class="close-modal" onclick="closeEstimatorModal()">&times;</span>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="estimatorProposalId" />
+                            <div class="manhour-section">
+                                <h3>Manhour Breakdown *</h3>
+                                <div class="manhour-grid">
+                                    <div class="manhour-input-group">
+                                        <label>Design Hours</label>
+                                        <input type="number" id="designHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
+                                    </div>
+                                    <div class="manhour-input-group">
+                                        <label>Detailing Hours</label>
+                                        <input type="number" id="detailingHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
+                                    </div>
+                                    <div class="manhour-input-group">
+                                        <label>Checking Hours</label>
+                                        <input type="number" id="checkingHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
+                                    </div>
+                                    <div class="manhour-input-group">
+                                        <label>Revision Hours</label>
+                                        <input type="number" id="revisionHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
+                                    </div>
+                                    <div class="manhour-input-group">
+                                        <label>PM Hours</label>
+                                        <input type="number" id="pmHours" min="0" step="0.5" value="0" oninput="calculateTotalHours()">
+                                    </div>
+                                </div>
+                                <div class="manhour-total-row">
+                                    <div class="manhour-total-item">
+                                        <label>Total Hours</label>
+                                        <div class="total-value" id="totalHoursDisplay">0</div>
+                                    </div>
+                                    <div class="manhour-input-group">
+                                        <label>Tonnage (tons)</label>
+                                        <input type="number" id="tonnage" min="0" step="0.1" value="0">
+                                    </div>
+                                </div>
+                                <div id="validationMessage" class="validation-message" style="display: none;">
+                                    Either Total Hours or Tonnage must be greater than 0.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-cancel" onclick="closeEstimatorModal()">Cancel</button>
+                            <button type="button" class="btn btn-success" onclick="submitEstimatorData()">Save Estimation</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openEstimatorForm(proposalId) {
+            document.getElementById('estimatorProposalId').value = proposalId;
+            document.getElementById('estimatorFormModal').style.display = 'block';
+        }
+
+        function closeEstimatorModal() {
+            document.getElementById('estimatorFormModal').style.display = 'none';
+            // Reset form
+            document.getElementById('designHours').value = 0;
+            document.getElementById('detailingHours').value = 0;
+            document.getElementById('checkingHours').value = 0;
+            document.getElementById('revisionHours').value = 0;
+            document.getElementById('pmHours').value = 0;
+            document.getElementById('tonnage').value = 0;
+            document.getElementById('totalHoursDisplay').textContent = '0';
+            document.getElementById('validationMessage').style.display = 'none';
+        }
+
+        function calculateTotalHours() {
+            const designHours = parseFloat(document.getElementById('designHours').value) || 0;
+            const detailingHours = parseFloat(document.getElementById('detailingHours').value) || 0;
+            const checkingHours = parseFloat(document.getElementById('checkingHours').value) || 0;
+            const revisionHours = parseFloat(document.getElementById('revisionHours').value) || 0;
+            const pmHours = parseFloat(document.getElementById('pmHours').value) || 0;
+            
+            const totalHours = designHours + detailingHours + checkingHours + revisionHours + pmHours;
+            document.getElementById('totalHoursDisplay').textContent = totalHours.toFixed(1);
+        }
+
+        function submitEstimatorData() {
+            const proposalId = parseInt(document.getElementById('estimatorProposalId').value);
+            const designHours = parseFloat(document.getElementById('designHours').value) || 0;
+            const detailingHours = parseFloat(document.getElementById('detailingHours').value) || 0;
+            const checkingHours = parseFloat(document.getElementById('checkingHours').value) || 0;
+            const revisionHours = parseFloat(document.getElementById('revisionHours').value) || 0;
+            const pmHours = parseFloat(document.getElementById('pmHours').value) || 0;
+            const tonnage = parseFloat(document.getElementById('tonnage').value) || 0;
+            
+            const totalHours = designHours + detailingHours + checkingHours + revisionHours + pmHours;
+            
+            // Validation
+            if (totalHours === 0 && tonnage === 0) {
+                document.getElementById('validationMessage').style.display = 'block';
                 return;
             }
-
-            const formData = new FormData();
-            formData.append('projectName', projectName);
-            formData.append('clientName', clientName);
-            formData.append('bdmId', currentUser._id);
-            formData.append('bdmName', currentUser.name);
             
-            selectedFiles.forEach(file => {
-                formData.append('files', file);
-            });
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (response.ok) {
-                    closeProposalModal();
-                    showSuccessModal('Proposal Submitted!', 'Your proposal has been successfully submitted.');
-                    loadMyProposals();
-                    loadDashboard();
-                } else {
-                    alert('Failed to submit proposal');
-                }
-            } catch (error) {
-                alert('Error submitting proposal');
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposalIndex = proposals.findIndex(p => p.id === proposalId);
+            
+            if (proposalIndex !== -1) {
+                proposals[proposalIndex].estimationData = {
+                    designHours,
+                    detailingHours,
+                    checkingHours,
+                    revisionHours,
+                    pmHours,
+                    totalHours,
+                    tonnage,
+                    estimatorId: currentUser.id,
+                    estimatorName: currentUser.name,
+                    updatedAt: new Date().toISOString()
+                };
+                proposals[proposalIndex].status = 'Pending Management Approval';
+                
+                localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
+                
+                closeEstimatorModal();
+                showSuccessModal('Estimation Submitted!', 'The estimation has been submitted to management for approval.');
+                setTimeout(() => navigateTo('pending-estimations'), 2000);
             }
         }
 
-        // View BDM Files
-        async function viewBDMFiles(proposalId) {
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals/${proposalId}`);
-                const proposal = await response.json();
+        function getCompletedEstimations() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const completedEstimations = proposals.filter(p => 
+                p.estimationData && 
+                p.estimationData.estimatorId === currentUser.id &&
+                p.status !== 'Pending Estimation'
+            );
+            
+            return `
+                <div class="page-header">
+                    <h2>Completed Estimations</h2>
+                    <p class="subtitle">Your submitted estimations</p>
+                </div>
                 
-                const filesList = document.getElementById('bdmFilesList');
-                if (proposal.files && proposal.files.length > 0) {
-                    filesList.innerHTML = proposal.files.map(file => `
-                        <div class="file-item">
-                            <div class="file-name">${file.originalName}</div>
-                            <a href="${API_BASE_URL}${file.path}" target="_blank" class="btn btn-sm btn-primary">Download</a>
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>Total Hours</th>
+                                <th>Tonnage</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${completedEstimations.length > 0 ? completedEstimations.map(p => `
+                                <tr>
+                                    <td>${p.projectNumber}</td>
+                                    <td><strong>${p.projectName}</strong></td>
+                                    <td>${p.clientName}</td>
+                                    <td>${p.estimationData.totalHours} hrs</td>
+                                    <td>${p.estimationData.tonnage} tons</td>
+                                    <td><span class="status-badge status-${p.status.toLowerCase().replace(/ /g, '-')}">${p.status}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="viewProposal(${p.id})">View</button>
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="7" class="text-center">No completed estimations</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        // Management Pages
+        function getManagementDashboard() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            const pendingApprovals = proposals.filter(p => p.status === 'Pending Management Approval');
+            
+            return `
+                <div class="page-header">
+                    <h2>Management Dashboard</h2>
+                    <p class="subtitle">Overview of all projects and approvals</p>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">${pendingApprovals.length}</span>
+                        <span class="stat-label">Pending Approvals</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${projects.length}</span>
+                        <span class="stat-label">Active Projects</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${proposals.filter(p => p.status === 'Approved').length}</span>
+                        <span class="stat-label">Approved</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${proposals.length}</span>
+                        <span class="stat-label">Total Proposals</span>
+                    </div>
+                </div>
+
+                <div class="activity-section">
+                    <h3>Recent Activity</h3>
+                    ${getManagementActivity(proposals)}
+                </div>
+            `;
+        }
+
+        function getManagementActivity(proposals) {
+            if (proposals.length === 0) {
+                return '<p class="empty-state">No activity yet</p>';
+            }
+            
+            return proposals.slice(0, 5).map(p => `
+                <div class="activity-item">
+                    <strong>${p.projectName}</strong> - ${p.clientName}
+                    <span class="status-badge status-${p.status.toLowerCase().replace(/ /g, '-')}">${p.status}</span>
+                    <span class="activity-time">${new Date(p.createdAt).toLocaleDateString()}</span>
+                </div>
+            `).join('');
+        }
+
+        function getPendingApprovals() {
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const pendingApprovals = proposals.filter(p => p.status === 'Pending Management Approval');
+            
+            return `
+                <div class="page-header">
+                    <h2>Pending Approvals</h2>
+                    <p class="subtitle">Review and approve project estimations</p>
+                </div>
+                
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>BDM</th>
+                                <th>Estimator</th>
+                                <th>Total Hours</th>
+                                <th>Tonnage</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingApprovals.length > 0 ? pendingApprovals.map(p => `
+                                <tr>
+                                    <td>${p.projectNumber}</td>
+                                    <td><strong>${p.projectName}</strong></td>
+                                    <td>${p.clientName}</td>
+                                    <td>${p.bdmName}</td>
+                                    <td>${p.estimationData.estimatorName}</td>
+                                    <td>${p.estimationData.totalHours} hrs</td>
+                                    <td>${p.estimationData.tonnage} tons</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary" onclick="viewProposal(${p.id})">View</button>
+                                            <button class="btn btn-sm btn-success" onclick="approveProposal(${p.id})">Approve</button>
+                                            <button class="btn btn-sm btn-danger" onclick="rejectProposal(${p.id})">Reject</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="8" class="text-center">No pending approvals</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function approveProposal(id) {
+            if (!confirm('Are you sure you want to approve this proposal?')) return;
+            
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposalIndex = proposals.findIndex(p => p.id === id);
+            
+            if (proposalIndex !== -1) {
+                proposals[proposalIndex].status = 'Approved';
+                proposals[proposalIndex].managementApproval = {
+                    approvedBy: currentUser.name,
+                    approvedAt: new Date().toISOString()
+                };
+                
+                // Create project entry
+                const project = {
+                    id: Date.now(),
+                    proposalId: proposals[proposalIndex].id,
+                    projectNumber: proposals[proposalIndex].projectNumber,
+                    projectName: proposals[proposalIndex].projectName,
+                    clientName: proposals[proposalIndex].clientName,
+                    status: 'Active',
+                    createdAt: new Date().toISOString(),
+                    assignedDesigners: []
+                };
+                
+                const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+                projects.push(project);
+                
+                localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
+                localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+                
+                showSuccessModal('Proposal Approved!', 'The proposal has been approved and converted to a project.');
+                setTimeout(() => navigateTo('pending-approvals'), 2000);
+            }
+        }
+
+        function rejectProposal(id) {
+            const reason = prompt('Please provide a reason for rejection:');
+            if (!reason) return;
+            
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposalIndex = proposals.findIndex(p => p.id === id);
+            
+            if (proposalIndex !== -1) {
+                proposals[proposalIndex].status = 'Rejected';
+                proposals[proposalIndex].managementApproval = {
+                    rejectedBy: currentUser.name,
+                    rejectedAt: new Date().toISOString(),
+                    reason: reason
+                };
+                
+                localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
+                
+                showSuccessModal('Proposal Rejected', 'The proposal has been rejected.');
+                setTimeout(() => navigateTo('pending-approvals'), 2000);
+            }
+        }
+
+        function getAllProjects() {
+            const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            
+            return `
+                <div class="page-header">
+                    <h2>All Projects</h2>
+                    <p class="subtitle">View and manage all active projects</p>
+                </div>
+                
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>Status</th>
+                                <th>Designers</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${projects.length > 0 ? projects.map(p => `
+                                <tr>
+                                    <td>${p.projectNumber}</td>
+                                    <td><strong>${p.projectName}</strong></td>
+                                    <td>${p.clientName}</td>
+                                    <td><span class="status-badge status-${p.status.toLowerCase()}">${p.status}</span></td>
+                                    <td>${p.assignedDesigners.length > 0 ? p.assignedDesigners.length + ' assigned' : 'None'}</td>
+                                    <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-primary" onclick="viewProjectDetails(${p.id})">View</button>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteProject(${p.id})">Delete</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="7" class="text-center">No projects found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- DELETE CONFIRMATION MODAL -->
+                <div id="deleteConfirmModal" class="modal">
+                    <div class="modal-content confirm-modal">
+                        <div class="modal-header">
+                            <h2>Confirm Delete</h2>
+                            <span class="close-modal" onclick="closeDeleteConfirmModal()">&times;</span>
                         </div>
-                    `).join('');
-                } else {
-                    filesList.innerHTML = '<p class="text-center">No files uploaded</p>';
-                }
-                
-                document.getElementById('bdmFilesModal').style.display = 'flex';
-            } catch (error) {
-                alert('Error loading files');
-            }
+                        <div class="modal-body">
+                            <div class="confirm-icon danger">⚠️</div>
+                            <h3 class="confirm-message">Are you sure you want to delete this project?</h3>
+                            <p class="confirm-details" id="deleteProjectDetails"></p>
+                            <p style="color: var(--danger); margin-top: 1rem; font-weight: 600;">This action cannot be undone!</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline" onclick="closeDeleteConfirmModal()">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="confirmDeleteProject()">Delete Project</button>
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
-        function closeBDMFilesModal() {
-            document.getElementById('bdmFilesModal').style.display = 'none';
-        }
+        let projectToDelete = null;
 
-        // Delete Proposal
-        function deleteProposal(proposalId, projectName) {
-            projectToDelete = proposalId;
-            document.getElementById('deleteProjectDetails').textContent = `Project: ${projectName}`;
-            document.getElementById('deleteConfirmModal').style.display = 'flex';
+        function deleteProject(id) {
+            const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            const project = projects.find(p => p.id === id);
+            
+            if (!project) return;
+            
+            projectToDelete = id;
+            document.getElementById('deleteProjectDetails').textContent = `${project.projectName} (${project.projectNumber})`;
+            document.getElementById('deleteConfirmModal').style.display = 'block';
         }
 
         function closeDeleteConfirmModal() {
@@ -1645,175 +2429,338 @@
             projectToDelete = null;
         }
 
-        async function confirmDeleteProject() {
+        function confirmDeleteProject() {
             if (!projectToDelete) return;
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals/${projectToDelete}`, {
-                    method: 'DELETE'
-                });
-
-                if (response.ok) {
-                    closeDeleteConfirmModal();
-                    showSuccessModal('Deleted!', 'Project has been deleted successfully.');
-                    loadMyProposals();
-                    loadDashboard();
-                } else {
-                    alert('Failed to delete proposal');
-                }
-            } catch (error) {
-                alert('Error deleting proposal');
-            }
-        }
-
-        // Estimator Modal Functions
-        function openEstimatorModal(proposalId) {
-            document.getElementById('estimatorProposalId').value = proposalId;
-            document.getElementById('estimatorFormModal').style.display = 'flex';
-        }
-
-        function closeEstimatorModal() {
-            document.getElementById('estimatorFormModal').style.display = 'none';
-            document.getElementById('estimatorProposalId').value = '';
-            resetEstimatorForm();
-        }
-
-        function resetEstimatorForm() {
-            document.getElementById('designHours').value = '0';
-            document.getElementById('detailingHours').value = '0';
-            document.getElementById('checkingHours').value = '0';
-            document.getElementById('revisionHours').value = '0';
-            document.getElementById('pmHours').value = '0';
-            document.getElementById('tonnage').value = '0';
-            document.getElementById('totalHoursDisplay').textContent = '0';
-            document.getElementById('validationMessage').style.display = 'none';
-        }
-
-        function calculateTotalHours() {
-            const design = parseFloat(document.getElementById('designHours').value) || 0;
-            const detailing = parseFloat(document.getElementById('detailingHours').value) || 0;
-            const checking = parseFloat(document.getElementById('checkingHours').value) || 0;
-            const revision = parseFloat(document.getElementById('revisionHours').value) || 0;
-            const pm = parseFloat(document.getElementById('pmHours').value) || 0;
             
-            const total = design + detailing + checking + revision + pm;
-            document.getElementById('totalHoursDisplay').textContent = total.toFixed(1);
-        }
-
-        async function submitEstimatorData() {
-            const proposalId = document.getElementById('estimatorProposalId').value;
-            const totalHours = parseFloat(document.getElementById('totalHoursDisplay').textContent);
-            const tonnage = parseFloat(document.getElementById('tonnage').value) || 0;
-
-            if (totalHours === 0 && tonnage === 0) {
-                document.getElementById('validationMessage').style.display = 'block';
-                return;
-            }
-
-            const estimationData = {
-                designHours: parseFloat(document.getElementById('designHours').value) || 0,
-                detailingHours: parseFloat(document.getElementById('detailingHours').value) || 0,
-                checkingHours: parseFloat(document.getElementById('checkingHours').value) || 0,
-                revisionHours: parseFloat(document.getElementById('revisionHours').value) || 0,
-                pmHours: parseFloat(document.getElementById('pmHours').value) || 0,
-                totalHours: totalHours,
-                tonnage: tonnage
-            };
-
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals/${proposalId}/estimation`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ estimationData })
-                });
-
-                if (response.ok) {
-                    closeEstimatorModal();
-                    showSuccessModal('Estimation Updated!', 'Estimation details have been saved successfully.');
-                    loadAllProposals();
-                    loadEstimationPortal();
-                } else {
-                    alert('Failed to update estimation');
-                }
-            } catch (error) {
-                alert('Error updating estimation');
-            }
-        }
-
-        // Designer Assignment Functions
-        async function openDesignerAssignment(projectId) {
-            document.getElementById('assignProjectId').value = projectId;
+            let projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            projects = projects.filter(p => p.id !== projectToDelete);
+            localStorage.setItem(STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
             
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/auth/users/designers`);
-                const designers = await response.json();
-                
-                const designersList = document.getElementById('designersList');
-                designersList.innerHTML = designers.map(designer => `
-                    <div class="checkbox-item">
-                        <input type="checkbox" id="designer_${designer._id}" value="${designer._id}">
-                        <label for="designer_${designer._id}">${designer.name}</label>
+            closeDeleteConfirmModal();
+            showSuccessModal('Project Deleted', 'The project has been successfully deleted.');
+            setTimeout(() => navigateTo('all-projects'), 2000);
+        }
+
+        function viewProjectDetails(id) {
+            const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            const project = projects.find(p => p.id === id);
+            
+            if (!project) return;
+            
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposal = proposals.find(p => p.id === project.proposalId);
+            
+            const modalContent = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Project Details</h2>
+                        <span class="close-modal" onclick="closeViewModal()">&times;</span>
                     </div>
-                `).join('');
+                    <div class="modal-body">
+                        <h3>${project.projectName}</h3>
+                        <p><strong>Project Number:</strong> ${project.projectNumber}</p>
+                        <p><strong>Client:</strong> ${project.clientName}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-${project.status.toLowerCase()}">${project.status}</span></p>
+                        <p><strong>Created:</strong> ${new Date(project.createdAt).toLocaleDateString()}</p>
+                        ${project.assignedDesigners.length > 0 ? `
+                            <div class="divider"></div>
+                            <h4>Assigned Designers</h4>
+                            <ul>
+                                ${project.assignedDesigners.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
+                        ` : ''}
+                        ${proposal ? `
+                            <div class="divider"></div>
+                            <h4>Original Proposal</h4>
+                            <p>${proposal.projectDescription}</p>
+                            ${proposal.estimationData ? `
+                                <h4>Estimation</h4>
+                                <p><strong>Total Hours:</strong> ${proposal.estimationData.totalHours}</p>
+                                <p><strong>Tonnage:</strong> ${proposal.estimationData.tonnage} tons</p>
+                            ` : ''}
+                        ` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="closeViewModal()">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            showModal(modalContent);
+        }
+
+        function getAllocateProjects() {
+            return `
+                <div class="page-header">
+                    <h2>Allocate Projects to Estimators</h2>
+                    <p class="subtitle">Assign projects to specific estimators for processing</p>
+                </div>
                 
-                document.getElementById('designerAssignmentModal').style.display = 'flex';
-            } catch (error) {
-                alert('Error loading designers');
+                <div class="card">
+                    <form onsubmit="submitAllocation(event)">
+                        <div class="form-group">
+                            <label>Select Project <span class="required">*</span></label>
+                            <select id="projectSelect" class="form-control" required>
+                                <option value="">-- Select a Project --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Select Estimator <span class="required">*</span></label>
+                            <select id="estimatorSelect" class="form-control" required>
+                                <option value="">-- Select an Estimator --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select class="form-control" id="prioritySelect">
+                                <option value="Normal">Normal</option>
+                                <option value="High">High</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Deadline</label>
+                            <input type="date" id="deadlineInput" class="form-control">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Notes for Estimator</label>
+                            <textarea id="allocationNotes" class="form-control" rows="3" placeholder="Add any special instructions or notes..."></textarea>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <span class="btn-icon">✓</span> Allocate Project
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        function loadEstimators() {
+            const users = JSON.parse(localStorage.getItem(STORAGE_KEYS.USERS) || '[]');
+            const estimators = users.filter(u => u.role === 'Estimator');
+            const estimatorSelect = document.getElementById('estimatorSelect');
+            
+            estimatorSelect.innerHTML = '<option value="">-- Select an Estimator --</option>' +
+                estimators.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const pendingProposals = proposals.filter(p => p.status === 'Pending Estimation');
+            const projectSelect = document.getElementById('projectSelect');
+            
+            projectSelect.innerHTML = '<option value="">-- Select a Project --</option>' +
+                pendingProposals.map(p => `<option value="${p.id}">${p.projectName} (${p.projectNumber})</option>`).join('');
+        }
+
+        function submitAllocation(event) {
+            event.preventDefault();
+            
+            const proposalId = parseInt(document.getElementById('projectSelect').value);
+            const estimatorId = parseInt(document.getElementById('estimatorSelect').value);
+            const priority = document.getElementById('prioritySelect').value;
+            const deadline = document.getElementById('deadlineInput').value;
+            const notes = document.getElementById('allocationNotes').value;
+            
+            const proposals = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROPOSALS) || '[]');
+            const proposalIndex = proposals.findIndex(p => p.id === proposalId);
+            
+            if (proposalIndex !== -1) {
+                proposals[proposalIndex].allocatedTo = estimatorId;
+                proposals[proposalIndex].priority = priority;
+                proposals[proposalIndex].deadline = deadline;
+                proposals[proposalIndex].allocationNotes = notes;
+                proposals[proposalIndex].allocatedAt = new Date().toISOString();
+                proposals[proposalIndex].allocatedBy = currentUser.name;
+                
+                localStorage.setItem(STORAGE_KEYS.PROPOSALS, JSON.stringify(proposals));
+                
+                showSuccessModal('Project Allocated!', 'The project has been successfully allocated to the estimator.');
+                setTimeout(() => {
+                    document.getElementById('projectSelect').value = '';
+                    document.getElementById('estimatorSelect').value = '';
+                    document.getElementById('prioritySelect').value = 'Normal';
+                    document.getElementById('deadlineInput').value = '';
+                    document.getElementById('allocationNotes').value = '';
+                    loadEstimators();
+                }, 2000);
             }
         }
 
-        function closeDesignerAssignmentModal() {
-            document.getElementById('designerAssignmentModal').style.display = 'none';
+        // Designer Pages
+        function getDesignerDashboard() {
+            const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            const myProjects = projects.filter(p => 
+                p.assignedDesigners && p.assignedDesigners.includes(currentUser.name)
+            );
+            
+            return `
+                <div class="page-header">
+                    <h2>Designer Dashboard</h2>
+                    <p class="subtitle">Your assigned projects</p>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <span class="stat-number">${myProjects.length}</span>
+                        <span class="stat-label">Assigned Projects</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${myProjects.filter(p => p.status === 'Active').length}</span>
+                        <span class="stat-label">Active</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">${myProjects.filter(p => p.status === 'Completed').length}</span>
+                        <span class="stat-label">Completed</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-number">0</span>
+                        <span class="stat-label">Overdue</span>
+                    </div>
+                </div>
+
+                <div class="recent-projects">
+                    <h3>Recent Projects</h3>
+                    ${getDesignerRecentProjects(myProjects)}
+                </div>
+            `;
         }
 
-        async function submitDesignerAssignment() {
-            const projectId = document.getElementById('assignProjectId').value;
-            const checkboxes = document.querySelectorAll('#designersList input[type="checkbox"]:checked');
-            const designerIds = Array.from(checkboxes).map(cb => cb.value);
+        function getDesignerRecentProjects(projects) {
+            if (projects.length === 0) {
+                return '<p class="empty-state">No projects assigned yet</p>';
+            }
+            
+            return projects.slice(0, 5).map(p => `
+                <div class="activity-item">
+                    <strong>${p.projectName}</strong> - ${p.clientName}
+                    <span class="status-badge status-${p.status.toLowerCase()}">${p.status}</span>
+                    <span class="activity-time">${new Date(p.createdAt).toLocaleDateString()}</span>
+                </div>
+            `).join('');
+        }
 
-            if (designerIds.length === 0) {
-                alert('Please select at least one designer');
+        function getAllocatedProjects() {
+            return `
+                <div class="page-header">
+                    <h2>My Allocated Projects</h2>
+                    <p class="subtitle">Projects assigned to you by management</p>
+                </div>
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project #</th>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>Allocated By</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allocatedProjectsTableBody">
+                            <tr>
+                                <td colspan="7" class="text-center">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        function loadAllocatedProjects() {
+            const projects = JSON.parse(localStorage.getItem(STORAGE_KEYS.PROJECTS) || '[]');
+            const myProjects = projects.filter(p => 
+                p.assignedDesigners && p.assignedDesigners.includes(currentUser.name)
+            );
+            
+            const tbody = document.getElementById('allocatedProjectsTableBody');
+            
+            if (myProjects.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center">No projects allocated to you yet</td></tr>';
                 return;
             }
+            
+            tbody.innerHTML = myProjects.map(p => `
+                <tr>
+                    <td>${p.projectNumber}</td>
+                    <td><strong>${p.projectName}</strong></td>
+                    <td>${p.clientName}</td>
+                    <td>Management</td>
+                    <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+                    <td><span class="status-badge status-${p.status.toLowerCase()}">${p.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="viewProjectDetails(${p.id})">View</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
 
-            try {
-                const response = await fetch(`${API_BASE_URL}/api/proposals/${projectId}/assign-designers`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ designerIds })
-                });
-
-                if (response.ok) {
-                    closeDesignerAssignmentModal();
-                    showSuccessModal('Designers Assigned!', 'Designers have been assigned to the project successfully.');
-                    loadMyProjects();
-                } else {
-                    alert('Failed to assign designers');
+        // Modal functions
+        function showModal(content) {
+            const modal = document.createElement('div');
+            modal.id = 'viewModal';
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = content;
+            document.body.appendChild(modal);
+            
+            // Close on outside click
+            modal.onclick = function(event) {
+                if (event.target === modal) {
+                    closeViewModal();
                 }
-            } catch (error) {
-                alert('Error assigning designers');
+            };
+        }
+
+        function closeViewModal() {
+            const modal = document.getElementById('viewModal');
+            if (modal) {
+                modal.remove();
             }
         }
 
-        // Success Modal
         function showSuccessModal(title, message) {
-            document.getElementById('successMessage').textContent = title;
-            document.getElementById('successDetails').textContent = message;
-            document.getElementById('successModal').style.display = 'flex';
+            const modalContent = `
+                <div class="modal-content modal-success">
+                    <div class="modal-body text-center">
+                        <div class="success-icon">✓</div>
+                        <h3>${title}</h3>
+                        <p>${message}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" onclick="closeSuccessModal()">OK</button>
+                    </div>
+                </div>
+            `;
+            
+            const modal = document.createElement('div');
+            modal.id = 'successModal';
+            modal.className = 'modal';
+            modal.style.display = 'block';
+            modal.innerHTML = modalContent;
+            document.body.appendChild(modal);
         }
 
         function closeSuccessModal() {
-            document.getElementById('successModal').style.display = 'none';
+            const modal = document.getElementById('successModal');
+            if (modal) {
+                modal.remove();
+            }
         }
 
-        // Check for existing session
-        window.onload = function() {
-            const savedUser = localStorage.getItem('ebtracker_user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                showApp();
+        // Close modals on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeViewModal();
+                closeSuccessModal();
+                closeDeleteConfirmModal();
+                closeEstimatorModal();
             }
-        };
+        });
     </script>
 </body>
 </html>
