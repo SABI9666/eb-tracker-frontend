@@ -64,8 +64,8 @@
         .btn-primary:hover { background: var(--dark-blue); }
         .btn-success { background: var(--success); color: white; }
         .btn-outline { background: transparent; color: var(--primary-blue); border: 2px solid var(--primary-blue); }
-        .btn-danger { background: var(--danger); color: white; }
-        .btn-warning { background: var(--warning); color: white; }
+         btn-warning { background: var(--warning); color: white; }
+        .btn-warning:hover { background: #e67e22; }
         .btn-sm { padding: 0.6rem 1.2rem; font-size: 0.85rem; width: auto; }
         .btn-disabled { background: #ccc; color: #666; cursor: not-allowed; }
 
@@ -2873,19 +2873,35 @@
 
 
             // BDM delete button - only for own proposals and if not too far in workflow
-            // FIXED: BDM can now delete their own proposals unless they are already allocated
-         if (currentUserRole === 'bdm' && p.createdByUid === currentUser.uid) {
-         // Only prevent deletion if proposal is allocated to a Design Manager
-       if (!p.allocationStatus || p.allocationStatus !== 'allocated') {
-        actionsHtml += ` 
-            <button class="btn btn-danger btn-sm" 
-                    onclick="deleteProposal('${p.id}')" 
-                    style="margin-left: 10px;">
-                Delete
-            </button>
-        `;
-    }
-}
+      // BDM edit and delete buttons - only for own proposals and if not allocated
+        if (currentUserRole === 'bdm' && p.createdByUid === currentUser.uid) {
+            // Only prevent edit/delete if proposal is allocated to a Design Manager
+            if (!p.allocationStatus || p.allocationStatus !== 'allocated') {
+                actionsHtml += ` 
+                    <button class="btn btn-primary btn-sm" 
+                            onclick="editProposal('${p.id}')" 
+                            style="margin-left: 10px;">
+                        ✏️ Edit
+                    </button>
+                    <button class="btn btn-danger btn-sm" 
+                            onclick="deleteProposal('${p.id}')" 
+                            style="margin-left: 10px;">
+                        🗑️ Delete
+                    </button>
+                `;
+            }
+        }
+
+        // COO and Director can also edit proposals
+        if (['coo', 'director'].includes(currentUserRole) && (!p.allocationStatus || p.allocationStatus !== 'allocated')) {
+            actionsHtml += ` 
+                <button class="btn btn-primary btn-sm" 
+                        onclick="editProposal('${p.id}')" 
+                        style="margin-left: 10px;">
+                    ✏️ Edit
+                </button>
+            `;
+        }
             // Build links section
             let linksHtml = '';
             if (linkFiles.length > 0 || (p.projectLinks && p.projectLinks.length > 0)) {
@@ -2910,7 +2926,10 @@
                                 </div>
                                 <div>
                                     <button class="btn btn-outline btn-sm" onclick="window.open('${link.url}', '_blank')">Open Link</button>
-                                    ${link.canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteFile('${link.id}'); closeModal(); viewProposal('${p.id}');">Delete</button>` : ''}
+                                    ${link.canDelete ? `
+                                        <button class="btn btn-warning btn-sm" onclick="editLink('${link.id}', '${p.id}')">✏️ Edit</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteLink('${link.id}', '${p.id}')">🗑️ Delete</button>
+                                    ` : ''}
                                 </div>
                             </div>
                         `).join('')}
@@ -2931,7 +2950,10 @@
                                     <div>
                                         <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
                                         <button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">Download</button>
-                                         ${file.canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">Delete</button>` : ''}
+                                        ${file.canDelete ? `
+                                            <button class="btn btn-warning btn-sm" onclick="editFile('${file.id}', '${p.id}')">✏️ Edit</button>
+                                            <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>
+                                        ` : ''}
                                     </div>
                                 </div>
                             `).join('')}
@@ -2977,8 +2999,10 @@
                                         <div>
                                             <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
                                             <button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">Download</button>
-                                            ${file.canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">Delete</button>` : ''}
-                                        </div>
+                                            ${file.canDelete ? `
+                                                <button class="btn btn-warning btn-sm" onclick="editFile('${file.id}', '${p.id}')">✏️ Edit</button>
+                                                <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>
+                                            ` : ''}
                                     </div>
                                 `).join('') : '<p>No project files uploaded.</p>'}
                             </div>
@@ -3580,6 +3604,23 @@
                 hideLoading();
             }
         }
+        async function deleteProposal(proposalId) {
+            // ... (This function remains unchanged)
+            if (!confirm('Are you sure you want to delete this proposal?')) return;
+            try {
+                showLoading();
+                const response = await apiCall(`proposals?id=${proposalId}`, { method: 'DELETE' });
+                if (response.success) {
+                    alert('Proposal deleted successfully!');
+                    closeModal();
+                    showProposals();
+                }
+            } catch (error) {
+                alert('Error deleting proposal: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }   // ← LINE 3582 - ADD CODE AFTER THIS LINE
 
         // ============================================
         // NEW FUNCTIONS ADDED FROM PROMPT
