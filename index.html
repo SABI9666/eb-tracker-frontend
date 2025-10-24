@@ -2873,10 +2873,19 @@
 
 
             // BDM delete button - only for own proposals and if not too far in workflow
-            if (currentUserRole === 'bdm' && p.createdByUid === currentUser.uid && ['draft', 'estimated', 'priced', 'rejected'].includes(p.status)) {
-                actionsHtml += ` <button class="btn btn-danger btn-sm" onclick="deleteProposal('${p.id}')" style="margin-left: auto;">Delete</button>`;
-            }
-
+            // FIXED: BDM can now delete their own proposals unless they are already allocated
+         if (currentUserRole === 'bdm' && p.createdByUid === currentUser.uid) {
+         // Only prevent deletion if proposal is allocated to a Design Manager
+       if (!p.allocationStatus || p.allocationStatus !== 'allocated') {
+        actionsHtml += ` 
+            <button class="btn btn-danger btn-sm" 
+                    onclick="deleteProposal('${p.id}')" 
+                    style="margin-left: 10px;">
+                Delete
+            </button>
+        `;
+    }
+}
             // Build links section
             let linksHtml = '';
             if (linkFiles.length > 0 || (p.projectLinks && p.projectLinks.length > 0)) {
