@@ -2844,19 +2844,23 @@
                 actionsHtml = `<button class="btn btn-primary" onclick="showEstimationModal('${p.id}')">Add Estimation</button>`;
             
             // MODIFIED: Use new button logic for COO
-            } else if (currentUserRole === 'coo' && (p.status === 'estimated' || p.status === 'won' || (p.estimation && !p.pricing) || p.status === 'pricing_complete')) {
+            } else if (currentUserRole === 'coo' && (p.status === 'estimated' || p.status === 'won' || (p.estimation && !p.pricing) || p.status === 'pricing_complete' || p.status === 'pending_approval')) {
                 actionsHtml = getProposalAllocationButton(p);
             
-            // MODIFIED: Use new button logic for Director
+            // MODIFIED: Director can approve/reject proposals with pending_approval status
             } else if (currentUserRole === 'director') { 
-                if (p.status === 'pending_director_approval') {
+                if (p.status === 'pending_approval' || p.status === 'pending_director_approval' || p.status === 'pricing_complete') {
                     actionsHtml = `
-                        <button class="btn btn-danger" onclick="rejectProposal('${p.id}')">Reject</button>
-                        <button class="btn btn-success" onclick="approveProposal('${p.id}')">Approve</button>
+                        <button class="btn btn-danger" onclick="showRejectModal('${p.id}')">❌ Reject</button>
+                        <button class="btn btn-success" onclick="showApproveModal('${p.id}')">✅ Approve</button>
                     `;
-                } else {
-                    // Get allocation/view buttons if status is 'won' etc.
+                } else if (p.status === 'won') {
+                    // Get allocation/view buttons if status is 'won'
                     actionsHtml = getProposalAllocationButton(p);
+                } else if (p.status === 'approved') {
+                    actionsHtml = '<span style="color: var(--success); font-weight: 600;">✅ Already Approved</span>';
+                } else if (p.status === 'rejected') {
+                    actionsHtml = '<span style="color: var(--danger); font-weight: 600;">❌ Already Rejected</span>';
                 }
             
             } else if (currentUserRole === 'bdm' && p.status === 'approved') {
@@ -3326,21 +3330,159 @@
             }
         }
 
-        async function approveProposal(id) {
-            // ... (This function remains unchanged)
-            const comments = prompt("Optional approval comments:");
-            await handleProposalAction(id, 'director_approve', {
-                comments: comments || 'Approved'
-            }, 'Proposal APPROVED successfully!');
+        // Show Approve Modal with proper dialog
+        function showApproveModal(proposalId) {
+            closeModal(); // Close proposal detail modal first
+            
+            const modalHtml = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header" style="background: var(--success); color: white;">
+                            <h2>✅ Approve Proposal</h2>
+                        </div>
+                        <div class="modal-body" style="padding: 2rem;">
+                            <div class="success-message" style="margin-bottom: 1.5rem;">
+                                <strong>Approve this proposal?</strong>
+                                <p style="margin-top: 0.5rem;">The proposal will be marked as approved and the BDM will be notified to submit it to the client.</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="approveComments">Comments (Optional)</label>
+                                <textarea id="approveComments" class="form-control" rows="4" 
+                                    placeholder="Add any approval comments or special instructions..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button onclick="closeModal(); viewProposal('${proposalId}')" class="btn btn-outline">Cancel</button>
+                            <button onclick="confirmApproveProposal('${proposalId}')" class="btn btn-success">
+                                ✅ Confirm Approval
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
         }
-        async function rejectProposal(id) {
-            // ... (This function remains unchanged)
-            const reason = prompt("Reason for rejection:");
-            if (reason) {
-                await handleProposalAction(id, 'director_reject', {
-                    comments: reason
-                }, 'Proposal REJECTED and sent for revision.');
+
+        // Confirm and execute approval
+        async function confirmApproveProposal(id) {
+            const comments = document.getElementById('approveComments').value;
+            
+            try {
+                showLoading();
+                const response = await apiCall(`proposals?id=${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'director_approve',
+                        data: { comments: comments || 'Approved by Director' }
+                    })
+                });
+                
+                if (response.success) {
+                    closeModal();
+                    showNotification('✅ Proposal approved successfully!', 'success');
+                    // Refresh the view
+                    if (typeof showProposals === 'function') {
+                        showProposals();
+                    } else if (typeof showDashboard === 'function') {
+                        showDashboard();
+                    }
+                } else {
+                    throw new Error(response.error || 'Failed to approve proposal');
+                }
+            } catch (error) {
+                console.error('Error approving proposal:', error);
+                alert('Error approving proposal: ' + error.message);
+            } finally {
+                hideLoading();
             }
+        }
+
+        // Show Reject Modal with proper dialog
+        function showRejectModal(proposalId) {
+            closeModal(); // Close proposal detail modal first
+            
+            const modalHtml = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 600px;">
+                        <div class="modal-header" style="background: var(--danger); color: white;">
+                            <h2>❌ Reject Proposal</h2>
+                        </div>
+                        <div class="modal-body" style="padding: 2rem;">
+                            <div class="error-message" style="margin-bottom: 1.5rem;">
+                                <strong>Reject this proposal?</strong>
+                                <p style="margin-top: 0.5rem;">The proposal will be marked as rejected and sent back for revision. Please provide a reason.</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="rejectReason">Reason for Rejection <span class="required">*</span></label>
+                                <textarea id="rejectReason" class="form-control" rows="4" 
+                                    placeholder="Please explain why this proposal is being rejected..." required></textarea>
+                                <small class="form-text">This information will be sent to the team for revision.</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button onclick="closeModal(); viewProposal('${proposalId}')" class="btn btn-outline">Cancel</button>
+                            <button onclick="confirmRejectProposal('${proposalId}')" class="btn btn-danger">
+                                ❌ Confirm Rejection
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // Confirm and execute rejection
+        async function confirmRejectProposal(id) {
+            const reason = document.getElementById('rejectReason').value.trim();
+            
+            if (!reason) {
+                alert('Please provide a reason for rejection');
+                return;
+            }
+            
+            try {
+                showLoading();
+                const response = await apiCall(`proposals?id=${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'director_reject',
+                        data: { comments: reason }
+                    })
+                });
+                
+                if (response.success) {
+                    closeModal();
+                    showNotification('Proposal rejected and sent for revision', 'warning');
+                    // Refresh the view
+                    if (typeof showProposals === 'function') {
+                        showProposals();
+                    } else if (typeof showDashboard === 'function') {
+                        showDashboard();
+                    }
+                } else {
+                    throw new Error(response.error || 'Failed to reject proposal');
+                }
+            } catch (error) {
+                console.error('Error rejecting proposal:', error);
+                alert('Error rejecting proposal: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Keep old functions for backward compatibility but use new modals
+        async function approveProposal(id) {
+            showApproveModal(id);
+        }
+        
+        async function rejectProposal(id) {
+            showRejectModal(id);
         }
         async function submitToClient(id) {
             // ... (This function remains unchanged)
