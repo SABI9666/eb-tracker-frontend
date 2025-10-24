@@ -4030,34 +4030,34 @@
         // Submit Project Allocation
         async function submitProjectAllocation(proposalId) {
             const designManagerSelect = document.getElementById('designManagerSelect');
-const designManagerUid = designManagerSelect?.value;
-const targetCompletionDate = document.getElementById('targetCompletionDate')?.value;
-const projectPriority = document.getElementById('projectPriority')?.value || 'Normal';
-
-// FIXED: Enhanced retrieval with proper null checking
-const allocationCommentsElement = document.getElementById('allocationComments');
-const allocationComments = allocationCommentsElement ? allocationCommentsElement.value.trim() : '';
-
-const specialInstructionsElement = document.getElementById('specialInstructions');
-const specialInstructions = specialInstructionsElement ? specialInstructionsElement.value.trim() : '';
+            const designManagerUid = designManagerSelect?.value;
+            const targetCompletionDate = document.getElementById('targetCompletionDate')?.value;
+            const projectPriority = document.getElementById('projectPriority')?.value || 'Normal';
+            
+            // FIXED: Enhanced retrieval with proper null checking
+            const allocationCommentsElement = document.getElementById('allocationComments');
+            const allocationComments = allocationCommentsElement ? allocationCommentsElement.value.trim() : '';
+            
+            const specialInstructionsElement = document.getElementById('specialInstructions');
+            const specialInstructions = specialInstructionsElement ? specialInstructionsElement.value.trim() : '';
                 
-       // Enhanced validation with debugging
-console.log('Form validation - Design Manager UID:', designManagerUid);
-console.log('Form validation - Allocation Comments:', allocationComments);
-console.log('Form validation - Comments Length:', allocationComments.length);
-
-if (!designManagerUid) {
-    alert('Please select a Design Manager');
-    designManagerSelect?.focus();  // Focus on the field
-    return;
-}
-    
-// FIXED: Enhanced validation check
-if (!allocationComments || allocationComments.length === 0) {
-    alert('Please add allocation comments');
-    allocationCommentsElement?.focus();  // Focus on the textarea
-    return;
-}
+            // ENHANCED VALIDATION with debugging
+            console.log('Form validation - Design Manager UID:', designManagerUid);
+            console.log('Form validation - Allocation Comments:', allocationComments);
+            console.log('Form validation - Comments Length:', allocationComments.length);
+            
+            if (!designManagerUid) {
+                alert('Please select a Design Manager');
+                designManagerSelect?.focus();
+                return;
+            }
+                
+            // FIXED: Enhanced validation check
+            if (!allocationComments || allocationComments.length === 0) {
+                alert('Please add allocation comments');
+                allocationCommentsElement?.focus();
+                return;
+            }
                 
             try {
                 showLoading();
@@ -4101,6 +4101,8 @@ if (!allocationComments || allocationComments.length === 0) {
                     allocationNotes: allocationComments,
                     specialInstructions: specialInstructions
                 };
+                
+                console.log('Sending allocation data:', allocationData);
                         
                 const response = await apiCall(`projects?id=${projectId}`, {
                     method: 'PUT',
