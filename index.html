@@ -5813,15 +5813,7 @@ async function submitAllocation() {
             return;
         }
         
-      const allocatedHours = parseFloat(document.getElementById('allocatedHours').value);
-        
-if (!allocatedHours || allocatedHours <= 0) {
-         alert('Please enter valid allocated hours (greater than 0)');
-          hideLoading();
-           return;
-     }
-      
-       const allocationData = {
+      const allocationData = {
          designLeadUid: designManagerUid,        
            targetCompletionDate: targetCompletionDate || null,
           priority: projectPriority,
@@ -5838,8 +5830,8 @@ if (!allocatedHours || allocatedHours <= 0) {
             body: JSON.stringify({
                 action: 'allocate_to_design_lead',
                 data: allocationData
-            })
-        });
+            }
+        };
         
         if (response.success) {
             // Update proposal allocation status
