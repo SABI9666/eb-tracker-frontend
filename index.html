@@ -5813,7 +5813,8 @@ async function submitAllocation() {
             return;
         }
         
-      const allocationData = {
+      
+       const allocationData = {
          designLeadUid: designManagerUid,        
            targetCompletionDate: targetCompletionDate || null,
           priority: projectPriority,
@@ -5822,7 +5823,6 @@ async function submitAllocation() {
             specialInstructions: specialInstructions
       };
     
-        };
         
         const response = await apiCall(`projects?id=${projectId}`, {
             method: 'PUT',
@@ -5830,8 +5830,8 @@ async function submitAllocation() {
             body: JSON.stringify({
                 action: 'allocate_to_design_lead',
                 data: allocationData
-            }
-        };
+            })
+        });
         
         if (response.success) {
             // Update proposal allocation status
