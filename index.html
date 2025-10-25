@@ -5113,16 +5113,12 @@
         }
 
         // Function to submit designer assignment
+       // Function to submit designer assignment
         async function submitDesignerAssignment() {
             const projectId = document.getElementById('assignProjectId').value;
             const checkboxes = document.querySelectorAll('#designersList input[type="checkbox"]:checked');
 
-            // Allow assigning zero designers (unassigning)
-            // if (checkboxes.length === 0) {
-            //     alert('Please select at least one designer');
-            //     return;
-            // }
-
+            // Collect selected designers
             const designerUids = [];
             const designerNames = [];
             const designerEmails = [];
@@ -5133,32 +5129,23 @@
                 designerEmails.push(checkbox.dataset.email);
             });
 
-            const assignmentData = {
-                action: 'assign_designers',
-                data: {
-                    designerUids: designerUids,
-                    designerNames: designerNames,
-                    designerEmails: designerEmails
-                }
-            };
+            // Validate hours allocation
+            const allocatedHours = parseFloat(document.getElementById('projectAllocatedHours').value);
+            
+            if (!allocatedHours || allocatedHours <= 0) {
+                alert('Please enter valid hours budget (greater than 0)');
+                return;
+            }
 
-  try {
+            try {
                 showLoading();
-        
-                const allocatedHours = parseFloat(document.getElementById('projectAllocatedHours').value);
-        
-                if (!allocatedHours || allocatedHours <= 0) {
-                    alert('Please enter valid hours budget (greater than 0)');
-                    hideLoading();
-                    return;
-                }
                 
                 const response = await apiCall('projects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         projectId: projectId,
-                        designerUids: selectedDesigners,
+                        designerUids: designerUids,
                         allocatedHours: allocatedHours,
                         action: 'assign_designers'
                     })
