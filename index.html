@@ -4030,34 +4030,34 @@
         // Submit Project Allocation
         async function submitProjectAllocation(proposalId) {
             const designManagerSelect = document.getElementById('designManagerSelect');
-const designManagerUid = designManagerSelect?.value;
-const targetCompletionDate = document.getElementById('targetCompletionDate')?.value;
-const projectPriority = document.getElementById('projectPriority')?.value || 'Normal';
-
-// FIXED: Enhanced retrieval with proper null checking
-const allocationCommentsElement = document.getElementById('allocationComments');
-const allocationComments = allocationCommentsElement ? allocationCommentsElement.value.trim() : '';
-
-const specialInstructionsElement = document.getElementById('specialInstructions');
-const specialInstructions = specialInstructionsElement ? specialInstructionsElement.value.trim() : '';
+            const designManagerUid = designManagerSelect?.value;
+            const targetCompletionDate = document.getElementById('targetCompletionDate')?.value;
+            const projectPriority = document.getElementById('projectPriority')?.value || 'Normal';
+            
+            // FIXED: Enhanced retrieval with proper null checking
+            const allocationCommentsElement = document.getElementById('allocationComments');
+            const allocationComments = allocationCommentsElement ? allocationCommentsElement.value.trim() : '';
+            
+            const specialInstructionsElement = document.getElementById('specialInstructions');
+            const specialInstructions = specialInstructionsElement ? specialInstructionsElement.value.trim() : '';
                 
-       // Enhanced validation with debugging
-console.log('Form validation - Design Manager UID:', designManagerUid);
-console.log('Form validation - Allocation Comments:', allocationComments);
-console.log('Form validation - Comments Length:', allocationComments.length);
-
-if (!designManagerUid) {
-    alert('Please select a Design Manager');
-    designManagerSelect?.focus();  // Focus on the field
-    return;
-}
-    
-// FIXED: Enhanced validation check
-if (!allocationComments || allocationComments.length === 0) {
-    alert('Please add allocation comments');
-    allocationCommentsElement?.focus();  // Focus on the textarea
-    return;
-}
+            // ENHANCED VALIDATION with debugging
+            console.log('Form validation - Design Manager UID:', designManagerUid);
+            console.log('Form validation - Allocation Comments:', allocationComments);
+            console.log('Form validation - Comments Length:', allocationComments.length);
+            
+            if (!designManagerUid) {
+                alert('Please select a Design Manager');
+                designManagerSelect?.focus();
+                return;
+            }
+                
+            // FIXED: Enhanced validation check
+            if (!allocationComments || allocationComments.length === 0) {
+                alert('Please add allocation comments');
+                allocationCommentsElement?.focus();
+                return;
+            }
                 
             try {
                 showLoading();
@@ -4101,6 +4101,8 @@ if (!allocationComments || allocationComments.length === 0) {
                     allocationNotes: allocationComments,
                     specialInstructions: specialInstructions
                 };
+                
+                console.log('Sending allocation data:', allocationData);
                         
                 const response = await apiCall(`projects?id=${projectId}`, {
                     method: 'PUT',
@@ -5446,14 +5448,14 @@ async function showAllocationModal(proposalId) {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label for="allocationComments">Allocation Comments <span class="required">*</span></label>
-                                    <textarea id="allocationComments" class="form-control" rows="4"
+                                    <label for="allocationComments2">Allocation Comments <span class="required">*</span></label>
+                                    <textarea id="allocationComments2" class="form-control" rows="4"
                                          placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
                                     <small class="form-text">Provide clear guidance and expectations for this project</small>
                                 </div>
                                 <div class="form-group">
-                                    <label for="specialInstructions">Special Instructions</label>
-                                    <textarea id="specialInstructions" class="form-control" rows="3"
+                                    <label for="specialInstructions2">Special Instructions</label>
+                                    <textarea id="specialInstructions2" class="form-control" rows="3"
                                          placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
                                 </div>
                             </form>
@@ -5485,8 +5487,8 @@ async function submitAllocation() {
     const designManagerUid = designManagerSelect.value;
     const targetCompletionDate = document.getElementById('targetCompletionDate').value;
     const projectPriority = document.getElementById('projectPriority').value;
-    const allocationComments = document.getElementById('allocationComments').value.trim();
-    const specialInstructions = document.getElementById('specialInstructions').value.trim();
+    const allocationComments = document.getElementById('allocationComments2').value.trim();
+    const specialInstructions = document.getElementById('specialInstructions2').value.trim();
     
     // FIXED: Proper validation
     if (!designManagerUid) {
@@ -5498,7 +5500,7 @@ async function submitAllocation() {
     // FIXED: Better validation message with minimum character requirement
     if (!allocationComments || allocationComments.length < 10) {
         alert('⚠️ Please add allocation comments (at least 10 characters)');
-        document.getElementById('allocationComments').focus();
+        document.getElementById('allocationComments2').focus();
         return;
     }
     
@@ -5774,8 +5776,8 @@ async function submitAllocation() {
                         <small class="form-text">Select the Design Manager who will oversee this project</small>
                     </div>
                     <div class="form-group">
-                        <label for="allocationComments">Allocation Comments</label>
-                        <textarea id="allocationComments" class="form-control" rows="4"
+                        <label for="allocationComments3">Allocation Comments</label>
+                        <textarea id="allocationComments3" class="form-control" rows="4"
                             placeholder="Add any special instructions, priorities, or notes for the Design Manager..."></textarea>
                         <small class="form-text">These comments will be visible to the Design Manager</small>
                     </div>
