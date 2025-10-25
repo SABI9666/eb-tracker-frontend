@@ -5142,44 +5142,35 @@
                 }
             };
 
-            try {
+  try {
                 showLoading();
         
+                const allocatedHours = parseFloat(document.getElementById('projectAllocatedHours').value);
         
-        constconst allocatedHours = parseFloat(document.getElementById('projectAllocatedHours').value);
-        
-        if (!allocatedHours || allocatedHours <= 0) {
-            alert('Please enter valid hours budget (greater than 0)');
-            return;
-        }
-         const response = await apiCall('projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId: projectId,
-                designerUids: selectedDesigners,
-                allocatedHours: allocatedHours,
-                action: 'assign_designers'
-            })
-        });response = await apiCall('projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId: projectId,
-                designerUids: selectedDesigners,
-                allocatedHours: allocatedHours,
-                action: 'assign_designers'
-            })
-        });
-
-                if (result.success) {
-                    showSuccessModal('Designers assigned successfully!');
-                    closeDesignerAssignmentModal();
-                    showDesignLeadDashboard(); // Reload projects
-                } else {
-                    throw new Error(result.error || 'Assignment failed');
+                if (!allocatedHours || allocatedHours <= 0) {
+                    alert('Please enter valid hours budget (greater than 0)');
+                    hideLoading();
+                    return;
                 }
+                
+                const response = await apiCall('projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        projectId: projectId,
+                        designerUids: selectedDesigners,
+                        allocatedHours: allocatedHours,
+                        action: 'assign_designers'
+                    })
+                });
 
+                if (response.success) {
+                    alert('✅ Designers assigned successfully!');
+                    closeDesignerAssignmentModal();
+                    showDesignLeadDashboard();
+                } else {
+                    throw new Error(response.error || 'Failed to assign designers');
+                }
             } catch (error) {
                 console.error('Error assigning designers:', error);
                 alert('Failed to assign designers: ' + error.message);
@@ -5827,14 +5818,31 @@ async function submitAllocation() {
         if (!projectId) {
             throw new Error('Project ID not found');
         }
+      const allocatedHours = parseFloat(document.getElementById('allocatedHours').value);
         
-        // Allocate to design lead
-        const allocationData = {
-            designLeadUid: designManagerUid,
-            targetCompletionDate: targetCompletionDate || null,
-            priority: projectPriority,
-            allocationNotes: allocationComments,
+        if (!allocatedHours || allocatedHours <= 0) {
+            alert('Please enter valid allocated hours (greater than 0)');
+            hideLoading();
+            return;
+        }
+        
+      const allocatedHours = parseFloat(document.getElementById('allocatedHours').value);
+        
+if (!allocatedHours || allocatedHours <= 0) {
+         alert('Please enter valid allocated hours (greater than 0)');
+          hideLoading();
+           return;
+     }
+      
+       const allocationData = {
+         designLeadUid: designManagerUid,        
+           targetCompletionDate: targetCompletionDate || null,
+          priority: projectPriority,
+           allocatedHours: allocatedHours,  ✅ Added
+           allocationNotes: allocationComments,
             specialInstructions: specialInstructions
+      };
+    
         };
         
         const response = await apiCall(`projects?id=${projectId}`, {
