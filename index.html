@@ -2052,6 +2052,10 @@
                 (currentUserRole === 'designer') ? 'block' : 'none';
             document.getElementById('paymentsNavItem').style.display =
                 (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+              document.getElementById('executiveMonitoringNavItem').style.display =
+                (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
+            document.getElementById('timesheetNavItem').style.display =
+                (currentUserRole === 'designer') ? 'block' : 'none';
 
             // Show role-specific dashboard
             if (currentUserRole === 'designer') {
@@ -7040,23 +7044,6 @@ async function deleteTimesheet(timesheetId) {
     }
 }
 
-
-// ===================================
-// UPDATE showSection() FUNCTION
-// ===================================
-
-// Add these cases to your existing showSection() function:
-/*
-case 'executiveMonitoring':
-    document.getElementById('executiveTimesheetMonitoring').style.display = 'block';
-    loadExecutiveMonitoring();
-    break;
-    
-case 'timesheet':
-    document.getElementById('timesheetSection').style.display = 'block';
-    loadTimesheets();
-    break;
-*/
 
 </script>
 
