@@ -1764,9 +1764,6 @@
 <li id="timesheetNavItem" style="display: none;">
     <a href="#" onclick="showTimesheet()" id="nav-timesheet">
     <span class="nav-icon">⏱️</span>My Timesheet</a></li>
-                     <li id="designerUploadsNavItem" style="display: none;">
-                        <a href="#" onclick="showDesignerUploads()" id="nav-designer-uploads">
-                        <span class="nav-icon">📤</span>Upload Files</a></li>
                 </ul>
             </nav>
 
@@ -2052,8 +2049,6 @@
             document.getElementById('projectsNavItem').style.display =
                 (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('tasksNavItem').style.display =
-                (currentUserRole === 'designer') ? 'block' : 'none';
-            document.getElementById('designerUploadsNavItem').style.display =
                 (currentUserRole === 'designer') ? 'block' : 'none';
             document.getElementById('paymentsNavItem').style.display =
                 (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
@@ -5099,9 +5094,6 @@
                 });
 
                 document.getElementById('assignProjectId').value = projectId;
-                  if (currentProject.allocatedHours) {
-                    document.getElementById('projectAllocatedHours').value = currentProject.allocatedHours;
-                }
                 modal.style.display = 'flex'; // Use flex
 
             } catch (error) {
@@ -5144,33 +5136,10 @@
 
             try {
                 showLoading();
-        
-        
-        constconst allocatedHours = parseFloat(document.getElementById('projectAllocatedHours').value);
-        
-        if (!allocatedHours || allocatedHours <= 0) {
-            alert('Please enter valid hours budget (greater than 0)');
-            return;
-        }
-         const response = await apiCall('projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId: projectId,
-                designerUids: selectedDesigners,
-                allocatedHours: allocatedHours,
-                action: 'assign_designers'
-            })
-        });response = await apiCall('projects', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId: projectId,
-                designerUids: selectedDesigners,
-                allocatedHours: allocatedHours,
-                action: 'assign_designers'
-            })
-        });
+                const result = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(assignmentData)
+                });
 
                 if (result.success) {
                     showSuccessModal('Designers assigned successfully!');
@@ -5251,187 +5220,6 @@
             const modal = document.getElementById('designerAssignmentModal');
             modal.style.display = 'none';
             document.getElementById('designersList').innerHTML = '';
-        }
-        // ============================================
-        // DESIGNER FILE UPLOAD FUNCTIONS
-        // ============================================
-        
-        async function showDesignerUploads() {
-            const section = document.getElementById('designerUploadSection');
-            if (!section) return;
-            
-            section.style.display = 'block';
-            showLoading();
-            
-            try {
-                const response = await apiCall('projects');
-                if (!response.success) throw new Error('Failed to load projects');
-                
-                const projects = response.data || [];
-                const myProjects = projects.filter(p => 
-                    p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)
-                );
-                
-                const projectsList = document.getElementById('designerProjectsList');
-                
-                if (myProjects.length === 0) {
-                    projectsList.innerHTML = `
-                        <div style="text-align: center; padding: 3rem; color: var(--text-light);">
-                            <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
-                            <p>No active projects assigned yet</p>
-                        </div>
-                    `;
-                } else {
-                    projectsList.innerHTML = `
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>Hours</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${myProjects.map(project => `
-                                    <tr>
-                                        <td>
-                                            <div style="font-weight: 600;">${project.projectName}</div>
-                                            <div style="font-size: 0.85rem; color: var(--text-light);">${project.projectNumber || 'N/A'}</div>
-                                        </td>
-                                        <td>${project.clientCompany}</td>
-                                        <td><strong>${project.hoursLogged || 0}h</strong> / ${project.allocatedHours || 0}h</td>
-                                        <td>
-                                            <button onclick="showDesignerUploadModal('${project.id}')" class="btn btn-primary btn-sm">
-                                                📤 Upload Files
-                                            </button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    `;
-                }
-                
-                hideLoading();
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error loading projects: ' + error.message);
-                hideLoading();
-            }
-        }
-        
-        async function showDesignerUploadModal(projectId) {
-            const modal = document.getElementById('designerUploadModal');
-            if (!modal) return;
-            
-            try {
-                const response = await apiCall('projects');
-                if (!response.success) throw new Error('Failed to load project');
-                
-                const projects = response.data || [];
-                const project = projects.find(p => p.id === projectId);
-                
-                if (!project) throw new Error('Project not found');
-                
-                document.getElementById('uploadProjectId').value = projectId;
-                document.getElementById('uploadProjectName').textContent = project.projectName;
-                document.getElementById('uploadProjectDetails').innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; font-size: 0.9rem;">
-                        <div><strong>Client:</strong> ${project.clientCompany}</div>
-                        <div><strong>Project #:</strong> ${project.projectNumber || 'N/A'}</div>
-                        <div><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</div>
-                        <div><strong>Status:</strong> ${project.status || 'Active'}</div>
-                    </div>
-                `;
-                
-                document.getElementById('designerFileInput').value = '';
-                document.getElementById('designerFilesList').innerHTML = '';
-                document.getElementById('designerUploadComments').value = '';
-                
-                setupDesignerFileUpload();
-                
-                modal.style.display = 'flex';
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error: ' + error.message);
-            }
-        }
-        
-        function setupDesignerFileUpload() {
-            const uploadArea = document.getElementById('designerUploadArea');
-            const fileInput = document.getElementById('designerFileInput');
-            const filesList = document.getElementById('designerFilesList');
-            
-            uploadArea.onclick = () => fileInput.click();
-            
-            fileInput.onchange = (e) => {
-                const files = Array.from(e.target.files);
-                if (files.length === 0) return;
-                
-                filesList.innerHTML = `
-                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 1rem;">
-                        <div style="font-weight: 600; margin-bottom: 0.5rem;">${files.length} file(s) selected:</div>
-                        ${files.map(file => `
-                            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: var(--light-blue); border-radius: 4px; margin-bottom: 0.5rem;">
-                                <span>📄</span>
-                                <span style="flex: 1;">${file.name}</span>
-                                <span style="color: var(--text-light); font-size: 0.85rem;">${(file.size / 1024).toFixed(1)} KB</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            };
-        }
-        
-        async function submitDesignerFiles() {
-            const projectId = document.getElementById('uploadProjectId').value;
-            const fileInput = document.getElementById('designerFileInput');
-            const comments = document.getElementById('designerUploadComments').value;
-            
-            if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please select at least one file to upload');
-                return;
-            }
-            
-            try {
-                showLoading();
-                
-                const formData = new FormData();
-                formData.append('projectId', projectId);
-                formData.append('uploadedBy', currentUser.uid);
-                formData.append('uploaderName', currentUser.displayName || currentUser.email);
-                formData.append('comments', comments);
-                
-                for (let i = 0; i < fileInput.files.length; i++) {
-                    formData.append('files', fileInput.files[i]);
-                }
-                
-                const response = await apiCall('files', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (response.success) {
-                    closeDesignerUploadModal();
-                    alert('Files uploaded successfully!');
-                    showDesignerUploads();
-                } else {
-                    throw new Error(response.error || 'Upload failed');
-                }
-                
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error uploading files: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }
-        
-        function closeDesignerUploadModal() {
-            const modal = document.getElementById('designerUploadModal');
-            if (modal) modal.style.display = 'none';
         }
         function closeBDMFilesModal() {
             const modal = document.getElementById('bdmFilesModal');
@@ -6068,12 +5856,6 @@ async function submitAllocation() {
                         </select>
                         <small class="form-text">Select the Design Manager who will oversee this project</small>
                     </div>
-                     <div class="form-group">
-                        <label for="allocatedHours">Maximum Hours Budget <span class="required">*</span></label>
-                        <input type="number" id="allocatedHours" class="form-control" 
-                               min="1" step="0.5" placeholder="e.g., 160" required>
-                        <small class="form-text">Total hours allocated for this project</small>
-                    </div>
                     <div class="form-group">
                         <label for="allocationComments3">Allocation Comments</label>
                         <textarea id="allocationComments3" class="form-control" rows="4"
@@ -6116,64 +5898,6 @@ async function submitAllocation() {
             </table>
         </div>
     </div>
-    !-- Designer File Upload Section -->
-    <div id="designerUploadSection" style="display: none;">
-        <div class="page-header">
-            <h2>📤 Upload Design Files</h2>
-            <p class="subtitle">Upload completed designs for Design Manager review</p>
-        </div>
-        
-        <div class="card">
-            <div class="card-header">
-                <h3>My Active Projects</h3>
-            </div>
-            <div id="designerProjectsList">
-                <!-- Populated by JavaScript -->
-            </div>
-        </div>
-    </div>
-    
-    <!-- Upload Modal for Designers -->
-    <div id="designerUploadModal" class="modal" style="display: none;">
-        <div class="modal-content new-modal">
-            <div class="modal-header">
-                <h2>Upload Design Files</h2>
-                <span class="close-modal" onclick="closeDesignerUploadModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="uploadProjectId" />
-                <div class="project-info" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
-                    <h4 id="uploadProjectName" style="margin: 0 0 0.5rem 0;"></h4>
-                    <div id="uploadProjectDetails"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Design Files <span class="required">*</span></label>
-                    <div class="upload-area" id="designerUploadArea" style="border: 2px dashed var(--primary-blue); padding: 2rem; text-align: center; cursor: pointer; border-radius: 8px;">
-                        <input type="file" id="designerFileInput" multiple style="display: none;" accept=".dwg,.pdf,.jpg,.jpeg,.png,.zip">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">📁</div>
-                        <p style="margin: 0; font-weight: 600;">Click to upload or drag and drop</p>
-                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: var(--text-light);">
-                            DWG, PDF, Images, or ZIP files
-                        </p>
-                    </div>
-                    <div id="designerFilesList" style="margin-top: 1rem;"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="designerUploadComments">Comments / Description</label>
-                    <textarea id="designerUploadComments" class="form-control" rows="4" 
-                              placeholder="Add any notes about the uploaded files..."></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-cancel" onclick="closeDesignerUploadModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitDesignerFiles()">
-                    <span class="btn-icon">📤</span> Upload Files
-                </button>
-            </div>
-        </div>
-    </div>
     
     <div id="designerAssignmentModal" class="modal" style="display: none;">
         <div class="modal-content new-modal">
@@ -6188,12 +5912,6 @@ async function submitAllocation() {
                     <div id="designersList" class="checkbox-list">
                         </div>
                     <small class="form-text">Select one or more designers</small>
-                </div>
-                   <div class="form-group">
-                    <label for="projectAllocatedHours">Total Hours Budget <span class="required">*</span></label>
-                    <input type="number" id="projectAllocatedHours" class="form-control" 
-                           min="1" step="0.5" placeholder="e.g., 160" required>
-                    <small class="form-text">Total hours for all designers on this project</small>
                 </div>
             </div>
             <div class="modal-footer">
