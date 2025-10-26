@@ -1,1076 +1,2388 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0d47a1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EB-Tracker - Allocation Portal</title>
-    
+    <title>EBTracker - EDANBROOK Project Management</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --color-primary: #4f46e5;
-            --color-secondary: #06b6d4;
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
-            --color-danger: #ef4444;
-            --color-dark: #1f2937;
-            --color-light: #f9fafb;
-            --color-text: #374151;
-            --color-text-light: #6b7280;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --border-radius: 0.5rem;
-        }
-
-        /* --- General Styles & Body --- */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+            --primary-blue: #00BFFF;
+            --dark-blue: #0099CC;
+            --light-blue: #E6F7FF;
+            --text-dark: #2C3E50;
+            --text-light: #7F8C8D;
+            --background: #F8FAFB;
+            --success: #27AE60;
+            --danger: #E74C3C;
+            --warning: #F39C12;
+            --border: #E1E8ED;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, var(--color-light) 0%, #f0f4f8 100%);
-            color: var(--color-text);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background);
+            color: var(--text-dark);
             line-height: 1.6;
-            min-height: 100vh;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1.5rem;
+        /* Login styles */
+        .login-page { min-height: 100vh; background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); display: flex; align-items: center; justify-content: center; padding: 2rem; }
+        .login-container { background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); overflow: hidden; display: flex; min-width: 1000px; min-height: 600px; }
+        .login-left { flex: 1; background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; padding: 3rem; text-align: center; }
+        .logo-circle { width: 100px; height: 100px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: var(--primary-blue); font-size: 40px; margin-bottom: 1rem; }
+        .company-title { font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem; }
+        .company-subtitle { font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem; }
+        .login-right { flex: 1.2; padding: 3rem; display: flex; flex-direction: column; justify-content: center; }
+        .auth-tabs { display: flex; margin-bottom: 2rem; border-bottom: 2px solid var(--border); }
+        .auth-tab { flex: 1; padding: 1rem; background: none; border: none; cursor: pointer; font-size: 1.1rem; font-weight: 600; color: var(--text-light); border-bottom: 2px solid transparent; transition: all 0.3s ease; }
+        .auth-tab.active { color: var(--primary-blue); border-bottom-color: var(--primary-blue); }
+        .auth-content { display: none; }
+        .auth-content.active { display: block; }
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-dark); }
+        .form-control { width: 100%; padding: 0.8rem; border: 2px solid var(--border); border-radius: 8px; font-size: 1rem; transition: all 0.3s ease; }
+        .form-control:focus { outline: none; border-color: var(--primary-blue); box-shadow: 0 0 0 3px rgba(0, 191, 255, 0.1); }
+
+        /* Button styles */
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary { background: var(--primary-blue); color: white; }
+        .btn-primary:hover { background: var(--dark-blue); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: transparent; color: var(--primary-blue); border: 2px solid var(--primary-blue); }
+        .btn-warning { background: var(--warning); color: white; }
+        .btn-warning:hover { background: #e67e22; }
+        .btn-sm { padding: 0.6rem 1.2rem; font-size: 0.85rem; width: auto; }
+        .btn-disabled { background: #ccc; color: #666; cursor: not-allowed; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: #c0392b; }
+
+        .role-selector { margin-bottom: 1.5rem; }
+        .role-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
+        .role-btn { padding: 1rem; background: var(--light-blue); border: 2px solid var(--primary-blue); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s ease; color: var(--primary-blue); font-weight: 600; }
+        .role-btn.active { background: var(--primary-blue); color: white; }
+        .info-box { background: var(--light-blue); padding: 1.5rem; border-radius: 8px; margin-top: 2rem; text-align: left; color: var(--text-dark); }
+        .info-box h4 { color: var(--primary-blue); margin-bottom: 1rem; }
+        .info-box ul { list-style-position: inside; padding-left: 0.5rem; }
+        .info-box li { margin-bottom: 0.5rem; }
+        .error-message, .success-message, .info-message, .warning-message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 600; }
+        .error-message { background: #f8d7da; color: #721c24; }
+        .success-message { background: #d4edda; color: #155724; }
+        .info-message { background: #d1ecf1; color: #0c5460; }
+        .warning-message { background: #fff3cd; color: #856404; }
+
+        /* App layout */
+        .app-container { display: none; min-height: 100vh; background: var(--background); }
+        .header { background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); color: white; padding: 1rem 2rem; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-content { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; }
+        .logo { display: flex; align-items: center; gap: 1rem; }
+        .logo .logo-circle { width: 50px; height: 50px; font-size: 20px; }
+        .company-info h1 { font-size: 1.8rem; font-weight: 600; }
+        .company-info .subtitle { font-size: 0.9rem; opacity: 0.8; margin-top: 0.2rem; }
+        .user-info { text-align: right; }
+        .btn-logout { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; margin-left: 1rem; }
+
+        .main-layout { display: flex; max-width: 1400px; margin: 0 auto; }
+        .sidebar { width: 280px; background: white; box-shadow: 2px 0 10px rgba(0,0,0,0.1); padding: 0; min-height: calc(100vh - 80px); }
+
+        /* Enhanced sidebar navigation */
+        .nav-menu { list-style: none; margin: 0; padding: 0; }
+        .nav-menu li { border-bottom: 1px solid #f0f0f0; }
+        .nav-menu a {
+            display: flex;
+            align-items: center;
+            padding: 1.2rem 2rem;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .nav-menu a:hover, .nav-menu a.active {
+            background: var(--primary-blue);
+            color: white;
+        }
+        .nav-menu .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            opacity: 0.7;
         }
 
-        /* --- Header --- */
-        header {
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            max-height: calc(100vh - 80px);
+            background: var(--background);
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        .page-header h2 {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+        .page-header .subtitle {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        /* Dashboard stats */
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            border-top: 4px solid var(--primary-blue);
+            transition: transform 0.3s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+            margin-bottom: 0.8rem;
+        }
+        .stat-label {
+            color: var(--text-light);
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        /* Action items section */
+        .action-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            margin-bottom: 3rem;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        }
+        .action-section h3 {
+            font-size: 1.5rem;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+        }
+        .action-badges {
+            display: flex;
+            gap: 0.8rem;
+            margin-bottom: 2rem;
+        }
+        .action-badge {
+            background: var(--success);
+            color: white;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .action-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        header h1 {
-            font-size: 2.25rem;
-            font-weight: 700;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        header .current-role-display {
-            font-size: 1rem;
-            font-weight: 600;
-            padding: 0.5rem 1rem;
-            background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-sm);
-            color: var(--color-primary);
-        }
-
-        /* --- Filters (Tabs) --- */
-        .filters {
-            display: flex;
-            gap: 0.5rem;
+            padding: 2rem;
+            background: #f8fafc;
+            border-radius: 15px;
             margin-bottom: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
-            padding-bottom: 1rem;
-        }
-
-        .filter-btn {
-            background: transparent;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--color-text-light);
-            padding: 0.5rem 1rem;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            position: relative;
-        }
-        
-        .filter-btn .count-badge {
-            display: inline-block;
-            min-width: 20px;
-            padding: 2px 6px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: #e5e7eb;
-            color: var(--color-text-light);
-            border-radius: 99px;
-            margin-left: 0.5rem;
-        }
-
-        .filter-btn.active {
-            color: var(--color-primary);
-        }
-        
-        .filter-btn.active::after {
-            content: '';
-            position: absolute;
-            bottom: -1rem; /* Aligns with the padding-bottom of .filters */
-            left: 0;
-            width: 100%;
-            height: 3px;
-            background: var(--color-primary);
-            border-radius: 3px 3px 0 0;
-        }
-        
-        .filter-btn.active .count-badge {
-            background: var(--color-primary);
-            color: white;
-        }
-
-        /* --- Project List --- */
-        .project-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-        
-        .no-projects-message {
-            grid-column: 1 / -1;
-            text-align: center;
-            padding: 3rem;
-            background: white;
-            border-radius: var(--border-radius);
-            color: var(--color-text-light);
-            font-size: 1.1rem;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .project-card {
-            background: #ffffff;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-md);
-            overflow: hidden;
+            border-left: 5px solid var(--primary-blue);
             transition: all 0.3s ease;
+        }
+        .action-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .action-content strong {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+            color: var(--text-dark);
+        }
+        .action-meta {
+            font-size: 0.95rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+        .action-buttons {
             display: flex;
-            flex-direction: column;
+            gap: 1rem;
         }
 
-        .project-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .card-content {
-            padding: 1.5rem;
-            flex-grow: 1;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-        }
-
-        .card-header h3 {
-            font-size: 1.25rem;
+        /* Status badges */
+        .proposal-status {
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.8rem;
             font-weight: 600;
-            color: var(--color-dark);
-        }
-
-        .status-badge {
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.25rem 0.75rem;
-            border-radius: 99px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
+        .status-draft { background: #e0e7ff; color: #4c1d95; }
+        .status-estimated { background: #dbeafe; color: #1e3a8a; }
+        .status-priced, .status-pending-director-approval, .status-pricing_complete, .status-pricing-complete { background: #fed7aa; color: #9a3412; }
+        .status-approved { background: #d4edda; color: #155724; }
+        .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-submitted, .status-submitted-to-client { background: #cce5ff; color: #0066cc; }
+        .status-won { background: #a7f3d0; color: #064e3b; }
+        .status-lost { background: #fecaca; color: #991b1b; }
+        .status-allocated { background: #a7f3d0; color: #064e3b; }
+        .status-needs-allocation { background: #fed7aa; color: #9a3412; }
+        .status-assigned { background: #ddd6fe; color: #5b21b6; }
+        .status-pending-setup { background: #fef3c7; color: #92400e; }
+        .status-completed { background: #bbf7d0; color: #14532d; }
+        .status-in-progress, .status-active { background: #bfdbfe; color: #1e40af; }
+        .status-not-started { background: #f3f4f6; color: #6b7280; }
+        .status-to-be-allocated { background: #fff3cd; color: #856404; }
 
-        .status-new { background: var(--color-warning); color: #fff; }
-        .status-allocated { background: var(--color-primary); color: #fff; }
-        .status-designer-allocated { background: var(--color-success); color: #fff; }
-
-        .card-content p {
-            font-size: 0.9rem;
-            color: var(--color-text-light);
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-details {
-            font-size: 0.85rem;
-            color: var(--color-text-light);
-            border-top: 1px solid #f3f4f6;
-            padding-top: 1rem;
-            margin-top: 1rem;
-        }
-        .card-details strong {
-            color: var(--color-text);
-        }
-        .card-details div {
-            margin-bottom: 0.25rem;
-        }
-
-        .card-footer {
-            background: var(--color-light);
-            padding: 1rem 1.5rem;
-            border-top: 1px solid #e5e7eb;
-        }
-
-        .action-btn {
-            width: 100%;
-            background: var(--color-primary);
-            color: white;
-            border: none;
-            padding: 0.75rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .action-btn:hover {
-            opacity: 0.9;
-            box-shadow: var(--shadow-md);
-        }
-        
-        .action-btn-secondary {
-            background: var(--color-success);
-        }
-
-        /* --- Role Switcher --- */
-        .role-switcher {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            z-index: 1000;
-        }
-
-        .role-switcher-btn {
-            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-            color: white;
-            border: none;
-            padding: 0.75rem 1.25rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            border-radius: 99px;
-            cursor: pointer;
-            box-shadow: var(--shadow-lg);
-            transition: all 0.3s ease;
-        }
-        
-        .role-switcher-btn:hover {
-            transform: scale(1.05);
-        }
-        
-        .role-switcher-btn span {
-            margin-left: 0.5rem;
-        }
-        
-        /* --- Modal Styles --- */
-        .modal-backdrop {
+        /* Modal styles */
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(17, 24, 39, 0.6);
-            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.8);
             z-index: 2000;
             display: flex;
-            justify-content: center;
             align-items: center;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease, visibility 0.3s ease;
+            justify-content: center;
+            padding: 2rem;
         }
-
-        .modal-backdrop.show {
-            opacity: 1;
-            visibility: visible;
-        }
-
         .modal-content {
             background: white;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
-            width: 90%;
-            max-width: 500px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
             max-height: 90vh;
             overflow-y: auto;
-            transform: scale(0.95);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            padding: 3rem;
         }
-        
-        .modal-backdrop.show .modal-content {
-            transform: scale(1);
-            opacity: 1;
-        }
-
         .modal-header {
-            padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+            margin-bottom: 2rem;
         }
-
         .modal-header h2 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--color-dark);
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-        }
-        
-        .project-details-summary {
-            background: var(--color-light);
-            border: 1px solid #e5e7eb;
-            padding: 1rem;
-            border-radius: var(--border-radius);
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-        .project-details-summary div {
+            color: var(--primary-blue);
+            font-size: 2rem;
             margin-bottom: 0.5rem;
         }
-        .project-details-summary strong {
-            color: var(--color-text);
-        }
 
-        .form-group {
-            margin-bottom: 1.25rem;
-        }
-
-        .form-group label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-        
-        .label-with-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .new-feature-badge {
-            background: var(--color-danger);
+        /* Project Number Badge */
+        .project-number-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background: var(--success);
             color: white;
-            font-size: 0.65rem;
+            border-radius: 8px;
             font-weight: 700;
-            padding: 0.2rem 0.4rem;
-            border-radius: 4px;
-            text-transform: uppercase;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0, 191, 255, 0.2);
         }
 
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: var(--border-radius);
-            font-size: 1rem;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .form-group select option[data-load="low"] { color: #059669; }
-        .form-group select option[data-load="medium"] { color: #d97706; }
-        .form-group select option[data-load="high"] { color: var(--color-danger); }
-        
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-        
-        .form-error {
-            color: var(--color-danger);
-            font-size: 0.85rem;
-            margin-top: 0.25rem;
-            display: none;
-        }
-        
-        input.invalid, select.invalid, textarea.invalid {
-            border-color: var(--color-danger);
-        }
-        input.invalid:focus, select.invalid:focus, textarea.invalid:focus {
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-        }
-        input.invalid ~ .form-error, 
-        select.invalid ~ .form-error, 
-        textarea.invalid ~ .form-error {
-            display: block;
-        }
-
-
-        .modal-footer {
+        /* Allocation Details Section */
+        .allocation-details-section {
+            background: var(--light-blue);
             padding: 1.5rem;
-            background: var(--color-light);
-            border-top: 1px solid #e5e7eb;
-            display: flex;
-            justify-content: flex-end;
-            gap: 0.75rem;
-            border-radius: 0 0 var(--border-radius) var(--border-radius);
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(0, 191, 255, 0.2);
         }
 
-        .modal-btn {
-            padding: 0.6rem 1.25rem;
-            font-size: 0.9rem;
+        .allocation-details-section h3 {
+            color: var(--primary-blue);
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
             font-weight: 600;
-            border-radius: var(--border-radius);
-            border: none;
-            cursor: pointer;
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 0.5rem;
+        }
+
+        /* Hour Budget Display */
+        .hour-budget-display {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            border-left: 4px solid var(--primary-blue);
+        }
+
+        .hour-budget-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hour-budget-row:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+            border-top: 2px solid var(--primary-blue);
+        }
+
+        .hour-budget-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .hour-budget-value {
+            font-weight: 600;
+            color: var(--primary-blue);
+            font-size: 1.1rem;
+        }
+
+        /* Designer Assignment Enhancements */
+        .designer-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            background: white;
             transition: all 0.2s ease;
         }
 
-        .modal-btn-primary {
-            background: var(--color-primary);
-            color: white;
-        }
-        
-        .modal-btn-primary:hover {
-            opacity: 0.9;
+        .designer-row:hover {
+            border-color: var(--primary-blue);
+            background: var(--light-blue);
         }
 
-        .modal-btn-secondary {
-            background: white;
-            color: var(--color-text);
-            border: 1px solid #d1d5db;
+        .designer-row.selected {
+            border-color: var(--primary-blue);
+            background: var(--light-blue);
         }
-        
-        .modal-btn-secondary:hover {
-            background: var(--color-light);
+
+        .hours-input {
+            width: 100px;
+            padding: 0.5rem;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
         }
-        
-        /* --- Toast Notification --- */
-        #toastNotification {
+
+        .hours-input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+        }
+
+        .hours-input:disabled {
+            background: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        /* Hours Summary Box */
+        .hours-summary-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+        }
+
+        .hours-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            text-align: center;
+        }
+
+        .hours-summary-item {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .hours-summary-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .hours-summary-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        /* Loading spinner */
+        .loading {
             position: fixed;
-            top: 1.5rem;
-            right: 1.5rem;
-            z-index: 3000;
-            display: flex;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(248, 250, 251, 0.85);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
             flex-direction: column;
-            gap: 0.5rem;
-            align-items: flex-end;
         }
-        
-        .toast {
+        .loading p { margin-top: 1rem; font-weight: 600; }
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .main-layout { flex-direction: column; }
+            .sidebar { width: 100%; min-height: auto; }
+            .dashboard-stats { grid-template-columns: 1fr; }
+            .hours-summary-grid { grid-template-columns: repeat(2, 1fr); }
+            .designer-row { grid-template-columns: 1fr; }
+        }
+
+        /* Required field indicator */
+        .required {
+            color: var(--danger);
+            font-weight: bold;
+            margin-left: 2px;
+        }
+
+        .form-text {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        /* Notification Toast */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+        }
+        .notification.show {
+            transform: translateX(0);
+        }
+        .notification.success {
+            background-color: #10b981;
+        }
+        .notification.error {
+            background-color: #ef4444;
+        }
+        .notification.info {
+            background-color: #3b82f6;
+        }
+        .notification.warning {
+            background-color: #f59e0b;
+        }
+
+        /* Card styles */
+        .card {
             background: white;
-            color: var(--color-dark);
-            padding: 1rem 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-lg);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            background: var(--light-blue);
+            border-bottom: 2px solid var(--primary-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Data Table */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table th {
+            background: var(--light-blue);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--primary-blue);
+        }
+
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--light-blue);
+            transition: background 0.2s ease;
+        }
+
+        /* Project Card */
+        .project-card {
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-color: var(--primary-blue);
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .project-header h3 {
+            margin: 0;
+            color: var(--text-dark);
+            font-size: 1.3rem;
+        }
+
+        .project-details p {
+            margin: 0.5rem 0;
+            color: var(--text-dark);
+        }
+
+        .project-details strong {
+            color: var(--text-dark);
+            margin-right: 0.5rem;
+        }
+
+        .project-actions {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        /* Close button for modals */
+        .close-modal {
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-light);
+            transition: color 0.2s ease;
+            border: none;
+            background: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            opacity: 0;
-            transform: translateX(100%);
-            animation: slideIn 0.5s forwards, slideOut 0.5s 2.5s forwards;
-        }
-        
-        .toast.toast-success {
-            border-left: 5px solid var(--color-success);
-        }
-        
-        .toast-icon {
-            font-size: 1.5rem;
-            color: var(--color-success);
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        @keyframes slideOut {
-            from {
-                transform: translateX(0);
-                opacity: 1;
-            }
-            to {
-                transform: translateX(100%);
-                opacity: 0;
-            }
+            justify-content: center;
+            position: absolute;
+            right: 1.5rem;
+            top: 1.5rem;
         }
 
-        /* --- Responsive Design --- */
-        @media (max-width: 768px) {
-            header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
-            }
-            
-            .filters {
-                flex-wrap: wrap;
-            }
-            
-            .project-list {
-                grid-template-columns: 1fr;
-            }
+        .close-modal:hover {
+            color: var(--danger);
+        }
+
+        /* Modal positioning fix */
+        .modal-header {
+            position: relative;
         }
     </style>
 </head>
 <body>
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page">
+        <div class="login-container">
+            <div class="login-left">
+                <div class="logo-circle">EB</div>
+                <h1 class="company-title">EDANBROOK</h1>
+                <p class="company-subtitle">Project Management System</p>
+                <div class="info-box">
+                    <h4>✅ Updated Workflow Process</h4>
+                    <ul>
+                        <li><strong>Step 1:</strong> BDM creates proposal (DRAFT) & uploads files</li>
+                        <li><strong>Step 2:</strong> Estimator adds manhours (ESTIMATED) & BOQ</li>
+                        <li><strong>Step 3:</strong> COO sets pricing (PRICED)</li>
+                        <li><strong>Step 4:</strong> Director approves (APPROVED) or rejects (REJECTED)</li>
+                        <li><strong>Step 5:</strong> BDM submits to client (SUBMITTED)</li>
+                        <li><strong>Step 6:</strong> BDM marks as WON/LOST → Project created</li>
+                        <li><strong>Step 7:</strong> COO allocates with hours → Design Lead assigns tasks</li>
+                        <li><strong>Step 8:</strong> Designer uploads → Design sent to client</li>
+                        <li><strong>Step 9:</strong> Accounts prepares invoice → Payment tracking</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="login-right">
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="showTab('login')">Login</button>
+                    <button class="auth-tab" onclick="showTab('register')">Register</button>
+                </div>
+                <div id="authMessages"></div>
+                <div id="loginContent" class="auth-content active">
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="loginEmail">Email</label>
+                            <input type="email" id="loginEmail" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="loginPassword">Password</label>
+                            <input type="password" id="loginPassword" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Login</button>
+                    </form>
+                </div>
+                <div id="registerContent" class="auth-content">
+                    <form id="registerForm">
+                        <div class="role-selector">
+                            <label>Select Role:</label>
+                            <div class="role-buttons">
+                                <div class="role-btn active" data-role="bdm">BDM</div>
+                                <div class="role-btn" data-role="estimator">Estimator</div>
+                                <div class="role-btn" data-role="coo">COO</div>
+                                <div class="role-btn" data-role="director">Director</div>
+                                <div class="role-btn" data-role="design_lead">Design Manager</div>
+                                <div class="role-btn" data-role="designer">Designer</div>
+                                <div class="role-btn" data-role="accounts">Accounts</div>
+                            </div>
+                            <input type="hidden" id="selectedRole" value="bdm">
+                        </div>
+                        <div class="form-group">
+                            <label for="registerName">Full Name</label>
+                            <input type="text" id="registerName" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerEmail">Email</label>
+                            <input type="email" id="registerEmail" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="registerPassword">Password</label>
+                            <input type="password" id="registerPassword" class="form-control" required minlength="6">
+                        </div>
+                        <button type="submit" class="btn btn-success">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <div class="container">
-        <header>
-            <h1>EB-Tracker</h1>
-            <div class="current-role-display" id="roleDisplay">
-                Viewing as: COO
+    <!-- App Container -->
+    <div id="appContainer" class="app-container">
+        <div class="loading" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-circle">EB</div>
+                    <div class="company-info">
+                        <h1>EDANBROOK</h1>
+                        <div class="subtitle">EBTrack - Enhanced Project Management</div>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <div id="userWelcome"></div>
+                    <div id="userRole"></div>
+                    <button onclick="logout()" class="btn-logout">Logout</button>
+                </div>
             </div>
         </header>
 
-        <div class="filters">
-            <button class="filter-btn active" id="filter-new" data-filter="new">
-                To Be Allocated <span class="count-badge" id="count-new">0</span>
-            </button>
-            <button class="filter-btn" id="filter-allocated" data-filter="allocated">
-                Allocated <span class="count-badge" id="count-allocated">0</span>
-            </button>
+        <div class="main-layout">
+            <nav class="sidebar">
+                <ul class="nav-menu">
+                    <li><a href="#" onclick="showDashboard()" class="active" id="nav-dashboard">
+                        <span class="nav-icon">📊</span>Dashboard</a></li>
+                    <li id="newProposalNavItem" style="display: none;">
+                        <a href="#" onclick="showCreateProposalModal()">
+                        <span class="nav-icon">➕</span>New Proposal</a></li>
+                    <li><a href="#" onclick="showProposals()" id="nav-proposals">
+                        <span class="nav-icon">📋</span>All Proposals</a></li>
+                    <li id="allProjectsNavItem" style="display: none;">
+                        <a href="#" onclick="showAllProjects()" id="nav-all-projects">
+                        <span class="nav-icon">📁</span>All Projects</a></li>
+                    <li><a href="#" onclick="showFileUpload()" id="nav-files">
+                        <span class="nav-icon">📎</span>File Manager</a></li>
+                    <li id="projectsNavItem" style="display: none;">
+                        <a href="#" onclick="showProjects()" id="nav-projects">
+                        <span class="nav-icon">🗂️</span>My Projects</a></li>
+                    <li id="tasksNavItem" style="display: none;">
+                        <a href="#" onclick="showTasks()" id="nav-tasks">
+                        <span class="nav-icon">✅</span>My Tasks</a></li>
+                    <li><a href="#" onclick="showActivities()" id="nav-activities">
+                        <span class="nav-icon">📝</span>Activities</a></li>
+                </ul>
+            </nav>
+
+            <main class="main-content" id="mainContent"></main>
         </div>
-
-        <div class="project-list" id="projectList">
-            </div>
     </div>
 
-    <div class="role-switcher">
-        <button class="role-switcher-btn" id="roleSwitcherBtn">
-            Switch to Design Manager <span>&rarr;</span>
-        </button>
-    </div>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     
-    <div id="toastNotification"></div>
-
-    <div class="modal-backdrop" id="cooAllocateModal">
-        <div class="modal-content">
-            <form id="cooAllocateForm">
-                <div class="modal-header">
-                    <h2>Allocate to Design Manager</h2>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="cooProjectId">
-                    
-                    <div class="form-group">
-                        <label for="cooDesignManager">Select Design Manager</label>
-                        <select id="cooDesignManager" required>
-                            <option value="">-- Select a Manager --</option>
-                            </select>
-                        <div class="form-error">Please select a manager.</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="cooMaxHours" class="label-with-badge">
-                            Max Design Hours
-                            <span class="new-feature-badge">NEW</span>
-                        </label>
-                        <input type="number" id="cooMaxHours" placeholder="e.g., 40" min="1" required>
-                        <div class="form-error">Please enter valid hours.</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="cooAdditionalHours" class="label-with-badge">
-                            Additional Hours (Optional)
-                            <span class="new-feature-badge">NEW</span>
-                        </label>
-                        <input type="number" id="cooAdditionalHours" placeholder="e.g., 5" min="0">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="cooNotes">Allocation Notes (Optional)</label>
-                        <textarea id="cooNotes" placeholder="Add any specific instructions for the Design Manager..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="modal-btn modal-btn-secondary" data-dismiss="cooAllocateModal">Cancel</button>
-                    <button type="submit" class="modal-btn modal-btn-primary">Submit Allocation</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    
-    <div class="modal-backdrop" id="designManagerAllocateModal">
-        <div class="modal-content">
-            <form id="designManagerAllocateForm">
-                <div class="modal-header">
-                    <h2>Allocate to Designer</h2>
-                </div>
-                <div class="modal-body">
-                    <input type="hidden" id="dmProjectId">
-                    
-                    <div class="project-details-summary">
-                        <div id="dmProjectName"><strong>Project:</strong> <span></span></div>
-                        <div id="dmMaxHours"><strong>Max Hours (from COO):</strong> <span></span></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="dmDesigner">Select Designer (Workload)</label>
-                        <select id="dmDesigner" required>
-                            <option value="">-- Select a Designer --</option>
-                            </select>
-                        <div class="form-error">Please select a designer.</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="dmNotes">Allocation Notes (Optional)</label>
-                        <textarea id="dmNotes" placeholder="Add any specific notes for the designer..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="modal-btn modal-btn-secondary" data-dismiss="designManagerAllocateModal">Cancel</button>
-                    <button type="submit" class="modal-btn modal-btn-primary">Allocate Designer</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
+            authDomain: "eb-tracker-42881.firebaseapp.com",
+            projectId: "eb-tracker-42881",
+            storageBucket: "eb-tracker-42881.firebasestorage.app",
+            messagingSenderId: "922340749018",
+            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-            // --- STATE MANAGEMENT ---
-            
-            // This acts as our "database" for the demo
-            let projects = [
-                {
-                    id: 'p1',
-                    name: 'Orion Tower - Lobby Lighting',
-                    client: 'Starlight Developments',
-                    status: 'new', // 'new' -> 'allocated' -> 'designer_allocated'
-                },
-                {
-                    id: 'p2',
-                    name: 'CyberCorp HQ - Full Office Fitout',
-                    client: 'CyberCorp Inc.',
-                    status: 'new',
-                },
-                {
-                    id: 'p3',
-                    name: 'Greenleaf Plaza - Exterior Facade',
-                    client: 'Evergreen Properties',
-                    status: 'allocated',
-                    designManager: 'dm1',
-                    maxHours: 40,
-                    additionalHours: 5,
-                    cooNotes: 'Client is very particular about the evening ambiance. Focus on warm tones.'
-                },
-                {
-                    id: 'p4',
-                    name: 'Sunset Villa - Residential Project',
-                    client: 'Private Client',
-                    status: 'new',
-                },
-                {
-                    id: 'p5',
-                    name: 'Metro Hospital - Wing C',
-                    client: 'City Health Trust',
-                    status: 'designer_allocated',
-                    designManager: 'dm2',
-                    designer: 'd2',
-                    maxHours: 80,
-                    additionalHours: 0,
-                    cooNotes: 'Strict compliance with healthcare lighting standards required.',
-                    dmNotes: 'Bob, please coordinate with the architect on fixture placement.'
+        // API Configuration
+        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        console.log('🔧 Backend URL configured:', API_BASE);
+
+        let currentUser = null;
+        let currentUserRole = '';
+        let authToken = '';
+
+        // ============================================
+        // CORE API & AUTH FUNCTIONS
+        // ============================================
+
+        async function apiCall(endpoint, options = {}, retryCount = 0) {
+            const MAX_RETRIES = 2;
+            const RETRY_DELAY = 2000;
+            const url = `${API_BASE}/api/${endpoint}`;
+
+            if (!authToken && currentUser && !endpoint.includes('health')) {
+                try {
+                    authToken = await currentUser.getIdToken(true);
+                } catch (error) {
+                    console.error('❌ Failed to refresh token:', error);
+                    throw new Error('Authentication token expired. Please log in again.');
                 }
-            ];
-            
-            // Master data for dropdowns
-            const designManagers = [
-                { id: 'dm1', name: 'Alice Smith' },
-                { id: 'dm2', name: 'David Lee' },
-            ];
-            
-            const designers = [
-                { id: 'd1', name: 'Bob Johnson', load: 'low' },
-                { id: 'd2', name: 'Carol Williams', load: 'medium' },
-                { id: 'd3', name: 'Eve Brown', load: 'high' },
-                { id: 'd4', name: 'Frank Davis', load: 'low' },
-            ];
-            
-            // Emojis for workload
-            const loadMap = {
-                'low': '🟢 (Light Load)',
-                'medium': '🟡 (Medium Load)',
-                'high': '🔴 (Full Load)'
-            };
-            
-            let currentRole = 'coo'; // 'coo' or 'design_manager'
-            let activeFilter = 'new'; // 'new' or 'allocated'
-
-            // --- DOM ELEMENT SELECTORS ---
-            const projectList = document.getElementById('projectList');
-            const roleSwitcherBtn = document.getElementById('roleSwitcherBtn');
-            const roleDisplay = document.getElementById('roleDisplay');
-            const filterBtnNew = document.getElementById('filter-new');
-            const filterBtnAllocated = document.getElementById('filter-allocated');
-            const countNew = document.getElementById('count-new');
-            const countAllocated = document.getElementById('count-allocated');
-            const toastContainer = document.getElementById('toastNotification');
-            
-            // Modals
-            const cooModal = document.getElementById('cooAllocateModal');
-            const dmModal = document.getElementById('designManagerAllocateModal');
-            const cooForm = document.getElementById('cooAllocateForm');
-            const dmForm = document.getElementById('designManagerAllocateForm');
-
-
-            // --- CORE FUNCTIONS ---
-
-            /**
-             * Updates the project counts in the filter tabs
-             */
-            function updateCounts() {
-                // 'new' status is for the COO's "To Be Allocated" tab
-                const newCount = projects.filter(p => p.status === 'new').length;
-                
-                // 'allocated' + 'designer_allocated' are for the "Allocated" tab
-                const allocatedCount = projects.filter(p => p.status === 'allocated' || p.status === 'designer_allocated').length;
-                
-                countNew.textContent = newCount;
-                countAllocated.textContent = allocatedCount;
             }
 
-            /**
-             * Renders the project cards based on current role and filter
-             */
-            function renderProjects() {
-                projectList.innerHTML = ''; // Clear existing list
-                
-                let projectsToRender = [];
-                
-                if (activeFilter === 'new') {
-                    // "To Be Allocated" tab only shows 'new' projects
-                    projectsToRender = projects.filter(p => p.status === 'new');
+            const defaultHeaders = {};
+            if (authToken) {
+                defaultHeaders['Authorization'] = `Bearer ${authToken}`;
+            }
+            if (!(options.body instanceof FormData)) {
+                defaultHeaders['Content-Type'] = 'application/json';
+            }
+
+            const finalOptions = {
+                method: options.method || 'GET',
+                ...options,
+                headers: { ...defaultHeaders, ...(options.headers || {}) },
+                mode: 'cors',
+                credentials: 'omit'
+            };
+
+            try {
+                const response = await fetch(url, finalOptions);
+                const contentType = response.headers.get('content-type');
+                let responseData;
+
+                if (contentType && contentType.includes('application/json')) {
+                    const responseText = await response.text();
+                    try {
+                        responseData = responseText ? JSON.parse(responseText) : {};
+                    } catch (parseError) {
+                        console.error('❌ JSON parse error:', parseError);
+                        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
+                    }
                 } else {
-                    // "Allocated" tab shows both 'allocated' (to DM) and 'designer_allocated'
-                    projectsToRender = projects.filter(p => p.status === 'allocated' || p.status === 'designer_allocated');
+                    responseData = await response.text();
+                }
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        if (currentUser && retryCount === 0) {
+                            try {
+                                authToken = await currentUser.getIdToken(true);
+                                return await apiCall(endpoint, options, retryCount + 1);
+                            } catch (refreshError) {
+                                await auth.signOut();
+                                throw new Error('Session expired. Please log in again.');
+                            }
+                        }
+                        throw new Error('Authentication failed. Please log in again.');
+                    }
+                    const errorMessage = responseData.message || responseData.error || `Request failed with status ${response.status}`;
+                    throw new Error(errorMessage);
+                }
+
+                if (responseData && typeof responseData === 'object') {
+                    if ('success' in responseData && 'data' in responseData) {
+                        return responseData;
+                    }
+                    return { success: true, data: responseData };
                 }
                 
-                if (projectsToRender.length === 0) {
-                    let message = 'No projects found.';
-                    if (activeFilter === 'new') message = 'All projects have been allocated.';
-                    if (activeFilter === 'allocated') message = 'No projects are currently in the allocation pipeline.';
-                    projectList.innerHTML = `<div class="no-projects-message">${message}</div>`;
+                return { success: true, data: responseData };
+
+            } catch (error) {
+                console.error(`❌ API call to ${endpoint} failed:`, error);
+                if ((error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) && retryCount < MAX_RETRIES) {
+                    await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+                    return await apiCall(endpoint, options, retryCount + 1);
+                }
+                throw error;
+            }
+        }
+
+        // Auth State Listener
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    currentUser = user;
+                    try {
+                        authToken = await user.getIdToken(true);
+                        const userDoc = await db.collection('users').doc(user.uid).get();
+
+                        if (userDoc.exists) {
+                            currentUserRole = userDoc.data().role;
+                            showApp();
+                        } else {
+                            await auth.signOut();
+                            showMessage('Your user account was not found.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Auth initialization error:', error);
+                        showMessage('Failed to initialize session: ' + error.message, 'error');
+                        await auth.signOut();
+                    }
+                } else {
+                    currentUser = null;
+                    currentUserRole = '';
+                    authToken = '';
+                    showLogin();
+                }
+            });
+        });
+
+        // Token refresh interval
+        setInterval(async () => {
+            if (currentUser) {
+                try {
+                    authToken = await currentUser.getIdToken(true);
+                } catch (error) {
+                    console.error('Token refresh failed:', error);
+                }
+            }
+        }, 50 * 60 * 1000);
+
+        function setupEventListeners() {
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById('selectedRole').value = this.dataset.role;
+                });
+            });
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('registerForm').addEventListener('submit', handleRegister);
+        }
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            try {
+                clearMessages();
+                showMessage('Logging in...', 'info');
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                authToken = await userCredential.user.getIdToken(true);
+            } catch (error) {
+                showMessage(
+                    error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found'
+                        ? 'Invalid email or password.'
+                        : 'Login failed: ' + error.message,
+                    'error'
+                );
+            }
+        }
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value.toLowerCase();
+            const password = document.getElementById('registerPassword').value;
+            const role = document.getElementById('selectedRole').value;
+
+            try {
+                clearMessages();
+                showMessage('Creating account...', 'info');
+                const cred = await auth.createUserWithEmailAndPassword(email, password);
+                await cred.user.updateProfile({ displayName: name });
+                await db.collection('users').doc(cred.user.uid).set({
+                    name, email, role, status: 'active',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                showMessage('Account created! Please log in.', 'success');
+                showTab('login');
+            } catch (error) {
+                showMessage(error.code.includes('in-use') ? 'An account with this email already exists.' : 'Registration failed.', 'error');
+            }
+        }
+
+        async function logout() {
+            await auth.signOut();
+        }
+
+        // ============================================
+        // UI FUNCTIONS
+        // ============================================
+
+        function showApp() {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('appContainer').style.display = 'block';
+            document.getElementById('userWelcome').textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
+            document.getElementById('userRole').textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
+
+            // Role-based UI updates
+            document.getElementById('newProposalNavItem').style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
+            document.getElementById('allProjectsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
+            document.getElementById('projectsNavItem').style.display = (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+            document.getElementById('tasksNavItem').style.display = (currentUserRole === 'designer') ? 'block' : 'none';
+
+            if (currentUserRole === 'design_lead') {
+                showDesignLeadDashboard();
+            } else if (currentUserRole === 'designer') {
+                showTasks();
+            } else {
+                showDashboard();
+            }
+        }
+
+        function showLogin() {
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+            clearMessages();
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tab}')"]`).classList.add('active');
+            document.querySelectorAll('.auth-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(`${tab}Content`).classList.add('active');
+            clearMessages();
+        }
+
+        function setActiveNav(navId) {
+            document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
+            document.getElementById(navId)?.classList.add('active');
+        }
+
+        function showLoading() { document.getElementById('loadingSpinner').style.display = 'flex'; }
+        function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
+        function showMessage(message, type = 'info') {
+            const c = document.getElementById('authMessages');
+            if(c) c.innerHTML = `<div class="${type}-message">${message}</div>`;
+        }
+        function clearMessages() {
+            const c = document.getElementById('authMessages');
+            if(c) c.innerHTML = '';
+        }
+        function closeModal() {
+            document.querySelector('.modal-overlay')?.remove();
+        }
+        function formatDate(ts) {
+            if (!ts) return 'N/A';
+            let date;
+            if (ts.seconds) {
+                date = new Date(ts.seconds * 1000);
+            } else if (typeof ts === 'string' && ts.includes('-')) {
+                date = new Date(ts);
+            } else {
+                return 'Invalid Date';
+            }
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type} show`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // ============================================
+        // DASHBOARD
+        // ============================================
+
+        async function showDashboard() {
+            setActiveNav('nav-dashboard');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block';
+            showLoading();
+            try {
+                const response = await apiCall('dashboard');
+                let dashboardData = null;
+                if (response.success && response.data) {
+                    dashboardData = response.data;
+                } else if (response.data) {
+                    dashboardData = response.data;
+                } else {
+                    dashboardData = response;
+                }
+                
+                if (dashboardData && Object.keys(dashboardData).length > 0) {
+                    renderDashboard(dashboardData);
+                } else {
+                    throw new Error('No dashboard data received.');
+                }
+            } catch (error) {
+                console.error('❌ Dashboard error:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Dashboard Error</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showDashboard()" class="btn btn-primary">Retry</button>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderDashboard(data) {
+            let stats = data.stats || data;
+            
+            const statsHtml = stats ? Object.entries(stats)
+                .filter(([k, v]) => typeof v === 'number')
+                .map(([k, v]) => `
+                    <div class="stat-card">
+                        <div class="stat-number">${v}</div>
+                        <div class="stat-label">${k.charAt(0).toUpperCase() + k.slice(1)}</div>
+                    </div>
+                `).join('') : '<div class="stat-card"><div class="stat-number">0</div><div class="stat-label">No Data</div></div>';
+
+            let actionsHtml = '';
+            if (data.actionItems?.length) {
+                actionsHtml = `
+                    <h3>Your Action Items</h3>
+                    ${data.actionItems.map(item => `
+                        <div class="action-item">
+                            <div class="action-content">
+                                <strong>${item.projectName}</strong>
+                                <div class="action-meta">Client: ${item.clientCompany} | Status: ${item.status.replace(/_/g, ' ')}</div>
+                            </div>
+                            <div class="action-buttons">
+                                ${getActionButtons(item, currentUserRole)}
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            } else {
+                actionsHtml = `<h3>Action Items</h3><p>No pending action items. All caught up! 🎉</p>`;
+            }
+
+            document.getElementById('mainContent').innerHTML = `
+                <div class="page-header">
+                    <h2>Dashboard</h2>
+                    <div class="subtitle">✅ Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>
+                </div>
+                <div class="dashboard-stats">${statsHtml}</div>
+                <div class="action-section">${actionsHtml}</div>
+            `;
+        }
+
+        function getActionButtons(item, role) {
+            let actionBtn = '';
+            const viewId = item.proposalId || item.projectId;
+            const viewFn = item.proposalId ? 'viewProposal' : 'viewProject';
+            const viewButton = viewId ? `<button class="btn btn-outline btn-sm" onclick="${viewFn}('${viewId}')">VIEW</button>` : '';
+            return `${actionBtn} ${viewButton}`;
+        }
+
+        // ============================================
+        // PROPOSALS
+        // ============================================
+
+        async function showProposals() {
+            setActiveNav('nav-proposals');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block';
+            showLoading();
+            main.innerHTML = '';
+
+            try {
+                const response = await apiCall('proposals');
+                let proposalsData = null;
+                if (response.success && response.data) {
+                    proposalsData = response.data;
+                } else if (Array.isArray(response.data)) {
+                    proposalsData = response.data;
+                } else if (Array.isArray(response)) {
+                    proposalsData = response;
+                } else {
+                    proposalsData = [];
+                }
+                
+                if (proposalsData && Array.isArray(proposalsData)) {
+                    renderProposals(proposalsData);
+                } else {
+                    throw new Error('Invalid proposals response format.');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching proposals:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Proposals</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderProposals(proposals) {
+            const wonProposals = proposals.filter(p => p.status === 'won');
+
+            let wonSection = '';
+            if (wonProposals.length > 0) {
+                wonSection = `
+                    <div class="action-section" style="margin-bottom: 2rem; background: #D5F4E6;">
+                        <h3>🏆 WON Proposals</h3>
+                        ${wonProposals.map(p => {
+                            let allocationInfo = '';
+                            let allocationButton = '';
+                            
+                            if (p.allocationStatus === 'allocated' && p.designLeadName) {
+                                allocationInfo = '<span class="proposal-status status-allocated">✅ Allocated to: ' + p.designLeadName + '</span>';
+                                if (currentUserRole === 'coo' || currentUserRole === 'director') {
+                                    allocationButton = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">View Project</button>`;
+                                }
+                            } else if (p.pricing && p.pricing.projectNumber) {
+                                allocationInfo = '<span class="proposal-status status-to-be-allocated">⏳ To Be Allocated</span>';
+                                if (currentUserRole === 'coo') {
+                                    allocationButton = `<button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-success btn-sm">🎯 Allocate</button>`;
+                                }
+                            } else {
+                                allocationInfo = '<span class="proposal-status status-pending">⏳ Pending Pricing</span>';
+                            }
+                            
+                            return `
+                            <div class="action-item" style="background: white;">
+                                <div class="action-content">
+                                    <strong>${p.projectName}</strong>
+                                    <div class="action-meta">
+                                        Client: ${p.clientCompany} |
+                                        Won: ${formatDate(p.wonDate)} |
+                                        ${p.pricing && p.pricing.projectNumber ? `Project #: ${p.pricing.projectNumber}` : 'No Project Number'}
+                                    </div>
+                                </div>
+                                ${allocationInfo}
+                                <div class="action-buttons">
+                                    ${allocationButton}
+                                    <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View</button>
+                                </div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                `;
+            }
+
+            const otherProposals = proposals.filter(p => p.status !== 'won');
+            const proposalsHtml = otherProposals?.length ? otherProposals.map(p => {
+                let statusDisplay = p.status.toUpperCase().replace(/_/g, ' ');
+                let statusClass = p.status.toLowerCase().replace(/_/g, '-');
+                
+                return `
+                <div class="action-item">
+                    <div class="action-content">
+                        <strong>${p.projectName}</strong>
+                        <div class="action-meta">Client: ${p.clientCompany} | Created: ${formatDate(p.createdAt)}</div>
+                    </div>
+                    <span class="proposal-status status-${statusClass}">${statusDisplay}</span>
+                    <div class="action-buttons">
+                        <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
+                    </div>
+                </div>
+            `}).join('') : '';
+
+            document.getElementById('mainContent').innerHTML = `
+                <div class="page-header">
+                    <h2>All Proposals</h2>
+                    <div class="subtitle">Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>
+                </div>
+                ${wonSection}
+                <div class="action-section">
+                    <h3>All Other Proposals</h3>
+                    ${proposalsHtml || '<p>No other proposals found.</p>'}
+                </div>
+            `;
+        }
+
+        async function viewProposal(proposalId) {
+            try {
+                showLoading();
+                const { success, data } = await apiCall(`proposals?id=${proposalId}`);
+                if (success && data) {
+                    hideLoading();
+                    alert('Proposal details: ' + data.projectName);
+                } else {
+                    throw new Error('Failed to load proposal');
+                }
+            } catch (error) {
+                hideLoading();
+                alert(`Error fetching proposal: ${error.message}`);
+            }
+        }
+
+        // ============================================
+        // ENHANCED PROJECT ALLOCATION MODAL (COO)
+        // ============================================
+
+        async function showProjectAllocationModal(proposalId) {
+            try {
+                showLoading();
+                
+                const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+                if (!proposalResponse.success || !proposalResponse.data) {
+                    throw new Error('Failed to load proposal');
+                }
+                const proposal = proposalResponse.data;
+                
+                if (proposal.status !== 'won') {
+                    alert('Only WON proposals can be allocated to Design Managers');
+                    hideLoading();
                     return;
                 }
-
-                projectsToRender.forEach(project => {
-                    const card = document.createElement('div');
-                    card.className = 'project-card';
-                    card.dataset.projectId = project.id;
-                    
-                    let statusBadge = '';
-                    let buttonHtml = '';
-                    let detailsHtml = '';
-
-                    // 1. Set Status Badge
-                    if (project.status === 'new') {
-                        statusBadge = '<span class="status-badge status-new">To Be Allocated</span>';
-                    } else if (project.status === 'allocated') {
-                        statusBadge = '<span class="status-badge status-allocated">Allocated (to DM)</span>';
-                    } else if (project.status === 'designer_allocated') {
-                        statusBadge = '<span class="status-badge status-designer-allocated">Designer Assigned</span>';
-                    }
-
-                    // 2. Set Action Button based on Role and Status
-                    if (currentRole === 'coo') {
-                        if (project.status === 'new') {
-                            buttonHtml = `<button class="action-btn" data-action="coo-allocate" data-id="${project.id}">Allocate to DM</button>`;
-                        } else {
-                            buttonHtml = `<button class="action-btn" disabled>Allocation Complete</button>`;
-                        }
-                    } else if (currentRole === 'design_manager') {
-                        if (project.status === 'new') {
-                            buttonHtml = `<button class="action-btn" disabled>Awaiting COO Allocation</button>`;
-                        } else if (project.status === 'allocated') {
-                            buttonHtml = `<button class="action-btn action-btn-secondary" data-action="dm-allocate" data-id="${project.id}">Allocate Designer</button>`;
-                        } else if (project.status === 'designer_allocated') {
-                            buttonHtml = `<button class="action-btn" disabled>Designer Assigned</button>`;
-                        }
-                    }
-                    
-                    // 3. Set Details
-                    if (project.status === 'allocated' || project.status === 'designer_allocated') {
-                        const manager = designManagers.find(m => m.id === project.designManager)?.name || 'N/A';
-                        detailsHtml += `
-                            <div class="card-details">
-                                <div><strong>Design Manager:</strong> ${manager}</div>
-                                <div><strong>Max Hours:</strong> ${project.maxHours}</div>
-                        `;
-                        
-                        if (project.status === 'designer_allocated') {
-                            const designer = designers.find(d => d.id === project.designer)?.name || 'N/A';
-                            detailsHtml += `<div><strong>Assigned Designer:</strong> ${designer}</div>`;
-                        }
-                        detailsHtml += '</div>';
-                    }
-
-                    // 4. Assemble Card
-                    card.innerHTML = `
-                        <div class="card-content">
-                            <div class="card-header">
-                                <h3>${project.name}</h3>
-                                ${statusBadge}
+                
+                const usersResponse = await apiCall('users?role=design_lead');
+                let designManagers = [];
+                if (usersResponse.success && usersResponse.data) {
+                    designManagers = usersResponse.data;
+                }
+                
+                if (designManagers.length === 0) {
+                    alert('No Design Managers found in the system. Please create Design Manager users first.');
+                    hideLoading();
+                    return;
+                }
+                
+                const modalHtml = `
+                    <div class="modal-overlay">
+                        <div class="modal-content" style="max-width: 800px;">
+                            <div class="modal-header">
+                                <div>
+                                    <h2>🎯 Allocate Project to Design Manager</h2>
+                                    <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
+                                </div>
+                                <span class="close-modal" onclick="closeModal()">&times;</span>
                             </div>
-                            <p>Client: ${project.client}</p>
-                            ${detailsHtml}
+                            <div style="padding: 0 3rem 3rem 3rem;">
+                                <div class="allocation-details-section">
+                                    <h3>📋 Project Information</h3>
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+                                        <div style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">
+                                                🔢 Project Number:
+                                            </label>
+                                            <span class="project-number-badge" style="font-size: 1.3rem; padding: 0.7rem 1.2rem;">
+                                                ${proposal.pricing.projectNumber}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Quote Value:</label>
+                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
+                                                ${proposal.pricing.currency} ${proposal.pricing.quoteValue?.toLocaleString()}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Status:</label>
+                                            <span class="proposal-status status-won">WON</span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">BDM:</label>
+                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
+                                                ${proposal.createdByName || 'N/A'}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Client:</label>
+                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
+                                                ${proposal.clientCompany}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin-top: 2rem;">
+                                    <h3 style="color: var(--text-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">
+                                        👤 Allocation Details
+                                    </h3>
+                                    <form id="allocationForm">
+                                        <input type="hidden" id="allocationProposalId" value="${proposalId}">
+                                        
+                                        <div class="form-group">
+                                            <label for="designManagerSelect">Select Design Manager <span class="required">*</span></label>
+                                            <select id="designManagerSelect" class="form-control" required>
+                                                <option value="">Choose a Design Manager...</option>
+                                                ${designManagers.map(dm => `
+                                                    <option value="${dm.uid}" data-name="${dm.name}" data-email="${dm.email}">
+                                                        ${dm.name} (${dm.email})
+                                                    </option>
+                                                `).join('')}
+                                            </select>
+                                            <small class="form-text">Select the Design Manager who will oversee this project</small>
+                                        </div>
+
+                                        <!-- MAX DESIGN HOURS FIELD -->
+                                        <div class="form-group">
+                                            <label for="maxAllocatedHours">Max Design Hours <span class="required">*</span></label>
+                                            <input type="number" id="maxAllocatedHours" class="form-control" 
+                                                   step="0.5" min="1" placeholder="Enter maximum hours allocated for this project" required
+                                                   onchange="updateHoursSummary()">
+                                            <small class="form-text">Total hours budget allocated by COO/Director for this project</small>
+                                        </div>
+
+                                        <!-- ADDITIONAL HOURS FIELD -->
+                                        <div class="form-group">
+                                            <label for="additionalHours">Additional Hours Provision</label>
+                                            <input type="number" id="additionalHours" class="form-control" 
+                                                   step="0.5" min="0" value="0" placeholder="Enter buffer hours (optional)"
+                                                   onchange="updateHoursSummary()">
+                                            <small class="form-text">Extra hours that
+                                            can be allocated if needed (buffer)</small>
+                                        </div>
+
+                                        <!-- HOURS BUDGET DISPLAY -->
+                                        <div class="hour-budget-display" id="hourBudgetDisplay" style="display: none;">
+                                            <div class="hour-budget-row">
+                                                <span class="hour-budget-label">Max Design Hours:</span>
+                                                <span class="hour-budget-value" id="displayMaxHours">0h</span>
+                                            </div>
+                                            <div class="hour-budget-row">
+                                                <span class="hour-budget-label">Additional Hours:</span>
+                                                <span class="hour-budget-value" id="displayAdditionalHours">0h</span>
+                                            </div>
+                                            <div class="hour-budget-row">
+                                                <span class="hour-budget-label" style="font-weight: 700;">Total Available Hours:</span>
+                                                <span class="hour-budget-value" id="displayTotalHours" style="font-size: 1.3rem; color: var(--success);">0h</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="targetCompletionDate">Target Completion Date</label>
+                                            <input type="date" id="targetCompletionDate" class="form-control"
+                                                 min="${new Date().toISOString().split('T')[0]}">
+                                            <small class="form-text">Expected project completion date</small>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="projectPriority">Project Priority</label>
+                                            <select id="projectPriority" class="form-control">
+                                                <option value="Normal">Normal</option>
+                                                <option value="High">High</option>
+                                                <option value="Urgent">Urgent</option>
+                                                <option value="Low">Low</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="allocationComments">Allocation Comments <span class="required">*</span></label>
+                                            <textarea id="allocationComments" class="form-control" rows="4"
+                                                 placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
+                                            <small class="form-text">Provide clear guidance and expectations for this project</small>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label for="specialInstructions">Special Instructions</label>
+                                            <textarea id="specialInstructions" class="form-control" rows="3"
+                                                 placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                    <button type="button" onclick="submitProjectAllocation()" class="btn btn-success">
+                                        <span style="margin-right: 0.5rem;">✓</span> Allocate Project
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="card-footer">
-                            ${buttonHtml}
-                        </div>
-                    `;
-                    projectList.appendChild(card);
-                });
-            }
-            
-            /**
-             * Handles click events on project list (delegated)
-             */
-            function handleProjectListClick(e) {
-                const target = e.target;
-                if (target.tagName === 'BUTTON' && target.dataset.action) {
-                    const action = target.dataset.action;
-                    const id = target.dataset.id;
-                    const project = projects.find(p => p.id === id);
-                    
-                    if (!project) return;
-                    
-                    if (action === 'coo-allocate') {
-                        openCooModal(project);
-                    } else if (action === 'dm-allocate') {
-                        openDmModal(project);
-                    }
-                }
-            }
-            
-            /**
-             * Switches the current user role
-             */
-            function switchRole() {
-                if (currentRole === 'coo') {
-                    currentRole = 'design_manager';
-                    roleDisplay.textContent = 'Viewing as: Design Manager';
-                    roleSwitcherBtn.innerHTML = 'Switch to COO <span>&larr;</span>';
-                } else {
-                    currentRole = 'coo';
-                    roleDisplay.textContent = 'Viewing as: COO';
-                    roleSwitcherBtn.innerHTML = 'Switch to Design Manager <span>&rarr;</span>';
-                }
-                // Re-render projects to show appropriate buttons
-                renderAll();
-            }
-            
-            /**
-             * Changes the active project filter
-             */
-            function changeFilter(newFilter) {
-                activeFilter = newFilter;
-                
-                filterBtnNew.classList.toggle('active', newFilter === 'new');
-                filterBtnAllocated.classList.toggle('active', newFilter === 'allocated');
-                
-                // Re-render projects for the new filter
-                renderProjects();
-            }
-            
-            /**
-             * Shows a success toast notification
-             */
-            function showToast(message) {
-                const toast = document.createElement('div');
-                toast.className = 'toast toast-success';
-                toast.innerHTML = `
-                    <span class="toast-icon">✔</span>
-                    <span class="toast-message">${message}</span>
+                    </div>
                 `;
-                toastContainer.appendChild(toast);
                 
-                // Remove toast after 3 seconds
-                setTimeout(() => {
-                    toast.remove();
-                }, 3000);
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                hideLoading();
+                
+            } catch (error) {
+                console.error('Error showing allocation modal:', error);
+                alert('Error loading allocation form: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Update hours summary display
+        function updateHoursSummary() {
+            const maxHours = parseFloat(document.getElementById('maxAllocatedHours').value) || 0;
+            const additionalHours = parseFloat(document.getElementById('additionalHours').value) || 0;
+            const totalHours = maxHours + additionalHours;
+            
+            const displayDiv = document.getElementById('hourBudgetDisplay');
+            if (maxHours > 0) {
+                displayDiv.style.display = 'block';
+                document.getElementById('displayMaxHours').textContent = maxHours.toFixed(1) + 'h';
+                document.getElementById('displayAdditionalHours').textContent = additionalHours.toFixed(1) + 'h';
+                document.getElementById('displayTotalHours').textContent = totalHours.toFixed(1) + 'h';
+            } else {
+                displayDiv.style.display = 'none';
+            }
+        }
+
+        // Submit Project Allocation
+        async function submitProjectAllocation() {
+            const proposalId = document.getElementById('allocationProposalId').value;
+            const designManagerSelect = document.getElementById('designManagerSelect');
+            const designManagerUid = designManagerSelect.value;
+            const targetCompletionDate = document.getElementById('targetCompletionDate').value;
+            const projectPriority = document.getElementById('projectPriority').value;
+            const allocationComments = document.getElementById('allocationComments').value.trim();
+            const specialInstructions = document.getElementById('specialInstructions').value.trim();
+            const maxAllocatedHours = document.getElementById('maxAllocatedHours').value;
+            const additionalHours = document.getElementById('additionalHours').value || 0;
+            
+            // Validation
+            if (!designManagerUid) {
+                alert('⚠️ Please select a Design Manager');
+                designManagerSelect.focus();
+                return;
             }
             
-            /**
-             * Validates a form. Returns true if valid, false otherwise.
-             * Also adds/removes 'invalid' class from fields.
-             */
-            function validateForm(form) {
-                let isValid = true;
-                const requiredFields = form.querySelectorAll('[required]');
+            if (!maxAllocatedHours || parseFloat(maxAllocatedHours) < 1) {
+                alert('⚠️ Please enter max allocated hours (minimum 1 hour)');
+                document.getElementById('maxAllocatedHours').focus();
+                return;
+            }
+            
+            if (!allocationComments || allocationComments.length < 10) {
+                alert('⚠️ Please add allocation comments (at least 10 characters)');
+                document.getElementById('allocationComments').focus();
+                return;
+            }
+            
+            try {
+                showLoading();
+                const selectedOption = designManagerSelect.options[designManagerSelect.selectedIndex];
+                const designManagerName = selectedOption.getAttribute('data-name');
+                const designManagerEmail = selectedOption.getAttribute('data-email');
                 
-                requiredFields.forEach(field => {
-                    if (!field.value.trim()) {
-                        isValid = false;
-                        field.classList.add('invalid');
-                    } else {
-                        field.classList.remove('invalid');
+                // Create project from proposal
+                const createProjectResponse = await apiCall('projects', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'create_from_proposal',
+                        proposalId: proposalId
+                    })
+                });
+                
+                if (!createProjectResponse.success) {
+                    const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+                    if (!proposalResponse.data.projectId) {
+                        throw new Error('Failed to create project: ' + (createProjectResponse.error || 'Unknown error'));
                     }
-                });
-                return isValid;
-            }
-            
-            /**
-             * Resets all form fields and error states
-             */
-            function resetForm(form) {
-                form.reset();
-                form.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
-            }
-
-            // --- MODAL FUNCTIONS ---
-
-            function openModal(modalEl) {
-                modalEl.classList.add('show');
-            }
-            
-            function closeModal(modalEl) {
-                modalEl.classList.remove('show');
-            }
-            
-            // COO Modal
-            function openCooModal(project) {
-                resetForm(cooForm);
-                cooForm.querySelector('#cooProjectId').value = project.id;
-                
-                // Populate Design Manager dropdown
-                const dmSelect = cooForm.querySelector('#cooDesignManager');
-                dmSelect.innerHTML = '<option value="">-- Select a Manager --</option>'; // Reset
-                designManagers.forEach(dm => {
-                    dmSelect.innerHTML += `<option value="${dm.id}">${dm.name}</option>`;
-                });
-                
-                openModal(cooModal);
-            }
-            
-            function handleCooSubmit(e) {
-                e.preventDefault();
-                if (!validateForm(cooForm)) return;
-                
-                // Get data from form
-                const projectId = cooForm.querySelector('#cooProjectId').value;
-                const managerId = cooForm.querySelector('#cooDesignManager').value;
-                const maxHours = cooForm.querySelector('#cooMaxHours').value;
-                const additionalHours = cooForm.querySelector('#cooAdditionalHours').value || 0;
-                const notes = cooForm.querySelector('#cooNotes').value;
-                
-                // Find and update the project in our "database"
-                const project = projects.find(p => p.id === projectId);
-                if (project) {
-                    project.status = 'allocated'; // <-- THIS IS THE FIX
-                    project.designManager = managerId;
-                    project.maxHours = parseInt(maxHours, 10);
-                    project.additionalHours = parseInt(additionalHours, 10);
-                    project.cooNotes = notes;
                 }
                 
-                closeModal(cooModal);
-                showToast('Project allocated to Design Manager!');
-                renderAll(); // Re-render everything
+                // Get the project ID
+                const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
+                const projectId = proposalResponse.data.projectId;
+                
+                if (!projectId) {
+                    throw new Error('Project ID not found');
+                }
+                
+                // Allocate to design lead with hours
+                const allocationData = {
+                    designLeadUid: designManagerUid,
+                    targetCompletionDate: targetCompletionDate || null,
+                    priority: projectPriority,
+                    allocationNotes: allocationComments,
+                    specialInstructions: specialInstructions,
+                    maxAllocatedHours: parseFloat(maxAllocatedHours),
+                    additionalHours: parseFloat(additionalHours)
+                };
+                
+                const response = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'allocate_to_design_lead',
+                        data: allocationData
+                    })
+                });
+                
+                if (response.success) {
+                    // Update proposal allocation status
+                    await apiCall(`proposals?id=${proposalId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'update_allocation_status',
+                            data: {
+                                allocationStatus: 'allocated',
+                                designLeadName: designManagerName,
+                                designLeadUid: designManagerUid,
+                                allocatedAt: new Date().toISOString()
+                            }
+                        })
+                    });
+                    
+                    closeModal();
+                    showNotification(`✅ Project Allocated Successfully! Allocated to ${designManagerName} with ${maxAllocatedHours}h (+${additionalHours}h buffer)`, 'success');
+                    
+                    setTimeout(() => {
+                        showProposals();
+                    }, 1000);
+                } else {
+                    throw new Error(response.error || 'Failed to allocate project');
+                }
+            } catch (error) {
+                console.error('Error allocating project:', error);
+                alert('❌ Error allocating project: ' + error.message);
+            } finally {
+                hideLoading();
             }
+        }
 
-            // Design Manager Modal
-            function openDmModal(project) {
-                resetForm(dmForm);
-                dmForm.querySelector('#dmProjectId').value = project.id;
+        // ============================================
+        // ALL PROJECTS VIEW (COO & DIRECTOR)
+        // ============================================
+
+        async function showAllProjects() {
+            setActiveNav('nav-all-projects');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            main.innerHTML = '';
+            try {
+                const response = await apiCall('proposals');
+                if (response.success && response.data) {
+                    renderAllProjectsView(response.data);
+                } else {
+                    throw new Error('Invalid proposals response');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching all projects:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Projects</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderAllProjectsView(proposals) {
+            const wonProjects = proposals.filter(p => p.status === 'won');
+            const allocatedProjects = wonProjects.filter(p => p.allocationStatus === 'allocated');
+            const toBeAllocatedProjects = wonProjects.filter(p => p.allocationStatus !== 'allocated' && p.pricing?.projectNumber);
+
+            const projectsHtml = wonProjects.map(p => {
+                const allocationStatusDisplay = p.allocationStatus === 'allocated' ? 
+                    `<span class="proposal-status status-allocated">✅ Allocated</span>` : 
+                    `<span class="proposal-status status-to-be-allocated">⏳ To Be Allocated</span>`;
                 
-                // Populate project details
-                dmForm.querySelector('#dmProjectName span').textContent = project.name;
-                dmForm.querySelector('#dmMaxHours span').textContent = `${project.maxHours} (+${project.additionalHours} additional)`;
+                let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
                 
-                // Populate Designer dropdown
-                const designerSelect = dmForm.querySelector('#dmDesigner');
-                designerSelect.innerHTML = '<option value="">-- Select a Designer --</option>'; // Reset
-                designers.forEach(d => {
-                    designerSelect.innerHTML += `
-                        <option value="${d.id}" data-load="${d.load}">
-                            ${d.name} ${loadMap[d.load]}
-                        </option>
+                if (currentUserRole === 'coo' && p.allocationStatus !== 'allocated' && p.pricing?.projectNumber) {
+                    actionButtons = `
+                        <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-primary btn-sm">🎯 Allocate</button>
+                        ${actionButtons}
                     `;
-                });
-                
-                openModal(dmModal);
-            }
-            
-            function handleDmSubmit(e) {
-                e.preventDefault();
-                if (!validateForm(dmForm)) return;
-                
-                // Get data
-                const projectId = dmForm.querySelector('#dmProjectId').value;
-                const designerId = dmForm.querySelector('#dmDesigner').value;
-                const notes = dmForm.querySelector('#dmNotes').value;
-                
-                // Update project
-                const project = projects.find(p => p.id === projectId);
-                if (project) {
-                    project.status = 'designer_allocated';
-                    project.designer = designerId;
-                    project.dmNotes = notes;
                 }
                 
-                closeModal(dmModal);
-                showToast('Designer has been assigned to the project!');
-                renderAll(); // Re-render everything
-            }
+                return `
+                    <tr>
+                        <td><strong>${p.projectName}</strong></td>
+                        <td>${p.clientCompany}</td>
+                        <td>${p.createdByName || 'N/A'}</td>
+                        <td>${p.pricing?.currency || ''} ${p.pricing?.quoteValue?.toLocaleString() || 'N/A'}</td>
+                        <td>${p.pricing?.projectNumber ? 
+                            `<span class="project-number-badge" style="font-size: 0.9rem;">${p.pricing.projectNumber}</span>` : 
+                            '<span class="proposal-status status-pending">Not Assigned</span>'}</td>
+                        <td><span class="proposal-status status-${p.status}">${p.status.toUpperCase()}</span></td>
+                        <td>${allocationStatusDisplay}</td>
+                        <td><div class="action-buttons">${actionButtons}</div></td>
+                    </tr>
+                `;
+            }).join('');
 
-            // --- INITIALIZATION & EVENT LISTENERS ---
-            
-            /**
-             * Helper to render all components
-             */
-            function renderAll() {
-                updateCounts();
-                renderProjects();
-            }
+            document.getElementById('mainContent').innerHTML = `
+                <div class="page-header">
+                    <h2>All Projects Overview</h2>
+                    <div class="subtitle">Complete view of all projects across all statuses</div>
+                </div>
+                
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-number">${wonProjects.length}</div>
+                        <div class="stat-label">Won Projects</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${allocatedProjects.length}</div>
+                        <div class="stat-label">Allocated</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">${toBeAllocatedProjects.length}</div>
+                        <div class="stat-label">To Be Allocated</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Project Name</th>
+                                <th>Client</th>
+                                <th>BDM</th>
+                                <th>Value</th>
+                                <th>Project Number</th>
+                                <th>Status</th>
+                                <th>Allocation Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${projectsHtml || '<tr><td colspan="8" style="text-align: center;">No projects found</td></tr>'}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
 
-            // Initial setup
-            renderAll();
+        // ============================================
+        // DESIGN LEAD DASHBOARD WITH DESIGNER ALLOCATION
+        // ============================================
+
+        async function showDesignLeadDashboard() {
+            setActiveNav('nav-dashboard');
+            const main = document.getElementById('mainContent');
+            main.innerHTML = '';
+            showLoading();
+
+            try {
+                const response = await apiCall('projects');
+                if (!response.success) throw new Error('Failed to fetch projects');
+
+                const allProjects = response.data;
+                const myProjects = allProjects.filter(p => p.designLeadUid === currentUser.uid);
+
+                const stats = {
+                    myProjects: myProjects.length,
+                    inProgress: myProjects.filter(p => p.status === 'active').length,
+                    pendingReview: 0
+                };
+
+                let projectsHtml = '';
+                if (myProjects.length === 0) {
+                    projectsHtml = '<p style="text-align: center; padding: 2rem;">No projects allocated to you yet.</p>';
+                } else {
+                    projectsHtml = myProjects.map(project => createProjectCard(project)).join('');
+                }
+
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>Design Lead Dashboard</h2>
+                        <div class="subtitle">Manage your assigned projects and team</div>
+                    </div>
+                    <div class="dashboard-stats">
+                        <div class="stat-card"><div class="stat-number">${stats.myProjects}</div><div class="stat-label">My Projects</div></div>
+                        <div class="stat-card"><div class="stat-number">${stats.inProgress}</div><div class="stat-label">In Progress</div></div>
+                        <div class="stat-card"><div class="stat-number">${stats.pendingReview}</div><div class="stat-label">Pending Review</div></div>
+                    </div>
+                    <div class="action-section">
+                         <h3>My Projects</h3>
+                         ${projectsHtml}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('Error loading Design Lead dashboard:', error);
+                main.innerHTML = `<div class="error-message">Failed to load dashboard: ${error.message}</div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function createProjectCard(project) {
+            const allocDate = project.allocationDate ? formatDate(project.allocationDate) : 'Not set';
+            const targetDate = project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set';
+            const maxHours = project.maxAllocatedHours || 0;
+            const additionalHours = project.additionalHours || 0;
+            const totalHours = maxHours + additionalHours;
+            const usedHours = project.hoursLogged || 0;
+            const remainingHours = totalHours - usedHours;
+
+            return `
+                <div class="project-card">
+                    <div class="project-header">
+                        <h3>${project.projectName}</h3>
+                        <span class="proposal-status status-${project.status?.replace(/_/g, '-') || 'active'}">${project.status?.replace(/_/g, ' ') || 'Active'}</span>
+                    </div>
+                    <div class="project-details">
+                        <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
+                        <p><strong>Project #:</strong> ${project.projectCode || project.projectNumber || 'N/A'}</p>
+                        <p><strong>Allocated:</strong> ${allocDate}</p>
+                        <p><strong>Target:</strong> ${targetDate}</p>
+                        <p><strong>Designers:</strong> ${project.assignedDesignerNames?.join(', ') || 'None assigned'}</p>
+                        ${maxHours > 0 ? `
+                        <div class="hour-budget-display" style="margin-top: 1rem;">
+                            <div class="hour-budget-row">
+                                <span class="hour-budget-label">Max Hours:</span>
+                                <span class="hour-budget-value">${maxHours}h</span>
+                            </div>
+                            <div class="hour-budget-row">
+                                <span class="hour-budget-label">Additional:</span>
+                                <span class="hour-budget-value">${additionalHours}h</span>
+                            </div>
+                            <div class="hour-budget-row">
+                                <span class="hour-budget-label">Used:</span>
+                                <span class="hour-budget-value" style="color: var(--primary-blue);">${usedHours}h</span>
+                            </div>
+                            <div class="hour-budget-row">
+                                <span class="hour-budget-label" style="font-weight: 700;">Remaining:</span>
+                                <span class="hour-budget-value" style="font-size: 1.3rem; color: ${remainingHours > 0 ? 'var(--success)' : 'var(--danger)'};">${remainingHours}h</span>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    <div class="project-actions">
+                        <button onclick="viewProject('${project.id}')" class="btn btn-outline btn-sm">View Details</button>
+                        <button onclick="assignDesigners('${project.id}')" class="btn btn-primary btn-sm">👥 Assign Designers</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // DESIGNER ASSIGNMENT MODAL (DESIGN LEAD)
+        // ============================================
+
+        async function assignDesigners(projectId) {
+            try {
+                showLoading();
+                
+                // Fetch designers
+                const response = await apiCall('users?role=designer');
+                if (!response.success) throw new Error('Failed to fetch designers');
+                const designers = response.data;
+
+                // Fetch project details
+                const projectResponse = await apiCall(`projects?id=${projectId}`);
+                const currentProject = projectResponse.success ? projectResponse.data : {};
+                const assignedUids = currentProject.assignedDesignerUids || [];
+                const assignedHours = currentProject.assignedDesignerHours || {};
+                
+                const maxHours = parseFloat(currentProject.maxAllocatedHours || 0);
+                const additionalHours = parseFloat(currentProject.additionalHours || 0);
+                const totalAvailable = maxHours + additionalHours;
+                const alreadyUsed = Object.values(assignedHours).reduce((sum, h) => sum + h, 0);
+                
+                const modalHtml = `
+                    <div class="modal-overlay">
+                        <div class="modal-content" style="max-width: 800px;">
+                            <div class="modal-header">
+                                <div>
+                                    <h2>👥 Assign Designers to Project</h2>
+                                    <div class="subtitle">${currentProject.projectName}</div>
+                                </div>
+                                <span class="close-modal" onclick="closeModal()">&times;</span>
+                            </div>
+                            <div style="padding: 0 3rem 3rem 3rem;">
+                                <input type="hidden" id="assignProjectId" value="${projectId}">
+                                
+                                ${maxHours > 0 ? `
+                                <div class="hours-summary-box">
+                                    <div class="hours-summary-grid">
+                                        <div class="hours-summary-item">
+                                            <div class="hours-summary-label">Max Hours</div>
+                                            <div class="hours-summary-value">${maxHours.toFixed(1)}h</div>
+                                        </div>
+                                        <div class="hours-summary-item">
+                                            <div class="hours-summary-label">Additional</div>
+                                            <div class="hours-summary-value">${additionalHours.toFixed(1)}h</div>
+                                        </div>
+                                        <div class="hours-summary-item">
+                                            <div class="hours-summary-label">Total Available</div>
+                                            <div class="hours-summary-value">${totalAvailable.toFixed(1)}h</div>
+                                        </div>
+                                        <div class="hours-summary-item">
+                                            <div class="hours-summary-label">Already Assigned</div>
+                                            <div class="hours-summary-value" id="totalAllocatedDisplay">${alreadyUsed.toFixed(1)}h</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                <div class="form-group" style="margin-top: 2rem;">
+                                    <label style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; display: block;">
+                                        Select Designers & Allocate Hours <span class="required">*</span>
+                                    </label>
+                                    <div id="designersList">
+                                        ${designers.map(designer => {
+                                            const isAssigned = assignedUids.includes(designer.uid);
+                                            const currentHours = assignedHours[designer.uid] || 0;
+                                            
+                                            return `
+                                                <div class="designer-row ${isAssigned ? 'selected' : ''}">
+                                                    <div style="display: flex; align-items: center;">
+                                                        <input type="checkbox" 
+                                                               id="designer-${designer.uid}" 
+                                                               value="${designer.uid}"
+                                                               data-name="${designer.name}" 
+                                                               data-email="${designer.email}" 
+                                                               ${isAssigned ? 'checked' : ''}
+                                                               onchange="toggleDesignerHoursInput(this)"
+                                                               style="width: 20px; height: 20px; cursor: pointer;">
+                                                    </div>
+                                                    <div>
+                                                        <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
+                                                            ${designer.name}
+                                                        </label>
+                                                        <div style="font-size: 0.85rem; color: var(--text-light);">
+                                                            ${designer.email}
+                                                        </div>
+                                                    </div>
+                                                    <div style="min-width: 150px;">
+                                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                            <input type="number" 
+                                                                   id="hours-${designer.uid}"
+                                                                   class="hours-input" 
+                                                                   step="0.5" 
+                                                                   min="0.5"
+                                                                   ${maxHours > 0 ? `max="${totalAvailable}"` : ''}
+                                                                   value="${currentHours}"
+                                                                   placeholder="Hours"
+                                                                   ${!isAssigned ? 'disabled' : ''}
+                                                                   onchange="updateTotalAllocated(${totalAvailable})">
+                                                            <span style="font-size: 0.9rem; color: var(--text-light);">hrs</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                    <small class="form-text" style="display: block; margin-top: 0.5rem;">
+                                        💡 Select designers and allocate hours to each. ${maxHours > 0 ? 'Total allocated hours cannot exceed available hours.' : ''}
+                                    </small>
+                                </div>
+                                
+                                ${maxHours > 0 ? `
+                                <div style="background: #FFF3E0; padding: 1rem; border-radius: 8px; margin-top: 1.5rem; text-align: center;">
+                                    <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Total Hours Being Allocated:</div>
+                                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary-blue);" id="totalAllocatedHours">${alreadyUsed.toFixed(1)}h</div>
+                                    <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 0.5rem;">
+                                        Remaining: <strong id="remainingHoursDisplay" style="color: ${totalAvailable - alreadyUsed > 0 ? 'var(--success)' : 'var(--danger)'};">${(totalAvailable - alreadyUsed).toFixed(1)}h</strong>
+                                    </div>
+                                </div>
+                                ` : ''}
+                                
+                                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                    <button type="button" onclick="submitDesignerAssignment(${totalAvailable})" class="btn btn-success">
+                                        ✅ Assign Designers
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                hideLoading();
+                
+            } catch (error) {
+                console.error('Error loading designers:', error);
+                alert('Failed to load designers: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        // Toggle hours input when checkbox is changed
+        function toggleDesignerHoursInput(checkbox) {
+            const designerId = checkbox.value;
+            const hoursInput = document.getElementById(`hours-${designerId}`);
+            const row = checkbox.closest('.designer-row');
             
-            // Role Switcher
-            roleSwitcherBtn.addEventListener('click', switchRole);
+            if (checkbox.checked) {
+                hoursInput.disabled = false;
+                row.classList.add('selected');
+                if (!hoursInput.value || hoursInput.value === '0') {
+                    hoursInput.value = '1';
+                }
+            } else {
+                hoursInput.disabled = true;
+                row.classList.remove('selected');
+                hoursInput.value = '0';
+            }
             
-            // Filter Tabs
-            filterBtnNew.addEventListener('click', () => changeFilter('new'));
-            filterBtnAllocated.addEventListener('click', () => changeFilter('allocated'));
-            
-            // Project Card action buttons (Event Delegation)
-            projectList.addEventListener('click', handleProjectListClick);
-            
-            // Modal close buttons
-            document.querySelectorAll('[data-dismiss]').forEach(btn => {
-                const modalId = btn.dataset.dismiss;
-                btn.addEventListener('click', () => closeModal(document.getElementById(modalId)));
+            const maxHours = parseFloat(hoursInput.max) || 0;
+            updateTotalAllocated(maxHours);
+        }
+
+        // Update total allocated hours display
+        function updateTotalAllocated(maxHours) {
+            let total = 0;
+            const hoursInputs = document.querySelectorAll('.hours-input:not([disabled])');
+            hoursInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
             });
             
-            // Close modal on backdrop click
-            document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
-                backdrop.addEventListener('click', (e) => {
-                    if (e.target === backdrop) {
-                        closeModal(backdrop);
-                    }
+            const totalDisplay = document.getElementById('totalAllocatedHours');
+            if (totalDisplay) {
+                totalDisplay.textContent = total.toFixed(1) + 'h';
+            }
+            
+            const allocatedDisplay = document.getElementById('totalAllocatedDisplay');
+            if (allocatedDisplay) {
+                allocatedDisplay.textContent = total.toFixed(1) + 'h';
+            }
+            
+            if (maxHours > 0) {
+                const remaining = maxHours - total;
+                const remainingDisplay = document.getElementById('remainingHoursDisplay');
+                if (remainingDisplay) {
+                    remainingDisplay.textContent = remaining.toFixed(1) + 'h';
+                    remainingDisplay.style.color = remaining >= 0 ? 'var(--success)' : 'var(--danger)';
+                }
+            }
+        }
+
+        // Submit designer assignment
+        async function submitDesignerAssignment(maxHours) {
+            const projectId = document.getElementById('assignProjectId').value;
+            const checkboxes = document.querySelectorAll('#designersList input[type="checkbox"]:checked');
+
+            const designerUids = [];
+            const designerNames = [];
+            const designerEmails = [];
+            const designerHours = {};
+            let totalAllocated = 0;
+
+            checkboxes.forEach(checkbox => {
+                const uid = checkbox.value;
+                const hoursInput = document.getElementById(`hours-${uid}`);
+                const hours = parseFloat(hoursInput.value) || 0;
+                
+                if (hours < 0.5) {
+                    alert(`Please allocate at least 0.5 hours for ${checkbox.dataset.name}`);
+                    throw new Error('Invalid hours');
+                }
+                
+                designerUids.push(uid);
+                designerNames.push(checkbox.dataset.name);
+                designerEmails.push(checkbox.dataset.email);
+                designerHours[uid] = hours;
+                totalAllocated += hours;
+            });
+            
+            if (maxHours > 0 && totalAllocated > maxHours) {
+                alert(`⚠️ Total allocated hours (${totalAllocated.toFixed(1)}) exceeds available hours (${maxHours.toFixed(1)}). Please adjust the allocation.`);
+                return;
+            }
+            
+            const assign
+            mentData = {
+                action: 'assign_designers',
+                data: {
+                    designerUids: designerUids,
+                    designerNames: designerNames,
+                    designerEmails: designerEmails,
+                    designerHours: designerHours,
+                    totalAllocatedHours: totalAllocated
+                }
+            };
+
+            try {
+                showLoading();
+                const result = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify(assignmentData)
                 });
-            });
+
+                if (result.success) {
+                    const summary = designerUids.length > 0 
+                        ? `${designerUids.length} designer(s) assigned with total ${totalAllocated.toFixed(1)} hours allocated.`
+                        : 'All designers unassigned from project.';
+                    closeModal();
+                    showNotification(`✅ Designers assigned successfully! ${summary}`, 'success');
+                    showDesignLeadDashboard();
+                } else {
+                    throw new Error(result.error || 'Assignment failed');
+                }
+
+            } catch (error) {
+                console.error('Error assigning designers:', error);
+                alert('Failed to assign designers: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // PROJECTS VIEW
+        // ============================================
+
+        async function showProjects() {
+            setActiveNav('nav-projects');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            main.innerHTML = '';
+
+            try {
+                const response = await apiCall('projects');
+                if (response.success && response.data) {
+                    renderProjectsList(response.data);
+                } else {
+                    throw new Error(response.error || 'Invalid projects response');
+                }
+            } catch (error) {
+                console.error('❌ Error fetching projects:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Projects</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function renderProjectsList(projects) {
+            const main = document.getElementById('mainContent');
             
-            // Modal form submissions
-            cooForm.addEventListener('submit', handleCooSubmit);
-            dmForm.addEventListener('submit', handleDmSubmit);
+            let relevantProjects = projects;
+            if (currentUserRole === 'design_lead') {
+                relevantProjects = projects.filter(p => p.designLeadUid === currentUser.uid);
+            } else if (currentUserRole === 'designer') {
+                relevantProjects = projects.filter(p => p.assignedDesigners?.includes(currentUser.uid));
+            }
 
+            const projectsHtml = relevantProjects.length ? relevantProjects.map(p => 
+                createProjectCard(p)
+            ).join('') : '<p style="text-align: center; padding: 2rem;">No projects found matching your criteria.</p>';
+
+            main.innerHTML = `
+                <div class="page-header">
+                    <h2>All Projects</h2>
+                    <div class="subtitle">Manage all active and pending projects.</div>
+                </div>
+                <div class="action-section">
+                    <h3>Project List</h3>
+                    <div style="display: grid; gap: 1.5rem;">
+                        ${projectsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function viewProject(projectId) {
+            try {
+                showLoading();
+                const { success, data } = await apiCall(`projects?id=${projectId}`);
+                if (success && data) {
+                    hideLoading();
+                    
+                    const modalHtml = `
+                        <div class="modal-overlay">
+                            <div class="modal-content" style="max-width: 800px;">
+                                <div class="modal-header">
+                                    <h2>📋 Project Details</h2>
+                                    <span class="close-modal" onclick="closeModal()">&times;</span>
+                                </div>
+                                <div style="padding: 0 3rem 3rem 3rem;">
+                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                                        <div><strong>Project Name:</strong><br>${data.projectName || 'N/A'}</div>
+                                        <div><strong>Client:</strong><br>${data.clientCompany || 'N/A'}</div>
+                                        <div><strong>Project Code:</strong><br>${data.projectCode || 'N/A'}</div>
+                                        <div><strong>Status:</strong><br><span class="proposal-status status-${data.status}">${data.status}</span></div>
+                                        <div><strong>Design Manager:</strong><br>${data.designLeadName || 'N/A'}</div>
+                                        <div><strong>Target Date:</strong><br>${data.targetCompletionDate ? formatDate(data.targetCompletionDate) : 'Not set'}</div>
+                                    </div>
+                                    
+                                    ${data.maxAllocatedHours ? `
+                                    <div class="hour-budget-display">
+                                        <div class="hour-budget-row">
+                                            <span class="hour-budget-label">Max Hours:</span>
+                                            <span class="hour-budget-value">${data.maxAllocatedHours}h</span>
+                                        </div>
+                                        <div class="hour-budget-row">
+                                            <span class="hour-budget-label">Additional Hours:</span>
+                                            <span class="hour-budget-value">${data.additionalHours || 0}h</span>
+                                        </div>
+                                        <div class="hour-budget-row">
+                                            <span class="hour-budget-label">Hours Used:</span>
+                                            <span class="hour-budget-value">${data.hoursLogged || 0}h</span>
+                                        </div>
+                                        <div class="hour-budget-row">
+                                            <span class="hour-budget-label" style="font-weight: 700;">Hours Remaining:</span>
+                                            <span class="hour-budget-value" style="font-size: 1.3rem; color: ${(data.maxAllocatedHours + (data.additionalHours || 0) - (data.hoursLogged || 0)) > 0 ? 'var(--success)' : 'var(--danger)'};">
+                                                ${(data.maxAllocatedHours + (data.additionalHours || 0) - (data.hoursLogged || 0)).toFixed(1)}h
+                                            </span>
+                                        </div>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                                        <button onclick="closeModal()" class="btn btn-primary">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    document.body.insertAdjacentHTML('beforeend', modalHtml);
+                } else {
+                    throw new Error('Failed to load project');
+                }
+            } catch (error) {
+                hideLoading();
+                alert(`Error fetching project: ${error.message}`);
+            }
+        }
+
+        // ============================================
+        // DESIGNER TASKS VIEW
+        // ============================================
+
+        async function showTasks() {
+            setActiveNav('nav-tasks');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block';
+            showLoading();
+            
+            try {
+                const response = await apiCall('projects?assignedToMe=true');
+                
+                if (!response.success) {
+                    throw new Error('Failed to load projects');
+                }
+                
+                const projects = response.data || [];
+                
+                const projectsHtml = projects.length > 0 ? projects.map(project => `
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>${project.projectName || 'Untitled Project'}</h3>
+                            <span class="proposal-status status-${project.status}">${project.status}</span>
+                        </div>
+                        <div class="project-details">
+                            <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
+                            <p><strong>Project Code:</strong> ${project.projectCode || 'N/A'}</p>
+                            <p><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</p>
+                            ${project.assignedHours ? `
+                            <div class="hour-budget-display" style="margin-top: 1rem;">
+                                <div class="hour-budget-row">
+                                    <span class="hour-budget-label">Your Allocated Hours:</span>
+                                    <span class="hour-budget-value">${project.assignedHours}h</span>
+                                </div>
+                                <div class="hour-budget-row">
+                                    <span class="hour-budget-label">Hours Logged:</span>
+                                    <span class="hour-budget-value" style="color: var(--primary-blue);">${project.yourHoursLogged || 0}h</span>
+                                </div>
+                                <div class="hour-budget-row">
+                                    <span class="hour-budget-label" style="font-weight: 700;">Remaining:</span>
+                                    <span class="hour-budget-value" style="color: ${(project.assignedHours - (project.yourHoursLogged || 0)) > 0 ? 'var(--success)' : 'var(--danger)'};">
+                                        ${(project.assignedHours - (project.yourHoursLogged || 0)).toFixed(1)}h
+                                    </span>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-primary btn-sm" onclick="viewProject('${project.id}')">
+                                👁️ View Details
+                            </button>
+                        </div>
+                    </div>
+                `).join('') : '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects assigned yet.</p>';
+                
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>📋 My Projects</h2>
+                        <p class="subtitle">Projects assigned to you</p>
+                    </div>
+                    
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-number">${projects.length}</div>
+                            <div class="stat-label">Total Projects</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${projects.filter(p => p.status === 'active').length}</div>
+                            <div class="stat-label">Active Projects</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${projects.filter(p => p.status === 'completed').length}</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-section">
+                        <h3>Your Projects</h3>
+                        <div style="display: grid; gap: 1.5rem;">
+                            ${projectsHtml}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                main.innerHTML = `<div class="error-message">Failed to load projects: ${error.message}</div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // FILE UPLOAD
+        // ============================================
+
+        function showFileUpload() {
+            setActiveNav('nav-files');
+            const main = document.getElementById('mainContent');
+            main.innerHTML = `
+                <div class="page-header">
+                    <h2>File Manager</h2>
+                    <div class="subtitle">Upload, view, and manage all project files.</div>
+                </div>
+                <div class="action-section">
+                    <h3>File Management</h3>
+                    <p style="text-align: center; padding: 2rem;">File management functionality coming soon...</p>
+                </div>
+            `;
+        }
+
+        // ============================================
+        // ACTIVITIES
+        // ============================================
+
+        async function showActivities() {
+            setActiveNav('nav-activities');
+            const main = document.getElementById('mainContent');
+            showLoading();
+
+            try {
+                const response = await apiCall('activities');
+                if (!response.success || !response.data) {
+                    throw new Error(response.error || 'Failed to load activities');
+                }
+                
+                const activities = response.data;
+                const activitiesHtml = activities.length ? activities.map(act => `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <strong>${act.details}</strong>
+                            <div class="action-meta">
+                                By ${act.performedByName || 'System'} (${act.performedByRole || 'N/A'}) - ${formatDate(act.timestamp)}
+                                ${act.proposalId ? ` | Proposal: ${act.proposalId}` : ''}
+                                ${act.projectId ? ` | Project: ${act.projectId}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '<p>No recent activities found.</p>';
+
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>All Activities</h2>
+                        <div class="subtitle">A log of all actions taken in the system.</div>
+                    </div>
+                    <div class="action-section">
+                        <h3>Activity Log</h3>
+                        ${activitiesHtml}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Error fetching activities:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Activities</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ============================================
+        // CREATE PROPOSAL MODAL (PLACEHOLDER)
+        // ============================================
+
+        function showCreateProposalModal() {
+            alert('Create Proposal Modal - Feature coming soon');
+        }
+
+        // ============================================
+        // WINDOW CLICK HANDLER FOR MODAL CLOSE
+        // ============================================
+
+        window.addEventListener('click', function(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                closeModal();
+            }
         });
-    </script>
 
+    </script>
 </body>
 </html>
