@@ -5171,9 +5171,11 @@
                         <p><strong>Designers:</strong> ${project.assignedDesignerNames?.join(', ') || 'None assigned'}</p>
                     </div>
                     <div class="project-actions">
-                        <button onclick="viewProject('${project.id}')">View Details</button>
-                        ${project.status === 'active' ?
-                            `<button onclick="assignDesigners('${project.id}')">Assign Designers</button>` : ''}
+    <button onclick="viewProject('${project.id}')">View Details</button>
+    ${(project.status === 'active' || project.status === 'ASSIGNED' || !project.assignedDesignerNames || project.assignedDesignerNames.length === 0) ?
+        `<button onclick="assignDesigners('${project.id}')">
+            ${project.assignedDesignerNames?.length > 0 ? '✏️ Manage Designers' : '➕ Assign Designers'}
+        </button>` : ''}
                         <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
                     </div>
                 </div>
