@@ -5439,6 +5439,57 @@
                 hideLoading();
             }
         }
+        / Toggle hours input when checkbox is changed
+function toggleDesignerHoursInput(checkbox) {
+    const designerId = checkbox.value;
+    const hoursInput = document.getElementById(`hours-${designerId}`);
+    
+    if (checkbox.checked) {
+        hoursInput.disabled = false;
+        if (!hoursInput.value || hoursInput.value === '0') {
+            hoursInput.value = '1'; // Default to 1 hour when checked
+        }
+    } else {
+        hoursInput.disabled = true;
+        hoursInput.value = '0';
+    }
+    
+    updateTotalAllocated();
+}
+
+// Update total allocated hours display
+function updateTotalAllocated() {
+    let total = 0;
+    const hoursInputs = document.querySelectorAll('.hours-input:not([disabled])');
+    hoursInputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        total += value;
+    });
+    
+    const totalDisplay = document.getElementById('totalAllocatedHours');
+    if (totalDisplay) {
+        totalDisplay.textContent = total.toFixed(1);
+    }
+    
+    // Update remaining hours if max hours are set
+    const modal = document.getElementById('designerAssignmentModal');
+    const maxHours = parseFloat(modal.dataset.maxHours || 0);
+    if (maxHours > 0) {
+        const remaining = maxHours - total;
+        const remainingDisplay = document.getElementById('displayRemainingHours');
+        if (remainingDisplay) {
+            remainingDisplay.textContent = remaining.toFixed(1);
+            // Change color based on remaining hours
+            if (remaining < 0) {
+                remainingDisplay.style.color = 'var(--danger)';
+            } else if (remaining < maxHours * 0.2) {
+                remainingDisplay.style.color = 'var(--warning)';
+            } else {
+                remainingDisplay.style.color = 'var(--success)';
+            }
+        }
+    }
+}
 
         // Function to view BDM uploaded files
               async function viewBDMFiles(projectId, proposalId) { // <-- Added proposalId
