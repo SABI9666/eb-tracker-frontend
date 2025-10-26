@@ -1885,7 +1885,21 @@
                 }
 
                 console.log('✅ API call successful');
-                return responseData;
+                
+                // Handle different response formats
+                // If backend returns { success: true, data: {...} }, use it directly
+                // If backend returns data directly, wrap it
+                if (responseData && typeof responseData === 'object') {
+                    // If it has success/data structure, return as is
+                    if ('success' in responseData && 'data' in responseData) {
+                        return responseData;
+                    }
+                    // If it's raw data, wrap it
+                    return { success: true, data: responseData };
+                }
+                
+                // For non-object responses
+                return { success: true, data: responseData };
 
             } catch (error) {
                 console.error(`❌ API call to ${endpoint} failed:`, error);
@@ -2151,14 +2165,36 @@
         async function showDashboard() {
             setActiveNav('nav-dashboard');
             const main = document.getElementById('mainContent');
+            main.style.display = 'block';
             showLoading();
             try {
                 console.log('📊 Loading dashboard...');
                 const response = await apiCall('dashboard');
+                console.log('📊 Dashboard response:', response);
+                console.log('📊 Response.data:', response.data);
+                console.log('📊 Response.success:', response.success);
+                
+                // Handle different response formats
+                let dashboardData = null;
                 if (response.success && response.data) {
-                    renderDashboard(response.data);
+                    dashboardData = response.data;
+                } else if (response.data) {
+                    // Backend might return data without success wrapper
+                    dashboardData = response.data;
+                } else if (response.success) {
+                    // Data might be in root level
+                    dashboardData = response;
                 } else {
-                    throw new Error('Invalid dashboard response: ' + JSON.stringify(response));
+                    // Fallback - use response itself
+                    dashboardData = response;
+                }
+                
+                console.log('📊 Final dashboard data:', dashboardData);
+                
+                if (dashboardData && Object.keys(dashboardData).length > 0) {
+                    renderDashboard(dashboardData);
+                } else {
+                    throw new Error('No dashboard data received. Response: ' + JSON.stringify(response));
                 }
             } catch (error) {
                 console.error('❌ Dashboard error:', error);
@@ -2176,12 +2212,20 @@
         }
 
         function renderDashboard(data) {
-             const statsHtml = data.stats ? Object.entries(data.stats).map(([k, v]) => `
-                <div class="stat-card">
-                    <div class="stat-number">${v}</div>
-                    <div class="stat-label">${k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}</div>
-                </div>
-            `).join('') : '';
+            console.log('🎨 Rendering dashboard with data:', data);
+            
+            // Handle different data formats
+            let stats = data.stats || data; // Backend might return stats directly or wrapped
+            
+            // Convert stats object to display format
+            const statsHtml = stats ? Object.entries(stats)
+                .filter(([k, v]) => typeof v === 'number') // Only show numeric values
+                .map(([k, v]) => `
+                    <div class="stat-card">
+                        <div class="stat-number">${v}</div>
+                        <div class="stat-label">${k.charAt(0).toUpperCase() + k.slice(1)}</div>
+                    </div>
+                `).join('') : '<div class="stat-card"><div class="stat-number">0</div><div class="stat-label">No Data</div></div>';
 
             let actionsHtml = '';
             if (data.actionItems?.length) {
@@ -2318,16 +2362,36 @@
         async function showProposals() {
             setActiveNav('nav-proposals');
             const main = document.getElementById('mainContent');
+            main.style.display = 'block';
             showLoading();
             main.innerHTML = '';
 
             try {
                 console.log('🔄 Fetching proposals...');
                 const response = await apiCall('proposals');
+                console.log('📋 Proposals response:', response);
+                console.log('📋 Proposals data:', response.data);
+                console.log('📋 Response.success:', response.success);
+                console.log('📋 Number of proposals:', response.data?.length);
+                
+                // Handle different response formats
+                let proposalsData = null;
                 if (response.success && response.data) {
-                    renderProposals(response.data);
+                    proposalsData = response.data;
+                } else if (Array.isArray(response.data)) {
+                    proposalsData = response.data;
+                } else if (Array.isArray(response)) {
+                    proposalsData = response;
                 } else {
-                    throw new Error('Invalid proposals response');
+                    proposalsData = [];
+                }
+                
+                console.log('📋 Final proposals data:', proposalsData, 'Length:', proposalsData.length);
+                
+                if (proposalsData && Array.isArray(proposalsData)) {
+                    renderProposals(proposalsData);
+                } else {
+                    throw new Error('Invalid proposals response format. Response: ' + JSON.stringify(response));
                 }
             } catch (error) {
                 console.error('❌ Error fetching proposals:', error);
@@ -4578,6 +4642,10 @@
             try {
                 console.log('🔄 Fetching all projects...');
                 const response = await apiCall('projects');
+                console.log('🏗️ Projects response:', response);
+                console.log('🏗️ Projects data:', response.data);
+                console.log('🏗️ Number of projects:', response.data?.length);
+                
                 if (response.success && response.data) {
                     renderProjectsList(response.data);
                 } else {
@@ -7679,7 +7747,7 @@ async function loadDesignerTimesheet() {
         
         // Load designer's projects
         const projectsResponse = await apiCall('projects?assignedToMe=true');
-        const timesheetResponse = await apiCall('timesheet');
+        const timesheetResponse = await apiCall('timesheets');
         
         if (!projectsResponse.success || !timesheetResponse.success) {
             throw new Error('Failed to load timesheet data');
@@ -7822,7 +7890,7 @@ async function submitTimesheet(event) {
     try {
         showLoading();
         
-        const response = await apiCall('timesheet', {
+        const response = await apiCall('timesheets', {
             method: 'POST',
             body: JSON.stringify(data)
         });
@@ -7848,7 +7916,7 @@ async function deleteTimesheetEntry(entryId) {
     
     try {
         showLoading();
-        const response = await apiCall(`timesheet/${entryId}`, { method: 'DELETE' });
+        const response = await apiCall(`timesheets/${entryId}`, { method: 'DELETE' });
         
         if (response.success) {
             alert('Entry deleted');
