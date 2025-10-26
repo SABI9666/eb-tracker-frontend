@@ -7044,6 +7044,528 @@ async function deleteTimesheet(timesheetId) {
     }
 }
 
+// ==========================================
+// ADDITIONAL WORKFLOW FUNCTIONS
+// ==========================================
+
+// Show Estimate Form (for Estimator role)
+function showEstimateForm(proposalId) {
+    const modalHtml = `
+        <div class="modal" id="estimateModal" style="display: flex;">
+            <div class="modal-content new-modal">
+                <div class="modal-header">
+                    <h3>Enter Estimate</h3>
+                    <button class="close" onclick="closeEstimateModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert-box alert-info">
+                        <strong>Required:</strong> Enter at least tonnage OR manhours
+                    </div>
+                    <form id="estimateForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tonnage</label>
+                                <input type="number" step="0.01" class="form-control" id="estimateTonnage">
+                            </div>
+                            <div class="form-group">
+                                <label>Manhours</label>
+                                <input type="number" step="0.1" class="form-control" id="estimateManhours">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Itemized Breakdown</label>
+                            <div id="itemizedRows">
+                                <div class="dynamic-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;">
+                                    <input type="text" class="form-control" placeholder="Item" />
+                                    <input type="number" class="form-control" placeholder="Qty" />
+                                    <input type="number" step="0.01" class="form-control" placeholder="Tonnage" />
+                                    <input type="number" step="0.1" class="form-control" placeholder="Manhours" />
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="removeEstimateRow(this)">×</button>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline btn-sm" onclick="addEstimateItemRow()">+ Add Item</button>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Remarks</label>
+                            <textarea class="form-control" id="estimateRemarks"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeEstimateModal()">Cancel</button>
+                    <button class="btn btn-success" onclick="submitEstimate('${proposalId}')">Save Estimate</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function addEstimateItemRow() {
+    const container = document.getElementById('itemizedRows');
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;';
+    row.innerHTML = `
+        <input type="text" class="form-control" placeholder="Item" />
+        <input type="number" class="form-control" placeholder="Qty" />
+        <input type="number" step="0.01" class="form-control" placeholder="Tonnage" />
+        <input type="number" step="0.1" class="form-control" placeholder="Manhours" />
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeEstimateRow(this)">×</button>
+    `;
+    container.appendChild(row);
+}
+
+function removeEstimateRow(btn) {
+    btn.parentElement.remove();
+}
+
+function closeEstimateModal() {
+    const modal = document.getElementById('estimateModal');
+    if (modal) modal.remove();
+}
+
+// Submit Estimate
+async function submitEstimate(proposalId) {
+    const tonnage = parseFloat(document.getElementById('estimateTonnage').value) || null;
+    const manhours = parseFloat(document.getElementById('estimateManhours').value) || null;
+    const remarks = document.getElementById('estimateRemarks').value;
+    
+    if (!tonnage && !manhours) {
+        alert('Please enter at least tonnage or manhours');
+        return;
+    }
+    
+    // Collect itemized rows
+    const itemizedRows = [];
+    document.querySelectorAll('#itemizedRows .dynamic-row').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs[0].value) {
+            itemizedRows.push({
+                item: inputs[0].value,
+                qty: parseFloat(inputs[1].value) || 0,
+                tonnage: parseFloat(inputs[2].value) || 0,
+                manhours: parseFloat(inputs[3].value) || 0
+            });
+        }
+    });
+    
+    try {
+        showLoading();
+        
+        const response = await apiCall(`proposals/${proposalId}/estimate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                tonnage,
+                manhours,
+                itemized_rows: itemizedRows,
+                remarks
+            })
+        });
+        
+        if (response.success) {
+            closeEstimateModal();
+            alert('Estimate saved successfully!');
+            if (typeof showProposals === 'function') {
+                showProposals();
+            } else if (typeof showDashboard === 'function') {
+                showDashboard();
+            }
+        } else {
+            throw new Error(response.error || 'Failed to save estimate');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting estimate:', error);
+        alert('Error saving estimate: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Show Pricing Form (for COO role) - Note: showCOOPricingForm already exists, this is an alternate entry point
+function showPricingForm(proposalId) {
+    // Use the existing showCOOPricingForm function
+    if (typeof showCOOPricingForm === 'function') {
+        showCOOPricingForm(proposalId);
+    }
+}
+
+// Show Client Outcome Form (for BDM role)
+function showClientOutcomeForm(proposalId) {
+    const modalHtml = `
+        <div class="modal" id="clientOutcomeModal" style="display: flex;">
+            <div class="modal-content new-modal">
+                <div class="modal-header">
+                    <h3>Submit Client Outcome</h3>
+                    <button class="close" onclick="closeClientOutcomeModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="clientOutcomeForm">
+                        <div class="form-group">
+                            <label>Client Response File</label>
+                            <div class="upload-area" onclick="document.getElementById('clientResponseFile').click()">
+                                <div class="upload-icon">📎</div>
+                                <p>Click to choose file</p>
+                            </div>
+                            <input type="file" id="clientResponseFile" style="display: none;">
+                            <div id="clientFileList" style="margin-top: 1rem;"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Outcome *</label>
+                            <select class="form-control" id="clientOutcome" required>
+                                <option value="">Select outcome</option>
+                                <option value="won">Won</option>
+                                <option value="loss">Loss</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Comments</label>
+                            <textarea class="form-control" id="clientComments"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeClientOutcomeModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitClientOutcome('${proposalId}')">Submit Outcome</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // File input handler
+    document.getElementById('clientResponseFile').addEventListener('change', function() {
+        const fileList = document.getElementById('clientFileList');
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            fileList.innerHTML = `<div style="padding: 0.5rem; background: var(--light-blue); border-radius: 6px;">📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)</div>`;
+        } else {
+            fileList.innerHTML = '';
+        }
+    });
+}
+
+function closeClientOutcomeModal() {
+    const modal = document.getElementById('clientOutcomeModal');
+    if (modal) modal.remove();
+}
+
+// Submit Client Outcome
+async function submitClientOutcome(proposalId) {
+    const outcome = document.getElementById('clientOutcome').value;
+    const comments = document.getElementById('clientComments').value;
+    const file = document.getElementById('clientResponseFile').files[0];
+    
+    if (!outcome) {
+        alert('Please select an outcome');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const formData = new FormData();
+        formData.append('outcome', outcome);
+        formData.append('comments', comments);
+        if (file) {
+            formData.append('client_response_file', file);
+        }
+        
+        const response = await apiCall(`proposals/${proposalId}/client-outcome`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.success) {
+            closeClientOutcomeModal();
+            alert(`Proposal marked as ${outcome}!`);
+            if (typeof showProposals === 'function') {
+                showProposals();
+            } else if (typeof showDashboard === 'function') {
+                showDashboard();
+            }
+        } else {
+            throw new Error(response.error || 'Failed to submit outcome');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting client outcome:', error);
+        alert('Error submitting outcome: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Show Allocation Form (for COO/Director) - Note: showProjectAllocationModal already exists
+function showAllocationForm(proposalId) {
+    // Use the existing showProjectAllocationModal function
+    if (typeof showProjectAllocationModal === 'function') {
+        showProjectAllocationModal(proposalId);
+    }
+}
+
+// Show Designer Assignment Form (for Design Manager)
+function showDesignerAssignment(projectId) {
+    // Use the existing assignDesigners function
+    if (typeof assignDesigners === 'function') {
+        assignDesigners(projectId);
+    }
+}
+
+// Show Submit Design Form (for Design Manager)
+function showSubmitDesign(projectId) {
+    const modalHtml = `
+        <div class="modal" id="submitDesignModal" style="display: flex;">
+            <div class="modal-content new-modal">
+                <div class="modal-header">
+                    <h3>Submit Final Design</h3>
+                    <button class="close" onclick="closeSubmitDesignModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="submitDesignForm">
+                        <div class="form-group">
+                            <label>Final Design Files *</label>
+                            <div class="upload-area" onclick="document.getElementById('designFiles').click()">
+                                <div class="upload-icon">📎</div>
+                                <p>Click to choose files</p>
+                            </div>
+                            <input type="file" id="designFiles" multiple required style="display: none;">
+                            <div id="designFileList" style="margin-top: 1rem;"></div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Remarks</label>
+                            <textarea class="form-control" id="designRemarks"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-outline" onclick="closeSubmitDesignModal()">Cancel</button>
+                    <button class="btn btn-success" onclick="submitFinalDesign('${projectId}')">Submit to Client</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    
+    // File input handler
+    document.getElementById('designFiles').addEventListener('change', function() {
+        const fileList = document.getElementById('designFileList');
+        if (this.files.length > 0) {
+            fileList.innerHTML = Array.from(this.files).map(file => `
+                <div style="padding: 0.5rem; background: var(--light-blue); border-radius: 6px; margin-bottom: 0.5rem;">
+                    📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)
+                </div>
+            `).join('');
+        } else {
+            fileList.innerHTML = '';
+        }
+    });
+}
+
+function closeSubmitDesignModal() {
+    const modal = document.getElementById('submitDesignModal');
+    if (modal) modal.remove();
+}
+
+// Submit Final Design
+async function submitFinalDesign(projectId) {
+    const files = document.getElementById('designFiles').files;
+    const remarks = document.getElementById('designRemarks').value;
+    
+    if (files.length === 0) {
+        alert('Please attach final design files');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const formData = new FormData();
+        for (let file of files) {
+            formData.append('attachments', file);
+        }
+        formData.append('remarks', remarks);
+        
+        const response = await apiCall(`projects/${projectId}/submit-design`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.success) {
+            closeSubmitDesignModal();
+            alert('Design submitted successfully!');
+            if (typeof showProjects === 'function') {
+                showProjects();
+            } else if (typeof showDashboard === 'function') {
+                showDashboard();
+            }
+        } else {
+            throw new Error(response.error || 'Failed to submit design');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting design:', error);
+        alert('Error submitting design: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Mark Project Complete (for Design Manager)
+async function markComplete(projectId) {
+    if (!confirm('Mark this project as complete?')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await apiCall(`projects/${projectId}/complete`, {
+            method: 'POST'
+        });
+        
+        if (response.success) {
+            alert('Project marked as complete!');
+            if (typeof showProjects === 'function') {
+                showProjects();
+            } else if (typeof showDashboard === 'function') {
+                showDashboard();
+            }
+        } else {
+            throw new Error(response.error || 'Failed to mark complete');
+        }
+        
+    } catch (error) {
+        console.error('Error marking complete:', error);
+        alert('Error marking project complete: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Update Total Assigned Hours (for Designer Assignment)
+function updateTotalAssigned() {
+    let total = 0;
+    const hoursInputs = document.querySelectorAll('.hours-input');
+    hoursInputs.forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    const totalElement = document.getElementById('totalAssignedHours');
+    if (totalElement) {
+        totalElement.textContent = total.toFixed(1);
+    }
+}
+
+// Add Designer Assignment Row
+function addDesignerRow() {
+    const container = document.getElementById('designerAssignmentRows');
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;';
+    row.innerHTML = `
+        <div class="form-group">
+            <select class="form-control designer-select">
+                <option value="">Select Designer</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <input type="number" step="0.1" class="form-control hours-input" 
+                   placeholder="Hours" onchange="updateTotalAssigned()">
+        </div>
+        <button type="button" class="btn btn-danger btn-sm" onclick="removeDesignerRow(this)">×</button>
+    `;
+    container.appendChild(row);
+    
+    // Load designers for new row
+    if (typeof loadDesigners === 'function') {
+        loadDesigners();
+    }
+}
+
+function removeDesignerRow(btn) {
+    btn.parentElement.remove();
+    updateTotalAssigned();
+}
+
+// Load Designers for Assignment
+async function loadDesigners() {
+    try {
+        const response = await apiCall('users?role=designer');
+        
+        if (response.success && response.data) {
+            document.querySelectorAll('.designer-select').forEach(select => {
+                // Keep first option
+                const firstOption = select.querySelector('option:first-child');
+                select.innerHTML = '';
+                if (firstOption) {
+                    select.appendChild(firstOption);
+                }
+                
+                response.data.forEach(designer => {
+                    const option = document.createElement('option');
+                    option.value = designer.id;
+                    option.textContent = designer.name;
+                    select.appendChild(option);
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error loading designers:', error);
+    }
+}
+
+// Load Design Managers for Allocation
+async function loadDesignManagers() {
+    try {
+        const response = await apiCall('users?role=design_manager');
+        const select = document.getElementById('designManagerId');
+        
+        if (response.success && response.data && select) {
+            response.data.forEach(manager => {
+                const option = document.createElement('option');
+                option.value = manager.id;
+                option.textContent = manager.name;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error loading design managers:', error);
+    }
+}
+
+// Add Pricing Row (for COO Pricing)
+function addPricingRow() {
+    const container = document.getElementById('pricingRows');
+    if (!container) return;
+    
+    const row = document.createElement('div');
+    row.className = 'dynamic-row';
+    row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;';
+    row.innerHTML = `
+        <input type="text" class="form-control" placeholder="Description" />
+        <input type="number" step="0.01" class="form-control" placeholder="Unit Cost" />
+        <input type="number" step="0.1" class="form-control" placeholder="Qty/Hours" />
+        <button type="button" class="btn btn-danger btn-sm" onclick="removePricingRow(this)">×</button>
+    `;
+    container.appendChild(row);
+}
+
+function removePricingRow(btn) {
+    btn.parentElement.remove();
+}
+
 
 </script>
 
