@@ -5172,32 +5172,95 @@
 
             try {
                 showLoading();
+                
+                // Fetch designers
                 const response = await apiCall('users?role=designer');
                 if (!response.success) throw new Error('Failed to fetch designers');
-
                 const designers = response.data;
+
+                // Fetch project details to get max hours and currently assigned designers
+                const projectResponse = await apiCall(`projects?id=${projectId}`);
+                const currentProject = projectResponse.success ? projectResponse.data : {};
+                const assignedUids = currentProject.assignedDesignerUids || [];
+                const assignedHours = currentProject.assignedDesignerHours || {};
+                
+                // Get max hours from project (set by COO/Director)
+                const maxHours = parseFloat(currentProject.maxAllocatedHours || 0);
+                const additionalHours = parseFloat(currentProject.additionalHours || 0);
+                const totalAvailable = maxHours + additionalHours;
+                
+                // Show hours summary if max hours are set
+                const summaryDiv = document.getElementById('projectHoursSummary');
+                if (maxHours > 0) {
+                    summaryDiv.style.display = 'block';
+                    document.getElementById('displayMaxHours').textContent = maxHours.toFixed(1);
+                    document.getElementById('displayAdditionalHours').textContent = additionalHours.toFixed(1);
+                    document.getElementById('displayTotalHours').textContent = totalAvailable.toFixed(1);
+                } else {
+                    summaryDiv.style.display = 'none';
+                }
+                
+                // Populate designers list with hour input
                 const designersList = document.getElementById('designersList');
                 designersList.innerHTML = '';
-
-                 // Fetch project details to see who is already assigned
-                 const projectResponse = await apiCall(`projects?id=${projectId}`);
-                 const currentProject = projectResponse.success ? projectResponse.data : {};
-                 const assignedUids = currentProject.assignedDesignerUids || [];
-
+                
                 designers.forEach(designer => {
                     const isAssigned = assignedUids.includes(designer.uid);
-                    const checkbox = document.createElement('div');
-                    checkbox.className = 'designer-checkbox';
-                    checkbox.innerHTML = `
-                        <input type="checkbox" id="designer-${designer.uid}" value="${designer.uid}"
-                               data-name="${designer.name}" data-email="${designer.email}" ${isAssigned ? 'checked' : ''}>
-                        <label for="designer-${designer.uid}">${designer.name} (${designer.assignedProjects || 0} active)</label>
+                    const currentHours = assignedHours[designer.uid] || 0;
+                    
+                    const designerRow = document.createElement('div');
+                    designerRow.className = 'designer-row';
+                    designerRow.style.cssText = 'display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; padding: 1rem; border: 2px solid var(--border); border-radius: 8px; margin-bottom: 0.8rem; background: white;';
+                    
+                    designerRow.innerHTML = `
+                        <div style="display: flex; align-items: center;">
+                            <input type="checkbox" 
+                                   id="designer-${designer.uid}" 
+                                   value="${designer.uid}"
+                                   data-name="${designer.name}" 
+                                   data-email="${designer.email}" 
+                                   ${isAssigned ? 'checked' : ''}
+                                   onchange="toggleDesignerHoursInput(this)"
+                                   style="width: 20px; height: 20px; cursor: pointer;">
+                        </div>
+                        <div>
+                            <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
+                                ${designer.name}
+                            </label>
+                            <div style="font-size: 0.85rem; color: var(--text-light);">
+                                ${designer.email} • ${designer.assignedProjects || 0} active projects
+                            </div>
+                        </div>
+                        <div style="min-width: 150px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="number" 
+                                       id="hours-${designer.uid}"
+                                       class="form-control hours-input" 
+                                       step="0.5" 
+                                       min="0.5"
+                                       ${maxHours > 0 ? `max="${totalAvailable}"` : ''}
+                                       value="${currentHours}"
+                                       placeholder="Hours"
+                                       ${!isAssigned ? 'disabled' : ''}
+                                       onchange="updateTotalAllocated()"
+                                       style="width: 80px; padding: 0.5rem; text-align: center;">
+                                <span style="font-size: 0.9rem; color: var(--text-light);">hrs</span>
+                            </div>
+                        </div>
                     `;
-                    designersList.appendChild(checkbox);
+                    
+                    designersList.appendChild(designerRow);
                 });
 
+                // Store project info for validation
                 document.getElementById('assignProjectId').value = projectId;
-                modal.style.display = 'flex'; // Use flex
+                modal.dataset.maxHours = totalAvailable;
+                
+                // Calculate and display initial totals
+                updateTotalAllocated();
+                
+                // Show modal
+                modal.style.display = 'flex';
 
             } catch (error) {
                 console.error('Error loading designers:', error);
@@ -5206,34 +5269,106 @@
                 hideLoading();
             }
         }
+        
+        // Toggle hours input when checkbox is changed
+        function toggleDesignerHoursInput(checkbox) {
+            const designerId = checkbox.value;
+            const hoursInput = document.getElementById(`hours-${designerId}`);
+            
+            if (checkbox.checked) {
+                hoursInput.disabled = false;
+                if (!hoursInput.value || hoursInput.value === '0') {
+                    hoursInput.value = '1'; // Default to 1 hour when checked
+                }
+            } else {
+                hoursInput.disabled = true;
+                hoursInput.value = '0';
+            }
+            
+            updateTotalAllocated();
+        }
+        
+        // Update total allocated hours display
+        function updateTotalAllocated() {
+            let total = 0;
+            const hoursInputs = document.querySelectorAll('.hours-input:not([disabled])');
+            hoursInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+            
+            const totalDisplay = document.getElementById('totalAllocatedHours');
+            if (totalDisplay) {
+                totalDisplay.textContent = total.toFixed(1);
+            }
+            
+            // Update remaining hours if max hours are set
+            const modal = document.getElementById('designerAssignmentModal');
+            const maxHours = parseFloat(modal.dataset.maxHours || 0);
+            if (maxHours > 0) {
+                const remaining = maxHours - total;
+                const remainingDisplay = document.getElementById('displayRemainingHours');
+                if (remainingDisplay) {
+                    remainingDisplay.textContent = remaining.toFixed(1);
+                    // Change color based on remaining hours
+                    if (remaining < 0) {
+                        remainingDisplay.style.color = 'var(--danger)';
+                    } else if (remaining < maxHours * 0.2) {
+                        remainingDisplay.style.color = 'var(--warning)';
+                    } else {
+                        remainingDisplay.style.color = 'var(--success)';
+                    }
+                }
+            }
+        }
 
         // Function to submit designer assignment
         async function submitDesignerAssignment() {
             const projectId = document.getElementById('assignProjectId').value;
             const checkboxes = document.querySelectorAll('#designersList input[type="checkbox"]:checked');
-
-            // Allow assigning zero designers (unassigning)
-            // if (checkboxes.length === 0) {
-            //     alert('Please select at least one designer');
-            //     return;
-            // }
+            const modal = document.getElementById('designerAssignmentModal');
+            const maxHours = parseFloat(modal.dataset.maxHours || 0);
 
             const designerUids = [];
             const designerNames = [];
             const designerEmails = [];
+            const designerHours = {};
+            let totalAllocated = 0;
 
+            // Collect selected designers and their hours
             checkboxes.forEach(checkbox => {
-                designerUids.push(checkbox.value);
+                const uid = checkbox.value;
+                const hoursInput = document.getElementById(`hours-${uid}`);
+                const hours = parseFloat(hoursInput.value) || 0;
+                
+                // Validate hours
+                if (hours < 0.5) {
+                    alert(`Please allocate at least 0.5 hours for ${checkbox.dataset.name}`);
+                    throw new Error('Invalid hours');
+                }
+                
+                designerUids.push(uid);
                 designerNames.push(checkbox.dataset.name);
                 designerEmails.push(checkbox.dataset.email);
+                designerHours[uid] = hours;
+                totalAllocated += hours;
             });
-
+            
+            // Validate total hours against max hours
+            if (maxHours > 0 && totalAllocated > maxHours) {
+                alert(`⚠️ Total allocated hours (${totalAllocated.toFixed(1)}) exceeds available hours (${maxHours.toFixed(1)}). Please adjust the allocation.`);
+                return;
+            }
+            
+            // Prepare assignment data
             const assignmentData = {
                 action: 'assign_designers',
                 data: {
                     designerUids: designerUids,
                     designerNames: designerNames,
-                    designerEmails: designerEmails
+                    designerEmails: designerEmails,
+                    designerHours: designerHours,
+                    totalAllocatedHours: totalAllocated
                 }
             };
 
@@ -5245,7 +5380,10 @@
                 });
 
                 if (result.success) {
-                    showSuccessModal('Designers assigned successfully!');
+                    const summary = designerUids.length > 0 
+                        ? `${designerUids.length} designer(s) assigned with total ${totalAllocated.toFixed(1)} hours allocated.`
+                        : 'All designers unassigned from project.';
+                    showSuccessModal(`Designers assigned successfully! ${summary}`);
                     closeDesignerAssignmentModal();
                     showDesignLeadDashboard(); // Reload projects
                 } else {
@@ -6026,23 +6164,62 @@ async function submitAllocation() {
     </div>
     
     <div id="designerAssignmentModal" class="modal" style="display: none;">
-        <div class="modal-content new-modal">
+        <div class="modal-content new-modal" style="max-width: 800px;">
             <div class="modal-header">
-                <h2>Assign Designers to Project</h2>
+                <h2>👥 Assign Designers to Project</h2>
                 <span class="close-modal" onclick="closeDesignerAssignmentModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="assignProjectId" />
-                <div class="form-group">
-                    <label>Select Designers <span class="required">*</span></label>
-                    <div id="designersList" class="checkbox-list">
+                
+                <!-- Project Hours Summary -->
+                <div id="projectHoursSummary" style="background: #E8F5E9; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; display: none;">
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.3rem;">Max Hours</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-blue);" id="displayMaxHours">0</div>
                         </div>
-                    <small class="form-text">Select one or more designers</small>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.3rem;">Additional</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);" id="displayAdditionalHours">0</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.3rem;">Total Available</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);" id="displayTotalHours">0</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.3rem;">Remaining</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);" id="displayRemainingHours">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Designer Assignment List -->
+                <div class="form-group">
+                    <label style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; display: block;">
+                        Assign Designers & Hours <span class="required">*</span>
+                    </label>
+                    <div id="designersList" style="max-height: 400px; overflow-y: auto;">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    <small class="form-text" style="display: block; margin-top: 0.5rem;">
+                        💡 Select designers and allocate hours to each. Total allocated hours cannot exceed available hours.
+                    </small>
+                </div>
+                
+                <!-- Allocated Hours Summary -->
+                <div style="background: #FFF3E0; padding: 1rem; border-radius: 8px; margin-top: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">Total Hours Allocated:</span>
+                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--primary-blue);" id="totalAllocatedHours">0</span>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-cancel" onclick="closeDesignerAssignmentModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitDesignerAssignment()">Assign Designers</button>
+                <button type="button" class="btn btn-primary" onclick="submitDesignerAssignment()">
+                    ✅ Assign Designers
+                </button>
             </div>
         </div>
     </div>
