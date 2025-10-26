@@ -2458,6 +2458,33 @@
                     statusClass = 'pricing-complete';
                 }
                 
+                // Determine action buttons based on role and status
+                let actionButtons = '';
+                const statusLower = (p.status || '').toLowerCase().replace(/\s+/g, '_');
+                
+                // Estimator: Add Estimation button
+                if (currentUserRole === 'estimator' && (statusLower === 'draft' || statusLower === 'pending_estimation' || !p.estimation)) {
+                    actionButtons += `<button class="btn btn-primary btn-sm" onclick="showEstimationModal('${p.id}')">Add Estimation</button> `;
+                }
+                
+                // COO: Set Pricing button
+                if (currentUserRole === 'coo' && (statusLower === 'estimated' || p.estimation) && (!p.pricing || !p.pricing.projectNumber)) {
+                    actionButtons += `<button class="btn btn-success btn-sm" onclick="showCOOPricingForm('${p.id}')">Set Pricing</button> `;
+                }
+                
+                // Director: Approve/Reject buttons
+                if (currentUserRole === 'director' && (statusLower === 'pending_approval' || statusLower === 'pricing_complete' || (p.pricing && p.pricing.projectNumber && statusLower !== 'approved' && statusLower !== 'rejected'))) {
+                    actionButtons += `
+                        <button class="btn btn-success btn-sm" onclick="showApproveModal('${p.id}')">✅ Approve</button>
+                        <button class="btn btn-danger btn-sm" onclick="showRejectModal('${p.id}')">❌ Reject</button>
+                    `;
+                }
+                
+                // COO/Director: Allocation button
+                if ((currentUserRole === 'coo' || currentUserRole === 'director') && p.pricing && p.pricing.projectNumber) {
+                    actionButtons += getProposalAllocationButton(p);
+                }
+                
                 return `
                 <div class="action-item">
                     <div class="action-content">
@@ -2466,7 +2493,7 @@
                     </div>
                     <span class="proposal-status status-${statusClass}">${statusDisplay}</span>
                     <div class="action-buttons">
-                        ${(currentUserRole === 'coo' || currentUserRole === 'director') ? getProposalAllocationButton(p) : ''}
+                        ${actionButtons}
                         <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
                     </div>
                 </div>
@@ -2916,36 +2943,44 @@
             const linkFiles = files.filter(f => f.fileType === 'link');
             let actionsHtml = '';
 
-            // Role-based actions
-            if (currentUserRole === 'estimator' && p.status === 'draft') {
+            // Role-based actions - normalize status to lowercase for comparison
+            const statusLower = (p.status || '').toLowerCase().replace(/\s+/g, '_');
+            
+            // ESTIMATOR: Show Add Estimation button
+            if (currentUserRole === 'estimator' && (statusLower === 'draft' || statusLower === 'pending_estimation' || !p.estimation)) {
                 actionsHtml = `<button class="btn btn-primary" onclick="showEstimationModal('${p.id}')">Add Estimation</button>`;
             
-            // MODIFIED: Use new button logic for COO
-            } else if (currentUserRole === 'coo' && (p.status === 'estimated' || p.status === 'won' || (p.estimation && !p.pricing) || p.status === 'pricing_complete' || p.status === 'pending_approval')) {
-                actionsHtml = getProposalAllocationButton(p);
+            // COO: Show pricing form when estimation is done
+            } else if (currentUserRole === 'coo' && (statusLower === 'estimated' || statusLower === 'won' || statusLower === 'pricing_complete' || statusLower === 'pending_approval' || statusLower === 'pending_pricing' || p.estimation)) {
+                // If no pricing yet, show pricing button
+                if (!p.pricing || !p.pricing.projectNumber) {
+                    actionsHtml = `<button class="btn btn-success" onclick="showCOOPricingForm('${p.id}')">Set Pricing</button>`;
+                } else {
+                    actionsHtml = getProposalAllocationButton(p);
+                }
             
-            // MODIFIED: Director can approve/reject proposals with pending_approval status
+            // MODIFIED: Director can approve/reject proposals with pending_approval status or after pricing
             } else if (currentUserRole === 'director') { 
-                if (p.status === 'pending_approval' || p.status === 'pending_director_approval' || p.status === 'pricing_complete') {
+                if (statusLower === 'pending_approval' || statusLower === 'pending_director_approval' || statusLower === 'pricing_complete' || (p.pricing && p.pricing.projectNumber && statusLower !== 'approved' && statusLower !== 'rejected' && statusLower !== 'won' && statusLower !== 'lost')) {
                     actionsHtml = `
                         <button class="btn btn-danger" onclick="showRejectModal('${p.id}')">❌ Reject</button>
                         <button class="btn btn-success" onclick="showApproveModal('${p.id}')">✅ Approve</button>
                     `;
-                } else if (p.status === 'won') {
+                } else if (statusLower === 'won') {
                     // Get allocation/view buttons if status is 'won'
                     actionsHtml = getProposalAllocationButton(p);
-                } else if (p.status === 'approved') {
+                } else if (statusLower === 'approved') {
                     actionsHtml = '<span style="color: var(--success); font-weight: 600;">✅ Already Approved</span>';
-                } else if (p.status === 'rejected') {
+                } else if (statusLower === 'rejected') {
                     actionsHtml = '<span style="color: var(--danger); font-weight: 600;">❌ Already Rejected</span>';
                 }
             
-            } else if (currentUserRole === 'bdm' && p.status === 'approved') {
+            } else if (currentUserRole === 'bdm' && statusLower === 'approved') {
                 actionsHtml = `<button class="btn btn-success" onclick="submitToClient('${p.id}')">Submit to Client</button>`;
                  // BDM can also directly mark as WON/LOST if approved
                  actionsHtml += ` <button class="btn btn-success btn-sm" onclick="markProposalWon('${p.id}')" style="margin-left: 10px;">✅ WON</button>`;
                  actionsHtml += ` <button class="btn btn-danger btn-sm" onclick="markProposalLost('${p.id}')" style="margin-left: 10px;">❌ LOST</button>`;
-            } else if (currentUserRole === 'bdm' && p.status === 'submitted_to_client') {
+            } else if (currentUserRole === 'bdm' && statusLower === 'submitted_to_client') {
                  actionsHtml = `
                     <button class="btn btn-success btn-sm" onclick="markProposalWon('${p.id}')">✅ WON</button>
                     <button class="btn btn-danger btn-sm" onclick="markProposalLost('${p.id}')" style="margin-left: 10px;">❌ LOST</button>
