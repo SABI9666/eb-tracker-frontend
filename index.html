@@ -1622,200 +1622,6 @@
     font-size: 0.85rem;
     color: var(--text-light);
 }
-        /* ============================================ */
-/* TIMESHEET & EXECUTIVE MONITORING STYLES */
-/* ============================================ */
-
-/* --- 1. Define a professional, clean color palette --- */
-:root {
-    --primary-blue: #007aff;
-    --danger: #dc3545;
-    --warning: #ffc107;
-    --success: #28a745;
-    --border: #e5e7eb;      /* Light gray for borders */
-    --text-dark: #1f2937;
-    --text-light: #6b7280;
-    --bg-light: #f9fafb;      /* Very light page background */
-    --white: #ffffff;
-}
-
-body {
-    background-color: var(--bg-light); /* Set a light bg for contrast */
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    color: var(--text-dark);
-}
-
-/* --- 2. Main Timesheet Container --- */
-.timesheet-container {
-    background: var(--white);
-    border-radius: 12px;
-    padding: 2rem;
-    /* Softer, more modern shadow */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--border);
-    max-width: 1200px;
-    margin: 2rem auto;
-}
-
-/* --- 3. Modern Tab Navigation (Fixes Layout) --- */
-.tabs-container {
-    /* Remove the old boxy look, use a simple bottom border */
-    border-bottom: 1px solid var(--border);
-    margin: -2rem -2rem 2rem -2rem; /* Extend to edges of parent padding */
-    padding: 0 2rem;
-    background: transparent;
-}
-
-.tabs {
-    display: flex;
-    gap: 1.5rem; /* Use gap for spacing */
-}
-
-.tab {
-    flex: 0 1 auto; /* Don't force tabs to fill space */
-    padding: 1rem 0.25rem;
-    margin-bottom: -1px; /* Aligns border with container's border */
-    text-align: center;
-    cursor: pointer;
-    font-weight: 600;
-    color: var(--text-light);
-    transition: all 0.2s;
-    border-bottom: 2px solid transparent; /* Inactive state */
-}
-
-.tab:hover {
-    color: var(--text-dark);
-}
-
-.tab.active {
-    /* Active state is just colored text and a border */
-    color: var(--primary-blue);
-    border-bottom-color: var(--primary-blue);
-}
-
-/* --- 4. Summary Cards (Replaces heavy gradient) --- */
-.timesheet-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-/* This new .summary-card replaces both your .summary-card and .metric-card */
-.summary-card {
-    background: var(--white);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    /* Lighter shadow on each card */
-    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-    transition: all 0.2s;
-}
-
-.summary-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.06);
-}
-
-/* Icon styles for the cards */
-.summary-card .icon {
-    font-size: 1.5rem; /* Smaller icon */
-    padding: 0.75rem;
-    border-radius: 50%;
-    display: grid;
-    place-items: center;
-    flex-shrink: 0;
-}
-
-.summary-card .icon.blue {
-    color: var(--primary-blue);
-    background: #e7f3ff;
-}
-.summary-card .icon.green {
-    color: var(--success);
-    background: #eaf7f0;
-}
-.summary-card .icon.red {
-    color: var(--danger);
-    background: #feedf0;
-}
-
-
-.summary-card .content {
-    flex: 1;
-}
-
-.summary-card .label {
-    font-size: 0.9rem;
-    color: var(--text-light);
-    margin-bottom: 0.25rem;
-    line-height: 1.4;
-}
-
-.summary-card .number {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--text-dark);
-    line-height: 1.2;
-}
-
-/* --- 5. Alert Cards (Refined Style) --- */
-.alert-card {
-    padding: 1.25rem;
-    border-left: 4px solid;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.alert-card:hover {
-    /* More subtle hover: slightly lighter background and a shadow */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-}
-
-.alert-critical {
-    background: #feedf0; /* Lighter red */
-    border-color: var(--danger);
-    color: #b02a37; /* Darker text for readability */
-}
-
-.alert-warning {
-    background: #fff9e0; /* Lighter yellow */
-    border-color: var(--warning);
-    color: #8a6d3b;
-}
-
-.alert-info {
-    background: #e7f3ff; /* Lighter blue */
-    border-color: var(--primary-blue);
-    color: #0056b3;
-}
-
-/* --- 6. Hour Badge (Minor Tweaks) --- */
-.hour-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background: var(--white);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-}
-
-.hour-badge .label {
-    color: var(--text-light);
-    font-size: 0.85rem;
-}
-
-.hour-badge .value {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--primary-blue);
-}
 
     </style>
 </head>
@@ -1952,76 +1758,18 @@ body {
                     <li id="settingsNavItem" style="display: none;">
                         <a href="#" onclick="showSettings()" id="nav-settings">
                         <span class="nav-icon">⚙️</span>Settings</a></li>
-                    <!-- Executive Monitoring - For COO, Director, Design Lead -->
-<li id="executiveMonitoringNavItem" style="display: none;">
-                        <a href="#" onclick="showExecutiveMonitoring()" id="nav-executive">
-                        <span class="nav-icon">📊</span>Executive Monitoring</a>
-                    </li>
+                    <li id="executiveMonitoringNavItem" style="display: none;">
+    <a href="#" onclick="showExecutiveMonitoring()" id="nav-executive">
+    <span class="nav-icon">📊</span>Executive Monitoring</a></li>
+<li id="timesheetNavItem" style="display: none;">
+    <a href="#" onclick="showTimesheet()" id="nav-timesheet">
+    <span class="nav-icon">⏱️</span>My Timesheet</a></li>
+                </ul>
+            </nav>
 
-                    <li id="timesheetNavItem" style="display: none;">
-                        <a href="#" onclick="showTimesheet()" id="nav-timesheet">
-                        <span class="nav-icon">⏱️</span>My Timesheet</a>
-                    </li>
-                    ...
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-...
-
-<!-- Timesheet - For Designers -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-<div class="timesheet-container">
-
-    <div class="tabs-container">
-        <div class="tabs">
-            <div class="tab active">Summary</div>
-            <div class="tab">My Timesheet</div>
-            <div class="tab">Team View</div>
-            <div class="tab">Reports</div>
+            <main class="main-content" id="mainContent"></main>
         </div>
     </div>
-
-    <div class="timesheet-summary">
-        <div class="summary-card">
-            <div class="icon blue">
-                <i class="fas fa-clock"></i>
-            </div>
-            <div class="content">
-                <div class="label">Total Hours This Week</div>
-                <div class="number">38.5</div>
-            </div>
-        </div>
-        
-        <div class="summary-card">
-            <div class="icon green">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <div class="content">
-                <div class="label">Approved Hours</div>
-                <div class="number">32.0</div>
-            </div>
-        </div>
-        
-        <div class="summary-card">
-            <div class="icon red">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="content">
-                <div class="label">Missing Entries</div>
-                <div class="number">2</div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="alerts-section">
-        <div class="alert-card alert-critical">
-            <strong>Action Required:</strong> Your timesheet for Oct 20-26 is overdue.
-        </div>
-        <div class="alert-card alert-warning">
-            <strong>Reminder:</strong> You have 6.5 pending hours awaiting approval.
-        </div>
-    </div>
-
-</div>
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
@@ -2320,13 +2068,8 @@ body {
                 (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
               document.getElementById('executiveMonitoringNavItem').style.display =
                 (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
-           // Show Executive Monitoring for COO, Director, Design Lead
-document.getElementById('executiveMonitoringNavItem').style.display =
-    (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
-
-// Show Timesheet for Designers
-document.getElementById('timesheetNavItem').style.display =
-    (currentUserRole === 'designer') ? 'block' : 'none';
+            document.getElementById('timesheetNavItem').style.display =
+                (currentUserRole === 'designer') ? 'block' : 'none';
 
             // Show role-specific dashboard
             if (currentUserRole === 'designer') {
@@ -6613,9 +6356,8 @@ async function submitAllocation() {
 <!-- STEP 2: ADD THESE SECTIONS BEFORE </body> -->
 <!-- Paste these complete sections -->
 <!-- ============================================ -->
-<!-- ============================================ -->
+
 <!-- EXECUTIVE MONITORING SECTION -->
-<!-- ============================================ -->
 <div id="executiveTimesheetMonitoring" style="display: none;">
     <div class="page-header">
         <h2>📊 Executive Timesheet Monitoring</h2>
@@ -6683,13 +6425,13 @@ async function submitAllocation() {
     </div>
 
     <!-- Tabs for Different Views -->
-    <div class="tabs-container">
+    <div class="tabs-container" style="margin-bottom: 1.5rem;">
         <div class="tabs">
-            <div class="tab active" onclick="switchExecutiveTab(event, 'overview')">Overview</div>
-            <div class="tab" onclick="switchExecutiveTab(event, 'projects')">Projects</div>
-            <div class="tab" onclick="switchExecutiveTab(event, 'designers')">Designers</div>
-            <div class="tab" onclick="switchExecutiveTab(event, 'analytics')">Analytics</div>
-            <div class="tab" onclick="switchExecutiveTab(event, 'alerts')">Alerts</div>
+            <div class="tab active" onclick="switchExecutiveTab('overview')">Overview</div>
+            <div class="tab" onclick="switchExecutiveTab('projects')">Projects</div>
+            <div class="tab" onclick="switchExecutiveTab('designers')">Designers</div>
+            <div class="tab" onclick="switchExecutiveTab('analytics')">Analytics</div>
+            <div class="tab" onclick="switchExecutiveTab('alerts')">Alerts</div>
         </div>
     </div>
 
@@ -6699,9 +6441,7 @@ async function submitAllocation() {
     </div>
 </div>
 
-<!-- ============================================ -->
 <!-- TIMESHEET SECTION FOR DESIGNERS -->
-<!-- ============================================ -->
 <div id="timesheetSection" style="display: none;">
     <div class="page-header">
         <h2>⏱️ My Timesheet</h2>
@@ -6709,7 +6449,7 @@ async function submitAllocation() {
     </div>
 
     <div class="card">
-        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 2px solid var(--border);">
+        <div class="card-header">
             <h3>Log Hours</h3>
             <button onclick="showTimesheetModal()" class="btn btn-primary">
                 <span class="btn-icon">+</span> Log Hours
@@ -6717,7 +6457,7 @@ async function submitAllocation() {
         </div>
 
         <!-- Timesheet Summary -->
-        <div id="timesheetSummary" class="timesheet-summary" style="padding: 1.5rem;">
+        <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
             <!-- Will be populated by JavaScript -->
         </div>
 
@@ -6751,43 +6491,7 @@ async function submitAllocation() {
 <!-- ============================================ -->
 
 <style>
-/* ============================================ */
-/* TIMESHEET & EXECUTIVE MONITORING STYLES */
-/* ============================================ */
-
-.timesheet-container {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.timesheet-summary {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 2rem;
-}
-
-.summary-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.summary-card .label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    margin-bottom: 0.5rem;
-}
-
-.summary-card .number {
-    font-size: 2.5rem;
-    font-weight: 700;
-}
-
+/* Executive Monitoring Styles */
 .metric-card {
     border-radius: 12px;
     padding: 1.5rem;
@@ -6824,12 +6528,31 @@ async function submitAllocation() {
     margin-top: 0.5rem;
 }
 
+.stat-card {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
 .tabs-container {
     background: white;
     border-radius: 12px;
     border: 2px solid var(--border);
     overflow: hidden;
-    margin-bottom: 2rem;
 }
 
 .tabs {
@@ -6861,6 +6584,16 @@ async function submitAllocation() {
     color: white;
 }
 
+.project-card {
+    transition: all 0.2s;
+}
+
+.project-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-color: var(--primary-blue);
+}
+
 .hour-badge {
     display: inline-flex;
     align-items: center;
@@ -6882,34 +6615,32 @@ async function submitAllocation() {
     color: var(--primary-blue);
 }
 
-.alert-card {
-    padding: 1.5rem;
-    border-left: 4px solid;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
 }
 
-.alert-card:hover {
-    transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.alert-critical {
-    background: #fee;
-    border-color: var(--danger);
-}
-
-.alert-warning {
+.status-submitted {
     background: #fff3cd;
-    border-color: var(--warning);
+    color: #856404;
 }
 
-.alert-info {
-    background: #e7f3ff;
-    border-color: var(--primary-blue);
+.status-approved {
+    background: #d4edda;
+    color: #155724;
+}
 
+.status-rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.progress-bar-container {
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
 }
 </style>
 
