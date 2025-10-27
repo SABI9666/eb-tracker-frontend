@@ -6773,11 +6773,105 @@ async function submitAllocation() {
 }
 </style>
 
+/* ============================================ */
+/* DESIGNER TIMESHEET STYLES */
+/* ============================================ */
+.card-header {
+    padding: 1.5rem;
+    background: var(--light-blue);
+    border-bottom: 2px solid var(--primary-blue);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
-<!-- ============================================ -->
-<!-- STEP 4: ADD THIS COMPLETE JAVASCRIPT -->
-<!-- Add before closing </body> tag -->
-<!-- ============================================ -->
+.card-header h3 {
+    margin: 0;
+    color: var(--text-dark);
+    font-size: 1.3rem;
+}
+
+#timesheetSummary .stat-card {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+#timesheetSummary .stat-card:hover {
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 191, 255, 0.2);
+}
+
+#timesheetSummary .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#timesheetSummary .stat-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--primary-blue);
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead {
+    background: var(--light-blue);
+    border-bottom: 2px solid var(--primary-blue);
+}
+
+.data-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+}
+
+.data-table tbody tr:hover {
+    background: var(--light-blue);
+}
+
+.data-table td {
+    padding: 1rem;
+}
+
+.status-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-submitted {
+    background: #cfe2ff;
+    color: #084298;
+}
+
+.status-approved {
+    background: #d1e7dd;
+    color: #0f5132;
+}
+
+.status-rejected {
+    background: #f8d7da;
+    color: #842029;
+}
 
 <script>
 // ===================================
