@@ -1,7 +1,16 @@
 <!DOCTYPE html>
+<!-- 
+    EBTracker - EDANBROOK Project Management
+    Version: Fixed & Stabilized
+    Date: October 27, 2025
+    
+    This is a standalone HTML file that should work when:
+    - Opened directly in a browser (file://)
+    - Served from any web server
+    - No external dependencies required
+-->
 <html lang="en">
 <head>
-    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0d47a1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,6 +36,31 @@
             color: var(--text-dark);
             line-height: 1.6;
         }
+
+        /* FIX: Prevent page shaking/flickering */
+        * {
+            -webkit-backface-visibility: hidden;
+            -moz-backface-visibility: hidden;
+            -ms-backface-visibility: hidden;
+            backface-visibility: hidden;
+            -webkit-transform: translate3d(0, 0, 0);
+            -moz-transform: translate3d(0, 0, 0);
+            -ms-transform: translate3d(0, 0, 0);
+            transform: translate3d(0, 0, 0);
+        }
+        
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+            position: relative;
+        }
+        
+        .main-content {
+            will-change: auto;
+            transform: translateZ(0);
+        }
+
+
 
         /* Login styles remain the same */
         .login-page { min-height: 100vh; background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)); display: flex; align-items: center; justify-content: center; padding: 2rem; }
@@ -1895,74 +1929,7 @@ async function apiCall(endpoint, options = {}, retryCount = 0) {
         return apiCall(endpoint, options, retryCount + 1);
     }
 }
-, retryCount = 0) {
-            const MAX_RETRIES = 2;
-            const RETRY_DELAY = 2000;
-            const url = `${API_BASE}/api/${endpoint}`;
 
-            if (!authToken && currentUser && !endpoint.includes('health')) {
-                try {
-                    authToken = await currentUser.getIdToken(true);
-                    console.log('🔑 Token refreshed for API call');
-                } catch (error) {
-                    console.error('❌ Failed to refresh token:', error);
-                    throw new Error('Authentication token expired. Please log in again.');
-                }
-            }
-
-            const defaultHeaders = {};
-            if (authToken) {
-                defaultHeaders['Authorization'] = `Bearer ${authToken}`;
-            }
-            if (!(options.body instanceof FormData)) {
-                defaultHeaders['Content-Type'] = 'application/json';
-            }
-
-            const finalOptions = {
-                method: options.method || 'GET',
-                ...options,
-                headers: { ...defaultHeaders, ...(options.headers || {}) },
-                mode: 'cors',
-                credentials: 'omit' // FIXED: Don't send credentials with origin: '*'
-            };
-
-            try {
-                console.log(`📤 API Call [${finalOptions.method}]: ${url}`);
-                const response = await fetch(url, finalOptions);
-                console.log(`📥 Response: ${response.status} ${response.statusText}`);
-
-                const contentType = response.headers.get('content-type');
-                let responseData;
-
-                if (contentType && contentType.includes('application/json')) {
-                    const responseText = await response.text();
-                    try {
-                        responseData = responseText ? JSON.parse(responseText) : {};
-                    } catch (parseError) {
-                        console.error('❌ JSON parse error:', parseError);
-                        throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
-                    }
-                } else {
-                    responseData = await response.text();
-                }
-
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        console.error('❌ 401 Unauthorized - Token may be invalid');
-                        if (currentUser && retryCount === 0) {
-                            console.log('🔄 Attempting token refresh...');
-                            try {
-                                authToken = await currentUser.getIdToken(true);
-                                console.log('✅ Token refreshed, retrying request...');
-                                return await apiCall(endpoint, options, retryCount + 1);
-                            } catch (refreshError) {
-                                console.error('❌ Token refresh failed:', refreshError);
-                                await auth.signOut();
-                                throw new Error('Session expired. Please log in again.');
-                            }
-                        }
-                        throw new Error('Authentication failed. Please log in again.');
-                    }
                     const errorMessage = responseData.message || responseData.error || `Request failed with status ${response.status}`;
                     throw new Error(errorMessage);
                 }
@@ -2202,6 +2169,82 @@ async function apiCall(endpoint, options = {}, retryCount = 0) {
                 loader.style.display = 'none';
                 loader.classList.remove('active');
             }
+
+
+// ============================================
+// ENHANCED STABILITY: Prevent Shaking & Multiple Loads
+// ============================================
+
+// Debounce timer for all navigation
+let navigationLock = false;
+const NAVIGATION_DELAY = 500; // Increased from 300ms
+
+// Enhanced debounce wrapper
+function stableNavigate(navigationFunc, funcName) {
+    return function(...args) {
+        if (navigationLock) {
+            console.log(`⚠️ Navigation locked, ignoring ${funcName} call`);
+            return;
+        }
+        
+        navigationLock = true;
+        console.log(`🔒 Navigating to: ${funcName}`);
+        
+        try {
+            navigationFunc.apply(this, args);
+        } finally {
+            setTimeout(() => {
+                navigationLock = false;
+                console.log(`🔓 Navigation unlocked`);
+            }, NAVIGATION_DELAY);
+        }
+    };
+}
+
+// Prevent multiple rapid function calls
+let callTimestamps = {};
+function preventRapidCall(funcName, minInterval = 1000) {
+    const now = Date.now();
+    const lastCall = callTimestamps[funcName] || 0;
+    
+    if (now - lastCall < minInterval) {
+        console.log(`⚠️ Rapid call prevented: ${funcName}`);
+        return false;
+    }
+    
+    callTimestamps[funcName] = now;
+    return true;
+}
+
+// Wrap all navigation functions with stability
+if (typeof showDashboard !== 'undefined') {
+    const original_showDashboard = showDashboard;
+    showDashboard = stableNavigate(original_showDashboard, 'showDashboard');
+}
+
+if (typeof showTimesheet !== 'undefined') {
+    const original_showTimesheet = showTimesheet;
+    showTimesheet = stableNavigate(original_showTimesheet, 'showTimesheet');
+}
+
+if (typeof showExecutiveMonitoring !== 'undefined') {
+    const original_showExecutiveMonitoring = showExecutiveMonitoring;
+    showExecutiveMonitoring = stableNavigate(original_showExecutiveMonitoring, 'showExecutiveMonitoring');
+}
+
+if (typeof showProposals !== 'undefined') {
+    const original_showProposals = showProposals;
+    showProposals = stableNavigate(original_showProposals, 'showProposals');
+}
+
+if (typeof showAllProjects !== 'undefined') {
+    const original_showAllProjects = showAllProjects;
+    showAllProjects = stableNavigate(original_showAllProjects, 'showAllProjects');
+}
+
+console.log('✅ Navigation functions wrapped with stability layer');
+
+
         }
 
         function showMessage(message, type = 'info') {
