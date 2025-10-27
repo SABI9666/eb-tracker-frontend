@@ -8544,7 +8544,7 @@ function showEnhancedTimesheetModal() {
 
 // ============================================
         const API_BASE_URL = 'http://localhost:3000/api'; // CHANGE TO YOUR BACKEND URL
-        let currentUser = null;
+        currentUser = null;
 
         // Initialize
         window.addEventListener('DOMContentLoaded', () => {
@@ -8876,6 +8876,121 @@ function showEnhancedTimesheetModal() {
             window.location.href = 'index.html';
         }
     </script>
+
+
+
+// ============================================
+// MISSING FUNCTIONS - COMPATIBILITY FIXES
+// ============================================
+
+// Load Timesheets function (called by showTimesheet)
+async function loadTimesheets() {
+    try {
+        const response = await apiCall('timesheets');
+        if (response && response.success) {
+            renderTimesheets(response.data || []);
+        } else {
+            console.log('No timesheet data available');
+        }
+    } catch (error) {
+        console.error('Error loading timesheets:', error);
+    }
+}
+
+// Render timesheets (helper function)
+function renderTimesheets(timesheets) {
+    // This function should render timesheet data
+    // For now, just log it
+    console.log('Timesheets loaded:', timesheets);
+}
+
+// Load Executive Monitoring function (called by showExecutiveMonitoring)
+async function loadExecutiveMonitoring() {
+    try {
+        showLoading();
+        
+        // Try to load executive data
+        const response = await apiCall('executive/monitoring');
+        
+        if (response && response.success) {
+            // If we have the newer rendering function, use it
+            if (typeof calculateExecutiveMetrics === 'function') {
+                calculateExecutiveMetrics();
+            }
+            // Otherwise just display the data
+            console.log('Executive monitoring data loaded:', response);
+        } else {
+            console.log('No executive monitoring data available');
+        }
+    } catch (error) {
+        console.error('Error loading executive monitoring:', error);
+    } finally {
+        hideLoading();
+    }
+}
+
+
+
+// ============================================
+// ENHANCED COMPATIBILITY WRAPPERS
+// ============================================
+
+// Ensure loadEnhancedTimesheet works with existing showTimesheet
+if (typeof loadEnhancedTimesheet === 'function') {
+    const originalLoadTimesheets = loadTimesheets;
+    loadTimesheets = async function() {
+        try {
+            await loadEnhancedTimesheet();
+        } catch (e) {
+            console.log('Enhanced timesheet not available, using original');
+            if (originalLoadTimesheets) await originalLoadTimesheets();
+        }
+    };
+}
+
+// Make sure showTimesheet properly initializes the enhanced view
+const originalShowTimesheet = showTimesheet;
+showTimesheet = async function() {
+    // Call original function
+    if (originalShowTimesheet) {
+        await originalShowTimesheet.call(this);
+    }
+    
+    // Initialize enhanced features if available
+    try {
+        // Check if we're in the enhanced timesheet section
+        const timesheetSection = document.getElementById('executiveTimesheetMonitoring');
+        if (timesheetSection && timesheetSection.style.display !== 'none') {
+            // Load initial data for enhanced view
+            if (typeof loadEnhancedTimesheet === 'function') {
+                loadEnhancedTimesheet();
+            }
+        }
+    } catch (e) {
+        console.log('Enhanced features not available:', e);
+    }
+};
+
+// Ensure showExecutiveMonitoring works properly
+const originalShowExecutiveMonitoring = showExecutiveMonitoring;
+showExecutiveMonitoring = async function() {
+    try {
+        // Call original function
+        if (originalShowExecutiveMonitoring) {
+            await originalShowExecutiveMonitoring.call(this);
+        }
+        
+        // Load data
+        if (typeof loadExecutiveMonitoring === 'function') {
+            await loadExecutiveMonitoring();
+        }
+    } catch (e) {
+        console.error('Error in executive monitoring:', e);
+        showMessage('Executive monitoring is loading...', 'info');
+    }
+};
+
+console.log('✅ Compatibility wrappers loaded');
 
 </script>
 
