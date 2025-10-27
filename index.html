@@ -1626,13 +1626,74 @@
 /* TIMESHEET & EXECUTIVE MONITORING STYLES */
 /* ============================================ */
 
-.timesheet-container {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+/* --- 1. Define a professional, clean color palette --- */
+:root {
+    --primary-blue: #007aff;
+    --danger: #dc3545;
+    --warning: #ffc107;
+    --success: #28a745;
+    --border: #e5e7eb;      /* Light gray for borders */
+    --text-dark: #1f2937;
+    --text-light: #6b7280;
+    --bg-light: #f9fafb;      /* Very light page background */
+    --white: #ffffff;
 }
 
+body {
+    background-color: var(--bg-light); /* Set a light bg for contrast */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--text-dark);
+}
+
+/* --- 2. Main Timesheet Container --- */
+.timesheet-container {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 2rem;
+    /* Softer, more modern shadow */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
+    max-width: 1200px;
+    margin: 2rem auto;
+}
+
+/* --- 3. Modern Tab Navigation (Fixes Layout) --- */
+.tabs-container {
+    /* Remove the old boxy look, use a simple bottom border */
+    border-bottom: 1px solid var(--border);
+    margin: -2rem -2rem 2rem -2rem; /* Extend to edges of parent padding */
+    padding: 0 2rem;
+    background: transparent;
+}
+
+.tabs {
+    display: flex;
+    gap: 1.5rem; /* Use gap for spacing */
+}
+
+.tab {
+    flex: 0 1 auto; /* Don't force tabs to fill space */
+    padding: 1rem 0.25rem;
+    margin-bottom: -1px; /* Aligns border with container's border */
+    text-align: center;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-light);
+    transition: all 0.2s;
+    border-bottom: 2px solid transparent; /* Inactive state */
+}
+
+.tab:hover {
+    color: var(--text-dark);
+}
+
+.tab.active {
+    /* Active state is just colored text and a border */
+    color: var(--primary-blue);
+    border-bottom-color: var(--primary-blue);
+}
+
+/* --- 4. Summary Cards (Replaces heavy gradient) --- */
 .timesheet-summary {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1640,106 +1701,109 @@
     margin-bottom: 2rem;
 }
 
+/* This new .summary-card replaces both your .summary-card and .metric-card */
 .summary-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    text-align: center;
-}
-
-.summary-card .label {
-    font-size: 0.9rem;
-    opacity: 0.9;
-    margin-bottom: 0.5rem;
-}
-
-.summary-card .number {
-    font-size: 2.5rem;
-    font-weight: 700;
-}
-
-.metric-card {
+    background: var(--white);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     display: flex;
     align-items: center;
     gap: 1rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    color: white;
+    /* Lighter shadow on each card */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+    transition: all 0.2s;
 }
 
-.metric-icon {
-    font-size: 2.5rem;
+.summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.06);
 }
 
-.metric-content {
+/* Icon styles for the cards */
+.summary-card .icon {
+    font-size: 1.5rem; /* Smaller icon */
+    padding: 0.75rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+}
+
+.summary-card .icon.blue {
+    color: var(--primary-blue);
+    background: #e7f3ff;
+}
+.summary-card .icon.green {
+    color: var(--success);
+    background: #eaf7f0;
+}
+.summary-card .icon.red {
+    color: var(--danger);
+    background: #feedf0;
+}
+
+
+.summary-card .content {
     flex: 1;
 }
 
-.metric-label {
+.summary-card .label {
     font-size: 0.9rem;
-    opacity: 0.9;
-    margin-bottom: 0.5rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+    line-height: 1.4;
 }
 
-.metric-value {
+.summary-card .number {
     font-size: 2rem;
     font-weight: 700;
-    line-height: 1;
+    color: var(--text-dark);
+    line-height: 1.2;
 }
 
-.metric-subtitle {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    margin-top: 0.5rem;
-}
-
-.tabs-container {
-    background: white;
-    border-radius: 12px;
-    border: 2px solid var(--border);
-    overflow: hidden;
-    margin-bottom: 2rem;
-}
-
-.tabs {
-    display: flex;
-    gap: 0;
-}
-
-.tab {
-    flex: 1;
-    padding: 1rem;
-    text-align: center;
+/* --- 5. Alert Cards (Refined Style) --- */
+.alert-card {
+    padding: 1.25rem;
+    border-left: 4px solid;
+    border-radius: 8px;
+    margin-bottom: 1rem;
     cursor: pointer;
-    font-weight: 600;
-    color: var(--text-light);
     transition: all 0.2s;
-    border-right: 1px solid var(--border);
 }
 
-.tab:last-child {
-    border-right: none;
+.alert-card:hover {
+    /* More subtle hover: slightly lighter background and a shadow */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
-.tab:hover {
-    background: var(--light-blue);
+.alert-critical {
+    background: #feedf0; /* Lighter red */
+    border-color: var(--danger);
+    color: #b02a37; /* Darker text for readability */
 }
 
-.tab.active {
-    background: var(--primary-blue);
-    color: white;
+.alert-warning {
+    background: #fff9e0; /* Lighter yellow */
+    border-color: var(--warning);
+    color: #8a6d3b;
 }
 
+.alert-info {
+    background: #e7f3ff; /* Lighter blue */
+    border-color: var(--primary-blue);
+    color: #0056b3;
+}
+
+/* --- 6. Hour Badge (Minor Tweaks) --- */
 .hour-badge {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: white;
+    background: var(--white);
     border-radius: 8px;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
 }
 
 .hour-badge .label {
@@ -1751,35 +1815,6 @@
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--primary-blue);
-}
-
-.alert-card {
-    padding: 1.5rem;
-    border-left: 4px solid;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.alert-card:hover {
-    transform: translateX(5px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-}
-
-.alert-critical {
-    background: #fee;
-    border-color: var(--danger);
-}
-
-.alert-warning {
-    background: #fff3cd;
-    border-color: var(--warning);
-}
-
-.alert-info {
-    background: #e7f3ff;
-    border-color: var(--primary-blue);
 }
 
     </style>
