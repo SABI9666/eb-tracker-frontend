@@ -5277,57 +5277,7 @@ const allocationData = {
 `;
     
     
-        <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
-            ${designer.name}
-        </label>
-        <div style="font-size: 0.85rem; color: var(--text-light);">
-            ${designer.email} • ${designer.assignedProjects || 0} active projects
-        </div>
-    </div>
-    <div style="min-width: 150px;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="number" 
-                   id="hours-${designer.uid}"
-                   class="form-control hours-input" 
-                   step="0.5" 
-                   min="0.5"
-                   ${maxHours > 0 ? `max="${totalAvailable}"` : ''}
-                   value="${currentHours}"
-                   placeholder="Hours"
-                   ${!isAssigned ? 'disabled' : ''}
-                   onchange="updateTotalAllocated()"
-                   style="width: 80px; padding: 0.5rem; text-align: center;">
-            <span style="font-size: 0.9rem; color: var(--text-light);">hrs</span>
-        </div>
-    </div>
-    `;
-`</div>  </div>
-                     
-                            <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
-                                ${designer.name}
-                            </label>
-                            <div style="font-size: 0.85rem; color: var(--text-light);">
-                                ${designer.email} • ${designer.assignedProjects || 0} active projects
-                            </div>
-                        </div>
-                        <div style="min-width: 150px;">
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <input type="number" 
-                                       id="hours-${designer.uid}"
-                                       class="form-control hours-input" 
-                                       step="0.5" 
-                                       min="0.5"
-                                       ${maxHours > 0 ? `max="${totalAvailable}"` : ''}
-                                       value="${currentHours}"
-                                       placeholder="Hours"
-                                       ${!isAssigned ? 'disabled' : ''}
-                                       onchange="updateTotalAllocated()"
-                                       style="width: 80px; padding: 0.5rem; text-align: center;">
-                                <span style="font-size: 0.9rem; color: var(--text-light);">hrs</span>
-                            </div>
-                        </div>
-                    `;
-                    
+          
                     designersList.appendChild(designerRow);
                 });
 
