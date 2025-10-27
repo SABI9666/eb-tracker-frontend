@@ -1646,15 +1646,12 @@ body {
 }
 
 /* --- 2. Main Timesheet Container --- */
-.timesheet-container {
-    background: var(--white);
-    border-radius: 12px;
-    padding: 2rem;
-    /* Softer, more modern shadow */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-    border: 1px solid var(--border);
+
+ .timesheet-container {
+    ...
     max-width: 1200px;
     margin: 2rem auto;
+
 }
 
 /* --- 3. Modern Tab Navigation (Fixes Layout) --- */
@@ -1990,28 +1987,14 @@ body {
                 <div class="number">38.5</div>
             </div>
         </div>
-        
+
         <div class="summary-card">
-            <div class="icon green">
-                <i class="fas fa-check-circle"></i>
             </div>
-            <div class="content">
-                <div class="label">Approved Hours</div>
-                <div class="number">32.0</div>
-            </div>
-        </div>
-        
+
         <div class="summary-card">
-            <div class="icon red">
-                <i class="fas fa-exclamation-triangle"></i>
             </div>
-            <div class="content">
-                <div class="label">Missing Entries</div>
-                <div class="number">2</div>
-            </div>
-        </div>
     </div>
-    
+
     <div class="alerts-section">
         <div class="alert-card alert-critical">
             <strong>Action Required:</strong> Your timesheet for Oct 20-26 is overdue.
@@ -2022,7 +2005,6 @@ body {
     </div>
 
 </div>
-
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
