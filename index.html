@@ -6821,7 +6821,43 @@ async function submitAllocation() {
 <!-- ============================================ -->
 
 <style>
-/* Executive Monitoring Styles */
+/* ============================================ */
+/* TIMESHEET & EXECUTIVE MONITORING STYLES */
+/* ============================================ */
+
+.timesheet-container {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.timesheet-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.summary-card .label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin-bottom: 0.5rem;
+}
+
+.summary-card .number {
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
 .metric-card {
     border-radius: 12px;
     padding: 1.5rem;
@@ -6858,31 +6894,12 @@ async function submitAllocation() {
     margin-top: 0.5rem;
 }
 
-.stat-card {
-    background: white;
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    padding: 1rem;
-    text-align: center;
-}
-
-.stat-label {
-    font-size: 0.85rem;
-    color: var(--text-light);
-    margin-bottom: 0.5rem;
-}
-
-.stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    color: var(--primary-blue);
-}
-
 .tabs-container {
     background: white;
     border-radius: 12px;
     border: 2px solid var(--border);
     overflow: hidden;
+    margin-bottom: 2rem;
 }
 
 .tabs {
@@ -6914,16 +6931,6 @@ async function submitAllocation() {
     color: white;
 }
 
-.project-card {
-    transition: all 0.2s;
-}
-
-.project-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    border-color: var(--primary-blue);
-}
-
 .hour-badge {
     display: inline-flex;
     align-items: center;
@@ -6945,32 +6952,34 @@ async function submitAllocation() {
     color: var(--primary-blue);
 }
 
-.status-badge {
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.85rem;
-    font-weight: 600;
+.alert-card {
+    padding: 1.5rem;
+    border-left: 4px solid;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.status-submitted {
+.alert-card:hover {
+    transform: translateX(5px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.alert-critical {
+    background: #fee;
+    border-color: var(--danger);
+}
+
+.alert-warning {
     background: #fff3cd;
-    color: #856404;
+    border-color: var(--warning);
 }
 
-.status-approved {
-    background: #d4edda;
-    color: #155724;
-}
+.alert-info {
+    background: #e7f3ff;
+    border-color: var(--primary-blue);
 
-.status-rejected {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.progress-bar-container {
-    background: #e0e0e0;
-    border-radius: 10px;
-    overflow: hidden;
 }
 </style>
 
