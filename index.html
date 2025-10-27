@@ -6683,8 +6683,9 @@ async function submitAllocation() {
 <!-- STEP 2: ADD THESE SECTIONS BEFORE </body> -->
 <!-- Paste these complete sections -->
 <!-- ============================================ -->
-
+<!-- ============================================ -->
 <!-- EXECUTIVE MONITORING SECTION -->
+<!-- ============================================ -->
 <div id="executiveTimesheetMonitoring" style="display: none;">
     <div class="page-header">
         <h2>📊 Executive Timesheet Monitoring</h2>
@@ -6752,13 +6753,13 @@ async function submitAllocation() {
     </div>
 
     <!-- Tabs for Different Views -->
-    <div class="tabs-container" style="margin-bottom: 1.5rem;">
+    <div class="tabs-container">
         <div class="tabs">
-            <div class="tab active" onclick="switchExecutiveTab('overview')">Overview</div>
-            <div class="tab" onclick="switchExecutiveTab('projects')">Projects</div>
-            <div class="tab" onclick="switchExecutiveTab('designers')">Designers</div>
-            <div class="tab" onclick="switchExecutiveTab('analytics')">Analytics</div>
-            <div class="tab" onclick="switchExecutiveTab('alerts')">Alerts</div>
+            <div class="tab active" onclick="switchExecutiveTab(event, 'overview')">Overview</div>
+            <div class="tab" onclick="switchExecutiveTab(event, 'projects')">Projects</div>
+            <div class="tab" onclick="switchExecutiveTab(event, 'designers')">Designers</div>
+            <div class="tab" onclick="switchExecutiveTab(event, 'analytics')">Analytics</div>
+            <div class="tab" onclick="switchExecutiveTab(event, 'alerts')">Alerts</div>
         </div>
     </div>
 
@@ -6768,7 +6769,9 @@ async function submitAllocation() {
     </div>
 </div>
 
+<!-- ============================================ -->
 <!-- TIMESHEET SECTION FOR DESIGNERS -->
+<!-- ============================================ -->
 <div id="timesheetSection" style="display: none;">
     <div class="page-header">
         <h2>⏱️ My Timesheet</h2>
@@ -6776,7 +6779,7 @@ async function submitAllocation() {
     </div>
 
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem; border-bottom: 2px solid var(--border);">
             <h3>Log Hours</h3>
             <button onclick="showTimesheetModal()" class="btn btn-primary">
                 <span class="btn-icon">+</span> Log Hours
@@ -6784,7 +6787,7 @@ async function submitAllocation() {
         </div>
 
         <!-- Timesheet Summary -->
-        <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
+        <div id="timesheetSummary" class="timesheet-summary" style="padding: 1.5rem;">
             <!-- Will be populated by JavaScript -->
         </div>
 
