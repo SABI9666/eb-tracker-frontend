@@ -6443,7 +6443,9 @@ async function submitAllocation() {
     </div>
 </div>
 
-<!-- TIMESHEET SECTION FOR DESIGNERS -->
+<!-- ============================================ -->
+<!-- DESIGNER TIMESHEET SECTION (MISSING!) -->
+<!-- ============================================ -->
 <div id="timesheetSection" style="display: none;">
     <div class="page-header">
         <h2>⏱️ My Timesheet</h2>
@@ -6451,7 +6453,7 @@ async function submitAllocation() {
     </div>
 
     <div class="card">
-        <div class="card-header">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1.5rem;">
             <h3>Log Hours</h3>
             <button onclick="showTimesheetModal()" class="btn btn-primary">
                 <span class="btn-icon">+</span> Log Hours
@@ -6460,7 +6462,18 @@ async function submitAllocation() {
 
         <!-- Timesheet Summary -->
         <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
-            <!-- Will be populated by JavaScript -->
+            <div class="stat-card">
+                <div class="stat-label">This Week</div>
+                <div class="stat-value">0.0h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">This Month</div>
+                <div class="stat-value">0.0h</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Active Projects</div>
+                <div class="stat-value">0</div>
+            </div>
         </div>
 
         <!-- Timesheet Entries Table -->
@@ -6478,7 +6491,7 @@ async function submitAllocation() {
             <tbody id="timesheetTableBody">
                 <tr>
                     <td colspan="6" style="text-align: center; padding: 2rem;">
-                        No timesheet entries yet
+                        No timesheet entries yet. Click "Log Hours" to get started.
                     </td>
                 </tr>
             </tbody>
