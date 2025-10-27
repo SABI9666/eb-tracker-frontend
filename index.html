@@ -1646,12 +1646,15 @@ body {
 }
 
 /* --- 2. Main Timesheet Container --- */
-
- .timesheet-container {
-    ...
+.timesheet-container {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 2rem;
+    /* Softer, more modern shadow */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    border: 1px solid var(--border);
     max-width: 1200px;
     margin: 2rem auto;
-
 }
 
 /* --- 3. Modern Tab Navigation (Fixes Layout) --- */
@@ -1955,7 +1958,71 @@ body {
                         <span class="nav-icon">📊</span>Executive Monitoring</a>
                     </li>
 
-                    
+                    <li id="timesheetNavItem" style="display: none;">
+                        <a href="#" onclick="showTimesheet()" id="nav-timesheet">
+                        <span class="nav-icon">⏱️</span>My Timesheet</a>
+                    </li>
+                    ...
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+...
+
+<!-- Timesheet - For Designers -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<div class="timesheet-container">
+
+    <div class="tabs-container">
+        <div class="tabs">
+            <div class="tab active">Summary</div>
+            <div class="tab">My Timesheet</div>
+            <div class="tab">Team View</div>
+            <div class="tab">Reports</div>
+        </div>
+    </div>
+
+    <div class="timesheet-summary">
+        <div class="summary-card">
+            <div class="icon blue">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="content">
+                <div class="label">Total Hours This Week</div>
+                <div class="number">38.5</div>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="icon green">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="content">
+                <div class="label">Approved Hours</div>
+                <div class="number">32.0</div>
+            </div>
+        </div>
+        
+        <div class="summary-card">
+            <div class="icon red">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="content">
+                <div class="label">Missing Entries</div>
+                <div class="number">2</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alerts-section">
+        <div class="alert-card alert-critical">
+            <strong>Action Required:</strong> Your timesheet for Oct 20-26 is overdue.
+        </div>
+        <div class="alert-card alert-warning">
+            <strong>Reminder:</strong> You have 6.5 pending hours awaiting approval.
+        </div>
+    </div>
+
+</div>
+
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
