@@ -6649,7 +6649,6 @@ async function submitAllocation() {
 <!-- STEP 4: ADD THIS COMPLETE JAVASCRIPT -->
 <!-- Add before closing </body> tag -->
 <!-- ============================================ -->
-
 <script>
 // ===================================
 // EXECUTIVE MONITORING JAVASCRIPT
@@ -7312,8 +7311,9 @@ async function submitTimesheet() {
             closeModal();
             alert(`${hours} hours logged successfully for ${date}!`);
             
-            if (currentSection === 'timesheet') {
-                loadTimesheets();
+            // Check if timesheet section is active
+            if (document.getElementById('timesheetSection').style.display === 'block') {
+                loadDesignerTimesheet();
             }
         } else {
             throw new Error(response.error || 'Failed to log hours');
@@ -7822,14 +7822,14 @@ function removePricingRow(btn) {
 // ============================================
 // DESIGNER TASKS/PROJECTS VIEW
 // ============================================
+
+// ***** CORRECTED FUNCTION *****
+// This function now correctly injects the HTML into 'mainContent'
+// instead of hiding 'mainContent'.
 async function showTasks() {
     setActiveNav('nav-tasks');
     const main = document.getElementById('mainContent');
-    main.style.display = 'block';
-    
-    // Hide other sections
-    const timesheetSection = document.getElementById('timesheetSection');
-    if (timesheetSection) timesheetSection.style.display = 'none';
+    main.style.display = 'block'; // <-- FIX: Ensure main content is visible
     
     showLoading();
     
@@ -7867,6 +7867,7 @@ async function showTasks() {
             </div>
         `).join('') : '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects assigned yet.</p>';
         
+        // <-- FIX: Inject HTML into main.innerHTML
         main.innerHTML = `
             <div class="page-header">
                 <h2>📋 My Projects</h2>
@@ -7955,43 +7956,64 @@ function closeProjectDetailsModal() {
 // ============================================
 // SHOW SECTION FUNCTION FOR NAV ITEMS
 // ============================================
-function showTimesheet() {
+
+// ***** CORRECTED FUNCTION *****
+// This function now correctly injects the HTML into 'mainContent'
+// instead of hiding 'mainContent'.
+async function showTimesheet() {
     setActiveNav('nav-timesheet');
-    const mainContent = document.getElementById('mainContent');
-    if (mainContent) mainContent.style.display = 'none';
+    const main = document.getElementById('mainContent');
+    main.style.display = 'block'; // <-- FIX
+    showLoading();
     
-    const section = document.getElementById('timesheetSection');
-    if (section) {
-        section.style.display = 'block';
-        loadDesignerTimesheet();
+    try {
+        console.log('⏱️ Loading Timesheet...');
+        const templateContent = document.getElementById('timesheetSection');
+        if (!templateContent) {
+            throw new Error('Timesheet template not found');
+        }
+        
+        // Clone and insert into main content
+        main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"'); // <-- FIX
+        
+        // Load the data
+        await loadDesignerTimesheet(); // Use new function
+        
+        hideLoading();
+    } catch (error) {
+        console.error('❌ Timesheet error:', error);
+        main.innerHTML = `<div class="error-message"><h3>⚠️ Error Loading Timesheet</h3><p>${error.message}</p></div>`;
+        hideLoading();
     }
 }
 
-function showSection(sectionName) {
-    // Hide main content
-    const mainContent = document.getElementById('mainContent');
-    if (mainContent) mainContent.style.display = 'none';
-    
-    // Hide all sections
-    const sections = ['timesheetSection', 'executiveMonitoringSection'];
-    sections.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.display = 'none';
-    });
-    
-    // Show requested section
-    if (sectionName === 'timesheet') {
-        const section = document.getElementById('timesheetSection');
-        if (section) {
-            section.style.display = 'block';
-            loadDesignerTimesheet();
+// ***** CORRECTED FUNCTION *****
+// This function now correctly injects the HTML into 'mainContent'
+// instead of hiding 'mainContent'.
+async function showSection(sectionName) {
+    const main = document.getElementById('mainContent');
+    main.style.display = 'block'; // <-- FIX
+    showLoading();
+
+    try {
+        if (sectionName === 'timesheet') {
+            setActiveNav('nav-timesheet');
+            const templateContent = document.getElementById('timesheetSection');
+            if (!templateContent) throw new Error('Timesheet template not found');
+            main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
+            await loadDesignerTimesheet(); // Use new function
+        } else if (sectionName === 'executiveMonitoring') {
+            setActiveNav('nav-executive');
+            const templateContent = document.getElementById('executiveTimesheetMonitoring');
+            if (!templateContent) throw new Error('Executive Monitoring template not found');
+            main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
+            await loadExecutiveMonitoring(); // Use new function
         }
-    } else if (sectionName === 'executiveMonitoring') {
-        const section = document.getElementById('executiveMonitoringSection');
-        if (section) {
-            section.style.display = 'block';
-            // Load executive monitoring data if needed
-        }
+        hideLoading();
+    } catch (error) {
+        console.error('❌ Section load error:', error);
+        main.innerHTML = `<div class="error-message"><h3>⚠️ Error Loading Section</h3><p>${error.message}</p></div>`;
+        hideLoading();
     }
 }
 
@@ -8026,17 +8048,17 @@ async function loadDesignerTimesheet() {
         const summaryDiv = document.getElementById('timesheetSummary');
         if (summaryDiv) {
             summaryDiv.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-label">This Week</div>
-                    <div class="stat-value">${thisWeekHours.toFixed(1)}h</div>
+                <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
+                    <div class="stat-label" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">This Week</div>
+                    <div class="stat-value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${thisWeekHours.toFixed(1)}h</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">This Month</div>
-                    <div class="stat-value">${thisMonthHours.toFixed(1)}h</div>
+                <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
+                    <div class="stat-label" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">This Month</div>
+                    <div class="stat-value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${thisMonthHours.toFixed(1)}h</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Active Projects</div>
-                    <div class="stat-value">${projects.length}</div>
+                <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
+                    <div class="stat-label" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Active Projects</div>
+                    <div class="stat-value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${projects.length}</div>
                 </div>
             `;
         }
@@ -8079,14 +8101,18 @@ function showTimesheetModal() {
         if (!response.success) return;
         
         const projects = response.data || [];
+        
+        // Close existing modal if any
+        closeModal();
+
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.id = 'timesheetModal';
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 500px;">
                 <div class="modal-header">
-                    <h3>Log Hours</h3>
-                    <button class="modal-close" onclick="closeTimesheetModal()">&times;</button>
+                    <h2>Log Hours</h2>
+                    <span class="close-modal" onclick="closeTimesheetModal()">&times;</span>
                 </div>
                 <div class="modal-body">
                     <form id="timesheetForm" onsubmit="submitTimesheet(event)">
@@ -8115,12 +8141,11 @@ function showTimesheetModal() {
                             <textarea id="timesheetDescription" class="form-control" rows="3" 
                                       placeholder="What did you work on?" required></textarea>
                         </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" class="btn btn-outline" onclick="closeTimesheetModal()">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Log Hours</button>
-                        </div>
                     </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline" onclick="closeTimesheetModal()">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitTimesheet(event)">Log Hours</button>
                 </div>
             </div>
         `;
@@ -8132,10 +8157,12 @@ function showTimesheetModal() {
 function closeTimesheetModal() {
     const modal = document.getElementById('timesheetModal');
     if (modal) modal.remove();
+    // Also call general close modal just in case
+    closeModal();
 }
 
 async function submitTimesheet(event) {
-    event.preventDefault();
+    if(event) event.preventDefault();
     
     const data = {
         date: document.getElementById('timesheetDate').value,
@@ -8173,7 +8200,7 @@ async function deleteTimesheetEntry(entryId) {
     
     try {
         showLoading();
-        const response = await apiCall(`timesheets/${entryId}`, { method: 'DELETE' });
+        const response = await apiCall(`timesheets?id=${entryId}`, { method: 'DELETE' });
         
         if (response.success) {
             alert('Entry deleted');
@@ -8190,16 +8217,18 @@ async function deleteTimesheetEntry(entryId) {
 }
 
 // Helper functions for date filtering
-function isThisWeek(dateStr) {
-    const date = new Date(dateStr);
+function isThisWeek(dateObj) {
+    if (!dateObj || !dateObj.seconds) return false;
+    const date = new Date(dateObj.seconds * 1000);
     const now = new Date();
     const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
     weekStart.setHours(0, 0, 0, 0);
     return date >= weekStart;
 }
 
-function isThisMonth(dateStr) {
-    const date = new Date(dateStr);
+function isThisMonth(dateObj) {
+    if (!dateObj || !dateObj.seconds) return false;
+    const date = new Date(dateObj.seconds * 1000);
     const now = new Date();
     return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
 }
@@ -8208,14 +8237,18 @@ function isThisMonth(dateStr) {
 // DESIGNER PROJECT UPLOAD FUNCTIONS
 // ============================================
 function showDesignerUploadModal(projectId) {
+    
+    // Close existing modal if any
+    closeModal();
+
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = 'designerUploadModal';
     modal.innerHTML = `
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h3>Upload Project Files</h3>
-                <button class="modal-close" onclick="closeDesignerUploadModal()">&times;</button>
+                <h2>Upload Project Files</h2>
+                <span class="close-modal" onclick="closeDesignerUploadModal()">&times;</span>
             </div>
             <div class="modal-body">
                 <form id="designerUploadForm" onsubmit="submitDesignerUpload(event, '${projectId}')">
@@ -8245,12 +8278,11 @@ function showDesignerUploadModal(projectId) {
                             <option value="completed">Completed</option>
                         </select>
                     </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn btn-outline" onclick="closeDesignerUploadModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Upload Files</button>
-                    </div>
                 </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeDesignerUploadModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitDesignerUpload(event, '${projectId}')">Upload Files</button>
             </div>
         </div>
     `;
@@ -8261,6 +8293,7 @@ function showDesignerUploadModal(projectId) {
 function closeDesignerUploadModal() {
     const modal = document.getElementById('designerUploadModal');
     if (modal) modal.remove();
+    closeModal();
 }
 
 function updateDesignerFileList() {
@@ -8277,7 +8310,7 @@ function updateDesignerFileList() {
 }
 
 async function submitDesignerUpload(event, projectId) {
-    event.preventDefault();
+    if(event) event.preventDefault();
     
     const files = document.getElementById('designerFiles').files;
     if (files.length === 0) {
@@ -8304,8 +8337,8 @@ async function submitDesignerUpload(event, projectId) {
             closeDesignerUploadModal();
             alert('Files uploaded successfully!');
             // Reload designer dashboard or project view
-            if (typeof showDesignerDashboard === 'function') {
-                showDesignerDashboard();
+            if (typeof showTasks === 'function' && document.getElementById('mainContent').querySelector('h2').innerText.includes('My Projects')) {
+                showTasks();
             }
         } else {
             throw new Error(response.error || 'Upload failed');
@@ -8325,3 +8358,4 @@ async function submitDesignerUpload(event, projectId) {
 
 </body>
 </html>
+
