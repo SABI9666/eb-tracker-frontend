@@ -4286,16 +4286,27 @@
                 if (!projectId) {
                     throw new Error('Project ID not found');
                 }
-                        
-                // Now allocate to design manager
-                const allocationData = {
-                    designLeadUid: designManagerUid,
-                    targetCompletionDate: targetCompletionDate || null,
-                    priority: projectPriority,
-                    allocationNotes: allocationComments,
-                    specialInstructions: specialInstructions
-                };
-                
+              // Get max hours values
+const maxAllocatedHours = document.getElementById('maxAllocatedHours').value;
+const additionalHours = document.getElementById('additionalHours').value || 0;
+
+// Validate max hours
+if (!maxAllocatedHours || parseFloat(maxAllocatedHours) < 1) {
+    alert('⚠️ Please enter max allocated hours (minimum 1 hour)');
+    document.getElementById('maxAllocatedHours').focus();
+    return;
+}
+
+// Allocate to design lead
+const allocationData = {
+    designLeadUid: designManagerUid,
+    targetCompletionDate: targetCompletionDate || null,
+    priority: projectPriority,
+    allocationNotes: allocationComments,
+    specialInstructions: specialInstructions,
+    maxAllocatedHours: parseFloat(maxAllocatedHours),
+    additionalHours: parseFloat(additionalHours)
+};
                 console.log('Sending allocation data:', allocationData);
                         
                 const response = await apiCall(`projects?id=${projectId}`, {
