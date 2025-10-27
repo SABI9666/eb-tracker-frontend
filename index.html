@@ -69,6 +69,35 @@
         .btn-sm { padding: 0.6rem 1.2rem; font-size: 0.85rem; width: auto; }
         .btn-disabled { background: #ccc; color: #666; cursor: not-allowed; }
 
+        /* Loading spinner - FROM INDEX51 */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(248, 250, 251, 0.85);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .loading p { margin-top: 1rem; font-weight: 600; }
+        .spinner {
+            border: 4px solid var(--border);
+            border-top: 4px solid var(--primary-blue);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+
         .role-selector { margin-bottom: 1.5rem; }
         .role-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.5rem; }
         .role-btn { padding: 1rem; background: var(--light-blue); border: 2px solid var(--primary-blue); border-radius: 8px; cursor: pointer; text-align: center; transition: all 0.3s ease; color: var(--primary-blue); font-weight: 600; }
@@ -1701,8 +1730,7 @@
     </div>
 
     <div id="appContainer" class="app-container">
-        <div class="loading" id="loadingSpinner">
-            <div class="spinner"></div>
+        
             <p>Loading...</p>
         </div>
 
@@ -1775,6 +1803,9 @@
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script>
+
+
+
         const firebaseConfig = {
             apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
             authDomain: "eb-tracker-42881.firebaseapp.com",
@@ -1812,7 +1843,59 @@
         // CORE API & AUTH FUNCTIONS
         // ============================================
 
-        async function apiCall(endpoint, options = {}, retryCount = 0) {
+        
+// Improved API call with proper error handling and timeout
+async function apiCall(endpoint, options = {}, retryCount = 0) {
+    const MAX_RETRIES = 2; // Reduced from 3 to prevent loops
+    const TIMEOUT = 5000; // 5 second timeout
+    const BASE_URL = window.API_BASE_URL || 'https://eb-tracker-backend.onrender.com/api';
+    
+    // Create abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+    
+    try {
+        const token = localStorage.getItem('authToken');
+        const headers = {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+            ...options.headers
+        };
+
+        const response = await fetch(`${BASE_URL}/${endpoint}`, {
+            ...options,
+            headers,
+            signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                // Don't retry on auth errors
+                console.log('Authentication required');
+                return { success: false, error: 'Authentication required' };
+            }
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return await response.json();
+        
+    } catch (error) {
+        clearTimeout(timeoutId);
+        
+        // Don't retry on abort (timeout) or auth errors
+        if (error.name === 'AbortError' || retryCount >= MAX_RETRIES) {
+            console.log(`API call failed: ${endpoint}`, error.message);
+            return { success: false, error: error.message };
+        }
+        
+        // Retry with exponential backoff
+        await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, retryCount)));
+        return apiCall(endpoint, options, retryCount + 1);
+    }
+}
+, retryCount = 0) {
             const MAX_RETRIES = 2;
             const RETRY_DELAY = 2000;
             const url = `${API_BASE}/api/${endpoint}`;
@@ -2104,8 +2187,23 @@
         // HELPER FUNCTIONS
         // ============================================
 
-        function showLoading() { document.getElementById('loadingSpinner').style.display = 'flex'; }
-        function hideLoading() { document.getElementById('loadingSpinner').style.display = 'none'; }
+        
+        function showLoading() { 
+            const loader = document.getElementById('loadingSpinner');
+            if (loader) {
+                loader.style.display = 'flex';
+                loader.classList.add('active');
+            }
+        }
+        
+        function hideLoading() { 
+            const loader = document.getElementById('loadingSpinner');
+            if (loader) {
+                loader.style.display = 'none';
+                loader.classList.remove('active');
+            }
+        }
+
         function showMessage(message, type = 'info') {
             const c = document.getElementById('authMessages');
             if(c) c.innerHTML = `<div class="${type}-message">${message}</div>`;
@@ -6796,6 +6894,52 @@ async function submitAllocation() {
             .table-header { flex-direction: column; align-items: flex-start; }
         }
     </style>
+
+        /* ============================================
+           STABILITY FIXES - PREVENT SHAKING
+           ============================================ */
+        
+        /* Prevent page shaking during loads */
+        body {
+            overflow-x: hidden;
+        }
+        
+        /* Smooth transitions */
+        .app-container,
+        .login-page {
+            transition: opacity 0.2s ease-in-out;
+        }
+        
+        /* Prevent loading overlay from causing reflow */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        .loading.active {
+            pointer-events: all;
+        }
+        
+        /* Stabilize modals */
+        .modal-overlay {
+            position: fixed;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        
+        /* Prevent layout shift */
+        #dashboard,
+        #proposals,
+        #projects,
+        #executiveTimesheetMonitoring,
+        #executiveMonitoring {
+            min-height: 400px;
+        }
+
 </style>
 
 
@@ -8991,6 +9135,115 @@ showExecutiveMonitoring = async function() {
 };
 
 console.log('✅ Compatibility wrappers loaded');
+
+
+
+// Debounce function to prevent rapid clicks
+let debounceTimers = {};
+function debounce(func, key, delay = 300) {
+    return function(...args) {
+        if (debounceTimers[key]) {
+            clearTimeout(debounceTimers[key]);
+        }
+        debounceTimers[key] = setTimeout(() => {
+            func.apply(this, args);
+            delete debounceTimers[key];
+        }, delay);
+    };
+}
+
+// Wrap navigation functions with debounce
+if (typeof showDashboard !== 'undefined') {
+    const originalShowDashboard = showDashboard;
+    showDashboard = debounce(originalShowDashboard, 'dashboard', 300);
+}
+
+if (typeof showTimesheet !== 'undefined') {
+    const originalShowTimesheet = showTimesheet;
+    showTimesheet = debounce(originalShowTimesheet, 'timesheet', 300);
+}
+
+if (typeof showExecutiveMonitoring !== 'undefined') {
+    const originalShowExecutiveMonitoring = showExecutiveMonitoring;
+    showExecutiveMonitoring = debounce(originalShowExecutiveMonitoring, 'executive', 300);
+}
+
+if (typeof showProposals !== 'undefined') {
+    const originalShowProposals = showProposals;
+    showProposals = debounce(originalShowProposals, 'proposals', 300);
+}
+
+if (typeof showAllProjects !== 'undefined') {
+    const originalShowAllProjects = showAllProjects;
+    showAllProjects = debounce(originalShowAllProjects, 'projects', 300);
+}
+
+console.log('✅ Stability fixes applied - debounce enabled');
+
+
+
+// Initialization flag to prevent premature loads
+let appInitialized = false;
+let initializationInProgress = false;
+
+// Enhanced initialization
+async function initializeApp() {
+    if (initializationInProgress || appInitialized) {
+        console.log('App already initialized or initializing');
+        return;
+    }
+    
+    initializationInProgress = true;
+    
+    try {
+        console.log('Initializing application...');
+        
+        // Check auth
+        const token = localStorage.getItem('authToken');
+        const userRole = localStorage.getItem('userRole');
+        
+        if (!token || !userRole) {
+            console.log('No auth credentials, showing login');
+            showLogin();
+            return;
+        }
+        
+        // Load user data
+        currentUser = {
+            role: userRole,
+            name: localStorage.getItem('userName') || 'User',
+            email: localStorage.getItem('userEmail') || '',
+            token: token
+        };
+        
+        console.log('User authenticated:', currentUser.role);
+        
+        // Show app
+        showApp();
+        
+        // Mark as initialized
+        appInitialized = true;
+        console.log('✅ Application initialized successfully');
+        
+    } catch (error) {
+        console.error('Initialization error:', error);
+        showLogin();
+    } finally {
+        initializationInProgress = false;
+    }
+}
+
+// Prevent auto-load on every script execution
+if (typeof window !== 'undefined' && !window.appLoadHandled) {
+    window.appLoadHandled = true;
+    
+    // Single initialization on DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+        initializeApp();
+    }
+}
 
 </script>
 
