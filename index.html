@@ -2226,8 +2226,13 @@
                 (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
               document.getElementById('executiveMonitoringNavItem').style.display =
                 (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
-            document.getElementById('timesheetNavItem').style.display =
-                (currentUserRole === 'designer') ? 'block' : 'none';
+           // Show Executive Monitoring for COO, Director, Design Lead
+document.getElementById('executiveMonitoringNavItem').style.display =
+    (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
+
+// Show Timesheet for Designers
+document.getElementById('timesheetNavItem').style.display =
+    (currentUserRole === 'designer') ? 'block' : 'none';
 
             // Show role-specific dashboard
             if (currentUserRole === 'designer') {
