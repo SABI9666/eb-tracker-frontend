@@ -2119,13 +2119,7 @@
                 if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
                 else console.warn("Element 'paymentsNavItem' not found");
     
-                const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
-                if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(roleForCheck)) ? 'block' : 'none';
-                else console.warn("Element 'executiveMonitoringNavItem' not found");
-    
-                const timesheetNavItem = document.getElementById('timesheetNavItem');
-                if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
-                else console.warn("Element 'timesheetNavItem' not found");
+              
     
                 // User Requested Modifications: Hide Dashboard (USING roleForCheck)
                 const dashboardNavItem = document.getElementById('dashboardNavItem');
