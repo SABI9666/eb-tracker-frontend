@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-     <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#0d47a1">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1622,36 +1622,10 @@
     font-size: 0.85rem;
     color: var(--text-light);
 }
- /* Executive Monitoring Styles */
-.metric-card { border-radius: 12px; padding: 1.5rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: white; }
-.metric-icon { font-size: 2.5rem; }
-.metric-content { flex: 1; }
-.metric-label { font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; }
-.metric-value { font-size: 2rem; font-weight: 700; line-height: 1; }
-.metric-subtitle { font-size: 0.85rem; opacity: 0.8; margin-top: 0.5rem; }
-.stat-card { background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
-.stat-label { font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem; }
-.stat-value { font-size: 2rem; font-weight: 700; color: var(--primary-blue); }
-.tabs-container { background: white; border-radius: 12px; border: 2px solid var(--border); overflow: hidden; }
-.tabs { display: flex; gap: 0; }
-.tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; font-weight: 600; color: var(--text-light); transition: all 0.2s; border-right: 1px solid var(--border); }
-.tab:last-child { border-right: none; }
-.tab:hover { background: var(--light-blue); }
-.tab.active { background: var(--primary-blue); color: white; }
-.project-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: var(--primary-blue); }
-.hour-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 2px solid var(--border); }
-.hour-badge .label { color: var(--text-light); font-size: 0.85rem; }
-.hour-badge .value { font-size: 1.5rem; font-weight: 700; color: var(--primary-blue); }
-.status-badge { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
-.status-submitted { background: #fff3cd; color: #856404; }
-.status-approved { background: #d4edda; color: #155724; }
-.status-rejected { background: #f8d7da; color: #721c24; }
-.progress-bar-container { background: #e0e0e0; border-radius: 10px; overflow: hidden; }        
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="analytics.js"></script>
-     
 </head>
 <body>
     <div id="loginPage" class="login-page">
@@ -2079,138 +2053,134 @@
         // ============================================
         // UI & NAVIGATION
         // ============================================
-           function showApp(){
-                // --- FIX: Wrap entire function in a setTimeout to fix race condition ---
-                setTimeout(() => {
-                    console.log('--- showApp() EXECUTING (after timeout) ---');
-                    // Ensure core elements exist before proceeding
-                    const loginPage = document.getElementById('loginPage');
-                    const appContainer = document.getElementById('appContainer');
-                    const userWelcome = document.getElementById('userWelcome');
-                    const userRoleDisplay = document.getElementById('userRole');
 
-                    if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay) {
-                        console.error("Core UI elements missing! Cannot initialize app view.");
-                        return; // Stop execution if essential elements are missing
-                    }
-
-                    // --- FIX: Trim whitespace AND convert to lowercase ---
-                    const roleForCheck = currentUserRole.trim().toLowerCase();
-                    console.log('Original role:', currentUserRole, '| Cleaned roleForCheck:', roleForCheck);
-
-
-                    loginPage.style.display = 'none';
-                    appContainer.style.display = 'block';
-                    userWelcome.textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
-                    // Use the original currentUserRole for display purposes
-                    userRoleDisplay.textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
-
-                    console.log("showApp: Setting element visibility based on role:", currentUserRole, "(checking as:", roleForCheck, ")"); // Debugging line
-
-                    // --- Role-based UI updates with null checks (USING roleForCheck) ---
-                    const newProposalNavItem = document.getElementById('newProposalNavItem');
-                    if (newProposalNavItem) newProposalNavItem.style.display = (roleForCheck === 'bdm') ? 'block' : 'none';
-                    else console.warn("Element 'newProposalNavItem' not found");
-
-                    const analyticsNavItem = document.getElementById('analyticsNavItem');
-                    if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
-                    else console.warn("Element 'analyticsNavItem' not found");
-
-                    const workflowNavItem = document.getElementById('workflowNavItem');
-                    if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
-                    else console.warn("Element 'workflowNavItem' not found");
-
-                    const reportsNavItem = document.getElementById('reportsNavItem');
-                    if (reportsNavItem) reportsNavItem.style.display = 'none'; // Always hidden
-                    else console.warn("Element 'reportsNavItem' not found");
-
-                    const settingsNavItem = document.getElementById('settingsNavItem');
-                    if (settingsNavItem) settingsNavItem.style.display = (roleForCheck === 'director') ? 'block' : 'none';
-                    else console.warn("Element 'settingsNavItem' not found");
-
-                    const allProjectsNavItem = document.getElementById('allProjectsNavItem');
-                    if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
-                    else console.warn("Element 'allProjectsNavItem' not found");
-
-                    const projectsNavItem = document.getElementById('projectsNavItem');
-                    if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
-                    else console.warn("Element 'projectsNavItem' not found");
-
-                    const tasksNavItem = document.getElementById('tasksNavItem');
-                    if (tasksNavItem) tasksNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
-                    else console.warn("Element 'tasksNavItem' not found");
-
-                    const paymentsNavItem = document.getElementById('paymentsNavItem');
-                    if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
-                    else console.warn("Element 'paymentsNavItem' not found");
-
-                    // --- ADD THESE LINES BACK ---
-                    const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
-                    if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
-                    else console.warn("Element 'executiveMonitoringNavItem' not found");
-
-                    const timesheetNavItem = document.getElementById('timesheetNavItem');
-                    if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
-                    else console.warn("Element 'timesheetNavItem' not found");
-                    // --- END OF ADDED LINES ---
-
-
-                    // User Requested Modifications: Hide Dashboard (USING roleForCheck)
-                    const dashboardNavItem = document.getElementById('dashboardNavItem');
-                     let isDashboardHidden = false;
-                    if (dashboardNavItem) {
-                         isDashboardHidden = ['bdm', 'coo', 'director'].includes(roleForCheck); // Assign here
-                         console.log('Checking for roles [bdm, coo, director]. Found match?', isDashboardHidden);
-                        dashboardNavItem.style.display = isDashboardHidden ? 'none' : 'block';
-                        console.log(`showApp: Dashboard Nav Item ${isDashboardHidden ? 'hidden' : 'shown'}`);
-                    } else {
-                        console.error("Element with ID 'dashboardNavItem' not found! This should not happen.");
-                    }
-
-                    const filesNavItem = document.getElementById('filesNavItem');
-                    if (filesNavItem) {
-                        const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(roleForCheck);
-                        filesNavItem.style.display = isFileManagerHidden ? 'none' : 'block';
-                         console.log(`showApp: Files Nav Item ${isFileManagerHidden ? 'hidden' : 'shown'}`);
-                    } else {
-                         console.error("Element with ID 'filesNavItem' not found!");
-                    }
-                    // END OF MODIFIED LINES
-
-                    // --- Show role-specific dashboard or default view (USING roleForCheck) ---
-                     console.log("showApp: Determining initial view...");
-                     console.log('Routing check: is roleForCheck "bdm"?', roleForCheck === 'bdm');
-                     console.log('Routing check: is roleForCheck "coo" or "director"?', roleForCheck === 'coo' || roleForCheck === 'director');
-                    // REPLACE WITH THIS LOGIC:
-                 if (roleForCheck === 'designer') {
-               console.log("showApp: Loading Timesheet (Designer default)");
-             showSection('timesheet'); // <-- CORRECTED
-              } else if (roleForCheck === 'design_lead') {
-             console.log("showApp: Loading Design Lead Dashboard");
-           showDesignLeadDashboard();
-            } else if (roleForCheck === 'bdm') {
-          console.log("showApp: Loading Proposals (BDM default)");
-            showProposals();
-             } else if (roleForCheck === 'coo' || roleForCheck === 'director') {
-          console.log("showApp: Loading Executive Monitoring (COO/Director default)");
-         showSection('executiveMonitoring'); // <-- CORRECTED
-
-                    } else {
-                         console.log("Routing check: entering FINAL else block.");
-                         console.log("showApp: Loading default for other roles (Estimator/Accounts)");
-                         if (!isDashboardHidden) {
-                            console.log('Routing check: dashboard hidden?', isDashboardHidden, '-> Calling showDashboard()');
-                            console.log("showApp: Loading Dashboard (default)");
-                            showDashboard();
-                         } else {
-                             console.log("showApp: Dashboard hidden, loading Proposals (fallback)");
-                            showProposals();
-                         }
-                    }
-                     console.log("showApp: Finished setting up view.");
-                }, 0); // <-- End of setTimeout wrapper
+        function showApp(){
+            // --- FIX: Wrap entire function in a setTimeout to fix race condition ---
+            setTimeout(() => {
+                console.log('--- showApp() EXECUTING (after timeout) ---');
+                // Ensure core elements exist before proceeding
+                const loginPage = document.getElementById('loginPage');
+                const appContainer = document.getElementById('appContainer');
+                const userWelcome = document.getElementById('userWelcome');
+                const userRoleDisplay = document.getElementById('userRole'); 
+    
+                if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay) {
+                    console.error("Core UI elements missing! Cannot initialize app view.");
+                    return; // Stop execution if essential elements are missing
                 }
-        
+    
+                // --- FIX: Trim whitespace AND convert to lowercase ---
+                const roleForCheck = currentUserRole.trim().toLowerCase();
+                console.log('Original role:', currentUserRole, '| Cleaned roleForCheck:', roleForCheck);
+    
+    
+                loginPage.style.display = 'none';
+                appContainer.style.display = 'block';
+                userWelcome.textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
+                // Use the original currentUserRole for display purposes
+                userRoleDisplay.textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
+    
+                console.log("showApp: Setting element visibility based on role:", currentUserRole, "(checking as:", roleForCheck, ")"); // Debugging line
+    
+                // --- Role-based UI updates with null checks (USING roleForCheck) ---
+                const newProposalNavItem = document.getElementById('newProposalNavItem');
+                if (newProposalNavItem) newProposalNavItem.style.display = (roleForCheck === 'bdm') ? 'block' : 'none';
+                else console.warn("Element 'newProposalNavItem' not found");
+    
+                const analyticsNavItem = document.getElementById('analyticsNavItem');
+                if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
+                else console.warn("Element 'analyticsNavItem' not found");
+    
+                const workflowNavItem = document.getElementById('workflowNavItem');
+                if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
+                else console.warn("Element 'workflowNavItem' not found");
+    
+                const reportsNavItem = document.getElementById('reportsNavItem');
+                if (reportsNavItem) reportsNavItem.style.display = 'none'; // Always hidden
+                else console.warn("Element 'reportsNavItem' not found");
+    
+                const settingsNavItem = document.getElementById('settingsNavItem');
+                if (settingsNavItem) settingsNavItem.style.display = (roleForCheck === 'director') ? 'block' : 'none';
+                else console.warn("Element 'settingsNavItem' not found");
+    
+                const allProjectsNavItem = document.getElementById('allProjectsNavItem');
+                if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
+                else console.warn("Element 'allProjectsNavItem' not found");
+    
+                const projectsNavItem = document.getElementById('projectsNavItem');
+                if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
+                else console.warn("Element 'projectsNavItem' not found");
+    
+                const tasksNavItem = document.getElementById('tasksNavItem');
+                if (tasksNavItem) tasksNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
+                else console.warn("Element 'tasksNavItem' not found");
+    
+                const paymentsNavItem = document.getElementById('paymentsNavItem');
+                if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
+                else console.warn("Element 'paymentsNavItem' not found");
+    
+                const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
+                if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(roleForCheck)) ? 'block' : 'none';
+                else console.warn("Element 'executiveMonitoringNavItem' not found");
+    
+                const timesheetNavItem = document.getElementById('timesheetNavItem');
+                if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
+                else console.warn("Element 'timesheetNavItem' not found");
+    
+                // User Requested Modifications: Hide Dashboard (USING roleForCheck)
+                const dashboardNavItem = document.getElementById('dashboardNavItem');
+                 let isDashboardHidden = false; 
+                if (dashboardNavItem) {
+                     isDashboardHidden = ['bdm', 'coo', 'director'].includes(roleForCheck); // Assign here
+                     console.log('Checking for roles [bdm, coo, director]. Found match?', isDashboardHidden);
+                    dashboardNavItem.style.display = isDashboardHidden ? 'none' : 'block';
+                    console.log(`showApp: Dashboard Nav Item ${isDashboardHidden ? 'hidden' : 'shown'}`);
+                } else {
+                    console.error("Element with ID 'dashboardNavItem' not found! This should not happen.");
+                }
+    
+                const filesNavItem = document.getElementById('filesNavItem');
+                if (filesNavItem) {
+                    const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(roleForCheck);
+                    filesNavItem.style.display = isFileManagerHidden ? 'none' : 'block';
+                     console.log(`showApp: Files Nav Item ${isFileManagerHidden ? 'hidden' : 'shown'}`);
+                } else {
+                     console.error("Element with ID 'filesNavItem' not found!");
+                }
+                // END OF MODIFIED LINES
+    
+                // --- Show role-specific dashboard or default view (USING roleForCheck) ---
+                 console.log("showApp: Determining initial view...");
+                 console.log('Routing check: is roleForCheck "bdm"?', roleForCheck === 'bdm');
+                 console.log('Routing check: is roleForCheck "coo" or "director"?', roleForCheck === 'coo' || roleForCheck === 'director');
+    
+                if (roleForCheck === 'designer') {
+                    console.log("showApp: Loading Designer Dashboard");
+                    showDesignerDashboard();
+                } else if (roleForCheck === 'design_lead') {
+                     console.log("showApp: Loading Design Lead Dashboard");
+                    showDesignLeadDashboard();
+                } else if (roleForCheck === 'bdm') {
+                     console.log("showApp: Loading Proposals (BDM default)");
+                    showProposals(); // New default for BDM
+                } else if (roleForCheck === 'coo' || roleForCheck === 'director') {
+                     console.log("showApp: Loading All Projects (COO/Director default)");
+                    showAllProjects(); // New default for COO & Director
+                } else { 
+                     console.log("Routing check: entering FINAL else block.");
+                     console.log("showApp: Loading default for other roles (Estimator/Accounts)");
+                     if (!isDashboardHidden) {
+                        console.log('Routing check: dashboard hidden?', isDashboardHidden, '-> Calling showDashboard()');
+                        console.log("showApp: Loading Dashboard (default)");
+                        showDashboard();
+                     } else { 
+                         console.log("showApp: Dashboard hidden, loading Proposals (fallback)");
+                        showProposals();
+                     } 
+                } 
+                 console.log("showApp: Finished setting up view.");
+            }, 0); // <-- End of setTimeout wrapper
+            }
         
 
         function showLogin() {
@@ -6141,1667 +6111,7 @@ async function submitAllocation() {
     } finally {
         hideLoading();
     }
-// ===================================
-// EXECUTIVE MONITORING JAVASCRIPT
-// ===================================
-
-let executiveData = {
-    projects: [],
-    timesheets: [],
-    designers: [],
-    dateRange: { from: null, to: null }
-};
-
-// Load executive monitoring dashboard
-async function loadExecutiveMonitoring() {
-    try {
-        showLoading();
-        
-        const [projectsResponse, timesheetsResponse, usersResponse] = await Promise.all([
-            apiCall('projects'),
-            apiCall('timesheets'),
-            apiCall('users?role=designer')
-        ]);
-        
-        if (!projectsResponse.success || !timesheetsResponse.success || !usersResponse.success) {
-            throw new Error('Failed to load monitoring data');
-        }
-        
-        executiveData.projects = (projectsResponse.data || []).filter(p => p.allocatedHours && p.allocatedHours > 0);
-        executiveData.timesheets = timesheetsResponse.data || [];
-        executiveData.designers = usersResponse.data || [];
-        
-        calculateExecutiveMetrics();
-        switchExecutiveTab('overview');
-        
-        hideLoading();
-    } catch (error) {
-        console.error('Error loading executive monitoring:', error);
-        alert('Error loading monitoring dashboard: ' + error.message);
-        hideLoading();
-    }
 }
-
-// Calculate executive metrics
-function calculateExecutiveMetrics() {
-    const projects = executiveData.projects; // Already filtered for allocatedHours > 0
-    const timesheets = executiveData.timesheets;
-
-    let totalProjects = projects.length;
-    let onTrackProjects = 0;
-    let atRiskProjects = 0; // 70-100%
-    let exceededProjects = 0; // > 100%
-
-    let totalAllocated = 0;
-    let totalLogged = 0;
-
-    projects.forEach(p => {
-        const allocated = p.allocatedHours || 0; // Use 0 if missing
-        const logged = p.hoursLogged || 0;    // Use 0 if missing
-        totalAllocated += allocated;
-        totalLogged += logged;
-
-        // Ensure allocated is > 0 before calculating usage
-        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
-
-        if (usage > 100) {
-            exceededProjects++;
-        } else if (usage >= 70) {
-            atRiskProjects++;
-        } else {
-            onTrackProjects++;
-        }
-    });
-
-    const activeDesigners = new Set(timesheets.map(t => t.designerUid)).size;
-    // Check totalProjects > 0 before dividing
-    const avgHoursPerProject = totalProjects > 0 ? totalLogged / totalProjects : 0;
-    // Check totalAllocated > 0 before dividing
-    const efficiency = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
-    // Check totalAllocated > 0 before calculating remaining percentage
-    const remainingPercentage = totalAllocated > 0 ? (((totalAllocated - totalLogged) / totalAllocated) * 100) : 0;
-
-    const metricsHtml = `
-        <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <div class="metric-icon">📁</div>
-            <div class="metric-content">
-                <div class="metric-label">Total Projects</div>
-                <div class="metric-value">${totalProjects}</div>
-                <div class="metric-subtitle">${totalAllocated.toFixed(0)}h allocated</div>
-            </div>
-        </div>
-        <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="metric-icon">🟢</div>
-            <div class="metric-content">
-                <div class="metric-label">On-Track Projects</div>
-                <div class="metric-value">${onTrackProjects}</div>
-                <div class="metric-subtitle">Under 70% budget</div>
-            </div>
-        </div>
-        <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <div class="metric-icon">🟡</div>
-            <div class="metric-content">
-                <div class="metric-label">At-Risk Projects</div>
-                <div class="metric-value">${atRiskProjects}</div>
-                <div class="metric-subtitle">70-100% budget</div>
-            </div>
-        </div>
-        <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <div class="metric-icon">🔴</div>
-            <div class="metric-content">
-                <div class="metric-label">Exceeded Projects</div>
-                <div class="metric-value">${exceededProjects}</div>
-                <div class="metric-subtitle">Over 100% budget</div>
-            </div>
-        </div>
-    `;
-
-    document.getElementById('executiveMetrics').innerHTML = metricsHtml;
-    // Ensure elements exist before setting textContent
-    document.getElementById('execActiveProjects')?.textContent = totalProjects; // Use totalProjects here
-    document.getElementById('execTotalDesigners')?.textContent = activeDesigners;
-    document.getElementById('execTotalEntries')?.textContent = timesheets.length;
-    document.getElementById('execAvgHours')?.textContent = avgHoursPerProject.toFixed(1) + 'h';
-    document.getElementById('execEfficiency')?.textContent = efficiency.toFixed(1) + '%';
-}
-
-// Switch between tabs
-function switchExecutiveTab(tab) {
-    // Find the active tab button. If event is not passed, find it by function name
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(t => {
-        t.classList.remove('active');
-        if (t.getAttribute('onclick') === `switchExecutiveTab('${tab}')`) {
-            t.classList.add('active');
-        }
-    });
-    
-   // Fallback if event was not passed
-    if (event && event.target) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-    } //
-    const contentDiv = document.getElementById('executiveTabContent');
-    
-    switch(tab) {
-        case 'overview':
-            contentDiv.innerHTML = generateOverviewContent();
-            break;
-        case 'projects':
-            contentDiv.innerHTML = generateProjectsContent();
-            break;
-        case 'designers':
-            contentDiv.innerHTML = generateDesignersContent();
-            break;
-        case 'analytics':
-            contentDiv.innerHTML = generateAnalyticsContent();
-            setTimeout(renderDesignerChart, 0); 
-            break;
-        case 'alerts':
-            contentDiv.innerHTML = generateAlertsContent();
-            break;
-    }
-   }   
-
-
-// Generate Overview Content
-function generateOverviewContent() {
-    // Note: executiveData.projects is already pre-filtered in loadExecutiveMonitoring
-    // to include only projects with allocatedHours > 0.
-    const projects = executiveData.projects;
-
-    if (projects.length === 0) {
-        return `<div class="card"><p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects with allocated hours found.</p></div>`;
-    }
-
-    const sortedProjects = [...projects].sort((a, b) => {
-        const usageA = (a.allocatedHours || 0) > 0 ? ((a.hoursLogged || 0) / a.allocatedHours) * 100 : 0;
-        const usageB = (b.allocatedHours || 0) > 0 ? ((b.hoursLogged || 0) / b.allocatedHours) * 100 : 0;
-        return usageB - usageA; // Sort descending by usage
-    });
-
-    return `
-        <div class="card">
-            <div class="card-header">
-                <h3>🎯 Project Health Matrix</h3>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Project</th>
-                        <th>Design Manager</th>
-                        <th>Team Size</th>
-                        <th style="text-align: center;">Budget</th>
-                        <th style="text-align: center;">Used</th>
-                        <th style="text-align: center;">Remaining</th>
-                        <th style="text-align: center;">Usage %</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${sortedProjects.map(project => {
-                        const allocated = project.allocatedHours || 0; // Default to 0
-                        const logged = project.hoursLogged || 0;    // Default to 0
-                        // Calculate usage safely, ensuring allocated > 0
-                        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
-                        const remaining = allocated - logged;
-
-                        let healthIcon, healthText, healthColor;
-
-                        if (usage > 100) {
-                            healthIcon = '🔴'; healthText = 'Exceeded'; healthColor = 'var(--danger)';
-                        } else if (usage >= 90) { // Changed threshold slightly for Critical as per previous logic
-                            healthIcon = '🔴'; healthText = 'Critical'; healthColor = 'var(--danger)';
-                        } else if (usage >= 70) { // Changed to 70 for At Risk
-                            healthIcon = '🟡'; healthText = 'At Risk'; healthColor = 'var(--warning)';
-                        } else {
-                            healthIcon = '🟢'; healthText = 'Healthy'; healthColor = 'var(--success)';
-                        }
-
-                        // Display N/A if allocated hours were missing/zero initially
-                        const budgetDisplay = allocated > 0 ? `${allocated.toFixed(1)}h` : 'N/A';
-                        const loggedDisplay = allocated > 0 ? `${logged.toFixed(1)}h` : 'N/A';
-                        const remainingDisplay = allocated > 0 ? `${remaining.toFixed(1)}h` : 'N/A';
-                        const usageDisplay = allocated > 0 ? `${usage.toFixed(0)}%` : 'N/A';
-                        const statusDisplay = allocated > 0 ?
-                            `<span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: ${healthColor};">${healthIcon} ${healthText}</span>`
-                            : `<span style="color: var(--text-light);">N/A</span>`;
-                        const remainingColor = allocated > 0 ? (remaining >= 0 ? 'var(--success)' : 'var(--danger)') : 'var(--text-light)';
-
-                        return `
-                            <tr style="cursor: pointer;" onclick="viewProject('${project.id}')">
-                                <td>
-                                    <div style="font-weight: 600;">${project.projectName}</div>
-                                    <div style="font-size: 0.85rem; color: var(--text-light);">${project.clientCompany}</div>
-                                </td>
-                                <td>${project.designLeadName || 'Unassigned'}</td>
-                                <td>${project.assignedDesignerNames?.length || 0} designer(s)</td>
-                                <td style="text-align: center; font-weight: 600;">${budgetDisplay}</td>
-                                <td style="text-align: center; font-weight: 600; color: var(--primary-blue);">${loggedDisplay}</td>
-                                <td style="text-align: center; font-weight: 600; color: ${remainingColor};">${remainingDisplay}</td>
-                                <td style="text-align: center;">
-                                    ${allocated > 0 ? `<strong style="color: ${healthColor};">${usageDisplay}</strong>` : usageDisplay}
-                                </td>
-                                <td>${statusDisplay}</td>
-                            </tr>
-                        `;
-                    }).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
-
-// Generate Projects Content (simplified)
-function generateProjectsContent() {
-    return generateOverviewContent(); // Reuse the overview table
-}
-
-// Generate Designers Content
-function generateDesignersContent() {
-    const timesheets = executiveData.timesheets;
-    const designerStats = {};
-    
-    timesheets.forEach(entry => {
-        if (!designerStats[entry.designerUid]) {
-            designerStats[entry.designerUid] = {
-                uid: entry.designerUid,
-                name: entry.designerName,
-                email: entry.designerEmail,
-                totalHours: 0,
-                projectCount: new Set(),
-                entries: []
-            };
-        }
-        
-        designerStats[entry.designerUid].totalHours += entry.hours;
-        designerStats[entry.designerUid].projectCount.add(entry.projectId);
-        designerStats[entry.designerUid].entries.push(entry);
-    });
-    
-    const designersArray = Object.values(designerStats).map(d => ({
-        ...d,
-        projectCount: d.projectCount.size,
-        avgHoursPerProject: d.projectCount.size > 0 ? d.totalHours / d.projectCount.size : 0
-    })).sort((a, b) => b.totalHours - a.totalHours);
-    
-    return `
-        <div class="card">
-            <div class="card-header">
-                <h3>👥 Designer Performance</h3>
-            </div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Designer</th>
-                        <th style="text-align: center;">Total Hours</th>
-                        <th style="text-align: center;">Projects</th>
-                        <th style="text-align: center;">Avg Hours/Project</th>
-                        <th style="text-align: center;">Entries</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${designersArray.map(designer => `
-                        <tr>
-                            <td>
-                                <div style="font-weight: 600;">${designer.name}</div>
-                                <div style="font-size: 0.85rem; color: var(--text-light);">${designer.email}</div>
-                            </td>
-                            <td style="text-align: center; font-weight: 700; font-size: 1.1rem; color: var(--primary-blue);">${designer.totalHours.toFixed(1)}h</td>
-                            <td style="text-align: center; font-weight: 600;">${designer.projectCount}</td>
-                            <td style="text-align: center; font-weight: 600;">${designer.avgHoursPerProject.toFixed(1)}h</td>
-                            <td style="text-align: center;">${designer.entries.length}</td>
-                        </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-        </div>
-    `;
-}
-
-// Generate Analytics Content (simplified)
-function generateAnalyticsContent() {
-    const projects = executiveData.projects;
-    const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
-    const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
-    
-    // Add a canvas element for the chart
-    return `
-        <div class="card">
-            <div class="card-header">
-                <h3>📊 Budget Overview</h3>
-            </div>
-            <div style="padding: 2rem; text-align: center;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">
-                    ${totalAllocated > 0 ? ((totalLogged / totalAllocated) * 100).toFixed(0) : 0}%
-                </div>
-                <div style="font-size: 1.2rem; color: var(--text-light); margin-bottom: 2rem;">
-                    Budget Utilization
-                </div>
-                <div style="display: flex; justify-content: space-around; max-width: 600px; margin: 0 auto;">
-                    <div>
-                        <div style="font-size: 0.85rem; color: var(--text-light);">Allocated</div>
-                        <div style="font-weight: 700; font-size: 1.5rem;">${totalAllocated.toFixed(0)}h</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.85rem; color: var(--text-light);">Logged</div>
-                        <div style="font-weight: 700; font-size: 1.5rem; color: var(--primary-blue);">${totalLogged.toFixed(0)}h</div>
-                    </div>
-                    <div>
-                        <div style="font-size: 0.85rem; color: var(--text-light);">Remaining</div>
-                        <div style="font-weight: 700; font-size: 1.5rem; color: var(--success);">${(totalAllocated - totalLogged).toFixed(0)}h</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="card" style="margin-top: 2rem;">
-            <div class="card-header">
-                <h3>Designer Hours Contribution</h3>
-            </div>
-            <div style="padding: 1rem;">
-                <canvas id="designerChart"></canvas>
-            </div>
-        </div>
-    `;
-}
-
-// Render Designer Chart
-function renderDesignerChart() {
-    const timesheets = executiveData.timesheets;
-    const designerStats = {};
-
-    // Calculate stats
-    timesheets.forEach(entry => {
-        if (!designerStats[entry.designerUid]) {
-            designerStats[entry.designerUid] = {
-                uid: entry.designerUid,
-                name: entry.designerName,
-                totalHours: 0,
-            };
-        }
-        designerStats[entry.designerUid].totalHours += entry.hours; 
-    });
-
-    const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
-
-    const labels = designersArray.map(d => d.name);
-    const data = designersArray.map(d => d.totalHours);
-
-    const ctx = document.getElementById('designerChart')?.getContext('2d');
-    if (!ctx) {
-        console.error('Designer chart canvas not found!');
-        return;
-    }
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total Hours Logged',
-                data: data,
-                backgroundColor: 'rgba(0, 191, 255, 0.6)', // var(--primary-blue)
-                borderColor: 'rgba(0, 153, 204, 1)',   // var(--dark-blue)
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Total Hours'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Designer'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.dataset.label}: ${context.raw.toFixed(1)}h`;
-                        }
-                    }
-                }
-            }
-        }
-    });
-}
-
-
-// Generate Alerts Content
-function generateAlertsContent() {
-    // Note: executiveData.projects is already pre-filtered in loadExecutiveMonitoring
-    // to include only projects with allocatedHours > 0.
-    const projects = executiveData.projects;
-    const alerts = [];
-
-    projects.forEach(project => {
-        const allocated = project.allocatedHours || 0; // Should be > 0 due to filter, but good practice
-        const logged = project.hoursLogged || 0;
-        // Calculate usage safely
-        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
-        const remaining = allocated - logged;
-
-        // Use the safe 'usage' value for checks
-        if (usage > 100) {
-            alerts.push({
-                type: 'critical', icon: '🔴', title: 'Budget Exceeded',
-                message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours (${usage.toFixed(0)}% used)`,
-                project: project
-            });
-        } else if (usage >= 70) { // Keep 70% threshold for yellow alert
-            alerts.push({
-                type: 'warning', icon: '🟡', title: 'High Budget Usage',
-                message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with ${remaining.toFixed(1)} hours remaining`,
-                project: project
-            });
-        }
-    });
-
-    if (alerts.length === 0) {
-        return `
-            <div class="card">
-                <div style="text-align: center; padding: 4rem; color: var(--text-light);">
-                    <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
-                    <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">All Clear!</div>
-                    <div>No projects are at risk or over budget based on available data.</div>
-                </div>
-            </div>
-        `;
-    }
-
-    return `
-        <div class="card">
-            <div class="card-header">
-                <h3>🔔 Active Alerts (${alerts.length})</h3>
-            </div>
-            <div style="padding: 1rem;">
-                ${alerts.map(alert => {
-                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd';
-                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107';
-
-                    return `
-                        <div style="padding: 1.5rem; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;" onclick="viewProject('${alert.project.id}')">
-                            <div style="display: flex; align-items: start; gap: 1rem;">
-                                <div style="font-size: 2rem;">${alert.icon}</div>
-                                <div style="flex: 1;">
-                                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">${alert.title}</div>
-                                    <div style="color: var(--text-dark); margin-bottom: 1rem;">${alert.message}</div>
-                                    <div style="display: flex; gap: 2rem; font-size: 0.9rem;">
-                                        <div>
-                                            <span style="color: var(--text-light);">Design Manager:</span>
-                                            <strong>${alert.project.designLeadName || 'Unassigned'}</strong>
-                                        </div>
-                                        <div>
-                                            <span style="color: var(--text-light);">Client:</span>
-                                            <strong>${alert.project.clientCompany}</strong>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-    `;
-}
-// Export executive reports
-async function exportExecutiveReport(type) {
-    try {
-        showLoading();
-        
-        const projects = executiveData.projects;
-        const timesheets = executiveData.timesheets;
-        
-        let csv = '';
-        let filename = '';
-        
-        if (type === 'summary') {
-            const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
-            const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
-            
-            csv = 'Executive Summary Report\n\n';
-            csv += `Generated: ${new Date().toLocaleString()}\n\n`;
-            csv += `Total Projects: ${projects.length}\n`;
-            csv += `Total Hours Allocated: ${totalAllocated.toFixed(0)}\n`;
-            csv += `Total Hours Logged: ${totalLogged.toFixed(0)}\n\n`;
-            csv += 'Project,Client,Design Manager,Allocated,Logged,Remaining,Usage %,Status\n';
-            
-            projects.forEach(project => {
-                const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
-                const remaining = project.allocatedHours - project.hoursLogged;
-                const status = usage >= 90 ? 'Critical' : usage >= 75 ? 'At Risk' : 'Healthy';
-                
-                csv += `"${project.projectName}","${project.clientCompany}","${project.designLeadName || 'Unassigned'}",${project.allocatedHours},${project.hoursLogged.toFixed(1)},${remaining.toFixed(1)},${usage.toFixed(1)},${status}\n`;
-            });
-            
-            filename = `Executive_Summary_${new Date().toISOString().split('T')[0]}.csv`;
-        } else {
-            csv = 'Detailed Hours Report\n\n';
-            csv += `Generated: ${new Date().toLocaleString()}\n\n`;
-            csv += 'Date,Project,Designer,Hours,Description\n';
-            
-            timesheets.forEach(entry => {
-                const date = new Date(entry.date.seconds * 1000).toLocaleDateString();
-                const description = (entry.description || '').replace(/,/g, ';');
-                csv += `${date},"${entry.projectName}","${entry.designerName}",${entry.hours},"${description}"\n`;
-            });
-            
-            filename = `Detailed_Report_${new Date().toISOString().split('T')[0]}.csv`;
-        }
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        
-        hideLoading();
-        alert('Report exported successfully!');
-        
-    } catch (error) {
-        console.error('Error exporting report:', error);
-        alert('Error exporting report: ' + error.message);
-        hideLoading();
-    }
-}
-
-function applyExecutiveDateFilter() {
-    const from = document.getElementById('executiveFromDate').value;
-    const to = document.getElementById('executiveToDate').value;
-    executiveData.dateRange = { from, to };
-    calculateExecutiveMetrics();
-    switchExecutiveTab('overview');
-}
-
-
-// ===================================  
-// TIMESHEET JAVASCRIPT
-// ===================================
-
-// Show timesheet modal
-async function showTimesheetModal(projectId = null) {
-    try {
-        showLoading();
-        
-        const response = await apiCall('projects');
-        if (!response.success) {
-            throw new Error('Failed to load projects');
-        }
-        
-        const projects = response.data || [];
-        const assignedProjects = projects.filter(p => 
-            p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)
-        );
-        
-        if (assignedProjects.length === 0) {
-            alert('You are not assigned to any projects yet.');
-            hideLoading();
-            return;
-        }
-        
-        const modalHtml = `
-            <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
-                <div class="modal-content" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h2>Log Hours</h2>
-                        <span class="close-modal" onclick="closeModal()">&times;</span>
-                    </div>
-                    
-                    <div class="modal-body">
-                        <form id="timesheetForm">
-                            <div class="form-group">
-                                <label>Project <span class="required">*</span></label>
-                                <select id="timesheetProjectId" class="form-control" required>
-                                    <option value="">Select a project...</option>
-                                    ${assignedProjects.map(project => `
-                                        <option value="${project.id}" data-allocated="${project.allocatedHours || 0}" data-logged="${project.hoursLogged || 0}">
-                                            ${project.projectName} - ${project.clientCompany}
-                                        </option>
-                                    `).join('')}
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Date <span class="required">*</span></label>
-                                <input type="date" id="timesheetDate" class="form-control" 
-                                       max="${new Date().toISOString().split('T')[0]}" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Hours <span class="required">*</span></label>
-                                <input type="number" id="timesheetHours" class="form-control" 
-                                       min="0.25" max="24" step="0.25" required placeholder="e.g., 8 or 2.5">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Description <span class="required">*</span></label>
-                                <textarea id="timesheetDescription" class="form-control" rows="4" 
-                                          placeholder="Describe what you worked on..." required></textarea>
-                            </div>
-
-                            <div id="timesheetAllocationInfo" style="display: none; padding: 1rem; background: var(--light-blue); border-radius: 8px; margin-top: 1rem;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Hours Logged:</span>
-                                    <strong id="timesheetCurrentHours">0h</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Hours Allocated:</span>
-                                    <strong id="timesheetAllocatedHours">0h</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>Hours Remaining:</span>
-                                    <strong id="timesheetRemainingHours" style="color: var(--success);">0h</strong>
-                                </div>
-                            </div>
-                        </form>
-                    </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                        <button type="button" onclick="submitTimesheet()" class="btn btn-success">
-                            Log Hours
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        document.getElementById('timesheetDate').value = new Date().toISOString().split('T')[0];
-        
-        document.getElementById('timesheetProjectId').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const infoDiv = document.getElementById('timesheetAllocationInfo');
-            
-            if (this.value) {
-                const allocated = parseFloat(selectedOption.dataset.allocated) || 0;
-                const logged = parseFloat(selectedOption.dataset.logged) || 0;
-                const remaining = allocated - logged;
-                
-                document.getElementById('timesheetCurrentHours').textContent = logged + 'h';
-                document.getElementById('timesheetAllocatedHours').textContent = allocated + 'h';
-                document.getElementById('timesheetRemainingHours').textContent = remaining + 'h';
-                document.getElementById('timesheetRemainingHours').style.color = 
-                    remaining < 5 ? 'var(--danger)' : 'var(--success)';
-                
-                infoDiv.style.display = 'block';
-            } else {
-                infoDiv.style.display = 'none';
-            }
-        });
-        
-        if (projectId) {
-            document.getElementById('timesheetProjectId').value = projectId;
-            document.getElementById('timesheetProjectId').dispatchEvent(new Event('change'));
-        }
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Error showing timesheet modal:', error);
-        alert('Error loading timesheet form: ' + error.message);
-        hideLoading();
-    }
-}
-
-// Submit timesheet
-async function submitTimesheet(event) {
-    if(event) event.preventDefault();
-
-    const projectId = document.getElementById('timesheetProjectId').value;
-    const date = document.getElementById('timesheetDate').value;
-    const hours = parseFloat(document.getElementById('timesheetHours').value);
-    const description = document.getElementById('timesheetDescription').value.trim();
-    
-    if (!projectId || !date || !hours || !description) {
-        alert('Please fill all required fields');
-        return;
-    }
-    
-    if (hours <= 0 || hours > 24) {
-        alert('Hours must be between 0.25 and 24');
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const response = await apiCall('timesheets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projectId, date, hours, description })
-        });
-        
-        if (response.success) {
-            closeModal();
-            alert(`${hours} hours logged successfully for ${date}!`);
-            
-            // Check if timesheet section is active
-            if (document.getElementById('timesheetSection').style.display === 'block') {
-                loadDesignerTimesheet();
-            }
-        } else {
-            throw new Error(response.error || 'Failed to log hours');
-        }
-        
-    } catch (error) {
-        console.error('Error submitting timesheet:', error);
-        alert('Error logging hours: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-// Load timesheets
-async function loadTimesheets() {
-    try {
-        showLoading();
-        
-        const response = await apiCall('timesheets');
-        if (!response.success) {
-            throw new Error('Failed to load timesheets');
-        }
-        
-        const timesheets = response.data || [];
-        const tbody = document.getElementById('timesheetTableBody');
-        
-        if (timesheets.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem;">
-                        No timesheet entries yet. Click "Log Hours" to get started.
-                    </td>
-                </tr>
-            `;
-        } else {
-            tbody.innerHTML = timesheets.map(entry => `
-                <tr>
-                    <td>${new Date(entry.date.seconds * 1000).toLocaleDateString()}</td>
-                    <td>${entry.projectName}</td>
-                    <td><strong>${entry.hours}h</strong></td>
-                    <td>${entry.description}</td>
-                    <td>
-                        <span class="status-badge status-${entry.status}">
-                            ${entry.status}
-                        </span>
-                    </td>
-                    <td>
-                        ${entry.status === 'submitted' ? `
-                            <button onclick="deleteTimesheet('${entry.id}')" class="btn btn-sm btn-outline" style="color: var(--danger);">
-                                Delete
-                            </button>
-                        ` : '-'}
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // Update summary
-        const totalHours = timesheets.reduce((sum, e) => sum + e.hours, 0);
-        const projectCount = new Set(timesheets.map(e => e.projectId)).size;
-        
-        document.getElementById('timesheetSummary').innerHTML = `
-            <div class="summary-card">
-                <div class="label">Total Hours Logged</div>
-                <div class="number">${totalHours.toFixed(1)}h</div>
-            </div>
-            <div class="summary-card">
-                <div class="label">Projects Worked On</div>
-                <div class="number">${projectCount}</div>
-            </div>
-            <div class="summary-card">
-                <div class="label">Total Entries</div>
-                <div class="number">${timesheets.length}</div>
-            </div>
-        `;
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Error loading timesheets:', error);
-        alert('Error loading timesheets: ' + error.message);
-        hideLoading();
-    }
-}
-
-// Delete timesheet entry
-async function deleteTimesheet(timesheetId) {
-    if (!confirm('Are you sure you want to delete this timesheet entry?')) {
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const response = await apiCall(`timesheets?id=${timesheetId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.success) {
-            alert('Timesheet entry deleted successfully');
-            loadTimesheets();
-        } else {
-            throw new Error(response.error || 'Failed to delete');
-        }
-        
-    } catch (error) {
-        console.error('Error deleting timesheet:', error);
-        alert('Error deleting timesheet: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-// ==========================================
-// ADDITIONAL WORKFLOW FUNCTIONS
-// ==========================================
-
-// NOTE: Estimator form already exists as showEstimationModal() - available when status='draft'
-// Wrapper function for compatibility
-function showEstimateForm(proposalId) {
-    if (typeof showEstimationModal === 'function') {
-        showEstimationModal(proposalId);
-    }
-}
-
-// Show Pricing Form (for COO role) - Note: showCOOPricingForm already exists, this is an alternate entry point
-function showPricingForm(proposalId) {
-    // Use the existing showCOOPricingForm function
-    if (typeof showCOOPricingForm === 'function') {
-        showCOOPricingForm(proposalId);
-    }
-}
-
-// Show Client Outcome Form (for BDM role)
-function showClientOutcomeForm(proposalId) {
-    const modalHtml = `
-        <div class="modal" id="clientOutcomeModal" style="display: flex;">
-            <div class="modal-content new-modal">
-                <div class="modal-header">
-                    <h3>Submit Client Outcome</h3>
-                    <button class="close" onclick="closeClientOutcomeModal()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="clientOutcomeForm">
-                        <div class="form-group">
-                            <label>Client Response File</label>
-                            <div class="upload-area" onclick="document.getElementById('clientResponseFile').click()">
-                                <div class="upload-icon">📎</div>
-                                <p>Click to choose file</p>
-                            </div>
-                            <input type="file" id="clientResponseFile" style="display: none;">
-                            <div id="clientFileList" style="margin-top: 1rem;"></div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Outcome *</label>
-                            <select class="form-control" id="clientOutcome" required>
-                                <option value="">Select outcome</option>
-                                <option value="won">Won</option>
-                                <option value="loss">Loss</option>
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Comments</label>
-                            <textarea class="form-control" id="clientComments"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="closeClientOutcomeModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="submitClientOutcome('${proposalId}')">Submit Outcome</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // File input handler
-    document.getElementById('clientResponseFile').addEventListener('change', function() {
-        const fileList = document.getElementById('clientFileList');
-        if (this.files.length > 0) {
-            const file = this.files[0];
-            fileList.innerHTML = `<div style="padding: 0.5rem; background: var(--light-blue); border-radius: 6px;">📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)</div>`;
-        } else {
-            fileList.innerHTML = '';
-        }
-    });
-}
-
-function closeClientOutcomeModal() {
-    const modal = document.getElementById('clientOutcomeModal');
-    if (modal) modal.remove();
-}
-
-// Submit Client Outcome
-async function submitClientOutcome(proposalId) {
-    const outcome = document.getElementById('clientOutcome').value;
-    const comments = document.getElementById('clientComments').value;
-    const file = document.getElementById('clientResponseFile').files[0];
-    
-    if (!outcome) {
-        alert('Please select an outcome');
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const formData = new FormData();
-        formData.append('outcome', outcome);
-        formData.append('comments', comments);
-        if (file) {
-            formData.append('client_response_file', file);
-        }
-        
-        const response = await apiCall(`proposals/${proposalId}/client-outcome`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.success) {
-            closeClientOutcomeModal();
-            alert(`Proposal marked as ${outcome}!`);
-            if (typeof showProposals === 'function') {
-                showProposals();
-            } else if (typeof showDashboard === 'function') {
-                showDashboard();
-            }
-        } else {
-            throw new Error(response.error || 'Failed to submit outcome');
-        }
-        
-    } catch (error) {
-        console.error('Error submitting client outcome:', error);
-        alert('Error submitting outcome: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-// Show Allocation Form (for COO/Director) - Note: showProjectAllocationModal already exists
-function showAllocationForm(proposalId) {
-    // Use the existing showProjectAllocationModal function
-    if (typeof showProjectAllocationModal === 'function') {
-        showProjectAllocationModal(proposalId);
-    }
-}
-
-// Show Designer Assignment Form (for Design Manager)
-function showDesignerAssignment(projectId) {
-    // Use the existing assignDesigners function
-    if (typeof assignDesigners === 'function') {
-        assignDesigners(projectId);
-    }
-}
-
-// Show Submit Design Form (for Design Manager)
-function showSubmitDesign(projectId) {
-    const modalHtml = `
-        <div class="modal" id="submitDesignModal" style="display: flex;">
-            <div class="modal-content new-modal">
-                <div class="modal-header">
-                    <h3>Submit Final Design</h3>
-                    <button class="close" onclick="closeSubmitDesignModal()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="submitDesignForm">
-                        <div class="form-group">
-                            <label>Final Design Files *</label>
-                            <div class="upload-area" onclick="document.getElementById('designFiles').click()">
-                                <div class="upload-icon">📎</div>
-                                <p>Click to choose files</p>
-                            </div>
-                            <input type="file" id="designFiles" multiple required style="display: none;">
-                            <div id="designFileList" style="margin-top: 1rem;"></div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label>Remarks</label>
-                            <textarea class="form-control" id="designRemarks"></textarea>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-outline" onclick="closeSubmitDesignModal()">Cancel</button>
-                    <button class="btn btn-success" onclick="submitFinalDesign('${projectId}')">Submit to Client</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-    
-    // File input handler
-    document.getElementById('designFiles').addEventListener('change', function() {
-        const fileList = document.getElementById('designFileList');
-        if (this.files.length > 0) {
-            fileList.innerHTML = Array.from(this.files).map(file => `
-                <div style="padding: 0.5rem; background: var(--light-blue); border-radius: 6px; margin-bottom: 0.5rem;">
-                    📄 ${file.name} (${(file.size / 1024).toFixed(2)} KB)
-                </div>
-            `).join('');
-        } else {
-            fileList.innerHTML = '';
-        }
-    });
-}
-
-function closeSubmitDesignModal() {
-    const modal = document.getElementById('submitDesignModal');
-    if (modal) modal.remove();
-}
-
-// Submit Final Design
-async function submitFinalDesign(projectId) {
-    const files = document.getElementById('designFiles').files;
-    const remarks = document.getElementById('designRemarks').value;
-    
-    if (files.length === 0) {
-        alert('Please attach final design files');
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const formData = new FormData();
-        for (let file of files) {
-            formData.append('attachments', file);
-        }
-        formData.append('remarks', remarks);
-        
-        const response = await apiCall(`projects/${projectId}/submit-design`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.success) {
-            closeSubmitDesignModal();
-            alert('Design submitted successfully!');
-            if (typeof showProjects === 'function') {
-                showProjects();
-            } else if (typeof showDashboard === 'function') {
-                showDashboard();
-            }
-        } else {
-            throw new Error(response.error || 'Failed to submit design');
-        }
-        
-    } catch (error) {
-        console.error('Error submitting design:', error);
-        alert('Error submitting design: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-// Mark Project Complete (for Design Manager)
-async function markComplete(projectId) {
-    if (!confirm('Mark this project as complete?')) {
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const response = await apiCall(`projects/${projectId}/complete`, {
-            method: 'POST'
-        });
-        
-        if (response.success) {
-            alert('Project marked as complete!');
-            if (typeof showProjects === 'function') {
-                showProjects();
-            } else if (typeof showDashboard === 'function') {
-                showDashboard();
-            }
-        } else {
-            throw new Error(response.error || 'Failed to mark complete');
-        }
-        
-    } catch (error) {
-        console.error('Error marking complete:', error);
-        alert('Error marking project complete: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-// Update Total Assigned Hours (for Designer Assignment)
-function updateTotalAssigned() {
-    let total = 0;
-    const hoursInputs = document.querySelectorAll('.hours-input');
-    hoursInputs.forEach(input => {
-        total += parseFloat(input.value) || 0;
-    });
-    const totalElement = document.getElementById('totalAssignedHours');
-    if (totalElement) {
-        totalElement.textContent = total.toFixed(1);
-    }
-}
-
-// Add Designer Assignment Row
-function addDesignerRow() {
-    const container = document.getElementById('designerAssignmentRows');
-    if (!container) return;
-    
-    const row = document.createElement('div');
-    row.className = 'dynamic-row';
-    row.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;';
-    row.innerHTML = `
-        <div class="form-group">
-            <select class="form-control designer-select">
-                <option value="">Select Designer</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <input type="number" step="0.1" class="form-control hours-input" 
-                   placeholder="Hours" onchange="updateTotalAssigned()">
-        </div>
-        <button type="button" class="btn btn-danger btn-sm" onclick="removeDesignerRow(this)">×</button>
-    `;
-    container.appendChild(row);
-    
-    // Load designers for new row
-    if (typeof loadDesigners === 'function') {
-        loadDesigners();
-    }
-}
-
-function removeDesignerRow(btn) {
-    btn.parentElement.remove();
-    updateTotalAssigned();
-}
-
-// Load Designers for Assignment
-async function loadDesigners() {
-    try {
-        const response = await apiCall('users?role=designer');
-        
-        if (response.success && response.data) {
-            document.querySelectorAll('.designer-select').forEach(select => {
-                // Keep first option
-                const firstOption = select.querySelector('option:first-child');
-                select.innerHTML = '';
-                if (firstOption) {
-                    select.appendChild(firstOption);
-                }
-                
-                response.data.forEach(designer => {
-                    const option = document.createElement('option');
-                    option.value = designer.id;
-                    option.textContent = designer.name;
-                    select.appendChild(option);
-                });
-            });
-        }
-    } catch (error) {
-        console.error('Error loading designers:', error);
-    }
-}
-
-// Load Design Managers for Allocation
-async function loadDesignManagers() {
-    try {
-        const response = await apiCall('users?role=design_manager');
-        const select = document.getElementById('designManagerId');
-        
-        if (response.success && response.data && select) {
-            response.data.forEach(manager => {
-                const option = document.createElement('option');
-                option.value = manager.id;
-                option.textContent = manager.name;
-                select.appendChild(option);
-            });
-        }
-    } catch (error) {
-        console.error('Error loading design managers:', error);
-    }
-}
-
-// Add Pricing Row (for COO Pricing)
-function addPricingRow() {
-    const container = document.getElementById('pricingRows');
-    if (!container) return;
-    
-    const row = document.createElement('div');
-    row.className = 'dynamic-row';
-    row.style.cssText = 'display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 1rem; margin-bottom: 1rem;';
-    row.innerHTML = `
-        <input type="text" class="form-control" placeholder="Description" />
-        <input type="number" step="0.01" class="form-control" placeholder="Unit Cost" />
-        <input type="number" step="0.1" class="form-control" placeholder="Qty/Hours" />
-        <button type="button" class="btn btn-danger btn-sm" onclick="removePricingRow(this)">×</button>
-    `;
-    container.appendChild(row);
-}
-
-function removePricingRow(btn) {
-    btn.parentElement.remove();
-}
-
-
-// ============================================
-// DESIGNER TASKS/PROJECTS VIEW
-// ============================================
-
-// This function now correctly injects the HTML into 'mainContent'
-async function showTasks() {
-    setActiveNav('nav-tasks');
-    const main = document.getElementById('mainContent');
-    main.style.display = 'block'; // <-- FIX: Ensure main content is visible
-    
-    showLoading();
-    
-    try {
-        // Fetch projects assigned to this designer
-        const response = await apiCall('projects?assignedToMe=true');
-        
-        if (!response.success) {
-            throw new Error('Failed to load projects');
-        }
-        
-        const projects = response.data || [];
-        
-        const projectsHtml = projects.length > 0 ? projects.map(project => `
-            <div class="project-card">
-                <div class="project-header">
-                    <h3>${project.projectName || 'Untitled Project'}</h3>
-                    <span class="project-status ${project.status}">${project.status}</span>
-                </div>
-                <div class="project-details">
-                    <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
-                    <p><strong>Project Code:</strong> ${project.projectCode || 'N/A'}</p>
-                    <p><strong>Target Date:</strong> ${project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set'}</p>
-                    <p><strong>Status:</strong> ${project.designStatus || 'N/A'}</p>
-                    <p><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</p>
-                </div>
-                <div class="project-actions">
-                    <button class="btn btn-primary" onclick="showDesignerUploadModal('${project.id}')">
-                        📤 Upload Files
-                    </button>
-                    <button class="btn btn-outline" onclick="viewProjectDetails('${project.id}')">
-                        👁️ View Details
-                    </button>
-                </div>
-            </div>
-        `).join('') : '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects assigned yet.</p>';
-        
-        // <-- FIX: Inject HTML into main.innerHTML
-        main.innerHTML = `
-            <div class="page-header">
-                <h2>📋 My Projects</h2>
-                <p class="subtitle">Projects assigned to you</p>
-            </div>
-            
-            <div class="dashboard-stats">
-                <div class="stat-card">
-                    <div class="stat-number">${projects.length}</div>
-                    <div class="stat-label">Total Projects</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${projects.filter(p => p.status === 'active').length}</div>
-                    <div class="stat-label">Active Projects</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${projects.filter(p => p.status === 'completed').length}</div>
-                    <div class="stat-label">Completed</div>
-                </div>
-            </div>
-            
-            <div class="action-section">
-                <h3>Your Projects</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
-                    ${projectsHtml}
-                </div>
-            </div>
-        `;
-        
-    } catch (error) {
-        console.error('Error loading tasks:', error);
-        main.innerHTML = `<div class="error-message">Failed to load projects: ${error.message}</div>`;
-    } finally {
-        hideLoading();
-    }
-}
-
-function viewProjectDetails(projectId) {
-    // Simple project details view
-    apiCall(`projects?id=${projectId}`).then(response => {
-        if (!response.success || !response.data) {
-            alert('Failed to load project details');
-            return;
-        }
-        
-        const project = response.data;
-        const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
-        modal.id = 'projectDetailsModal';
-        modal.innerHTML = `
-            <div class="modal-content" style="max-width: 700px;">
-                <div class="modal-header">
-                    <h3>📋 Project Details</h3>
-                    <button class="modal-close" onclick="closeProjectDetailsModal()">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                        <div><strong>Project Name:</strong><br>${project.projectName || 'N/A'}</div>
-                        <div><strong>Client:</strong><br>${project.clientCompany || 'N/A'}</div>
-                        <div><strong>Project Code:</strong><br>${project.projectCode || 'N/A'}</div>
-                        <div><strong>Status:</strong><br><span class="status-badge">${project.status}</span></div>
-                        <div><strong>Design Manager:</strong><br>${project.designLeadName || 'N/A'}</div>
-                        <div><strong>Target Date:</strong><br>${project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set'}</div>
-                        <div style="grid-column: 1 / -1;"><strong>Description:</strong><br>${project.projectDescription || 'No description provided'}</div>
-                        <div style="grid-column: 1 / -1;"><strong>Special Instructions:</strong><br>${project.specialInstructions || 'None'}</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button class="btn btn-primary" onclick="showDesignerUploadModal('${projectId}'); closeProjectDetailsModal();">
-                        📤 Upload Files
-                    </button>
-                    <button class="btn btn-outline" onclick="closeProjectDetailsModal()">Close</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    });
-}
-
-function closeProjectDetailsModal() {
-    const modal = document.getElementById('projectDetailsModal');
-    if (modal) modal.remove();
-}
-
-// ============================================
-// SHOW SECTION FUNCTION FOR NAV ITEMS
-// ============================================
-
-async function showSection(sectionName) {
-    const main = document.getElementById('mainContent');
-    main.style.display = 'block';
-    showLoading();
-
-    try {
-        if (sectionName === 'timesheet') {
-            setActiveNav('nav-timesheet');
-            const templateContent = document.getElementById('timesheetSection');
-            if (!templateContent) throw new Error('Timesheet template not found');
-            main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
-            await loadDesignerTimesheet();
-        } else if (sectionName === 'executiveMonitoring') {
-            setActiveNav('nav-executive');
-            const templateContent = document.getElementById('executiveTimesheetMonitoring');
-            if (!templateContent) throw new Error('Executive Monitoring template not found');
-            main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
-            await loadExecutiveMonitoring();
-        }
-        hideLoading();
-    } catch (error) {
-        console.error('❌ Section load error:', error);
-        main.innerHTML = `<div class="error-message"><h3>⚠️ Error Loading Section</h3><p>${error.message}</p></div>`;
-        hideLoading();
-    }
-}
-
-// ============================================
-// DESIGNER TIMESHEET FUNCTIONS
-// ============================================
-async function loadDesignerTimesheet() {
-    try {
-        showLoading();
-        
-        // Load designer's projects
-        const projectsResponse = await apiCall('projects?assignedToMe=true');
-        const timesheetResponse = await apiCall('timesheets');
-        
-        if (!projectsResponse.success || !timesheetResponse.success) {
-            throw new Error('Failed to load timesheet data');
-        }
-        
-        const projects = projectsResponse.data || [];
-        const entries = timesheetResponse.data || [];
-        
-        // Calculate summary
-        const thisWeekHours = entries
-            .filter(e => isThisWeek(e.date))
-            .reduce((sum, e) => sum + parseFloat(e.hours || 0), 0);
-        
-        const thisMonthHours = entries
-            .filter(e => isThisMonth(e.date))
-            .reduce((sum, e) => sum + parseFloat(e.hours || 0), 0);
-        
-        // Update summary
-        const summaryDiv = document.getElementById('timesheetSummary');
-        if (summaryDiv) {
-            summaryDiv.innerHTML = `
-                <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
-                    <div class="stat-label" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">This Week</div>
-                    <div class="stat-value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${thisWeekHours.toFixed(1)}h</div>
-                </div>
-                <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
-                    <div class="stat-label" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">This Month</div>
-                    <div class="stat-value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${thisMonthHours.toFixed(1)}h</div>
-                </div>
-                <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
-                    <div class="stat-label" style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Active Projects</div>
-                    <div class="stat-value" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${projects.length}</div>
-                </div>
-            `;
-        }
-        
-        // Update table
-        const tbody = document.getElementById('timesheetTableBody');
-        if (tbody) {
-            if (entries.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 2rem;">No timesheet entries yet</td></tr>';
-            } else {
-                tbody.innerHTML = entries.map(entry => `
-                    <tr>
-                        <td>${formatDate(entry.date)}</td>
-                        <td>${entry.projectName || 'N/A'}</td>
-                        <td>${entry.hours}h</td>
-                        <td>${entry.description || '-'}</td>
-                        <td><span class="status-badge status-${entry.status || 'pending'}">${entry.status || 'Pending'}</span></td>
-                        <td>
-                            ${entry.status === 'pending' ? 
-                                `<button onclick="editTimesheetEntry('${entry.id}')" class="btn btn-sm">Edit</button>
-                                 <button onclick="deleteTimesheetEntry('${entry.id}')" class="btn btn-sm btn-danger">Delete</button>` 
-                                : '-'}
-                        </td>
-                    </tr>
-                `).join('');
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error loading timesheet:', error);
-        alert('Failed to load timesheet: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-function closeTimesheetModal() {
-    const modal = document.getElementById('timesheetModal');
-    if (modal) modal.remove();
-    // Also call general close modal just in case
-    closeModal();
-}
-
-async function deleteTimesheetEntry(entryId) {
-    if (!confirm('Delete this timesheet entry?')) return;
-    
-    try {
-        showLoading();
-        const response = await apiCall(`timesheets?id=${entryId}`, { method: 'DELETE' });
-        
-        if (response.success) {
-            alert('Entry deleted');
-            loadDesignerTimesheet();
-        } else {
-            throw new Error(response.error || 'Failed to delete');
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-// Helper functions for date filtering
-function isThisWeek(dateObj) {
-    if (!dateObj || !dateObj.seconds) return false;
-    const date = new Date(dateObj.seconds * 1000);
-    const now = new Date();
-    const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
-    weekStart.setHours(0, 0, 0, 0);
-    return date >= weekStart;
-}
-
-function isThisMonth(dateObj) {
-    if (!dateObj || !dateObj.seconds) return false;
-    const date = new Date(dateObj.seconds * 1000);
-    const now = new Date();
-    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
-}
-
-// ============================================
-// DESIGNER PROJECT UPLOAD FUNCTIONS
-// ============================================
-function showDesignerUploadModal(projectId) {
-    
-    // Close existing modal if any
-    closeModal();
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-overlay';
-    modal.id = 'designerUploadModal';
-    modal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>Upload Project Files</h2>
-                <span class="close-modal" onclick="closeDesignerUploadModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <form id="designerUploadForm" onsubmit="submitDesignerUpload(event, '${projectId}')">
-                    <div class="form-group">
-                        <label>Upload Files *</label>
-                        <div class="upload-area" onclick="document.getElementById('designerFiles').click()" 
-                             style="border: 2px dashed var(--border); padding: 2rem; text-align: center; cursor: pointer; border-radius: 8px;">
-                            <p>📁 Click to select files or drag and drop</p>
-                            <small style="color: var(--text-light);">Supported: PDF, DWG, ZIP, Images (Max 50MB each)</small>
-                        </div>
-                        <input type="file" id="designerFiles" multiple accept=".pdf,.dwg,.zip,.jpg,.jpeg,.png" 
-                               style="display: none;" onchange="updateDesignerFileList()">
-                        <div id="designerFileList" style="margin-top: 1rem;"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>File Description</label>
-                        <textarea id="designerFileDescription" class="form-control" rows="3" 
-                                  placeholder="Describe what you're uploading..."></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Status Update</label>
-                        <select id="designerProjectStatus" class="form-control">
-                            <option value="in_progress">Work in Progress</option>
-                            <option value="review">Ready for Review</option>
-                            <option value="completed">Completed</option>
-                        </select>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline" onclick="closeDesignerUploadModal()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitDesignerUpload(event, '${projectId}')">Upload Files</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-}
-
-function closeDesignerUploadModal() {
-    const modal = document.getElementById('designerUploadModal');
-    if (modal) modal.remove();
-    closeModal();
-}
-
-function updateDesignerFileList() {
-    const input = document.getElementById('designerFiles');
-    const fileList = document.getElementById('designerFileList');
-    
-    if (input.files.length > 0) {
-        fileList.innerHTML = '<strong>Selected files:</strong><ul style="margin-top: 0.5rem;">' +
-            Array.from(input.files).map(f => `<li>${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</li>`).join('') +
-            '</ul>';
-    } else {
-        fileList.innerHTML = '';
-    }
-}
-
-async function submitDesignerUpload(event, projectId) {
-    if(event) event.preventDefault();
-    
-    const files = document.getElementById('designerFiles').files;
-    if (files.length === 0) {
-        alert('Please select at least one file');
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const formData = new FormData();
-        for (let file of files) {
-            formData.append('files', file);
-        }
-        formData.append('description', document.getElementById('designerFileDescription').value);
-        formData.append('status', document.getElementById('designerProjectStatus').value);
-        
-        const response = await apiCall(`projects/${projectId}/upload-designer-files`, {
-            method: 'POST',
-            body: formData
-        });
-        
-        if (response.success) {
-            closeDesignerUploadModal();
-            alert('Files uploaded successfully!');
-            // Reload designer dashboard or project view
-            if (typeof showTasks === 'function' && document.getElementById('mainContent').querySelector('h2').innerText.includes('My Projects')) {
-                showTasks();
-            }
-        } else {
-            throw new Error(response.error || 'Upload failed');
-        }
-        
-} catch (error) {
-            console.error('Error uploading files:', error);
-            alert('Error uploading files: ' + error.message);
-        } finally { // <--- 'finally' immediately follows 'catch'
-            hideLoading();
-        }
-    } // <-
 
 
     </script>
@@ -8149,13 +6459,19 @@ async function submitDesignerUpload(event, projectId) {
 <!-- Paste these complete sections -->
 <!-- ============================================ -->
 
-  <div id="executiveTimesheetMonitoring" style="display: none;">
+<!-- EXECUTIVE MONITORING SECTION -->
+<div id="executiveTimesheetMonitoring" style="display: none;">
     <div class="page-header">
         <h2>📊 Executive Timesheet Monitoring</h2>
         <p class="subtitle">Advanced analytics and insights for project hours management</p>
     </div>
+
+    <!-- Top Level Metrics -->
     <div id="executiveMetrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-        </div>
+        <!-- Populated by JavaScript -->
+    </div>
+
+    <!-- Date Range Selector -->
     <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; flex-wrap: wrap; gap: 1rem;">
             <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
@@ -8174,6 +6490,7 @@ async function submitDesignerUpload(event, projectId) {
                     Reset
                 </button>
             </div>
+            
             <div style="display: flex; gap: 0.5rem;">
                 <button onclick="exportExecutiveReport('summary')" class="btn btn-outline">
                     📊 Export Summary
@@ -8184,9 +6501,32 @@ async function submitDesignerUpload(event, projectId) {
             </div>
         </div>
     </div>
+
+    <!-- Quick Stats Row -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-         <div class="stat-card"> <div class="stat-label">Active Projects</div> <div class="stat-value" id="execActiveProjects">0</div> </div> <div class="stat-card"> <div class="stat-label">Total Designers</div> <div class="stat-value" id="execTotalDesigners">0</div> </div> <div class="stat-card"> <div class="stat-label">Timesheet Entries</div> <div class="stat-value" id="execTotalEntries">0</div> </div> <div class="stat-card"> <div class="stat-label">Avg Hours/Project</div> <div class="stat-value" id="execAvgHours">0</div> </div> <div class="stat-card"> <div class="stat-label">Efficiency Rate</div> <div class="stat-value" id="execEfficiency">0%</div> </div>
+        <div class="stat-card">
+            <div class="stat-label">Active Projects</div>
+            <div class="stat-value" id="execActiveProjects">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Total Designers</div>
+            <div class="stat-value" id="execTotalDesigners">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Timesheet Entries</div>
+            <div class="stat-value" id="execTotalEntries">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Avg Hours/Project</div>
+            <div class="stat-value" id="execAvgHours">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Efficiency Rate</div>
+            <div class="stat-value" id="execEfficiency">0%</div>
+        </div>
     </div>
+
+    <!-- Tabs for Different Views -->
     <div class="tabs-container" style="margin-bottom: 1.5rem;">
         <div class="tabs">
             <div class="tab active" onclick="switchExecutiveTab('overview')">Overview</div>
@@ -8196,15 +6536,20 @@ async function submitDesignerUpload(event, projectId) {
             <div class="tab" onclick="switchExecutiveTab('alerts')">Alerts</div>
         </div>
     </div>
+
+    <!-- Tab Content -->
     <div id="executiveTabContent">
-        </div>
+        <!-- Content will be loaded dynamically -->
+    </div>
 </div>
 
+<!-- TIMESHEET SECTION FOR DESIGNERS -->
 <div id="timesheetSection" style="display: none;">
     <div class="page-header">
         <h2>⏱️ My Timesheet</h2>
         <p class="subtitle">Track your hours on assigned projects</p>
     </div>
+
     <div class="card">
         <div class="card-header">
             <h3>Log Hours</h3>
@@ -8212,20 +6557,6 @@ async function submitDesignerUpload(event, projectId) {
                 <span class="btn-icon">+</span> Log Hours
             </button>
         </div>
-        <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
-            </div>
-        <table class="data-table">
-            <thead>
-                <tr> <th>Date</th> <th>Project</th> <th>Hours</th> <th>Description</th> <th>Status</th> <th>Actions</th> </tr>
-            </thead>
-            <tbody id="timesheetTableBody">
-                <tr> <td colspan="6" style="text-align: center; padding: 2rem;"> No timesheet entries yet </td> </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-</script>
 
         <!-- Timesheet Summary -->
         <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
@@ -8413,14 +6744,14 @@ async function submitDesignerUpload(event, projectId) {
     border-radius: 10px;
     overflow: hidden;
 }
-
+</style>
 
 
 <!-- ============================================ -->
 <!-- STEP 4: ADD THIS COMPLETE JAVASCRIPT -->
 <!-- Add before closing </body> tag -->
 <!-- ============================================ -->
-
+<script>
 // ===================================
 // EXECUTIVE MONITORING JAVASCRIPT
 // ===================================
@@ -8466,23 +6797,15 @@ async function loadExecutiveMonitoring() {
 function calculateExecutiveMetrics() {
     const projects = executiveData.projects;
     const timesheets = executiveData.timesheets;
-
+    
+    // --- NEW METRIC CALCULATIONS ---
     let totalProjects = projects.length;
     let onTrackProjects = 0;
-    let atRiskProjects = 0;
-    let exceededProjects = 0;
-
-    let totalAllocated = 0;
-    let totalLogged = 0;
+    let atRiskProjects = 0; // This is 70-100%
+    let exceededProjects = 0; // This is > 100%
 
     projects.forEach(p => {
-        const allocated = p.allocatedHours || 0;
-        const logged = p.hoursLogged || 0;
-        totalAllocated += allocated;
-        totalLogged += logged;
-
-        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
-
+        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
         if (usage > 100) {
             exceededProjects++;
         } else if (usage >= 70) {
@@ -8491,11 +6814,16 @@ function calculateExecutiveMetrics() {
             onTrackProjects++;
         }
     });
+    // --- END NEW METRIC CALCULATIONS ---
 
+    const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
+    const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
+    
     const activeDesigners = new Set(timesheets.map(t => t.designerUid)).size;
-    const avgHoursPerProject = totalProjects > 0 ? totalLogged / totalProjects : 0;
+    const avgHoursPerProject = projects.length > 0 ? totalLogged / projects.length : 0;
     const efficiency = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
-
+    
+    // --- MODIFIED HTML ---
     const metricsHtml = `
         <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
             <div class="metric-icon">📁</div>
@@ -8505,6 +6833,7 @@ function calculateExecutiveMetrics() {
                 <div class="metric-subtitle">${totalAllocated.toFixed(0)}h allocated</div>
             </div>
         </div>
+        
         <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <div class="metric-icon">🟢</div>
             <div class="metric-content">
@@ -8513,6 +6842,7 @@ function calculateExecutiveMetrics() {
                 <div class="metric-subtitle">Under 70% budget</div>
             </div>
         </div>
+        
         <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
             <div class="metric-icon">🟡</div>
             <div class="metric-content">
@@ -8521,6 +6851,7 @@ function calculateExecutiveMetrics() {
                 <div class="metric-subtitle">70-100% budget</div>
             </div>
         </div>
+        
         <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <div class="metric-icon">🔴</div>
             <div class="metric-content">
@@ -8530,31 +6861,32 @@ function calculateExecutiveMetrics() {
             </div>
         </div>
     `;
-
+    // --- END MODIFIED HTML ---
+    
     document.getElementById('executiveMetrics').innerHTML = metricsHtml;
-    
-    const execActiveProjects = document.getElementById('execActiveProjects');
-    const execTotalDesigners = document.getElementById('execTotalDesigners');
-    const execTotalEntries = document.getElementById('execTotalEntries');
-    const execAvgHours = document.getElementById('execAvgHours');
-    const execEfficiency = document.getElementById('execEfficiency');
-    
-    if (execActiveProjects) execActiveProjects.textContent = totalProjects;
-    if (execTotalDesigners) execTotalDesigners.textContent = activeDesigners;
-    if (execTotalEntries) execTotalEntries.textContent = timesheets.length;
-    if (execAvgHours) execAvgHours.textContent = avgHoursPerProject.toFixed(1) + 'h';
-    if (execEfficiency) execEfficiency.textContent = efficiency.toFixed(1) + '%';
+    document.getElementById('execActiveProjects').textContent = projects.length;
+    document.getElementById('execTotalDesigners').textContent = activeDesigners;
+    document.getElementById('execTotalEntries').textContent = timesheets.length;
+    document.getElementById('execAvgHours').textContent = avgHoursPerProject.toFixed(1) + 'h';
+    document.getElementById('execEfficiency').textContent = efficiency.toFixed(1) + '%';
 }
 
 // Switch between tabs
 function switchExecutiveTab(tab) {
+    // Find the active tab button. If event is not passed, find it by function name
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(t => {
         t.classList.remove('active');
-        if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${tab}'`)) {
+        if (t.getAttribute('onclick') === `switchExecutiveTab('${tab}')`) {
             t.classList.add('active');
         }
     });
+    
+    // Fallback if event was not passed
+    if (event && event.target) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+    }
 
     const contentDiv = document.getElementById('executiveTabContent');
     
@@ -8570,7 +6902,10 @@ function switchExecutiveTab(tab) {
             break;
         case 'analytics':
             contentDiv.innerHTML = generateAnalyticsContent();
-            setTimeout(renderDesignerChart, 100);
+            // --- ADD THIS LINE ---
+            // Call renderChart after HTML is injected
+            setTimeout(renderDesignerChart, 0); 
+            // --- END ADDED LINE ---
             break;
         case 'alerts':
             contentDiv.innerHTML = generateAlertsContent();
@@ -8581,17 +6916,17 @@ function switchExecutiveTab(tab) {
 // Generate Overview Content
 function generateOverviewContent() {
     const projects = executiveData.projects;
-
-    if (projects.length === 0) {
-        return `<div class="card"><p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects with allocated hours found.</p></div>`;
-    }
-
+    const timesheets = executiveData.timesheets;
+    
     const sortedProjects = [...projects].sort((a, b) => {
-        const usageA = (a.allocatedHours || 0) > 0 ? ((a.hoursLogged || 0) / a.allocatedHours) * 100 : 0;
-        const usageB = (b.allocatedHours || 0) > 0 ? ((b.hoursLogged || 0) / b.allocatedHours) * 100 : 0;
+        const usageA = a.allocatedHours > 0 ? (a.hoursLogged / a.allocatedHours) * 100 : 0;
+        const usageB = b.allocatedHours > 0 ? (b.hoursLogged / b.allocatedHours) * 100 : 0;
         return usageB - usageA;
     });
-
+    
+    const topProjects = sortedProjects.slice(0, 5);
+    const recentTimesheets = [...timesheets].sort((a, b) => b.date.seconds - a.date.seconds).slice(0, 10);
+    
     return `
         <div class="card">
             <div class="card-header">
@@ -8612,32 +6947,28 @@ function generateOverviewContent() {
                 </thead>
                 <tbody>
                     ${sortedProjects.map(project => {
-                        const allocated = project.allocatedHours || 0;
-                        const logged = project.hoursLogged || 0;
-                        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
-                        const remaining = allocated - logged;
-
+                        const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
+                        const remaining = project.allocatedHours - project.hoursLogged;
                         let healthIcon, healthText, healthColor;
-
-                        if (usage > 100) {
-                            healthIcon = '🔴'; healthText = 'Exceeded'; healthColor = 'var(--danger)';
+                        
+                        if (usage >= 100) {
+                            healthIcon = '🔴';
+                            healthText = 'Exceeded';
+                            healthColor = 'var(--danger)';
                         } else if (usage >= 90) {
-                            healthIcon = '🔴'; healthText = 'Critical'; healthColor = 'var(--danger)';
-                        } else if (usage >= 70) {
-                            healthIcon = '🟡'; healthText = 'At Risk'; healthColor = 'var(--warning)';
+                            healthIcon = '🔴';
+                            healthText = 'Critical';
+                            healthColor = 'var(--danger)';
+                        } else if (usage >= 75) {
+                            healthIcon = '🟡';
+                            healthText = 'At Risk';
+                            healthColor = 'var(--warning)';
                         } else {
-                            healthIcon = '🟢'; healthText = 'Healthy'; healthColor = 'var(--success)';
+                            healthIcon = '🟢';
+                            healthText = 'Healthy';
+                            healthColor = 'var(--success)';
                         }
-
-                        const budgetDisplay = allocated > 0 ? `${allocated.toFixed(1)}h` : 'N/A';
-                        const loggedDisplay = allocated > 0 ? `${logged.toFixed(1)}h` : 'N/A';
-                        const remainingDisplay = allocated > 0 ? `${remaining.toFixed(1)}h` : 'N/A';
-                        const usageDisplay = allocated > 0 ? `${usage.toFixed(0)}%` : 'N/A';
-                        const statusDisplay = allocated > 0 ?
-                            `<span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: ${healthColor};">${healthIcon} ${healthText}</span>`
-                            : `<span style="color: var(--text-light);">N/A</span>`;
-                        const remainingColor = allocated > 0 ? (remaining >= 0 ? 'var(--success)' : 'var(--danger)') : 'var(--text-light)';
-
+                        
                         return `
                             <tr style="cursor: pointer;" onclick="viewProject('${project.id}')">
                                 <td>
@@ -8646,13 +6977,17 @@ function generateOverviewContent() {
                                 </td>
                                 <td>${project.designLeadName || 'Unassigned'}</td>
                                 <td>${project.assignedDesignerNames?.length || 0} designer(s)</td>
-                                <td style="text-align: center; font-weight: 600;">${budgetDisplay}</td>
-                                <td style="text-align: center; font-weight: 600; color: var(--primary-blue);">${loggedDisplay}</td>
-                                <td style="text-align: center; font-weight: 600; color: ${remainingColor};">${remainingDisplay}</td>
+                                <td style="text-align: center; font-weight: 600;">${project.allocatedHours}h</td>
+                                <td style="text-align: center; font-weight: 600; color: var(--primary-blue);">${project.hoursLogged.toFixed(1)}h</td>
+                                <td style="text-align: center; font-weight: 600; color: ${remaining >= 0 ? 'var(--success)' : 'var(--danger)'};">${remaining.toFixed(1)}h</td>
                                 <td style="text-align: center;">
-                                    ${allocated > 0 ? `<strong style="color: ${healthColor};">${usageDisplay}</strong>` : usageDisplay}
+                                    <strong style="color: ${healthColor};">${usage.toFixed(0)}%</strong>
                                 </td>
-                                <td>${statusDisplay}</td>
+                                <td>
+                                    <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: ${healthColor};">
+                                        ${healthIcon} ${healthText}
+                                    </span>
+                                </td>
                             </tr>
                         `;
                     }).join('')}
@@ -8662,9 +6997,9 @@ function generateOverviewContent() {
     `;
 }
 
-// Generate Projects Content
+// Generate Projects Content (simplified)
 function generateProjectsContent() {
-    return generateOverviewContent();
+    return generateOverviewContent(); // Reuse the overview table
 }
 
 // Generate Designers Content
@@ -8729,12 +7064,11 @@ function generateDesignersContent() {
     `;
 }
 
-// Generate Analytics Content
+// Generate Analytics Content (simplified)
 function generateAnalyticsContent() {
     const projects = executiveData.projects;
     const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
     const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
-    const utilizationPercent = totalAllocated > 0 ? ((totalLogged / totalAllocated) * 100).toFixed(0) : 0;
     
     return `
         <div class="card">
@@ -8743,7 +7077,7 @@ function generateAnalyticsContent() {
             </div>
             <div style="padding: 2rem; text-align: center;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">
-                    ${utilizationPercent}%
+                    ${((totalLogged / totalAllocated) * 100).toFixed(0)}%
                 </div>
                 <div style="font-size: 1.2rem; color: var(--text-light); margin-bottom: 2rem;">
                     Budget Utilization
@@ -8762,112 +7096,41 @@ function generateAnalyticsContent() {
                         <div style="font-weight: 700; font-size: 1.5rem; color: var(--success);">${(totalAllocated - totalLogged).toFixed(0)}h</div>
                     </div>
                 </div>
-                <div style="margin-top: 2rem;">
-                    <canvas id="designerChart" width="400" height="200"></canvas>
-                </div>
             </div>
         </div>
     `;
-}
-
-// Render Designer Chart
-function renderDesignerChart() {
-    const timesheets = executiveData.timesheets;
-    const designerStats = {};
-
-    timesheets.forEach(entry => {
-        if (!designerStats[entry.designerUid]) {
-            designerStats[entry.designerUid] = {
-                uid: entry.designerUid,
-                name: entry.designerName,
-                totalHours: 0,
-            };
-        }
-        designerStats[entry.designerUid].totalHours += entry.hours;
-    });
-
-    const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
-
-    const labels = designersArray.map(d => d.name);
-    const data = designersArray.map(d => d.totalHours);
-
-    const ctx = document.getElementById('designerChart')?.getContext('2d');
-    if (!ctx) {
-        console.error('Designer chart canvas not found!');
-        return;
-    }
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total Hours Logged',
-                data: data,
-                backgroundColor: 'rgba(0, 191, 255, 0.6)',
-                borderColor: 'rgba(0, 153, 204, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Total Hours'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Designer'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.dataset.label}: ${context.raw.toFixed(1)}h`;
-                        }
-                    }
-                }
-            }
-        }
-    });
 }
 
 // Generate Alerts Content
 function generateAlertsContent() {
     const projects = executiveData.projects;
     const alerts = [];
-
+    
     projects.forEach(project => {
-        const allocated = project.allocatedHours || 0;
-        const logged = project.hoursLogged || 0;
-        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
-        const remaining = allocated - logged;
-
+        const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
+        const remaining = project.allocatedHours - project.hoursLogged;
+        
+        // --- MODIFIED ALERT LOGIC ---
         if (usage > 100) {
             alerts.push({
-                type: 'critical', icon: '🔴', title: 'Budget Exceeded',
+                type: 'critical', // Red
+                icon: '🔴',
+                title: 'Budget Exceeded',
                 message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours (${usage.toFixed(0)}% used)`,
                 project: project
             });
         } else if (usage >= 70) {
             alerts.push({
-                type: 'warning', icon: '🟡', title: 'High Budget Usage',
+                type: 'warning', // Yellow
+                icon: '🟡',
+                title: 'High Budget Usage',
                 message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with ${remaining.toFixed(1)} hours remaining`,
                 project: project
             });
         }
+        // --- END MODIFIED ALERT LOGIC ---
     });
-
+    
     if (alerts.length === 0) {
         return `
             <div class="card">
@@ -8879,7 +7142,7 @@ function generateAlertsContent() {
             </div>
         `;
     }
-
+    
     return `
         <div class="card">
             <div class="card-header">
@@ -8887,9 +7150,11 @@ function generateAlertsContent() {
             </div>
             <div style="padding: 1rem;">
                 ${alerts.map(alert => {
-                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd';
-                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107';
-
+                    // --- MODIFIED STYLING TO MATCH REQUEST ---
+                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd'; // Red or Yellow
+                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107'; // Red or Yellow
+                    // --- END MODIFIED STYLING ---
+                    
                     return `
                         <div style="padding: 1.5rem; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;" onclick="viewProject('${alert.project.id}')">
                             <div style="display: flex; align-items: start; gap: 1rem;">
@@ -8917,34 +7182,88 @@ function generateAlertsContent() {
     `;
 }
 
-// Export and filter functions
+// Export executive reports
 async function exportExecutiveReport(type) {
-    alert('Export functionality - implement based on your requirements');
+    try {
+        showLoading();
+        
+        const projects = executiveData.projects;
+        const timesheets = executiveData.timesheets;
+        
+        let csv = '';
+        let filename = '';
+        
+        if (type === 'summary') {
+            const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
+            const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
+            
+            csv = 'Executive Summary Report\n\n';
+            csv += `Generated: ${new Date().toLocaleString()}\n\n`;
+            csv += `Total Projects: ${projects.length}\n`;
+            csv += `Total Hours Allocated: ${totalAllocated.toFixed(0)}\n`;
+            csv += `Total Hours Logged: ${totalLogged.toFixed(0)}\n\n`;
+            csv += 'Project,Client,Design Manager,Allocated,Logged,Remaining,Usage %,Status\n';
+            
+            projects.forEach(project => {
+                const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
+                const remaining = project.allocatedHours - project.hoursLogged;
+                const status = usage >= 90 ? 'Critical' : usage >= 75 ? 'At Risk' : 'Healthy';
+                
+                csv += `"${project.projectName}","${project.clientCompany}","${project.designLeadName || 'Unassigned'}",${project.allocatedHours},${project.hoursLogged.toFixed(1)},${remaining.toFixed(1)},${usage.toFixed(1)},${status}\n`;
+            });
+            
+            filename = `Executive_Summary_${new Date().toISOString().split('T')[0]}.csv`;
+        } else {
+            csv = 'Detailed Hours Report\n\n';
+            csv += `Generated: ${new Date().toLocaleString()}\n\n`;
+            csv += 'Date,Project,Designer,Hours,Description\n';
+            
+            timesheets.forEach(entry => {
+                const date = new Date(entry.date.seconds * 1000).toLocaleDateString();
+                const description = (entry.description || '').replace(/,/g, ';');
+                csv += `${date},"${entry.projectName}","${entry.designerName}",${entry.hours},"${description}"\n`;
+            });
+            
+            filename = `Detailed_Report_${new Date().toISOString().split('T')[0]}.csv`;
+        }
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        
+        hideLoading();
+        alert('Report exported successfully!');
+        
+    } catch (error) {
+        console.error('Error exporting report:', error);
+        alert('Error exporting report: ' + error.message);
+        hideLoading();
+    }
 }
 
 function applyExecutiveDateFilter() {
-    const from = document.getElementById('executiveFromDate')?.value;
-    const to = document.getElementById('executiveToDate')?.value;
+    const from = document.getElementById('executiveFromDate').value;
+    const to = document.getElementById('executiveToDate').value;
     executiveData.dateRange = { from, to };
     calculateExecutiveMetrics();
     switchExecutiveTab('overview');
 }
 
 function resetExecutiveDateFilter() {
-    const fromDate = document.getElementById('executiveFromDate');
-    const toDate = document.getElementById('executiveToDate');
-    if (fromDate) fromDate.value = '';
-    if (toDate) toDate.value = '';
+    document.getElementById('executiveFromDate').value = '';
+    document.getElementById('executiveToDate').value = '';
     executiveData.dateRange = { from: null, to: null };
     calculateExecutiveMetrics();
     switchExecutiveTab('overview');
-}
-
+} // --- ADD THIS NEW FUNCTION ---
 // Render Designer Chart
 function renderDesignerChart() {
     const timesheets = executiveData.timesheets;
     const designerStats = {};
-
+    
     // Calculate stats (same as generateDesignersContent)
     timesheets.forEach(entry => {
         if (!designerStats[entry.designerUid]) {
@@ -8954,10 +7273,9 @@ function renderDesignerChart() {
                 totalHours: 0,
             };
         }
-        // MOVED THIS LINE INSIDE THE LOOP
-        designerStats[entry.designerUid].totalHours += entry.hours; 
+        designerStats[entry.designerUid].totalHours += entry.hours;
     });
-
+    
     const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
 
     const labels = designersArray.map(d => d.name);
@@ -9012,11 +7330,10 @@ function renderDesignerChart() {
             }
         }
     });
+}
 
 
-
-
-// ===================================  
+// ===================================
 // TIMESHEET JAVASCRIPT
 // ===================================
 
