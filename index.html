@@ -6454,19 +6454,13 @@ async function submitAllocation() {
 <!-- Paste these complete sections -->
 <!-- ============================================ -->
 
-<!-- EXECUTIVE MONITORING SECTION -->
-<div id="executiveTimesheetMonitoring" style="display: none;">
+  <div id="executiveTimesheetMonitoring" style="display: none;">
     <div class="page-header">
         <h2>📊 Executive Timesheet Monitoring</h2>
         <p class="subtitle">Advanced analytics and insights for project hours management</p>
     </div>
-
-    <!-- Top Level Metrics -->
     <div id="executiveMetrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
-        <!-- Populated by JavaScript -->
-    </div>
-
-    <!-- Date Range Selector -->
+        </div>
     <div class="card" style="margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; flex-wrap: wrap; gap: 1rem;">
             <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
@@ -6485,7 +6479,6 @@ async function submitAllocation() {
                     Reset
                 </button>
             </div>
-            
             <div style="display: flex; gap: 0.5rem;">
                 <button onclick="exportExecutiveReport('summary')" class="btn btn-outline">
                     📊 Export Summary
@@ -6496,32 +6489,9 @@ async function submitAllocation() {
             </div>
         </div>
     </div>
-
-    <!-- Quick Stats Row -->
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-        <div class="stat-card">
-            <div class="stat-label">Active Projects</div>
-            <div class="stat-value" id="execActiveProjects">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Total Designers</div>
-            <div class="stat-value" id="execTotalDesigners">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Timesheet Entries</div>
-            <div class="stat-value" id="execTotalEntries">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Avg Hours/Project</div>
-            <div class="stat-value" id="execAvgHours">0</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-label">Efficiency Rate</div>
-            <div class="stat-value" id="execEfficiency">0%</div>
-        </div>
+         <div class="stat-card"> <div class="stat-label">Active Projects</div> <div class="stat-value" id="execActiveProjects">0</div> </div> <div class="stat-card"> <div class="stat-label">Total Designers</div> <div class="stat-value" id="execTotalDesigners">0</div> </div> <div class="stat-card"> <div class="stat-label">Timesheet Entries</div> <div class="stat-value" id="execTotalEntries">0</div> </div> <div class="stat-card"> <div class="stat-label">Avg Hours/Project</div> <div class="stat-value" id="execAvgHours">0</div> </div> <div class="stat-card"> <div class="stat-label">Efficiency Rate</div> <div class="stat-value" id="execEfficiency">0%</div> </div>
     </div>
-
-    <!-- Tabs for Different Views -->
     <div class="tabs-container" style="margin-bottom: 1.5rem;">
         <div class="tabs">
             <div class="tab active" onclick="switchExecutiveTab('overview')">Overview</div>
@@ -6531,20 +6501,15 @@ async function submitAllocation() {
             <div class="tab" onclick="switchExecutiveTab('alerts')">Alerts</div>
         </div>
     </div>
-
-    <!-- Tab Content -->
     <div id="executiveTabContent">
-        <!-- Content will be loaded dynamically -->
-    </div>
+        </div>
 </div>
 
-<!-- TIMESHEET SECTION FOR DESIGNERS -->
 <div id="timesheetSection" style="display: none;">
     <div class="page-header">
         <h2>⏱️ My Timesheet</h2>
         <p class="subtitle">Track your hours on assigned projects</p>
     </div>
-
     <div class="card">
         <div class="card-header">
             <h3>Log Hours</h3>
@@ -6552,6 +6517,20 @@ async function submitAllocation() {
                 <span class="btn-icon">+</span> Log Hours
             </button>
         </div>
+        <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
+            </div>
+        <table class="data-table">
+            <thead>
+                <tr> <th>Date</th> <th>Project</th> <th>Hours</th> <th>Description</th> <th>Status</th> <th>Actions</th> </tr>
+            </thead>
+            <tbody id="timesheetTableBody">
+                <tr> <td colspan="6" style="text-align: center; padding: 2rem;"> No timesheet entries yet </td> </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</script>
 
         <!-- Timesheet Summary -->
         <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
