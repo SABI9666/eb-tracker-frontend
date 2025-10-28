@@ -2091,13 +2091,18 @@
             document.getElementById('filesNavItem').style.display = isFileManagerHidden ? 'none' : 'block';
             // END OF NEW LINES
 
-            // Show role-specific dashboard
+           // Show role-specific dashboard or default view
             if (currentUserRole === 'designer') {
                 showDesignerDashboard();
             } else if (currentUserRole === 'design_lead') {
                 showDesignLeadDashboard();
+            } else if (currentUserRole === 'bdm') {
+                showProposals(); // New default for BDM
+            } else if (currentUserRole === 'coo' || currentUserRole === 'director') {
+                showAllProjects(); // New default for COO & Director
             } else {
-                showDashboard(); // Default for BDM, COO, Director, etc.
+                // Default for other roles (Estimator, Accounts)
+                showDashboard(); 
             }
         }
 
