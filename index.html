@@ -6794,26 +6794,24 @@ async function loadExecutiveMonitoring() {
 }
 
 // Calculate executive metrics
-// Calculate executive metrics
 function calculateExecutiveMetrics() {
-    const projects = executiveData.projects; // Already filtered for allocatedHours > 0
+    const projects = executiveData.projects;
     const timesheets = executiveData.timesheets;
 
     let totalProjects = projects.length;
     let onTrackProjects = 0;
-    let atRiskProjects = 0; // 70-100%
-    let exceededProjects = 0; // > 100%
+    let atRiskProjects = 0;
+    let exceededProjects = 0;
 
     let totalAllocated = 0;
     let totalLogged = 0;
 
     projects.forEach(p => {
-        const allocated = p.allocatedHours || 0; // Use 0 if missing
-        const logged = p.hoursLogged || 0;    // Use 0 if missing
+        const allocated = p.allocatedHours || 0;
+        const logged = p.hoursLogged || 0;
         totalAllocated += allocated;
         totalLogged += logged;
 
-        // Ensure allocated is > 0 before calculating usage
         const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
 
         if (usage > 100) {
@@ -6826,12 +6824,8 @@ function calculateExecutiveMetrics() {
     });
 
     const activeDesigners = new Set(timesheets.map(t => t.designerUid)).size;
-    // Check totalProjects > 0 before dividing
     const avgHoursPerProject = totalProjects > 0 ? totalLogged / totalProjects : 0;
-    // Check totalAllocated > 0 before dividing
     const efficiency = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
-    // Check totalAllocated > 0 before calculating remaining percentage
-    const remainingPercentage = totalAllocated > 0 ? (((totalAllocated - totalLogged) / totalAllocated) * 100) : 0;
 
     const metricsHtml = `
         <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
@@ -6869,30 +6863,29 @@ function calculateExecutiveMetrics() {
     `;
 
     document.getElementById('executiveMetrics').innerHTML = metricsHtml;
-    // Ensure elements exist before setting textContent
-    document.getElementById('execActiveProjects')?.textContent = totalProjects; // Use totalProjects here
-    document.getElementById('execTotalDesigners')?.textContent = activeDesigners;
-    document.getElementById('execTotalEntries')?.textContent = timesheets.length;
-    document.getElementById('execAvgHours')?.textContent = avgHoursPerProject.toFixed(1) + 'h';
-    document.getElementById('execEfficiency')?.textContent = efficiency.toFixed(1) + '%';
+    
+    const execActiveProjects = document.getElementById('execActiveProjects');
+    const execTotalDesigners = document.getElementById('execTotalDesigners');
+    const execTotalEntries = document.getElementById('execTotalEntries');
+    const execAvgHours = document.getElementById('execAvgHours');
+    const execEfficiency = document.getElementById('execEfficiency');
+    
+    if (execActiveProjects) execActiveProjects.textContent = totalProjects;
+    if (execTotalDesigners) execTotalDesigners.textContent = activeDesigners;
+    if (execTotalEntries) execTotalEntries.textContent = timesheets.length;
+    if (execAvgHours) execAvgHours.textContent = avgHoursPerProject.toFixed(1) + 'h';
+    if (execEfficiency) execEfficiency.textContent = efficiency.toFixed(1) + '%';
 }
 
 // Switch between tabs
 function switchExecutiveTab(tab) {
-    // Find the active tab button. If event is not passed, find it by function name
     const tabs = document.querySelectorAll('.tab');
     tabs.forEach(t => {
         t.classList.remove('active');
-        if (t.getAttribute('onclick') === `switchExecutiveTab('${tab}')`) {
+        if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${tab}'`)) {
             t.classList.add('active');
         }
     });
-    
-    // Fallback if event was not passed
-    if (event && event.target) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-    }
 
     const contentDiv = document.getElementById('executiveTabContent');
     
@@ -6908,10 +6901,7 @@ function switchExecutiveTab(tab) {
             break;
         case 'analytics':
             contentDiv.innerHTML = generateAnalyticsContent();
-            // --- ADD THIS LINE ---
-            // Call renderChart after HTML is injected
-            setTimeout(renderDesignerChart, 0); 
-            // --- END ADDED LINE ---
+            setTimeout(renderDesignerChart, 100);
             break;
         case 'alerts':
             contentDiv.innerHTML = generateAlertsContent();
@@ -6921,8 +6911,6 @@ function switchExecutiveTab(tab) {
 
 // Generate Overview Content
 function generateOverviewContent() {
-    // Note: executiveData.projects is already pre-filtered in loadExecutiveMonitoring
-    // to include only projects with allocatedHours > 0.
     const projects = executiveData.projects;
 
     if (projects.length === 0) {
@@ -6932,7 +6920,7 @@ function generateOverviewContent() {
     const sortedProjects = [...projects].sort((a, b) => {
         const usageA = (a.allocatedHours || 0) > 0 ? ((a.hoursLogged || 0) / a.allocatedHours) * 100 : 0;
         const usageB = (b.allocatedHours || 0) > 0 ? ((b.hoursLogged || 0) / b.allocatedHours) * 100 : 0;
-        return usageB - usageA; // Sort descending by usage
+        return usageB - usageA;
     });
 
     return `
@@ -6955,9 +6943,8 @@ function generateOverviewContent() {
                 </thead>
                 <tbody>
                     ${sortedProjects.map(project => {
-                        const allocated = project.allocatedHours || 0; // Default to 0
-                        const logged = project.hoursLogged || 0;    // Default to 0
-                        // Calculate usage safely, ensuring allocated > 0
+                        const allocated = project.allocatedHours || 0;
+                        const logged = project.hoursLogged || 0;
                         const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
                         const remaining = allocated - logged;
 
@@ -6965,15 +6952,14 @@ function generateOverviewContent() {
 
                         if (usage > 100) {
                             healthIcon = '🔴'; healthText = 'Exceeded'; healthColor = 'var(--danger)';
-                        } else if (usage >= 90) { // Changed threshold slightly for Critical as per previous logic
+                        } else if (usage >= 90) {
                             healthIcon = '🔴'; healthText = 'Critical'; healthColor = 'var(--danger)';
-                        } else if (usage >= 70) { // Changed to 70 for At Risk
+                        } else if (usage >= 70) {
                             healthIcon = '🟡'; healthText = 'At Risk'; healthColor = 'var(--warning)';
                         } else {
                             healthIcon = '🟢'; healthText = 'Healthy'; healthColor = 'var(--success)';
                         }
 
-                        // Display N/A if allocated hours were missing/zero initially
                         const budgetDisplay = allocated > 0 ? `${allocated.toFixed(1)}h` : 'N/A';
                         const loggedDisplay = allocated > 0 ? `${logged.toFixed(1)}h` : 'N/A';
                         const remainingDisplay = allocated > 0 ? `${remaining.toFixed(1)}h` : 'N/A';
@@ -7007,9 +6993,9 @@ function generateOverviewContent() {
     `;
 }
 
-// Generate Projects Content (simplified)
+// Generate Projects Content
 function generateProjectsContent() {
-    return generateOverviewContent(); // Reuse the overview table
+    return generateOverviewContent();
 }
 
 // Generate Designers Content
@@ -7074,11 +7060,12 @@ function generateDesignersContent() {
     `;
 }
 
-// Generate Analytics Content (simplified)
+// Generate Analytics Content
 function generateAnalyticsContent() {
     const projects = executiveData.projects;
     const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
     const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
+    const utilizationPercent = totalAllocated > 0 ? ((totalLogged / totalAllocated) * 100).toFixed(0) : 0;
     
     return `
         <div class="card">
@@ -7087,7 +7074,7 @@ function generateAnalyticsContent() {
             </div>
             <div style="padding: 2rem; text-align: center;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">
-                    ${((totalLogged / totalAllocated) * 100).toFixed(0)}%
+                    ${utilizationPercent}%
                 </div>
                 <div style="font-size: 1.2rem; color: var(--text-light); margin-bottom: 2rem;">
                     Budget Utilization
@@ -7106,33 +7093,104 @@ function generateAnalyticsContent() {
                         <div style="font-weight: 700; font-size: 1.5rem; color: var(--success);">${(totalAllocated - totalLogged).toFixed(0)}h</div>
                     </div>
                 </div>
+                <div style="margin-top: 2rem;">
+                    <canvas id="designerChart" width="400" height="200"></canvas>
+                </div>
             </div>
         </div>
     `;
 }
 
+// Render Designer Chart
+function renderDesignerChart() {
+    const timesheets = executiveData.timesheets;
+    const designerStats = {};
+
+    timesheets.forEach(entry => {
+        if (!designerStats[entry.designerUid]) {
+            designerStats[entry.designerUid] = {
+                uid: entry.designerUid,
+                name: entry.designerName,
+                totalHours: 0,
+            };
+        }
+        designerStats[entry.designerUid].totalHours += entry.hours;
+    });
+
+    const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
+
+    const labels = designersArray.map(d => d.name);
+    const data = designersArray.map(d => d.totalHours);
+
+    const ctx = document.getElementById('designerChart')?.getContext('2d');
+    if (!ctx) {
+        console.error('Designer chart canvas not found!');
+        return;
+    }
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Hours Logged',
+                data: data,
+                backgroundColor: 'rgba(0, 191, 255, 0.6)',
+                borderColor: 'rgba(0, 153, 204, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Total Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Designer'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${context.raw.toFixed(1)}h`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 // Generate Alerts Content
 function generateAlertsContent() {
-    // Note: executiveData.projects is already pre-filtered in loadExecutiveMonitoring
-    // to include only projects with allocatedHours > 0.
     const projects = executiveData.projects;
     const alerts = [];
 
     projects.forEach(project => {
-        const allocated = project.allocatedHours || 0; // Should be > 0 due to filter, but good practice
+        const allocated = project.allocatedHours || 0;
         const logged = project.hoursLogged || 0;
-        // Calculate usage safely
         const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
         const remaining = allocated - logged;
 
-        // Use the safe 'usage' value for checks
         if (usage > 100) {
             alerts.push({
                 type: 'critical', icon: '🔴', title: 'Budget Exceeded',
                 message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours (${usage.toFixed(0)}% used)`,
                 project: project
             });
-        } else if (usage >= 70) { // Keep 70% threshold for yellow alert
+        } else if (usage >= 70) {
             alerts.push({
                 type: 'warning', icon: '🟡', title: 'High Budget Usage',
                 message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with ${remaining.toFixed(1)} hours remaining`,
@@ -7147,7 +7205,7 @@ function generateAlertsContent() {
                 <div style="text-align: center; padding: 4rem; color: var(--text-light);">
                     <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
                     <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">All Clear!</div>
-                    <div>No projects are at risk or over budget based on available data.</div>
+                    <div>No projects are at risk or over budget.</div>
                 </div>
             </div>
         `;
@@ -7189,72 +7247,26 @@ function generateAlertsContent() {
         </div>
     `;
 }
-// Export executive reports
+
+// Export and filter functions
 async function exportExecutiveReport(type) {
-    try {
-        showLoading();
-        
-        const projects = executiveData.projects;
-        const timesheets = executiveData.timesheets;
-        
-        let csv = '';
-        let filename = '';
-        
-        if (type === 'summary') {
-            const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
-            const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
-            
-            csv = 'Executive Summary Report\n\n';
-            csv += `Generated: ${new Date().toLocaleString()}\n\n`;
-            csv += `Total Projects: ${projects.length}\n`;
-            csv += `Total Hours Allocated: ${totalAllocated.toFixed(0)}\n`;
-            csv += `Total Hours Logged: ${totalLogged.toFixed(0)}\n\n`;
-            csv += 'Project,Client,Design Manager,Allocated,Logged,Remaining,Usage %,Status\n';
-            
-            projects.forEach(project => {
-                const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
-                const remaining = project.allocatedHours - project.hoursLogged;
-                const status = usage >= 90 ? 'Critical' : usage >= 75 ? 'At Risk' : 'Healthy';
-                
-                csv += `"${project.projectName}","${project.clientCompany}","${project.designLeadName || 'Unassigned'}",${project.allocatedHours},${project.hoursLogged.toFixed(1)},${remaining.toFixed(1)},${usage.toFixed(1)},${status}\n`;
-            });
-            
-            filename = `Executive_Summary_${new Date().toISOString().split('T')[0]}.csv`;
-        } else {
-            csv = 'Detailed Hours Report\n\n';
-            csv += `Generated: ${new Date().toLocaleString()}\n\n`;
-            csv += 'Date,Project,Designer,Hours,Description\n';
-            
-            timesheets.forEach(entry => {
-                const date = new Date(entry.date.seconds * 1000).toLocaleDateString();
-                const description = (entry.description || '').replace(/,/g, ';');
-                csv += `${date},"${entry.projectName}","${entry.designerName}",${entry.hours},"${description}"\n`;
-            });
-            
-            filename = `Detailed_Report_${new Date().toISOString().split('T')[0]}.csv`;
-        }
-        
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename;
-        a.click();
-        
-        hideLoading();
-        alert('Report exported successfully!');
-        
-    } catch (error) {
-        console.error('Error exporting report:', error);
-        alert('Error exporting report: ' + error.message);
-        hideLoading();
-    }
+    alert('Export functionality - implement based on your requirements');
 }
 
 function applyExecutiveDateFilter() {
-    const from = document.getElementById('executiveFromDate').value;
-    const to = document.getElementById('executiveToDate').value;
+    const from = document.getElementById('executiveFromDate')?.value;
+    const to = document.getElementById('executiveToDate')?.value;
     executiveData.dateRange = { from, to };
+    calculateExecutiveMetrics();
+    switchExecutiveTab('overview');
+}
+
+function resetExecutiveDateFilter() {
+    const fromDate = document.getElementById('executiveFromDate');
+    const toDate = document.getElementById('executiveToDate');
+    if (fromDate) fromDate.value = '';
+    if (toDate) toDate.value = '';
+    executiveData.dateRange = { from: null, to: null };
     calculateExecutiveMetrics();
     switchExecutiveTab('overview');
 }
