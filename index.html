@@ -1622,6 +1622,31 @@
     font-size: 0.85rem;
     color: var(--text-light);
 }
+ /* Executive Monitoring Styles */
+.metric-card { border-radius: 12px; padding: 1.5rem; display: flex; align-items: center; gap: 1rem; box-shadow: 0 4px 12px rgba(0,0,0,0.1); color: white; }
+.metric-icon { font-size: 2.5rem; }
+.metric-content { flex: 1; }
+.metric-label { font-size: 0.9rem; opacity: 0.9; margin-bottom: 0.5rem; }
+.metric-value { font-size: 2rem; font-weight: 700; line-height: 1; }
+.metric-subtitle { font-size: 0.85rem; opacity: 0.8; margin-top: 0.5rem; }
+.stat-card { background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center; }
+.stat-label { font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.5rem; }
+.stat-value { font-size: 2rem; font-weight: 700; color: var(--primary-blue); }
+.tabs-container { background: white; border-radius: 12px; border: 2px solid var(--border); overflow: hidden; }
+.tabs { display: flex; gap: 0; }
+.tab { flex: 1; padding: 1rem; text-align: center; cursor: pointer; font-weight: 600; color: var(--text-light); transition: all 0.2s; border-right: 1px solid var(--border); }
+.tab:last-child { border-right: none; }
+.tab:hover { background: var(--light-blue); }
+.tab.active { background: var(--primary-blue); color: white; }
+.project-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-color: var(--primary-blue); }
+.hour-badge { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; background: white; border-radius: 8px; border: 2px solid var(--border); }
+.hour-badge .label { color: var(--text-light); font-size: 0.85rem; }
+.hour-badge .value { font-size: 1.5rem; font-weight: 700; color: var(--primary-blue); }
+.status-badge { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+.status-submitted { background: #fff3cd; color: #856404; }
+.status-approved { background: #d4edda; color: #155724; }
+.status-rejected { background: #f8d7da; color: #721c24; }
+.progress-bar-container { background: #e0e0e0; border-radius: 10px; overflow: hidden; }        
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
