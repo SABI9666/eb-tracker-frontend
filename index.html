@@ -7094,31 +7094,25 @@ function generateAlertsContent() {
         const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
         const remaining = project.allocatedHours - project.hoursLogged;
         
-        if (usage >= 100) {
+        // --- MODIFIED ALERT LOGIC ---
+        if (usage > 100) {
             alerts.push({
-                type: 'critical',
-                icon: '🚨',
+                type: 'critical', // Red
+                icon: '🔴',
                 title: 'Budget Exceeded',
-                message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours`,
+                message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours (${usage.toFixed(0)}% used)`,
                 project: project
             });
-        } else if (usage >= 90) {
+        } else if (usage >= 70) {
             alerts.push({
-                type: 'warning',
-                icon: '⚠️',
-                title: 'Critical Budget Usage',
-                message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with only ${remaining.toFixed(1)} hours remaining`,
-                project: project
-            });
-        } else if (usage >= 75) {
-            alerts.push({
-                type: 'info',
-                icon: '⚡',
+                type: 'warning', // Yellow
+                icon: '🟡',
                 title: 'High Budget Usage',
-                message: `Project "${project.projectName}" has used ${usage.toFixed(0)}% of allocated hours`,
+                message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with ${remaining.toFixed(1)} hours remaining`,
                 project: project
             });
         }
+        // --- END MODIFIED ALERT LOGIC ---
     });
     
     if (alerts.length === 0) {
@@ -7127,7 +7121,7 @@ function generateAlertsContent() {
                 <div style="text-align: center; padding: 4rem; color: var(--text-light);">
                     <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
                     <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">All Clear!</div>
-                    <div>No critical alerts at this time</div>
+                    <div>No projects are at risk or over budget.</div>
                 </div>
             </div>
         `;
@@ -7140,8 +7134,10 @@ function generateAlertsContent() {
             </div>
             <div style="padding: 1rem;">
                 ${alerts.map(alert => {
-                    const bgColor = alert.type === 'critical' ? '#fee' : alert.type === 'warning' ? '#fff3cd' : '#e7f3ff';
-                    const borderColor = alert.type === 'critical' ? 'var(--danger)' : alert.type === 'warning' ? 'var(--warning)' : 'var(--primary-blue)';
+                    // --- MODIFIED STYLING TO MATCH REQUEST ---
+                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd'; // Red or Yellow
+                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107'; // Red or Yellow
+                    // --- END MODIFIED STYLING ---
                     
                     return `
                         <div style="padding: 1.5rem; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;" onclick="viewProject('${alert.project.id}')">
