@@ -2079,6 +2079,17 @@
                 (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('timesheetNavItem').style.display =
                 (currentUserRole === 'designer') ? 'block' : 'none';
+            document.getElementById('timesheetNavItem').style.display =
+                (currentUserRole === 'designer') ? 'block' : 'none';
+
+            // ADD THESE NEW LINES STARTING HERE
+            // User Requested Modifications: Hide Dashboard, File Manager for BDM, COO, Director
+            const isDashboardHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
+            document.getElementById('dashboardNavItem').style.display = isDashboardHidden ? 'none' : 'block';
+            
+            const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
+            document.getElementById('filesNavItem').style.display = isFileManagerHidden ? 'none' : 'block';
+            // END OF NEW LINES
 
             // Show role-specific dashboard
             if (currentUserRole === 'designer') {
