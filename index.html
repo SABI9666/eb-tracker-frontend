@@ -2059,31 +2059,35 @@
             const loginPage = document.getElementById('loginPage');
             const appContainer = document.getElementById('appContainer');
             const userWelcome = document.getElementById('userWelcome');
-            const userRoleDisplay = document.getElementById('userRole'); // Renamed variable to avoid conflict
+            const userRoleDisplay = document.getElementById('userRole'); 
 
             if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay) {
                 console.error("Core UI elements missing! Cannot initialize app view.");
                 return; // Stop execution if essential elements are missing
             }
 
+            // --- FIX: Trim whitespace AND convert to lowercase ---
+            const roleForCheck = currentUserRole.trim().toLowerCase();
+
             loginPage.style.display = 'none';
             appContainer.style.display = 'block';
             userWelcome.textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
+            // Use the original currentUserRole for display purposes
             userRoleDisplay.textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
 
-            console.log("showApp: Setting element visibility based on role:", currentUserRole); // Debugging line
+            console.log("showApp: Setting element visibility based on role:", currentUserRole, "(checking as:", roleForCheck, ")"); // Debugging line
 
-            // --- Role-based UI updates with null checks ---
+            // --- Role-based UI updates with null checks (USING roleForCheck) ---
             const newProposalNavItem = document.getElementById('newProposalNavItem');
-            if (newProposalNavItem) newProposalNavItem.style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
+            if (newProposalNavItem) newProposalNavItem.style.display = (roleForCheck === 'bdm') ? 'block' : 'none';
             else console.warn("Element 'newProposalNavItem' not found");
 
             const analyticsNavItem = document.getElementById('analyticsNavItem');
-            if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+            if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
             else console.warn("Element 'analyticsNavItem' not found");
 
             const workflowNavItem = document.getElementById('workflowNavItem');
-            if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
+            if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
             else console.warn("Element 'workflowNavItem' not found");
 
             const reportsNavItem = document.getElementById('reportsNavItem');
@@ -2091,38 +2095,38 @@
             else console.warn("Element 'reportsNavItem' not found");
 
             const settingsNavItem = document.getElementById('settingsNavItem');
-            if (settingsNavItem) settingsNavItem.style.display = (currentUserRole === 'director') ? 'block' : 'none';
+            if (settingsNavItem) settingsNavItem.style.display = (roleForCheck === 'director') ? 'block' : 'none';
             else console.warn("Element 'settingsNavItem' not found");
 
             const allProjectsNavItem = document.getElementById('allProjectsNavItem');
-            if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
+            if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
             else console.warn("Element 'allProjectsNavItem' not found");
 
             const projectsNavItem = document.getElementById('projectsNavItem');
-            if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+            if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
             else console.warn("Element 'projectsNavItem' not found");
 
             const tasksNavItem = document.getElementById('tasksNavItem');
-            if (tasksNavItem) tasksNavItem.style.display = (currentUserRole === 'designer') ? 'block' : 'none';
+            if (tasksNavItem) tasksNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
             else console.warn("Element 'tasksNavItem' not found");
 
             const paymentsNavItem = document.getElementById('paymentsNavItem');
-            if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+            if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
             else console.warn("Element 'paymentsNavItem' not found");
 
             const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
-            if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
+            if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(roleForCheck)) ? 'block' : 'none';
             else console.warn("Element 'executiveMonitoringNavItem' not found");
 
             const timesheetNavItem = document.getElementById('timesheetNavItem');
-            if (timesheetNavItem) timesheetNavItem.style.display = (currentUserRole === 'designer') ? 'block' : 'none';
+            if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
             else console.warn("Element 'timesheetNavItem' not found");
 
-            // User Requested Modifications: Hide Dashboard, File Manager for BDM, COO, Director
+            // User Requested Modifications: Hide Dashboard (USING roleForCheck)
             const dashboardNavItem = document.getElementById('dashboardNavItem');
-             let isDashboardHidden = false; // Define outside if block
+             let isDashboardHidden = false; 
             if (dashboardNavItem) {
-                 isDashboardHidden = ['bdm', 'coo', 'director'].includes(currentUserRole); // Assign here
+                 isDashboardHidden = ['bdm', 'coo', 'director'].includes(roleForCheck); // Assign here
                 dashboardNavItem.style.display = isDashboardHidden ? 'none' : 'block';
                 console.log(`showApp: Dashboard Nav Item ${isDashboardHidden ? 'hidden' : 'shown'}`);
             } else {
@@ -2131,7 +2135,7 @@
 
             const filesNavItem = document.getElementById('filesNavItem');
             if (filesNavItem) {
-                const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
+                const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(roleForCheck);
                 filesNavItem.style.display = isFileManagerHidden ? 'none' : 'block';
                  console.log(`showApp: Files Nav Item ${isFileManagerHidden ? 'hidden' : 'shown'}`);
             } else {
@@ -2139,32 +2143,32 @@
             }
             // END OF MODIFIED LINES
 
-            // --- Show role-specific dashboard or default view ---
+            // --- Show role-specific dashboard or default view (USING roleForCheck) ---
              console.log("showApp: Determining initial view...");
-            if (currentUserRole === 'designer') {
+            if (roleForCheck === 'designer') {
                 console.log("showApp: Loading Designer Dashboard");
                 showDesignerDashboard();
-            } else if (currentUserRole === 'design_lead') {
+            } else if (roleForCheck === 'design_lead') {
                  console.log("showApp: Loading Design Lead Dashboard");
                 showDesignLeadDashboard();
-            } else if (currentUserRole === 'bdm') {
+            } else if (roleForCheck === 'bdm') {
                  console.log("showApp: Loading Proposals (BDM default)");
                 showProposals(); // New default for BDM
-            } else if (currentUserRole === 'coo' || currentUserRole === 'director') {
+            } else if (roleForCheck === 'coo' || roleForCheck === 'director') {
                  console.log("showApp: Loading All Projects (COO/Director default)");
                 showAllProjects(); // New default for COO & Director
-            } else { // <-- Starts around line 2170 in your file
+            } else { 
                  console.log("showApp: Loading default for other roles (Estimator/Accounts)");
                  if (!isDashboardHidden) {
                     console.log("showApp: Loading Dashboard (default)");
                     showDashboard();
-                 } else { // <-- Check block starting here
+                 } else { 
                      console.log("showApp: Dashboard hidden, loading Proposals (fallback)");
                     showProposals();
-                 } // <-- Make sure this closes the inner 'else'
-            } // <-- Make sure this closes the outer 'else'
+                 } 
+            } 
              console.log("showApp: Finished setting up view.");
-        } // <-- Make sure this closes the 'showApp' function
+        }
 
         function showLogin() {
             document.getElementById('appContainer').style.display = 'none';
