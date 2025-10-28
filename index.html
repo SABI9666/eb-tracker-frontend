@@ -7258,6 +7258,78 @@ function resetExecutiveDateFilter() {
     executiveData.dateRange = { from: null, to: null };
     calculateExecutiveMetrics();
     switchExecutiveTab('overview');
+} // --- ADD THIS NEW FUNCTION ---
+// Render Designer Chart
+function renderDesignerChart() {
+    const timesheets = executiveData.timesheets;
+    const designerStats = {};
+    
+    // Calculate stats (same as generateDesignersContent)
+    timesheets.forEach(entry => {
+        if (!designerStats[entry.designerUid]) {
+            designerStats[entry.designerUid] = {
+                uid: entry.designerUid,
+                name: entry.designerName,
+                totalHours: 0,
+            };
+        }
+        designerStats[entry.designerUid].totalHours += entry.hours;
+    });
+    
+    const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
+
+    const labels = designersArray.map(d => d.name);
+    const data = designersArray.map(d => d.totalHours);
+
+    const ctx = document.getElementById('designerChart')?.getContext('2d');
+    if (!ctx) {
+        console.error('Designer chart canvas not found!');
+        return;
+    }
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Hours Logged',
+                data: data,
+                backgroundColor: 'rgba(0, 191, 255, 0.6)', // var(--primary-blue)
+                borderColor: 'rgba(0, 153, 204, 1)',   // var(--dark-blue)
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Total Hours'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Designer'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return ` ${context.dataset.label}: ${context.raw.toFixed(1)}h`;
+                        }
+                    }
+                }
+            }
+        }
+    });
 }
 
 
