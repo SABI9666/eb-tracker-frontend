@@ -6276,12 +6276,11 @@ function switchExecutiveTab(tab) {
         }
     });
     
-    // Fallback if event was not passed
+   // Fallback if event was not passed
     if (event && event.target) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         event.target.classList.add('active');
-    }
-
+    } //
     const contentDiv = document.getElementById('executiveTabContent');
     
     switch(tab) {
