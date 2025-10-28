@@ -7258,13 +7258,7 @@ function applyExecutiveDateFilter() {
     calculateExecutiveMetrics();
     switchExecutiveTab('overview');
 }
-function resetExecutiveDateFilter() {
-        document.getElementById('executiveFromDate').value = '';
-        document.getElementById('executiveToDate').value = '';
-        executiveData.dateRange = { from: null, to: null };
-        calculateExecutiveMetrics();
-        switchExecutiveTab('overview');
-    }
+
 
 // Render Designer Chart
 function renderDesignerChart() {
