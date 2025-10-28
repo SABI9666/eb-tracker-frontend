@@ -2066,7 +2066,7 @@
              (['bdm', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
             // END OF NEW LINE
             document.getElementById('workflowNavItem').style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
-            document.getElementById('reportsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
+            document.getElementById('reportsNavItem').style.display = 'none';
             document.getElementById('settingsNavItem').style.display = (currentUserRole === 'director') ? 'block' : 'none';
             document.getElementById('allProjectsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('projectsNavItem').style.display =
