@@ -2153,26 +2153,18 @@
             } else if (currentUserRole === 'coo' || currentUserRole === 'director') {
                  console.log("showApp: Loading All Projects (COO/Director default)");
                 showAllProjects(); // New default for COO & Director
-            } else {
+            } else { // <-- Starts around line 2170 in your file
                  console.log("showApp: Loading default for other roles (Estimator/Accounts)");
-                // Default for other roles (Estimator, Accounts) that still have dashboard access
-                 if (!isDashboardHidden) { // Check the variable defined above
+                 if (!isDashboardHidden) {
                     console.log("showApp: Loading Dashboard (default)");
                     showDashboard();
-                } else {
+                 } else { // <-- Check block starting here
                      console.log("showApp: Dashboard hidden, loading Proposals (fallback)");
-                    // Fallback if dashboard is hidden but no specific view defined
                     showProposals();
-                }
-            }
+                 } // <-- Make sure this closes the inner 'else'
+            } // <-- Make sure this closes the outer 'else'
              console.log("showApp: Finished setting up view.");
-                 // Fallback if dashboard is hidden but no specific view defined
-                    // You might want to define a default view for Estimator/Accounts too
-                    // For now, let's just show proposals as a general fallback
-                    showProposals();
-                }
-            }
-        }
+        } // <-- Make sure this closes the 'showApp' function
 
         function showLogin() {
             document.getElementById('appContainer').style.display = 'none';
