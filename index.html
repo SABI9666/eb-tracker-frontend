@@ -2147,19 +2147,20 @@
                  console.log("showApp: Determining initial view...");
                  console.log('Routing check: is roleForCheck "bdm"?', roleForCheck === 'bdm');
                  console.log('Routing check: is roleForCheck "coo" or "director"?', roleForCheck === 'coo' || roleForCheck === 'director');
-    
-                if (roleForCheck === 'designer') {
-                    console.log("showApp: Loading Designer Dashboard");
-                    showDesignerDashboard();
-                } else if (roleForCheck === 'design_lead') {
-                     console.log("showApp: Loading Design Lead Dashboard");
-                    showDesignLeadDashboard();
-                } else if (roleForCheck === 'bdm') {
-                     console.log("showApp: Loading Proposals (BDM default)");
-                    showProposals(); // New default for BDM
-                } else if (roleForCheck === 'coo' || roleForCheck === 'director') {
-                     console.log("showApp: Loading All Projects (COO/Director default)");
-                    showAllProjects(); // New default for COO & Director
+                // REPLACE WITH THIS LOGIC:
+             if (roleForCheck === 'designer') {
+           console.log("showApp: Loading Timesheet (Designer default)");
+         showSection('timesheet'); // <-- CORRECTED
+          } else if (roleForCheck === 'design_lead') {
+         console.log("showApp: Loading Design Lead Dashboard");
+       showDesignLeadDashboard();
+        } else if (roleForCheck === 'bdm') {
+      console.log("showApp: Loading Proposals (BDM default)");
+        showProposals();
+         } else if (roleForCheck === 'coo' || roleForCheck === 'director') {
+      console.log("showApp: Loading Executive Monitoring (COO/Director default)");
+     showSection('executiveMonitoring'); // <-- CORRECTED
+                
                 } else { 
                      console.log("Routing check: entering FINAL else block.");
                      console.log("showApp: Loading default for other roles (Estimator/Accounts)");
