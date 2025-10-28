@@ -7259,12 +7259,11 @@ function applyExecutiveDateFilter() {
     switchExecutiveTab('overview');
 }
 
-
 // Render Designer Chart
 function renderDesignerChart() {
     const timesheets = executiveData.timesheets;
     const designerStats = {};
-    
+
     // Calculate stats (same as generateDesignersContent)
     timesheets.forEach(entry => {
         if (!designerStats[entry.designerUid]) {
@@ -7274,9 +7273,10 @@ function renderDesignerChart() {
                 totalHours: 0,
             };
         }
-        designerStats[entry.designerUid].totalHours += entry.hours;
+        // MOVED THIS LINE INSIDE THE LOOP
+        designerStats[entry.designerUid].totalHours += entry.hours; 
     });
-    
+
     const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
 
     const labels = designersArray.map(d => d.name);
@@ -7331,7 +7331,8 @@ function renderDesignerChart() {
             }
         }
     });
-}
+} //
+
 
 
 // ===================================  
