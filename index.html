@@ -2062,8 +2062,8 @@
 
             // Role-based UI updates
             document.getElementById('newProposalNavItem').style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
-            // ADD THIS NEW LINE
-            document.getElementById('analyticsNavItem').style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
+            document.getElementById('analyticsNavItem').style.display = 
+             (['bdm', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
             // END OF NEW LINE
             document.getElementById('workflowNavItem').style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
             document.getElementById('reportsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
