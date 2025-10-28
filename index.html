@@ -6873,9 +6873,21 @@ function calculateExecutiveMetrics() {
 
 // Switch between tabs
 function switchExecutiveTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    event?.target?.classList.add('active');
+    // Find the active tab button. If event is not passed, find it by function name
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => {
+        t.classList.remove('active');
+        if (t.getAttribute('onclick') === `switchExecutiveTab('${tab}')`) {
+            t.classList.add('active');
+        }
+    });
     
+    // Fallback if event was not passed
+    if (event && event.target) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
     const contentDiv = document.getElementById('executiveTabContent');
     
     switch(tab) {
@@ -6890,6 +6902,10 @@ function switchExecutiveTab(tab) {
             break;
         case 'analytics':
             contentDiv.innerHTML = generateAnalyticsContent();
+            // --- ADD THIS LINE ---
+            // Call renderChart after HTML is injected
+            setTimeout(renderDesignerChart, 0); 
+            // --- END ADDED LINE ---
             break;
         case 'alerts':
             contentDiv.innerHTML = generateAlertsContent();
