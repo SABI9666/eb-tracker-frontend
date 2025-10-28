@@ -6798,74 +6798,70 @@ function calculateExecutiveMetrics() {
     const projects = executiveData.projects;
     const timesheets = executiveData.timesheets;
     
+    // --- NEW METRIC CALCULATIONS ---
+    let totalProjects = projects.length;
+    let onTrackProjects = 0;
+    let atRiskProjects = 0; // This is 70-100%
+    let exceededProjects = 0; // This is > 100%
+
+    projects.forEach(p => {
+        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
+        if (usage > 100) {
+            exceededProjects++;
+        } else if (usage >= 70) {
+            atRiskProjects++;
+        } else {
+            onTrackProjects++;
+        }
+    });
+    // --- END NEW METRIC CALCULATIONS ---
+
     const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
     const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
-    const totalRemaining = totalAllocated - totalLogged;
-    const avgUtilization = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
-    
-    const onTrack = projects.filter(p => {
-        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
-        return usage < 75;
-    }).length;
-    
-    const atRisk = projects.filter(p => {
-        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
-        return usage >= 75 && usage < 90;
-    }).length;
-    
-    const critical = projects.filter(p => {
-        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
-        return usage >= 90;
-    }).length;
-    
-    const exceeded = projects.filter(p => {
-        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
-        return usage >= 100;
-    }).length;
     
     const activeDesigners = new Set(timesheets.map(t => t.designerUid)).size;
     const avgHoursPerProject = projects.length > 0 ? totalLogged / projects.length : 0;
     const efficiency = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
     
+    // --- MODIFIED HTML ---
     const metricsHtml = `
-        <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="metric-icon">💰</div>
-            <div class="metric-content">
-                <div class="metric-label">Total Budget (Hours)</div>
-                <div class="metric-value">${totalAllocated.toFixed(0)}h</div>
-                <div class="metric-subtitle">${projects.length} active projects</div>
-            </div>
-        </div>
-        
-        <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <div class="metric-icon">⏱️</div>
-            <div class="metric-content">
-                <div class="metric-label">Hours Consumed</div>
-                <div class="metric-value">${totalLogged.toFixed(0)}h</div>
-                <div class="metric-subtitle">${avgUtilization.toFixed(1)}% utilization</div>
-            </div>
-        </div>
-        
         <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <div class="metric-icon">📊</div>
+            <div class="metric-icon">📁</div>
             <div class="metric-content">
-                <div class="metric-label">Budget Remaining</div>
-                <div class="metric-value">${totalRemaining.toFixed(0)}h</div>
-                <div class="metric-subtitle">${((totalRemaining / totalAllocated) * 100).toFixed(1)}% available</div>
+                <div class="metric-label">Total Projects</div>
+                <div class="metric-value">${totalProjects}</div>
+                <div class="metric-subtitle">${totalAllocated.toFixed(0)}h allocated</div>
+            </div>
+        </div>
+        
+        <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div class="metric-icon">🟢</div>
+            <div class="metric-content">
+                <div class="metric-label">On-Track Projects</div>
+                <div class="metric-value">${onTrackProjects}</div>
+                <div class="metric-subtitle">Under 70% budget</div>
             </div>
         </div>
         
         <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <div class="metric-icon">⚠️</div>
+            <div class="metric-icon">🟡</div>
             <div class="metric-content">
-                <div class="metric-label">Project Health</div>
-                <div class="metric-value" style="font-size: 1.2rem;">
-                    🟢 ${onTrack} | 🟡 ${atRisk} | 🔴 ${critical}
-                </div>
-                <div class="metric-subtitle">${exceeded} exceeded budget</div>
+                <div class="metric-label">At-Risk Projects</div>
+                <div class="metric-value">${atRiskProjects}</div>
+                <div class="metric-subtitle">70-100% budget</div>
+            </div>
+        </div>
+        
+        <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="metric-icon">🔴</div>
+            <div class="metric-content">
+                <div class="metric-label">Exceeded Projects</div>
+                <div class="metric-value">${exceededProjects}</div>
+                <div class="metric-subtitle">Over 100% budget</div>
             </div>
         </div>
     `;
+    // --- END MODIFIED HTML ---
     
     document.getElementById('executiveMetrics').innerHTML = metricsHtml;
     document.getElementById('execActiveProjects').textContent = projects.length;
