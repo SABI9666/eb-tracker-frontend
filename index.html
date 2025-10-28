@@ -6794,18 +6794,28 @@ async function loadExecutiveMonitoring() {
 }
 
 // Calculate executive metrics
+// Calculate executive metrics
 function calculateExecutiveMetrics() {
-    const projects = executiveData.projects;
+    const projects = executiveData.projects; // Already filtered for allocatedHours > 0
     const timesheets = executiveData.timesheets;
-    
-    // --- NEW METRIC CALCULATIONS ---
+
     let totalProjects = projects.length;
     let onTrackProjects = 0;
-    let atRiskProjects = 0; // This is 70-100%
-    let exceededProjects = 0; // This is > 100%
+    let atRiskProjects = 0; // 70-100%
+    let exceededProjects = 0; // > 100%
+
+    let totalAllocated = 0;
+    let totalLogged = 0;
 
     projects.forEach(p => {
-        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
+        const allocated = p.allocatedHours || 0; // Use 0 if missing
+        const logged = p.hoursLogged || 0;    // Use 0 if missing
+        totalAllocated += allocated;
+        totalLogged += logged;
+
+        // Ensure allocated is > 0 before calculating usage
+        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
+
         if (usage > 100) {
             exceededProjects++;
         } else if (usage >= 70) {
@@ -6814,16 +6824,15 @@ function calculateExecutiveMetrics() {
             onTrackProjects++;
         }
     });
-    // --- END NEW METRIC CALCULATIONS ---
 
-    const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
-    const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
-    
     const activeDesigners = new Set(timesheets.map(t => t.designerUid)).size;
-    const avgHoursPerProject = projects.length > 0 ? totalLogged / projects.length : 0;
+    // Check totalProjects > 0 before dividing
+    const avgHoursPerProject = totalProjects > 0 ? totalLogged / totalProjects : 0;
+    // Check totalAllocated > 0 before dividing
     const efficiency = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
-    
-    // --- MODIFIED HTML ---
+    // Check totalAllocated > 0 before calculating remaining percentage
+    const remainingPercentage = totalAllocated > 0 ? (((totalAllocated - totalLogged) / totalAllocated) * 100) : 0;
+
     const metricsHtml = `
         <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
             <div class="metric-icon">📁</div>
@@ -6833,7 +6842,6 @@ function calculateExecutiveMetrics() {
                 <div class="metric-subtitle">${totalAllocated.toFixed(0)}h allocated</div>
             </div>
         </div>
-        
         <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
             <div class="metric-icon">🟢</div>
             <div class="metric-content">
@@ -6842,7 +6850,6 @@ function calculateExecutiveMetrics() {
                 <div class="metric-subtitle">Under 70% budget</div>
             </div>
         </div>
-        
         <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
             <div class="metric-icon">🟡</div>
             <div class="metric-content">
@@ -6851,7 +6858,6 @@ function calculateExecutiveMetrics() {
                 <div class="metric-subtitle">70-100% budget</div>
             </div>
         </div>
-        
         <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
             <div class="metric-icon">🔴</div>
             <div class="metric-content">
@@ -6861,14 +6867,14 @@ function calculateExecutiveMetrics() {
             </div>
         </div>
     `;
-    // --- END MODIFIED HTML ---
-    
+
     document.getElementById('executiveMetrics').innerHTML = metricsHtml;
-    document.getElementById('execActiveProjects').textContent = projects.length;
-    document.getElementById('execTotalDesigners').textContent = activeDesigners;
-    document.getElementById('execTotalEntries').textContent = timesheets.length;
-    document.getElementById('execAvgHours').textContent = avgHoursPerProject.toFixed(1) + 'h';
-    document.getElementById('execEfficiency').textContent = efficiency.toFixed(1) + '%';
+    // Ensure elements exist before setting textContent
+    document.getElementById('execActiveProjects')?.textContent = totalProjects; // Use totalProjects here
+    document.getElementById('execTotalDesigners')?.textContent = activeDesigners;
+    document.getElementById('execTotalEntries')?.textContent = timesheets.length;
+    document.getElementById('execAvgHours')?.textContent = avgHoursPerProject.toFixed(1) + 'h';
+    document.getElementById('execEfficiency')?.textContent = efficiency.toFixed(1) + '%';
 }
 
 // Switch between tabs
