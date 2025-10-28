@@ -2061,37 +2061,59 @@
             document.getElementById('userRole').textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
 
             // Role-based UI updates
-            document.getElementById('newProposalNavItem').style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
-            document.getElementById('analyticsNavItem').style.display = 
-             (['bdm', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
-            // END OF NEW LINE
-            document.getElementById('workflowNavItem').style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
-            document.getElementById('reportsNavItem').style.display = 'none';
-            document.getElementById('settingsNavItem').style.display = (currentUserRole === 'director') ? 'block' : 'none';
-            document.getElementById('allProjectsNavItem').style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
-            document.getElementById('projectsNavItem').style.display =
-                (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
-            document.getElementById('tasksNavItem').style.display =
-                (currentUserRole === 'designer') ? 'block' : 'none';
-            document.getElementById('paymentsNavItem').style.display =
-                (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
-              document.getElementById('executiveMonitoringNavItem').style.display =
-                (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
-            document.getElementById('timesheetNavItem').style.display =
-                (currentUserRole === 'designer') ? 'block' : 'none';
-            document.getElementById('timesheetNavItem').style.display =
-                (currentUserRole === 'designer') ? 'block' : 'none';
+            const newProposalNavItem = document.getElementById('newProposalNavItem');
+            if (newProposalNavItem) newProposalNavItem.style.display = (currentUserRole === 'bdm') ? 'block' : 'none';
 
-            // ADD THESE NEW LINES STARTING HERE
+            const analyticsNavItem = document.getElementById('analyticsNavItem');
+            if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+
+            const workflowNavItem = document.getElementById('workflowNavItem');
+            if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
+
+            const reportsNavItem = document.getElementById('reportsNavItem');
+            if (reportsNavItem) reportsNavItem.style.display = 'none'; // Always hidden as requested
+
+            const settingsNavItem = document.getElementById('settingsNavItem');
+            if (settingsNavItem) settingsNavItem.style.display = (currentUserRole === 'director') ? 'block' : 'none';
+
+            const allProjectsNavItem = document.getElementById('allProjectsNavItem');
+            if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(currentUserRole)) ? 'block' : 'none';
+
+            const projectsNavItem = document.getElementById('projectsNavItem');
+            if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+
+            const tasksNavItem = document.getElementById('tasksNavItem');
+            if (tasksNavItem) tasksNavItem.style.display = (currentUserRole === 'designer') ? 'block' : 'none';
+
+            const paymentsNavItem = document.getElementById('paymentsNavItem');
+            if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(currentUserRole)) ? 'block' : 'none';
+
+            const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
+            if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(currentUserRole)) ? 'block' : 'none';
+
+            const timesheetNavItem = document.getElementById('timesheetNavItem');
+            if (timesheetNavItem) timesheetNavItem.style.display = (currentUserRole === 'designer') ? 'block' : 'none';
+
+
             // User Requested Modifications: Hide Dashboard, File Manager for BDM, COO, Director
-            const isDashboardHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
-            document.getElementById('dashboardNavItem').style.display = isDashboardHidden ? 'none' : 'block';
-            
-            const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
-            document.getElementById('filesNavItem').style.display = isFileManagerHidden ? 'none' : 'block';
-            // END OF NEW LINES
+            const dashboardNavItem = document.getElementById('dashboardNavItem');
+            if (dashboardNavItem) {
+                const isDashboardHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
+                dashboardNavItem.style.display = isDashboardHidden ? 'none' : 'block';
+            } else {
+                console.error("Element with ID 'dashboardNavItem' not found!");
+            }
 
-           // Show role-specific dashboard or default view
+            const filesNavItem = document.getElementById('filesNavItem');
+            if (filesNavItem) {
+                const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(currentUserRole);
+                filesNavItem.style.display = isFileManagerHidden ? 'none' : 'block';
+            } else {
+                 console.error("Element with ID 'filesNavItem' not found!");
+            }
+            // END OF MODIFIED LINES
+
+            // Show role-specific dashboard or default view
             if (currentUserRole === 'designer') {
                 showDesignerDashboard();
             } else if (currentUserRole === 'design_lead') {
@@ -2101,8 +2123,15 @@
             } else if (currentUserRole === 'coo' || currentUserRole === 'director') {
                 showAllProjects(); // New default for COO & Director
             } else {
-                // Default for other roles (Estimator, Accounts)
-                showDashboard(); 
+                // Default for other roles (Estimator, Accounts) that still have dashboard access
+                 if (!isDashboardHidden) { // Only show dashboard if it's not hidden for the role
+                    showDashboard();
+                } else {
+                    // Fallback if dashboard is hidden but no specific view defined
+                    // You might want to define a default view for Estimator/Accounts too
+                    // For now, let's just show proposals as a general fallback
+                    showProposals();
+                }
             }
         }
 
