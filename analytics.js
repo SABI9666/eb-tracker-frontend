@@ -273,7 +273,7 @@ async function loadAnalyticsData(role) {
         // 3. Regional Data
         regionalData = {};
         wonProposals.forEach(p => {
-            const region = p.country || 'Unknown';
+            let region = p.country || 'Unknown';
             if (region === "") {
                 region = "Unknown";
             }
