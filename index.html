@@ -7795,19 +7795,13 @@ async function submitDesignerUpload(event, projectId) {
             throw new Error(response.error || 'Upload failed');
         }
         
-    } catch (error) {
-        console.error('Error uploading files:', error);
-        alert('Error uploading files: ' + error.message);
-    } 
-         } // <--- ✅ ADD THIS CLOSING BRACE at the end of the file.
-    
-    finally {
-        hideLoading();
-    }
-}
-     
-}
-         
+} catch (error) {
+            console.error('Error uploading files:', error);
+            alert('Error uploading files: ' + error.message);
+        } finally { // <--- 'finally' immediately follows 'catch'
+            hideLoading();
+        }
+    } // <-
 
 
     </script>
