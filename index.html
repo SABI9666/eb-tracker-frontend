@@ -6921,18 +6921,20 @@ function switchExecutiveTab(tab) {
 
 // Generate Overview Content
 function generateOverviewContent() {
+    // Note: executiveData.projects is already pre-filtered in loadExecutiveMonitoring
+    // to include only projects with allocatedHours > 0.
     const projects = executiveData.projects;
-    const timesheets = executiveData.timesheets;
-    
+
+    if (projects.length === 0) {
+        return `<div class="card"><p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects with allocated hours found.</p></div>`;
+    }
+
     const sortedProjects = [...projects].sort((a, b) => {
-        const usageA = a.allocatedHours > 0 ? (a.hoursLogged / a.allocatedHours) * 100 : 0;
-        const usageB = b.allocatedHours > 0 ? (b.hoursLogged / b.allocatedHours) * 100 : 0;
-        return usageB - usageA;
+        const usageA = (a.allocatedHours || 0) > 0 ? ((a.hoursLogged || 0) / a.allocatedHours) * 100 : 0;
+        const usageB = (b.allocatedHours || 0) > 0 ? ((b.hoursLogged || 0) / b.allocatedHours) * 100 : 0;
+        return usageB - usageA; // Sort descending by usage
     });
-    
-    const topProjects = sortedProjects.slice(0, 5);
-    const recentTimesheets = [...timesheets].sort((a, b) => b.date.seconds - a.date.seconds).slice(0, 10);
-    
+
     return `
         <div class="card">
             <div class="card-header">
@@ -6953,28 +6955,34 @@ function generateOverviewContent() {
                 </thead>
                 <tbody>
                     ${sortedProjects.map(project => {
-                        const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
-                        const remaining = project.allocatedHours - project.hoursLogged;
+                        const allocated = project.allocatedHours || 0; // Default to 0
+                        const logged = project.hoursLogged || 0;    // Default to 0
+                        // Calculate usage safely, ensuring allocated > 0
+                        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
+                        const remaining = allocated - logged;
+
                         let healthIcon, healthText, healthColor;
-                        
-                        if (usage >= 100) {
-                            healthIcon = '🔴';
-                            healthText = 'Exceeded';
-                            healthColor = 'var(--danger)';
-                        } else if (usage >= 90) {
-                            healthIcon = '🔴';
-                            healthText = 'Critical';
-                            healthColor = 'var(--danger)';
-                        } else if (usage >= 75) {
-                            healthIcon = '🟡';
-                            healthText = 'At Risk';
-                            healthColor = 'var(--warning)';
+
+                        if (usage > 100) {
+                            healthIcon = '🔴'; healthText = 'Exceeded'; healthColor = 'var(--danger)';
+                        } else if (usage >= 90) { // Changed threshold slightly for Critical as per previous logic
+                            healthIcon = '🔴'; healthText = 'Critical'; healthColor = 'var(--danger)';
+                        } else if (usage >= 70) { // Changed to 70 for At Risk
+                            healthIcon = '🟡'; healthText = 'At Risk'; healthColor = 'var(--warning)';
                         } else {
-                            healthIcon = '🟢';
-                            healthText = 'Healthy';
-                            healthColor = 'var(--success)';
+                            healthIcon = '🟢'; healthText = 'Healthy'; healthColor = 'var(--success)';
                         }
-                        
+
+                        // Display N/A if allocated hours were missing/zero initially
+                        const budgetDisplay = allocated > 0 ? `${allocated.toFixed(1)}h` : 'N/A';
+                        const loggedDisplay = allocated > 0 ? `${logged.toFixed(1)}h` : 'N/A';
+                        const remainingDisplay = allocated > 0 ? `${remaining.toFixed(1)}h` : 'N/A';
+                        const usageDisplay = allocated > 0 ? `${usage.toFixed(0)}%` : 'N/A';
+                        const statusDisplay = allocated > 0 ?
+                            `<span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: ${healthColor};">${healthIcon} ${healthText}</span>`
+                            : `<span style="color: var(--text-light);">N/A</span>`;
+                        const remainingColor = allocated > 0 ? (remaining >= 0 ? 'var(--success)' : 'var(--danger)') : 'var(--text-light)';
+
                         return `
                             <tr style="cursor: pointer;" onclick="viewProject('${project.id}')">
                                 <td>
@@ -6983,17 +6991,13 @@ function generateOverviewContent() {
                                 </td>
                                 <td>${project.designLeadName || 'Unassigned'}</td>
                                 <td>${project.assignedDesignerNames?.length || 0} designer(s)</td>
-                                <td style="text-align: center; font-weight: 600;">${project.allocatedHours}h</td>
-                                <td style="text-align: center; font-weight: 600; color: var(--primary-blue);">${project.hoursLogged.toFixed(1)}h</td>
-                                <td style="text-align: center; font-weight: 600; color: ${remaining >= 0 ? 'var(--success)' : 'var(--danger)'};">${remaining.toFixed(1)}h</td>
+                                <td style="text-align: center; font-weight: 600;">${budgetDisplay}</td>
+                                <td style="text-align: center; font-weight: 600; color: var(--primary-blue);">${loggedDisplay}</td>
+                                <td style="text-align: center; font-weight: 600; color: ${remainingColor};">${remainingDisplay}</td>
                                 <td style="text-align: center;">
-                                    <strong style="color: ${healthColor};">${usage.toFixed(0)}%</strong>
+                                    ${allocated > 0 ? `<strong style="color: ${healthColor};">${usageDisplay}</strong>` : usageDisplay}
                                 </td>
-                                <td>
-                                    <span style="display: inline-flex; align-items: center; gap: 0.25rem; font-weight: 600; color: ${healthColor};">
-                                        ${healthIcon} ${healthText}
-                                    </span>
-                                </td>
+                                <td>${statusDisplay}</td>
                             </tr>
                         `;
                     }).join('')}
