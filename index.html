@@ -7113,46 +7113,46 @@ function generateAnalyticsContent() {
 
 // Generate Alerts Content
 function generateAlertsContent() {
+    // Note: executiveData.projects is already pre-filtered in loadExecutiveMonitoring
+    // to include only projects with allocatedHours > 0.
     const projects = executiveData.projects;
     const alerts = [];
-    
+
     projects.forEach(project => {
-        const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
-        const remaining = project.allocatedHours - project.hoursLogged;
-        
-        // --- MODIFIED ALERT LOGIC ---
+        const allocated = project.allocatedHours || 0; // Should be > 0 due to filter, but good practice
+        const logged = project.hoursLogged || 0;
+        // Calculate usage safely
+        const usage = allocated > 0 ? (logged / allocated) * 100 : 0;
+        const remaining = allocated - logged;
+
+        // Use the safe 'usage' value for checks
         if (usage > 100) {
             alerts.push({
-                type: 'critical', // Red
-                icon: '🔴',
-                title: 'Budget Exceeded',
+                type: 'critical', icon: '🔴', title: 'Budget Exceeded',
                 message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours (${usage.toFixed(0)}% used)`,
                 project: project
             });
-        } else if (usage >= 70) {
+        } else if (usage >= 70) { // Keep 70% threshold for yellow alert
             alerts.push({
-                type: 'warning', // Yellow
-                icon: '🟡',
-                title: 'High Budget Usage',
+                type: 'warning', icon: '🟡', title: 'High Budget Usage',
                 message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with ${remaining.toFixed(1)} hours remaining`,
                 project: project
             });
         }
-        // --- END MODIFIED ALERT LOGIC ---
     });
-    
+
     if (alerts.length === 0) {
         return `
             <div class="card">
                 <div style="text-align: center; padding: 4rem; color: var(--text-light);">
                     <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
                     <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">All Clear!</div>
-                    <div>No projects are at risk or over budget.</div>
+                    <div>No projects are at risk or over budget based on available data.</div>
                 </div>
             </div>
         `;
     }
-    
+
     return `
         <div class="card">
             <div class="card-header">
@@ -7160,11 +7160,9 @@ function generateAlertsContent() {
             </div>
             <div style="padding: 1rem;">
                 ${alerts.map(alert => {
-                    // --- MODIFIED STYLING TO MATCH REQUEST ---
-                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd'; // Red or Yellow
-                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107'; // Red or Yellow
-                    // --- END MODIFIED STYLING ---
-                    
+                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd';
+                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107';
+
                     return `
                         <div style="padding: 1.5rem; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;" onclick="viewProject('${alert.project.id}')">
                             <div style="display: flex; align-items: start; gap: 1rem;">
@@ -7191,7 +7189,6 @@ function generateAlertsContent() {
         </div>
     `;
 }
-
 // Export executive reports
 async function exportExecutiveReport(type) {
     try {
