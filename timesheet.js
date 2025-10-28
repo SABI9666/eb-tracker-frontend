@@ -1067,4 +1067,5 @@ async function submitDesignerUpload(event, projectId) {
         
     } catch (error) {
         console.error('Error uploading files:', error);
-        alert('Error uploading files: ' + error.message);
+        alert('Error uploading files: ' + error.message);}
+} //
