@@ -2680,26 +2680,40 @@
                 </div>
             `;
         }
-
-        // ============================================
-        // ALL PROJECTS VIEW (COO & DIRECTOR)
-        // ============================================
-        let currentProjectFilter = 'all';
+         let currentProjectFilter = 'all';
         let allProjectsData = [];
+        let allVariationsData = []; // <-- NEW: Add this line
+
         async function showAllProjects() {
             setActiveNav('nav-all-projects');
             const main = document.getElementById('mainContent');
             showLoading();
             main.innerHTML = '';
             try {
-                console.log('🔄 Fetching all projects...');
-                const response = await apiCall('proposals');
-                if (response.success && response.data) {
-                    allProjectsData = response.data;
-                    renderAllProjects();
+                console.log('🔄 Fetching all projects and variations...');
+                
+                // --- MODIFIED: Fetch projects AND variations ---
+                const [projectsResponse, variationsResponse] = await Promise.all([
+                    apiCall('proposals'), // This still fetches proposals, which you are treating as projects
+                    apiCall('variations?status=pending_coo_approval') // <-- NEW: Fetch pending variations
+                ]);
+                
+                if (projectsResponse.success && projectsResponse.data) {
+                    allProjectsData = projectsResponse.data;
                 } else {
                     throw new Error('Invalid proposals response');
                 }
+                
+                if (variationsResponse.success && variationsResponse.data) {
+                    allVariationsData = variationsResponse.data; // <-- NEW: Store variations
+                } else {
+                    console.warn('Could not load variations:', variationsResponse.error);
+                    allVariationsData = [];
+                }
+                
+                renderAllProjects();
+                // --- END OF MODIFICATION ---
+
             } catch (error) {
                 console.error('❌ Error fetching all projects:', error);
                 main.innerHTML = `<div class="error-message"><h3>Error Loading Projects</h3><p>${error.message}</p></div>`;
@@ -2707,6 +2721,7 @@
                 hideLoading();
             }
         }
+       
          // ============================================
         // EXECUTIVE MONITORING & TIMESHEET FUNCTIONS
         // ============================================
