@@ -83,7 +83,7 @@ function getAnalyticsHTML(role) {
         <div class="action-section">
             <h3>Regional Business (Won Revenue)</h3>
             <div style="position: relative; height: 350px; display: flex; align-items: center; justify-content: center;">
-                <canvas id="regionalPieChart" style="max-height: 350px; max-width: 350px;"></canvas>
+                <canvas id="regionalPieChart" style="max-height: 350px; max-width: 350px;"></canvas>.
             </div>
         </div>
 
@@ -289,7 +289,6 @@ async function loadAnalyticsData(role) {
 
 /**
  * Renders the KPI cards with processed data
- * --- THIS FUNCTION IS NOW CORRECT ---
  */
 function renderKpiCards(kpis, role) {
     const container = document.getElementById('bdm-kpi-cards');
@@ -438,7 +437,6 @@ function renderStatusPieChart(statusCounts) {
 
 /**
  * Renders the BDM Performance bar chart (COO/Director only)
- * --- THIS FUNCTION IS UPDATED WITH THE COLOR FIX ---
  */
 function renderBdmPerformanceChart(bdmData) {
     const ctx = document.getElementById('bdmPerformanceChart').getContext('2d');
@@ -494,6 +492,7 @@ function renderBdmPerformanceChart(bdmData) {
 
 /**
  * Renders the Weekly Revenue line chart (COO/Director only)
+ * --- TYPO FIX APPLIED HERE ---
  */
 function renderWeeklyRevenueChart(weeklyData) {
     const ctx = document.getElementById('weeklyRevenueChart').getContext('2d');
@@ -524,7 +523,8 @@ function renderWeeklyRevenueChart(weeklyData) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '$'MS' + (value / 1000) + 'k';
+                            // The extra 'MS' string was removed from here
+                            return '$' + (value / 1000) + 'k';
                         }
                     }
                 },
@@ -540,7 +540,7 @@ function renderWeeklyRevenueChart(weeklyData) {
 
 /**
  * Renders the Regional Business pie chart (COO/Director only)
- * --- THIS FUNCTION IS ALSO CORRECT ---
+ * --- TYPO FIX APPLIED HERE ---
  */
 function renderRegionalPieChart(regionalData) {
     const ctx = document.getElementById('regionalPieChart').getContext('2d');
@@ -557,7 +557,8 @@ function renderRegionalPieChart(regionalData) {
                     CHART_COLORS.green,
                     CHART_COLORS.yellow,
                     CHART_COLORS.purple,
-                    CHART_PROPERTIES.orange,
+                    // Fixed: Was 'CHART_PROPERTIES.orange', now 'CHART_COLORS.orange'
+                    CHART_COLORS.orange,
                     CHART_COLORS.red,
                     CHART_COLORS.grey
                 ],
@@ -594,7 +595,6 @@ function getWeekStartDate(d) {
 
 /**
  * Helper to format Chart.js tooltips as currency
- * --- THIS FUNCTION IS ALSO CORRECT ---
  */
 function formatTooltipAsCurrency(context, labelPrefix = '') {
     let label = labelPrefix || context.dataset.label || '';
