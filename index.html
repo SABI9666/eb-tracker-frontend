@@ -8748,6 +8748,149 @@ async function submitDesignerUpload(event, projectId) {
             }
         }
 
+    // ============================================
+        // NEW: COO VARIATION APPROVAL FUNCTIONS
+        // ============================================
+
+        /**
+         * Renders the table for pending variations.
+         */
+        function renderPendingVariationsTable(variations) {
+            if (variations.length === 0) {
+                return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No pending variations found.</div>';
+            }
+
+            const variationsHtml = variations.map(v => `
+                <tr>
+                    <td><strong>${v.parentProjectName}</strong><br><small>${v.clientCompany}</small></td>
+                    <td><span class="project-number-badge" style="background: var(--warning); color: #856404;">${v.variationCode}</span></td>
+                    <td><strong>${v.estimatedHours}h</strong></td>
+                    <td>${v.createdByName} <br><small>(${v.createdByRole.replace('_', ' ')})</small></td>
+                    <td>${formatDate(v.createdAt)}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="showVariationApprovalModal('${v.id}')">
+                            Review
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Parent Project</th>
+                                <th>Variation Code</th>
+                                <th>Requested Hours</th>
+                                <th>Submitted By</th>
+                                <th>Date Submitted</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${variationsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        /**
+         * Fetches variation details and shows the approval modal.
+         */
+        async function showVariationApprovalModal(variationId) {
+            try {
+                showLoading();
+                const response = await apiCall(`variations?id=${variationId}`);
+                
+                if (!response.success || !response.data) {
+                    throw new Error(response.error || 'Failed to fetch variation details.');
+                }
+                
+                const v = response.data;
+                
+                // Populate modal fields
+                document.getElementById('approvalVariationId').value = v.id;
+                document.getElementById('approvalParentProjectId').value = v.parentProjectId;
+                document.getElementById('app-parentProjectName').textContent = v.parentProjectName;
+                document.getElementById('app-clientCompany').textContent = v.clientCompany;
+                document.getElementById('app-variationCode').textContent = v.variationCode;
+                document.getElementById('app-estimatedHours').textContent = `${v.estimatedHours}h`;
+                document.getElementById('app-submittedBy').textContent = `${v.createdByName} (${v.createdByRole.replace('_', ' ')})`;
+                document.getElementById('app-scopeDescription').textContent = v.scopeDescription;
+                document.getElementById('approvalNotes').value = ''; // Clear notes
+                
+                // Show the modal
+                document.getElementById('variationApprovalModal').style.display = 'flex';
+                
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /**
+         * Submits the COO's decision (approve/reject) to the backend.
+         */
+        async function submitVariationApproval(decision) {
+            const variationId = document.getElementById('approvalVariationId').value;
+            const parentProjectId = document.getElementById('approvalParentProjectId').value;
+            const notes = document.getElementById('approvalNotes').value.trim();
+            const hours = parseFloat(document.getElementById('app-estimatedHours').textContent);
+
+            if (decision === 'rejected' && !notes) {
+                alert('A reason is required for rejection.');
+                document.getElementById('approvalNotes').focus();
+                return;
+            }
+
+            const confirmMsg = decision === 'approved'
+                ? `Approve this variation? This will add ${hours}h to the project's budget.`
+                : 'Reject this variation? This will notify the Design Manager.';
+
+            if (!confirm(confirmMsg)) {
+                return;
+            }
+
+            try {
+                showLoading();
+                
+                const response = await apiCall(`variations?id=${variationId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'review_variation',
+                        data: {
+                            status: decision, // 'approved' or 'rejected'
+                            notes: notes,
+                            parentProjectId: parentProjectId,
+                            approvedHours: hours
+                        }
+                    })
+                });
+
+                if (response.success) {
+                    closeModal();
+                    showSuccessModal(
+                        `Variation ${decision.charAt(0).toUpperCase() + decision.slice(1)}!`,
+                        `The variation has been processed and the team will be notified.`
+                    );
+                    
+                    // Refresh the COO dashboard
+                    await showAllProjects();
+                } else {
+                    throw new Error(response.error || 'Failed to process variation.');
+                }
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
 </script>
 
 
