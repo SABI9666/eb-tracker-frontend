@@ -6510,6 +6510,66 @@ async function submitAllocation() {
             </div>
         </div>
     </div>
+    <div id="variationApprovalModal" class="modal" style="display: none;">
+        <div class="modal-content new-modal" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>🔍 Review Variation Request</h2>
+                <span class="close-modal" onclick="closeModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="approvalVariationId" />
+                <input type="hidden" id="approvalParentProjectId" />
+
+                <div class="allocation-details-section">
+                    <h3>Variation Details</h3>
+                    <div class="details-grid">
+                        <div class="detail-item">
+                            <label>Parent Project:</label>
+                            <span id="app-parentProjectName" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Client:</label>
+                            <span id="app-clientCompany" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item highlight">
+                            <label>Variation Code:</label>
+                            <span id="app-variationCode" class="detail-value project-number-badge" style="background: var(--warning); color: #856404;"></span>
+                        </div>
+                        <div class="detail-item highlight">
+                            <label>Requested Hours:</label>
+                            <span id="app-estimatedHours" class="detail-value" style="font-size: 1.5rem; color: var(--primary-blue);"></span>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1;">
+                            <label>Submitted By:</label>
+                            <span id="app-submittedBy" class="detail-value"></span>
+                        </div>
+                        <div class="detail-item" style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px;">
+                            <label>Scope of Work:</label>
+                            <p id="app-scopeDescription" class="detail-value" style="line-height: 1.6; white-space: pre-wrap;"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Approval Decision</h3>
+                    <div class="form-group">
+                        <label for="approvalNotes">Notes (Required for Rejection)</label>
+                        <textarea id="approvalNotes" class="form-control" rows="4" placeholder="Add approval notes or a reason for rejection..."></textarea>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+                <button type="button" class="btn btn-danger" style="margin-right: auto;" onclick="submitVariationApproval('rejected')">
+                    ❌ Reject
+                </button>
+                <button type="button" class="btn btn-success btn-large" onclick="submitVariationApproval('approved')">
+                    ✅ Approve Variation
+                </button>
+            </div>
+        </div>
+    </div>
 
 
 <!-- ============================================ -->
