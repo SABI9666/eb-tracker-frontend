@@ -8547,10 +8547,9 @@ async function submitDesignerUpload(event, projectId) {
             document.getElementById('addVariationForm').reset();
         }
 
-        /**
+       /**
          * Generates a new variation code.
-         * Assumes a new backend endpoint: GET /api/projects/generate-variation-code?parentId=...
-         * Falls back to a simple frontend generator if the endpoint fails.
+         * Calls the consolidated /api/projects endpoint.
          */
         async function generateVariationCode(silent = false) {
             const parentId = document.getElementById('variationParentProjectId').value;
@@ -8559,8 +8558,10 @@ async function submitDesignerUpload(event, projectId) {
             
             if (!silent) showLoading();
             try {
-                // Ask the backend for the next variation code
-                const response = await apiCall(`projects/generate-variation-code?parentId=${parentId}`);
+                // ================== THIS IS THE CHANGED LINE ==================
+                // Calls /api/projects?action=... instead of /api/projects/generate-variation-code?...
+                const response = await apiCall(`projects?action=generate-variation-code&parentId=${parentId}`);
+                // =============================================================
                 
                 if (response.success && response.data.variationCode) {
                     variationInput.value = response.data.variationCode;
