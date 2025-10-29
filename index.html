@@ -1622,6 +1622,109 @@
     font-size: 0.85rem;
     color: var(--text-light);
 }
+        /* ========================================== */
+        /* NOTIFICATION BELL & PANEL STYLES
+        /* ========================================== */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+            font-size: 1.8rem;
+            color: white;
+            margin-right: 1.5rem;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+        .notification-bell:hover {
+            opacity: 1;
+        }
+        .notification-count {
+            position: absolute;
+            top: -5px;
+            right: -10px;
+            background: var(--danger);
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--primary-blue);
+            display: none; /* Hidden by default */
+        }
+        .notification-count.visible {
+            display: flex;
+        }
+
+        .notification-panel {
+            position: fixed;
+            top: 75px; /* Below the header */
+            right: 2rem;
+            width: 400px;
+            max-width: 90vw;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            z-index: 9998;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: none; /* Hidden by default */
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .notification-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .notification-header h3 {
+            margin: 0;
+            color: var(--text-dark);
+        }
+        .notification-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .notification-item {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+        .notification-item:hover {
+            background: var(--light-blue);
+        }
+        .notification-item.unread {
+            background: #f8fafc;
+            font-weight: 600;
+        }
+        .notification-item .message {
+            display: block;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+        .notification-item .meta {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+        }
+        .notification-item .notes {
+            font-size: 0.9rem;
+            color: #555;
+            background: #eee;
+            padding: 0.5rem;
+            border-radius: 6px;
+            margin-top: 0.5rem;
+            font-weight: 500;
+            white-space: pre-wrap; /* Preserves formatting */
+        }
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
