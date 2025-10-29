@@ -2275,10 +2275,12 @@ Paste this new CSS block inside your `<style>` tag in `index (85).html`. You can
                 }
                 // END OF MODIFIED LINES
     
-                // --- Show role-specific dashboard or default view (USING roleForCheck) ---
+              // --- Show role-specific dashboard or default view (USING roleForCheck) ---
                  console.log("showApp: Determining initial view...");
                  console.log('Routing check: is roleForCheck "bdm"?', roleForCheck === 'bdm');
                  console.log('Routing check: is roleForCheck "coo" or "director"?', roleForCheck === 'coo' || roleForCheck === 'director');
+    
+                loadNotifications(); // <-- ADD THIS LINE HERE
     
                 if (roleForCheck === 'designer') {
                     console.log("showApp: Loading Designer Dashboard");
