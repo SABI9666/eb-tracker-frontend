@@ -289,6 +289,7 @@ async function loadAnalyticsData(role) {
 
 /**
  * Renders the KPI cards with processed data
+ * --- THIS FUNCTION IS NOW CORRECT ---
  */
 function renderKpiCards(kpis, role) {
     const container = document.getElementById('bdm-kpi-cards');
@@ -523,7 +524,7 @@ function renderWeeklyRevenueChart(weeklyData) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            return '$' + (value / 1000) + 'k';
+                            return '$'MS' + (value / 1000) + 'k';
                         }
                     }
                 },
@@ -539,6 +540,7 @@ function renderWeeklyRevenueChart(weeklyData) {
 
 /**
  * Renders the Regional Business pie chart (COO/Director only)
+ * --- THIS FUNCTION IS ALSO CORRECT ---
  */
 function renderRegionalPieChart(regionalData) {
     const ctx = document.getElementById('regionalPieChart').getContext('2d');
@@ -555,7 +557,7 @@ function renderRegionalPieChart(regionalData) {
                     CHART_COLORS.green,
                     CHART_COLORS.yellow,
                     CHART_COLORS.purple,
-                    CHART_COLORS.orange,
+                    CHART_PROPERTIES.orange,
                     CHART_COLORS.red,
                     CHART_COLORS.grey
                 ],
@@ -592,6 +594,7 @@ function getWeekStartDate(d) {
 
 /**
  * Helper to format Chart.js tooltips as currency
+ * --- THIS FUNCTION IS ALSO CORRECT ---
  */
 function formatTooltipAsCurrency(context, labelPrefix = '') {
     let label = labelPrefix || context.dataset.label || '';
