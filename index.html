@@ -1764,11 +1764,11 @@
                     <li id="settingsNavItem" style="display: none;">
                         <a href="#" onclick="showSettings()" id="nav-settings">
                         <span class="nav-icon">⚙️</span>Settings</a></li>
-              <li id="executiveMonitoringNavItem" style="display: none;">
-    <a href="#" onclick="showSection('executiveMonitoring')" id="nav-executive">
+                    <li id="executiveMonitoringNavItem" style="display: none;">
+    <a href="#" onclick="showExecutiveMonitoring()" id="nav-executive">
     <span class="nav-icon">📊</span>Executive Monitoring</a></li>
 <li id="timesheetNavItem" style="display: none;">
-    <a href="#" onclick="showSection('timesheet')" id="nav-timesheet">
+    <a href="#" onclick="showTimesheet()" id="nav-timesheet">
     <span class="nav-icon">⏱️</span>My Timesheet</a></li>
                 </ul>
             </nav>
@@ -2707,7 +2707,77 @@
                 hideLoading();
             }
         }
+         // ============================================
+        // EXECUTIVE MONITORING & TIMESHEET FUNCTIONS
+        // ============================================
         
+        async function showExecutiveMonitoring() {
+            setActiveNav('nav-executive');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            
+            try {
+                console.log('📊 Loading Executive Monitoring...');
+                
+                // Get the template content
+                const templateContent = document.getElementById('executiveTimesheetMonitoring');
+                if (!templateContent) {
+                    throw new Error('Executive Monitoring template not found');
+                }
+                
+                // Clone and insert into main content
+                main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
+                
+                // Load the data
+                await loadExecutiveMonitoring();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Executive Monitoring error:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Error Loading Executive Monitoring</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showExecutiveMonitoring()" class="btn btn-primary">Retry</button>
+                    </div>
+                `;
+                hideLoading();
+            }
+        }
+
+        async function showTimesheet() {
+            setActiveNav('nav-timesheet');
+            const main = document.getElementById('mainContent');
+            showLoading();
+            
+            try {
+                console.log('⏱️ Loading Timesheet...');
+                
+                // Get the template content
+                const templateContent = document.getElementById('timesheetSection');
+                if (!templateContent) {
+                    throw new Error('Timesheet template not found');
+                }
+                
+                // Clone and insert into main content
+                main.innerHTML = templateContent.outerHTML.replace('style="display: none;"', 'style="display: block;"');
+                
+                // Load the data
+                await loadTimesheets();
+                
+                hideLoading();
+            } catch (error) {
+                console.error('❌ Timesheet error:', error);
+                main.innerHTML = `
+                    <div class="error-message">
+                        <h3>⚠️ Error Loading Timesheet</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showTimesheet()" class="btn btn-primary">Retry</button>
+                    </div>
+                `;
+                hideLoading();
+            }
+        }
         function renderAllProjects() {
             const wonProjects = allProjectsData.filter(p => p.status === 'won');
             const lostProjects = allProjectsData.filter(p => p.status === 'lost');
@@ -6367,9 +6437,21 @@ async function submitAllocation() {
     # COMPLETE INTEGRATION SCRIPT
 # Copy and paste this entire section into your existing index.html
 
-<
-<!-- ============================================ --
+<!-- ============================================ -->
+<!-- STEP 1: ADD THESE NAVIGATION ITEMS -->
+<!-- Find your navigation menu and add these 3 items -->
+<!-- ============================================ -->
 
+<!-- Add after your existing nav items -->
+<div class="nav-item" onclick="showSection('executiveMonitoring')" data-role="coo,design_lead,director">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Executive Monitoring</span>
+</div>
+
+<div class="nav-item" onclick="showSection('timesheet')" data-role="designer">
+    <span class="nav-icon">⏱️</span>
+    <span class="nav-label">My Timesheet</span>
+</div>
 
 
 <!-- ============================================ -->
