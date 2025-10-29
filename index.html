@@ -6466,89 +6466,10 @@ async function submitAllocation() {
         <p class="subtitle">Advanced analytics and insights for project hours management</p>
     </div>
 
-    // =========================================================
-    // --- PASTE YOUR NEW JAVASCRIPT CODE HERE ---
-    //
-    // Now that the HTML above has been created, this code can
-    // find the elements by their IDs.
-    // =========================================================
-    
-    // Get references to your page elements
-    const fromDateInput = document.getElementById('from-date-input');
-    const toDateInput = document.getElementById('to-date-input');
-    const applyButton = document.getElementById('apply-filter-btn');
-
-    // Get references to the KPI value elements from your screenshot
-    const totalProjectsEl = document.getElementById('total-projects-value');
-    const onTrackProjectsEl = document.getElementById('on-track-projects-value');
-    const atRiskProjectsEl = document.getElementById('at-risk-projects-value');
-    const exceededProjectsEl = document.getElementById('exceeded-projects-value');
-    
-    // Add a click listener to the "Apply Filter" button
-    applyButton.addEventListener('click', () => {
-        fetchDashboardData();
-    });
-
-    async function fetchDashboardData() {
-        const fromDate = fromDateInput.value;
-        const toDate = toDateInput.value;
-
-        if (!fromDate || !toDate) {
-            alert('Please select both a "From" and "To" date.');
-            return;
-        }
-        
-        const apiUrl = `/api/monitoring/executive-summary?fromDate=${fromDate}&toDate=${toDate}`;
-
-        try {
-            // Show a loading state
-            totalProjectsEl.textContent = '...';
-            onTrackProjectsEl.textContent = '...';
-            atRiskProjectsEl.textContent = '...';
-            exceededProjectsEl.textContent = '...';
-
-            // Use the Authorization header
-            const token = localStorage.getItem('userToken'); // Get your stored token
-            const response = await fetch(apiUrl, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.error || `HTTP error! Status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            const data = result.data;
-
-            // Populate the dashboard
-            totalProjectsEl.textContent = data.totalProjects;
-            onTrackProjectsEl.textContent = data.onTrackProjects;
-            atRiskProjectsEl.textContent = data.atRiskProjects;
-            exceededProjectsEl.textContent = data.exceededProjects;
-
-        } catch (error) {
-            console.error('Failed to fetch dashboard data:', error);
-            alert(`Could not load data: ${error.message}`);
-            // Reset to 0 on error
-            totalProjectsEl.textContent = '0';
-            onTrackProjectsEl.textContent = '0';
-            atRiskProjectsEl.textContent = '0';
-            exceededProjectsEl.textContent = '0';
-        }
-    }
-    
-    // Note: Don't wrap this code in `DOMContentLoaded` because
-    // this function is already running *after* the DOM has loaded.
-    
-} /
-
     <!-- Top Level Metrics -->
     <div id="executiveMetrics" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
         <!-- Populated by JavaScript -->
-    </div>  
+    </div>
 
     <!-- Date Range Selector -->
     <div class="card" style="margin-bottom: 1.5rem;">
