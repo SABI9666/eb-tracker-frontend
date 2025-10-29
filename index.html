@@ -8463,7 +8463,139 @@ async function submitDesignerUpload(event, projectId) {
         hideLoading();
     }
 }
+// ============================================
+        // NEW: ADD VARIATION FUNCTIONS (DESIGN MANAGER)
+        // ============================================
 
+        /**
+         * Shows the "Add Variation" modal and populates parent project info.
+         */
+        function showAddVariationModal(projectId, projectCode, projectName) {
+            // Close any other modals
+            closeModal();
+            
+            // Populate the modal fields
+            document.getElementById('variationParentProjectId').value = projectId;
+            document.getElementById('variationParentProjectName').textContent = projectName;
+            document.getElementById('variationParentProjectCode').textContent = projectCode;
+            
+            // Reset form fields
+            document.getElementById('addVariationForm').reset();
+            
+            // Show the modal
+            const modal = document.getElementById('addVariationModal');
+            modal.style.display = 'flex';
+
+            // Pre-fill the variation code
+            generateVariationCode(true); // Pass true for silent generation
+        }
+
+        /**
+         * Closes the "Add Variation" modal and resets the form.
+         */
+        function closeAddVariationModal() {
+            const modal = document.getElementById('addVariationModal');
+            modal.style.display = 'none';
+            document.getElementById('addVariationForm').reset();
+        }
+
+        /**
+         * Generates a new variation code.
+         * Assumes a new backend endpoint: GET /api/projects/generate-variation-code?parentId=...
+         * Falls back to a simple frontend generator if the endpoint fails.
+         */
+        async function generateVariationCode(silent = false) {
+            const parentId = document.getElementById('variationParentProjectId').value;
+            const parentCode = document.getElementById('variationParentProjectCode').textContent;
+            const variationInput = document.getElementById('variationCode');
+            
+            if (!silent) showLoading();
+            try {
+                // Ask the backend for the next variation code
+                const response = await apiCall(`projects/generate-variation-code?parentId=${parentId}`);
+                
+                if (response.success && response.data.variationCode) {
+                    variationInput.value = response.data.variationCode;
+                } else {
+                    // Fallback: just append -V1 (a real app would check existing)
+                    variationInput.value = `${parentCode}-V1`;
+                }
+            } catch (error) {
+                console.warn('Backend variation code generator failed, using fallback:', error.message);
+                // Fallback: just append -V1
+                variationInput.value = `${parentCode}-V1`;
+            } finally {
+                if (!silent) hideLoading();
+            }
+        }
+
+        /**
+         * Submits the new variation to the backend for COO approval.
+         * Assumes a new backend endpoint: POST /api/variations
+         */
+        async function submitVariationForApproval() {
+            const parentProjectId = document.getElementById('variationParentProjectId').value;
+            const variationCode = document.getElementById('variationCode').value;
+            const estimatedHours = parseFloat(document.getElementById('variationHours').value);
+            const scopeDescription = document.getElementById('variationScope').value;
+
+            // --- Validation ---
+            if (!variationCode) {
+                alert('Please enter or generate a Variation Code.');
+                return;
+            }
+            if (!estimatedHours || estimatedHours <= 0) {
+                alert('Please enter valid Variation Hours (must be > 0).');
+                return;
+            }
+            if (!scopeDescription || scopeDescription.trim().length < 10) {
+                alert('Please provide a detailed Scope of Work (at least 10 characters).');
+                return;
+            }
+
+            // --- Prepare Data ---
+            const variationData = {
+                parentProjectId: parentProjectId,
+                variationCode: variationCode,
+                estimatedHours: estimatedHours,
+                scopeDescription: scopeDescription,
+                status: 'pending_coo_approval' // Set status for COO
+            };
+
+            if (!confirm('This will submit the variation to the COO for approval. Continue?')) {
+                return;
+            }
+
+            try {
+                showLoading();
+                
+                // This assumes a new endpoint '/api/variations' exists on your backend
+                // to create variation records.
+                const response = await apiCall('variations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(variationData)
+                });
+
+                if (response.success) {
+                    closeAddVariationModal();
+                    // Use the existing success modal
+                    showSuccessModal(
+                        'Variation Submitted!',
+                        `Your request for variation "${variationCode}" has been sent to the COO for approval.`
+                    );
+                    // No need to reload, just show success
+                } else {
+                    throw new Error(response.error || 'Failed to submit variation. Please check if the variation code is unique.');
+                }
+
+            } catch (error) {
+                console.error('Error submitting variation:', error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
 
 </script>
 
