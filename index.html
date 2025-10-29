@@ -2175,8 +2175,7 @@
         // ============================================
         // UI & NAVIGATION
         // ============================================
-
-           function showApp(){
+              function showApp(){
             // --- FIX: Wrap entire function in a setTimeout to fix race condition ---
             setTimeout(() => { // <--- Start of setTimeout callback
                 console.log('--- showApp() EXECUTING (after timeout) ---');
@@ -2208,7 +2207,7 @@
                 console.log('Original role:', currentUserRole, '| Cleaned roleForCheck:', roleForCheck);
 
                 // =============================================================
-                // >>>>> ALL THE CODE YOU ACCIDENTALLY MOVED OUT GOES HERE <<<<<
+                // >>>>> ALL THIS CODE MUST BE INSIDE THE setTimeout <<<<<
                 // =============================================================
 
                 loginPage.style.display = 'none';
@@ -2227,7 +2226,37 @@
                 if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
                 else console.warn("Element 'analyticsNavItem' not found");
 
-                // ... include ALL other getElementById and style.display lines here ...
+                const workflowNavItem = document.getElementById('workflowNavItem');
+                 if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
+                 else console.warn("Element 'workflowNavItem' not found");
+
+                 const reportsNavItem = document.getElementById('reportsNavItem');
+                 if (reportsNavItem) reportsNavItem.style.display = 'none'; // Always hidden
+                 else console.warn("Element 'reportsNavItem' not found");
+
+                 const settingsNavItem = document.getElementById('settingsNavItem');
+                 if (settingsNavItem) settingsNavItem.style.display = (roleForCheck === 'director') ? 'block' : 'none';
+                 else console.warn("Element 'settingsNavItem' not found");
+
+                 const allProjectsNavItem = document.getElementById('allProjectsNavItem');
+                 if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
+                 else console.warn("Element 'allProjectsNavItem' not found");
+
+                 const projectsNavItem = document.getElementById('projectsNavItem');
+                 if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
+                 else console.warn("Element 'projectsNavItem' not found");
+
+                 const tasksNavItem = document.getElementById('tasksNavItem');
+                 if (tasksNavItem) tasksNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
+                 else console.warn("Element 'tasksNavItem' not found");
+
+                 const paymentsNavItem = document.getElementById('paymentsNavItem');
+                 if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
+                 else console.warn("Element 'paymentsNavItem' not found");
+
+                 const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
+                 if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(roleForCheck)) ? 'block' : 'none';
+                 else console.warn("Element 'executiveMonitoringNavItem' not found");
 
                 const timesheetNavItem = document.getElementById('timesheetNavItem');
                 if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
@@ -2297,6 +2326,7 @@
 
         // Add this line OUTSIDE the function to initialize the retry flag
         showApp.retried = false;
+           
     
     
                 loginPage.style.display = 'none';
