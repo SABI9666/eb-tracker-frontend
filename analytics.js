@@ -437,6 +437,7 @@ function renderStatusPieChart(statusCounts) {
 
 /**
  * Renders the BDM Performance bar chart (COO/Director only)
+ * --- THIS FUNCTION IS UPDATED WITH THE COLOR FIX ---
  */
 function renderBdmPerformanceChart(bdmData) {
     const ctx = document.getElementById('bdmPerformanceChart').getContext('2d');
@@ -453,9 +454,17 @@ function renderBdmPerformanceChart(bdmData) {
             datasets: [{
                 label: 'Revenue Won',
                 data: data,
-                backgroundColor: CHART_COLORS.green,
-                borderColor: CHART_COLORS.green.replace('0.7', '1'),
-                borderWidth: 1,
+                backgroundColor: [ // Using an array of colors
+                    CHART_COLORS.green,
+                    CHART_COLORS.blue,
+                    CHART_COLORS.yellow,
+                    CHART_COLORS.purple,
+                    CHART_COLORS.orange,
+                    CHART_COLORS.red,
+                    CHART_COLORS.grey
+                ],
+                borderColor: '#ffffff', // Matching pie chart style
+                borderWidth: 2,         // Matching pie chart style
                 borderRadius: 5
             }]
         },
