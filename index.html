@@ -2793,15 +2793,22 @@
                 hideLoading();
             }
         }
-        function renderAllProjects() {
+       function renderAllProjects() {
+            // --- MODIFIED: Add variation counts ---
             const wonProjects = allProjectsData.filter(p => p.status === 'won');
             const lostProjects = allProjectsData.filter(p => p.status === 'lost');
             const pendingProjects = allProjectsData.filter(p => p.status === 'pending' || p.status === 'draft');
             const approvedProjects = allProjectsData.filter(p => p.status === 'approved');
             const allocatedProjects = wonProjects.filter(p => p.projectCreated && p.designLeadAssigned);
             const toBeAllocatedProjects = wonProjects.filter(p => !p.designLeadAssigned);
+            
+            const pendingVariations = allVariationsData; // <-- NEW
+            // --- END OF MODIFICATION ---
+
             // Filter projects based on current filter
             let filteredProjects = allProjectsData;
+            let contentHtml = ''; // <-- NEW: Use a variable for content
+
             switch(currentProjectFilter) {
                 case 'won': filteredProjects = wonProjects; break;
                 case 'loss': filteredProjects = lostProjects; break;
@@ -2809,38 +2816,71 @@
                 case 'approved': filteredProjects = approvedProjects; break;
                 case 'toBeAllocated': filteredProjects = toBeAllocatedProjects; break;
                 case 'allocated': filteredProjects = allocatedProjects; break;
+                // <-- NEW: Add case for variations -->
+                case 'pendingVariations':
+                    contentHtml = renderPendingVariationsTable(pendingVariations);
+                    break;
+                default:
+                    filteredProjects = allProjectsData;
             }
-            const projectsHtml = filteredProjects.map(p => {
-                const allocationStatus = p.designLeadAssigned ? 
-                    '<span class="proposal-status status-allocated">Allocated</span>' : 
-                    (p.status === 'won' ? '<span class="proposal-status status-needs-allocation">To Be Allocated</span>' : 
-                    '<span class="proposal-status status-pending">-</span>');
-                
-                let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
-                
-                // Add allocation button for won projects not yet allocated (COO only)
-                if (currentUserRole === 'coo' && p.status === 'won' && !p.designLeadAssigned && p.pricing?.projectNumber) {
-                    actionButtons = `
-                        <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-primary btn-sm">🎯 Allocate</button>
-                        ${actionButtons}
+
+            // --- MODIFIED: Build project table only if not showing variations ---
+            if (currentProjectFilter !== 'pendingVariations') {
+                const projectsHtml = filteredProjects.map(p => {
+                    const allocationStatus = p.designLeadAssigned ? 
+                        '<span class="proposal-status status-allocated">Allocated</span>' : 
+                        (p.status === 'won' ? '<span class="proposal-status status-needs-allocation">To Be Allocated</span>' : 
+                        '<span class="proposal-status status-pending">-</span>');
+                    
+                    let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
+                    
+                    if (currentUserRole === 'coo' && p.status === 'won' && !p.designLeadAssigned && p.pricing?.projectNumber) {
+                        actionButtons = `
+                            <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-primary btn-sm">🎯 Allocate</button>
+                            ${actionButtons}
+                        `;
+                    }
+                    
+                    return `
+                        <tr>
+                            <td><strong>${p.projectName}</strong></td>
+                            <td>${p.clientCompany}</td>
+                            <td>${p.createdByName || 'N/A'}</td>
+                            <td>${p.pricing?.currency || ''} ${p.pricing?.quoteValue || 'N/A'}</td>
+                            <td>${p.pricing?.projectNumber ? 
+                                `<span class="project-number-badge" style="font-size: 0.9rem;">${p.pricing.projectNumber}</span>` : 
+                                '<span class="proposal-status status-pending">Not Assigned</span>'}</td>
+                            <td><span class="proposal-status status-${p.status}">${p.status.toUpperCase()}</span></td>
+                            <td>${allocationStatus}</td>
+                            <td><div class="action-buttons">${actionButtons}</div></td>
+                        </tr>
                     `;
-                }
-                
-                return `
-                    <tr>
-                        <td><strong>${p.projectName}</strong></td>
-                        <td>${p.clientCompany}</td>
-                        <td>${p.createdByName || 'N/A'}</td>
-                        <td>${p.pricing?.currency || ''} ${p.pricing?.quoteValue || 'N/A'}</td>
-                        <td>${p.pricing?.projectNumber ? 
-                            `<span class="project-number-badge" style="font-size: 0.9rem;">${p.pricing.projectNumber}</span>` : 
-                            '<span class="proposal-status status-pending">Not Assigned</span>'}</td>
-                        <td><span class="proposal-status status-${p.status}">${p.status.toUpperCase()}</span></td>
-                        <td>${allocationStatus}</td>
-                        <td><div class="action-buttons">${actionButtons}</div></td>
-                    </tr>
+                }).join('');
+
+                contentHtml = `
+                    <div class="card">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Project Name</th>
+                                    <th>Client</th>
+                                    <th>BDM</th>
+                                    <th>Value</th>
+                                    <th>Project Number</th>
+                                    <th>Status</th>
+                                    <th>Allocation Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${projectsHtml || '<tr><td colspan="8" class="text-center">No projects found</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
                 `;
-            }).join('');
+            }
+            // --- END OF MODIFICATION ---
+
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>All Projects Overview</h2>
@@ -2864,9 +2904,9 @@
                         <h4>Allocated</h4>
                         <div class="number">${allocatedProjects.length}</div>
                     </div>
-                    <div class="summary-card">
-                        <h4>To Be Allocated</h4>
-                        <div class="number">${toBeAllocatedProjects.length}</div>
+                    <div class="summary-card pending" style="border-top-color: var(--warning);">
+                        <h4>Pending Variations</h4>
+                        <div class="number">${pendingVariations.length}</div>
                     </div>
                 </div>
                 
@@ -2892,27 +2932,14 @@
                     <div class="filter-tab ${currentProjectFilter === 'allocated' ? 'active' : ''}" onclick="filterAllProjects('allocated')">
                         Allocated <span class="count">${allocatedProjects.length}</span>
                     </div>
+                    <div class="filter-tab ${currentProjectFilter === 'pendingVariations' ? 'active' : ''}" 
+                         style="${pendingVariations.length > 0 ? 'background: var(--warning); color: #856404; border-color: var(--warning);' : ''}"
+                         onclick="filterAllProjects('pendingVariations')">
+                        Pending Variations <span class="count">${pendingVariations.length}</span>
+                    </div>
                 </div>
                 
-                <div class="card">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Project Name</th>
-                                <th>Client</th>
-                                <th>BDM</th>
-                                <th>Value</th>
-                                <th>Project Number</th>
-                                <th>Status</th>
-                                <th>Allocation Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${projectsHtml || '<tr><td colspan="8" class="text-center">No projects found</td></tr>'}
-                        </tbody>
-                    </table>
-                </div>
+                ${contentHtml}
             `;
         }
         function filterAllProjects(filterType) {
