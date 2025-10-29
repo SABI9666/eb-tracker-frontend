@@ -5838,6 +5838,126 @@ function updateTotalAllocated() {
             document.getElementById('successDetails').textContent = details || '';
             modal.style.display = 'flex';
         }
+        // ============================================
+        // NEW: NOTIFICATION FUNCTIONS
+        // ============================================
+
+        let notifications = []; // Cache for notifications
+
+        /**
+         * Toggles the notification panel visibility.
+         */
+        function toggleNotificationPanel() {
+            const panel = document.getElementById('notificationPanel');
+            if (panel.style.display === 'block') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+                loadNotifications(); // Refresh when opening
+            }
+        }
+
+        /**
+         * Fetches unread and recent notifications for the current user.
+         */
+        async function loadNotifications() {
+            try {
+                // This assumes your /api/notifications endpoint fetches notifications for the logged-in user
+                const response = await apiCall('notifications');
+                if (!response.success) {
+                    throw new Error(response.error || 'Failed to load notifications');
+                }
+
+                notifications = response.data || [];
+                renderNotifications(notifications);
+
+            } catch (error) {
+                console.error('Error loading notifications:', error);
+                document.getElementById('notificationList').innerHTML = 
+                    `<div class="notification-item">${error.message}</div>`;
+            }
+        }
+
+        /**
+         * Renders the fetched notifications into the panel.
+         */
+        function renderNotifications(data) {
+            const list = document.getElementById('notificationList');
+            const countBadge = document.getElementById('notificationCount');
+            
+            const unreadCount = data.filter(n => !n.isRead).length;
+
+            if (unreadCount > 0) {
+                countBadge.textContent = unreadCount;
+                countBadge.classList.add('visible');
+            } else {
+                countBadge.classList.remove('visible');
+            }
+
+            if (data.length === 0) {
+                list.innerHTML = `<div class="notification-item" style="text-align: center; color: var(--text-light);">No notifications yet.</div>`;
+                return;
+            }
+
+            list.innerHTML = data.map(n => {
+                let icon = '🔔';
+                if (n.type === 'variation_approved') icon = '✅';
+                if (n.type === 'variation_rejected') icon = '❌';
+                if (n.type ==='project_allocated') icon = '🎯';
+                if (n.type ==='project_assigned') icon = '👤';
+
+                return `
+                    <div class="notification-item ${!n.isRead ? 'unread' : ''}" onclick="handleNotificationClick('${n.id}', '${n.projectId}', '${n.variationId}', ${n.isRead})">
+                        <span class="message">${icon} ${n.message}</span>
+                        ${n.notes ? `<div class="notes">${n.notes}</div>` : ''}
+                        <span class="meta">${formatDate(n.createdAt)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        /**
+         * Handles clicking on a notification.
+         */
+        async function handleNotificationClick(notificationId, projectId, variationId, isRead) {
+            try {
+                // Mark as read only if it's unread
+                if (!isRead) {
+                    await apiCall(`notifications?id=${notificationId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ isRead: true })
+                    });
+                    
+                    // Update UI immediately
+                    const notif = notifications.find(n => n.id === notificationId);
+                    if (notif) notif.isRead = true;
+                    renderNotifications(notifications);
+                }
+
+                // Close the panel
+                toggleNotificationPanel();
+
+                // --- Navigate to the relevant item ---
+                // This is where you would add navigation
+                if (variationId && (currentUserRole === 'design_lead')) {
+                    // If you have a modal to view variation details, open it
+                    // For now, just navigate to the project
+                    alert('Variation status updated. Navigating to project...');
+                    viewProject(projectId); // Assuming viewProject exists
+                }
+                else if (projectId) {
+                    // Navigate to the project
+                    if (typeof viewProject === 'function') {
+                        viewProject(projectId);
+                    } else if (typeof viewProposal === 'function') {
+                        viewProposal(projectId); // Fallback
+                    }
+                }
+
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
 
         // Close modal when clicking outside
         window.addEventListener('click', function(event) {
