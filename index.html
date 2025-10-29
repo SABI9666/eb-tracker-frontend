@@ -2229,15 +2229,6 @@
         // Add this line OUTSIDE the function to initialize the retry flag
         showApp.retried = false;
     
-                if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay) {
-                    console.error("Core UI elements missing! Cannot initialize app view.");
-                    return; // Stop execution if essential elements are missing
-                }
-    
-                // --- FIX: Trim whitespace AND convert to lowercase ---
-                const roleForCheck = currentUserRole.trim().toLowerCase();
-                console.log('Original role:', currentUserRole, '| Cleaned roleForCheck:', roleForCheck);
-    
     
                 loginPage.style.display = 'none';
                 appContainer.style.display = 'block';
