@@ -5264,10 +5264,14 @@ const allocationData = {
         }
 
 
-        // Function to create project card UI
+    
+     // Function to create project card UI
         function createProjectCard(project) {
              const allocDate = project.allocationDate ? formatDate(project.allocationDate) : 'Not set';
              const targetDate = project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set';
+
+            // Find this function (around line 5200)
+            // Add the "Add Variation" button inside the .project-actions div
 
             return `
                 <div class="project-card">
@@ -5284,17 +5288,23 @@ const allocationData = {
                         <p><strong>Designers:</strong> ${project.assignedDesignerNames?.join(', ') || 'None assigned'}</p>
                     </div>
                     <div class="project-actions">
-    <button onclick="viewProject('${project.id}')">View Details</button>
-    ${(project.status === 'active' || project.status === 'ASSIGNED' || !project.assignedDesignerNames || project.assignedDesignerNames.length === 0) ?
-        `<button onclick="assignDesigners('${project.id}')">
-            ${project.assignedDesignerNames?.length > 0 ? '✏️ Manage Designers' : '➕ Assign Designers'}
-        </button>` : ''}
+                        <button onclick="viewProject('${project.id}')">View Details</button>
+                        ${(project.status === 'active' || project.status === 'ASSIGNED' || !project.assignedDesignerNames || project.assignedDesignerNames.length === 0) ?
+                            `<button onclick="assignDesigners('${project.id}')">
+                                ${project.assignedDesignerNames?.length > 0 ? '✏️ Manage Designers' : '➕ Assign Designers'}
+                            </button>` : ''}
                         <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
-                    </div>
+                        
+                        ${currentUserRole === 'design_lead' ? `
+                            <button onclick="showAddVariationModal('${project.id}', '${project.projectCode}', '${project.projectName}')" 
+                                    style="background-color: var(--warning); color: white; border-color: var(--warning);">
+                                ➕ Add Variation
+                            </button>
+                        ` : ''}
+                        </div>
                 </div>
             `;
         }
-
         // Function for Design Lead to assign designers
         async function assignDesigners(projectId) {
             const modal = document.getElementById('designerAssignmentModal');
