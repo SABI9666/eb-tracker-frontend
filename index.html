@@ -6463,6 +6463,54 @@ async function submitAllocation() {
     <span class="nav-label">My Timesheet</span>
 </div>
 
+    <div id="addVariationModal" class="modal" style="display: none;">
+        <div class="modal-content new-modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>➕ Add Variation for Approval</h2>
+                <span class="close-modal" onclick="closeAddVariationModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="variationParentProjectId" />
+                
+                <div class="info-section" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h4 style="color: var(--primary-blue);">Parent Project</h4>
+                    <p style="margin: 0;"><strong>Project:</strong> <span id="variationParentProjectName"></span></p>
+                    <p style="margin: 0;"><strong>Code:</strong> <span id="variationParentProjectCode"></span></p>
+                </div>
+                
+                <form id="addVariationForm">
+                    <div class="form-group">
+                        <label for="variationCode">Variation Code <span class="required">*</span></label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="variationCode" class="form-control" placeholder="e.g., STE25-513-V1" required>
+                            <button type="button" onclick="generateVariationCode()" class="btn btn-outline" style="width: auto; white-space: nowrap;">
+                                Generate
+                            </button>
+                        </div>
+                        <small class="form-text">A unique code for this variation.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="variationHours">Variation Hours <span class="required">*</span></label>
+                        <input type="number" id="variationHours" class="form-control" step="0.5" min="0.5" placeholder="Enter estimated hours for this variation" required>
+                        <small class="form-text">Estimated hours required to complete this variation.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="variationScope">Scope of Work / Description <span class="required">*</span></label>
+                        <textarea id="variationScope" class="form-control" rows="5" placeholder="Describe the work required for this variation. This will be sent to the COO for approval." required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeAddVariationModal()">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="submitVariationForApproval()">
+                    Submit for COO Approval
+                </button>
+            </div>
+        </div>
+    </div>
+
 
 <!-- ============================================ -->
 <!-- STEP 2: ADD THESE SECTIONS BEFORE </body> -->
