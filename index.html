@@ -2175,7 +2175,7 @@
         // ============================================
         // UI & NAVIGATION
         // ============================================
-             {
+           function showApp(){
             // --- FIX: Wrap entire function in a setTimeout to fix race condition ---
             setTimeout(() => { // <--- Start of setTimeout callback
                 console.log('--- showApp() EXECUTING (after timeout) ---');
@@ -2322,7 +2322,7 @@
                 // =============================================================
 
             }, 0); // <-- This marks the CORRECT END of the setTimeout callback
-         <-- This marks the CORRECT END of the showApp function definition
+        } // <-- This marks the CORRECT END of the showApp function definition
 
         // Add this line OUTSIDE the function to initialize the retry flag
         showApp.retried = false;
