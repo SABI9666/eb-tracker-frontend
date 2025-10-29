@@ -6798,70 +6798,74 @@ function calculateExecutiveMetrics() {
     const projects = executiveData.projects;
     const timesheets = executiveData.timesheets;
     
-    // --- NEW METRIC CALCULATIONS ---
-    let totalProjects = projects.length;
-    let onTrackProjects = 0;
-    let atRiskProjects = 0; // This is 70-100%
-    let exceededProjects = 0; // This is > 100%
-
-    projects.forEach(p => {
-        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
-        if (usage > 100) {
-            exceededProjects++;
-        } else if (usage >= 70) {
-            atRiskProjects++;
-        } else {
-            onTrackProjects++;
-        }
-    });
-    // --- END NEW METRIC CALCULATIONS ---
-
     const totalAllocated = projects.reduce((sum, p) => sum + (p.allocatedHours || 0), 0);
     const totalLogged = projects.reduce((sum, p) => sum + (p.hoursLogged || 0), 0);
+    const totalRemaining = totalAllocated - totalLogged;
+    const avgUtilization = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
+    
+    const onTrack = projects.filter(p => {
+        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
+        return usage < 75;
+    }).length;
+    
+    const atRisk = projects.filter(p => {
+        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
+        return usage >= 75 && usage < 90;
+    }).length;
+    
+    const critical = projects.filter(p => {
+        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
+        return usage >= 90;
+    }).length;
+    
+    const exceeded = projects.filter(p => {
+        const usage = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours) * 100 : 0;
+        return usage >= 100;
+    }).length;
     
     const activeDesigners = new Set(timesheets.map(t => t.designerUid)).size;
     const avgHoursPerProject = projects.length > 0 ? totalLogged / projects.length : 0;
     const efficiency = totalAllocated > 0 ? (totalLogged / totalAllocated) * 100 : 0;
     
-    // --- MODIFIED HTML ---
     const metricsHtml = `
-        <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <div class="metric-icon">📁</div>
-            <div class="metric-content">
-                <div class="metric-label">Total Projects</div>
-                <div class="metric-value">${totalProjects}</div>
-                <div class="metric-subtitle">${totalAllocated.toFixed(0)}h allocated</div>
-            </div>
-        </div>
-        
         <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <div class="metric-icon">🟢</div>
+            <div class="metric-icon">💰</div>
             <div class="metric-content">
-                <div class="metric-label">On-Track Projects</div>
-                <div class="metric-value">${onTrackProjects}</div>
-                <div class="metric-subtitle">Under 70% budget</div>
-            </div>
-        </div>
-        
-        <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <div class="metric-icon">🟡</div>
-            <div class="metric-content">
-                <div class="metric-label">At-Risk Projects</div>
-                <div class="metric-value">${atRiskProjects}</div>
-                <div class="metric-subtitle">70-100% budget</div>
+                <div class="metric-label">Total Budget (Hours)</div>
+                <div class="metric-value">${totalAllocated.toFixed(0)}h</div>
+                <div class="metric-subtitle">${projects.length} active projects</div>
             </div>
         </div>
         
         <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <div class="metric-icon">🔴</div>
+            <div class="metric-icon">⏱️</div>
             <div class="metric-content">
-                <div class="metric-label">Exceeded Projects</div>
-                <div class="metric-value">${exceededProjects}</div>
-                <div class="metric-subtitle">Over 100% budget</div>
+                <div class="metric-label">Hours Consumed</div>
+                <div class="metric-value">${totalLogged.toFixed(0)}h</div>
+                <div class="metric-subtitle">${avgUtilization.toFixed(1)}% utilization</div>
+            </div>
+        </div>
+        
+        <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="metric-icon">📊</div>
+            <div class="metric-content">
+                <div class="metric-label">Budget Remaining</div>
+                <div class="metric-value">${totalRemaining.toFixed(0)}h</div>
+                <div class="metric-subtitle">${((totalRemaining / totalAllocated) * 100).toFixed(1)}% available</div>
+            </div>
+        </div>
+        
+        <div class="metric-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="metric-icon">⚠️</div>
+            <div class="metric-content">
+                <div class="metric-label">Project Health</div>
+                <div class="metric-value" style="font-size: 1.2rem;">
+                    🟢 ${onTrack} | 🟡 ${atRisk} | 🔴 ${critical}
+                </div>
+                <div class="metric-subtitle">${exceeded} exceeded budget</div>
             </div>
         </div>
     `;
-    // --- END MODIFIED HTML ---
     
     document.getElementById('executiveMetrics').innerHTML = metricsHtml;
     document.getElementById('execActiveProjects').textContent = projects.length;
@@ -6873,21 +6877,9 @@ function calculateExecutiveMetrics() {
 
 // Switch between tabs
 function switchExecutiveTab(tab) {
-    // Find the active tab button. If event is not passed, find it by function name
-    const tabs = document.querySelectorAll('.tab');
-    tabs.forEach(t => {
-        t.classList.remove('active');
-        if (t.getAttribute('onclick') === `switchExecutiveTab('${tab}')`) {
-            t.classList.add('active');
-        }
-    });
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event?.target?.classList.add('active');
     
-    // Fallback if event was not passed
-    if (event && event.target) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        event.target.classList.add('active');
-    }
-
     const contentDiv = document.getElementById('executiveTabContent');
     
     switch(tab) {
@@ -6902,10 +6894,6 @@ function switchExecutiveTab(tab) {
             break;
         case 'analytics':
             contentDiv.innerHTML = generateAnalyticsContent();
-            // --- ADD THIS LINE ---
-            // Call renderChart after HTML is injected
-            setTimeout(renderDesignerChart, 0); 
-            // --- END ADDED LINE ---
             break;
         case 'alerts':
             contentDiv.innerHTML = generateAlertsContent();
@@ -7110,25 +7098,31 @@ function generateAlertsContent() {
         const usage = project.allocatedHours > 0 ? (project.hoursLogged / project.allocatedHours) * 100 : 0;
         const remaining = project.allocatedHours - project.hoursLogged;
         
-        // --- MODIFIED ALERT LOGIC ---
-        if (usage > 100) {
+        if (usage >= 100) {
             alerts.push({
-                type: 'critical', // Red
-                icon: '🔴',
+                type: 'critical',
+                icon: '🚨',
                 title: 'Budget Exceeded',
-                message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours (${usage.toFixed(0)}% used)`,
+                message: `Project "${project.projectName}" has exceeded its allocated hours by ${Math.abs(remaining).toFixed(1)} hours`,
                 project: project
             });
-        } else if (usage >= 70) {
+        } else if (usage >= 90) {
             alerts.push({
-                type: 'warning', // Yellow
-                icon: '🟡',
+                type: 'warning',
+                icon: '⚠️',
+                title: 'Critical Budget Usage',
+                message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with only ${remaining.toFixed(1)} hours remaining`,
+                project: project
+            });
+        } else if (usage >= 75) {
+            alerts.push({
+                type: 'info',
+                icon: '⚡',
                 title: 'High Budget Usage',
-                message: `Project "${project.projectName}" is at ${usage.toFixed(0)}% budget utilization with ${remaining.toFixed(1)} hours remaining`,
+                message: `Project "${project.projectName}" has used ${usage.toFixed(0)}% of allocated hours`,
                 project: project
             });
         }
-        // --- END MODIFIED ALERT LOGIC ---
     });
     
     if (alerts.length === 0) {
@@ -7137,7 +7131,7 @@ function generateAlertsContent() {
                 <div style="text-align: center; padding: 4rem; color: var(--text-light);">
                     <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
                     <div style="font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem;">All Clear!</div>
-                    <div>No projects are at risk or over budget.</div>
+                    <div>No critical alerts at this time</div>
                 </div>
             </div>
         `;
@@ -7150,10 +7144,8 @@ function generateAlertsContent() {
             </div>
             <div style="padding: 1rem;">
                 ${alerts.map(alert => {
-                    // --- MODIFIED STYLING TO MATCH REQUEST ---
-                    const bgColor = alert.type === 'critical' ? '#f8d7da' : '#fff3cd'; // Red or Yellow
-                    const borderColor = alert.type === 'critical' ? '#dc3545' : '#ffc107'; // Red or Yellow
-                    // --- END MODIFIED STYLING ---
+                    const bgColor = alert.type === 'critical' ? '#fee' : alert.type === 'warning' ? '#fff3cd' : '#e7f3ff';
+                    const borderColor = alert.type === 'critical' ? 'var(--danger)' : alert.type === 'warning' ? 'var(--warning)' : 'var(--primary-blue)';
                     
                     return `
                         <div style="padding: 1.5rem; background: ${bgColor}; border-left: 4px solid ${borderColor}; border-radius: 8px; margin-bottom: 1rem; cursor: pointer;" onclick="viewProject('${alert.project.id}')">
@@ -7258,78 +7250,6 @@ function resetExecutiveDateFilter() {
     executiveData.dateRange = { from: null, to: null };
     calculateExecutiveMetrics();
     switchExecutiveTab('overview');
-} // --- ADD THIS NEW FUNCTION ---
-// Render Designer Chart
-function renderDesignerChart() {
-    const timesheets = executiveData.timesheets;
-    const designerStats = {};
-    
-    // Calculate stats (same as generateDesignersContent)
-    timesheets.forEach(entry => {
-        if (!designerStats[entry.designerUid]) {
-            designerStats[entry.designerUid] = {
-                uid: entry.designerUid,
-                name: entry.designerName,
-                totalHours: 0,
-            };
-        }
-        designerStats[entry.designerUid].totalHours += entry.hours;
-    });
-    
-    const designersArray = Object.values(designerStats).sort((a, b) => b.totalHours - a.totalHours);
-
-    const labels = designersArray.map(d => d.name);
-    const data = designersArray.map(d => d.totalHours);
-
-    const ctx = document.getElementById('designerChart')?.getContext('2d');
-    if (!ctx) {
-        console.error('Designer chart canvas not found!');
-        return;
-    }
-
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Total Hours Logged',
-                data: data,
-                backgroundColor: 'rgba(0, 191, 255, 0.6)', // var(--primary-blue)
-                borderColor: 'rgba(0, 153, 204, 1)',   // var(--dark-blue)
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Total Hours'
-                    }
-                },
-                x: {
-                    title: {
-                        display: true,
-                        text: 'Designer'
-                    }
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return ` ${context.dataset.label}: ${context.raw.toFixed(1)}h`;
-                        }
-                    }
-                }
-            }
-        }
-    });
 }
 
 
