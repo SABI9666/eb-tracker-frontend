@@ -2176,7 +2176,7 @@
         // UI & NAVIGATION
         // ============================================
 
-        function showApp(){
+       function showApp(){
             // --- FIX: Wrap entire function in a setTimeout to fix race condition ---
             setTimeout(() => {
                 console.log('--- showApp() EXECUTING (after timeout) ---');
@@ -2184,7 +2184,50 @@
                 const loginPage = document.getElementById('loginPage');
                 const appContainer = document.getElementById('appContainer');
                 const userWelcome = document.getElementById('userWelcome');
-                const userRoleDisplay = document.getElementById('userRole'); 
+                const userRoleDisplay = document.getElementById('userRole');
+
+                // -------- START: ADD THIS CHECK --------
+                const sidebarElement = document.querySelector('.sidebar'); // Find the main sidebar
+                if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay || !sidebarElement) {
+                    console.error("Core UI elements (login, app, user info, or sidebar) missing! Cannot initialize app view.");
+                    // Attempt to wait a fraction longer and retry ONCE
+                    if (!showApp.retried) {
+                        console.warn("Retrying showApp() in 100ms...");
+                        showApp.retried = true; // Mark as retried to prevent infinite loop
+                        setTimeout(showApp, 100);
+                    } else {
+                         console.error("showApp() retry failed. Aborting.");
+                    }
+                    return; // Stop execution if essential elements are missing
+                }
+                showApp.retried = false; // Reset retry flag if successful
+                // -------- END: ADD THIS CHECK --------
+
+                // --- FIX: Trim whitespace AND convert to lowercase ---
+                const roleForCheck = currentUserRole.trim().toLowerCase();
+                console.log('Original role:', currentUserRole, '| Cleaned roleForCheck:', roleForCheck);
+
+                // ... (rest of the showApp function remains the same) ...
+
+                // User Requested Modifications: Hide Dashboard (USING roleForCheck)
+                const dashboardNavItem = document.getElementById('dashboardNavItem'); // Now this should be safer
+                 let isDashboardHidden = false;
+                if (dashboardNavItem) { // Check STILL needed in case something else removes it
+                     isDashboardHidden = ['bdm', 'coo', 'director'].includes(roleForCheck); // Assign here
+                     console.log('Checking for roles [bdm, coo, director]. Found match?', isDashboardHidden);
+                    dashboardNavItem.style.display = isDashboardHidden ? 'none' : 'block';
+                    console.log(`showApp: Dashboard Nav Item ${isDashboardHidden ? 'hidden' : 'shown'}`);
+                } else {
+                    // This error is now less likely, but keep it for debugging
+                    console.error("Element with ID 'dashboardNavItem' not found AFTER sidebar check! Check HTML.");
+                }
+
+                // ... (rest of the showApp function continues) ...
+
+            }, 0); // <-- End of setTimeout wrapper
+            }
+        // Add this line OUTSIDE the function to initialize the retry flag
+        showApp.retried = false;
     
                 if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay) {
                     console.error("Core UI elements missing! Cannot initialize app view.");
