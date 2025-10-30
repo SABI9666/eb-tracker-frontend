@@ -3695,8 +3695,10 @@
                     body: JSON.stringify({ action: 'add_estimation', data: estimationData })
                 });
 
-                if (response.success) {
+              if (response.success) {
                     alert('Estimation saved successfully!');
+                    const projectName = document.getElementById('estProjectName')?.value || 'Unknown Project'; // <-- ADD THIS
+                    triggerEmailNotification('estimation.complete', { projectName: projectName }); // <-- ADD THIS
                     closeModal();
                     showDashboard();
                 }
