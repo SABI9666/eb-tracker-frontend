@@ -2404,6 +2404,29 @@
                 setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
+        async function triggerEmailNotification(eventName, data = {}) {
+    console.log(`📧 Triggering email for: ${eventName}`, data);
+    try {
+        // Use the existing apiCall function to call your /api/email/trigger endpoint
+        const response = await apiCall('email/trigger', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                event: eventName, // e.g., 'project.submitted'
+                data: data        // e.g., { projectName: 'Test', designerEmail: '...' }
+            })
+        });
+
+        if (response.success) {
+            console.log(`✅ Email for [${eventName}] queued successfully.`);
+        } else {
+            throw new Error(response.error || 'Unknown error');
+        }
+    } catch (error) {
+        // Don't alert the user, just log to console so it doesn't interrupt flow
+        console.error(`❌ Failed to send email for [${eventName}]:`, error.message);
+    }
+}
 
         // ============================================
         // DASHBOARD
