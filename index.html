@@ -9031,6 +9031,9 @@ async function submitDesignerUpload(event, projectId) {
                         'Variation Submitted!',
                         `Your request for variation "${variationCode}" has been sent to the COO for approval.`
                     );
+                    const parentProjectName = document.getElementById('variationParentProjectName').textContent; // <-- ADD THIS
+                    triggerEmailNotification('design.variation_request', { projectName: parentProjectName, variationCode: variationCode }); // <-- ADD THIS
+
                     // No need to reload, just show success
                 } else {
                     throw new Error(response.error || 'Failed to submit variation. Please check if the variation code is unique.');
