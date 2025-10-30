@@ -6444,6 +6444,8 @@ async function submitAllocation() {
             
             closeModal();
             alert(`✅ Project Allocated Successfully!\n\nProject has been allocated to ${designManagerName} with ${maxAllocatedHours} hours (+${additionalHours} buffer). They will be notified immediately.`);
+            const projectName = document.getElementById('allocationProjectName')?.value || 'Unknown Project'; // <-- ADD THIS
+                triggerEmailNotification('project.allotment_', { projectName: projectName, designerEmail: designManagerEmail }); // <-- ADD THIS
             
             setTimeout(() => {
                 showProposals();
