@@ -3269,6 +3269,7 @@
                         });
                     }
                     alert('Proposal created successfully!');
+                    triggerEmailNotification('project.submitted', { projectName: formData.projectName });
                     closeModal();
                     showProposals();
                 } catch (error) {
