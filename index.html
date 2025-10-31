@@ -5411,19 +5411,19 @@ function renderAccountsOverview(invoices) {
             const main = document.getElementById('mainContent');
 
             const invoicesHtml = invoices.length > 0 ? invoices.map(inv => {
-                const statusClass = (inv.status || 'draft').toLowerCase().replace(/ /g, '-');
-                // Check if it's a variation invoice
+                // --- FIX: Use backend field names 'paymentStatus', 'invoiceNo', 'paymentDueDate', 'invoiceAmount' ---
+                const statusClass = (inv.paymentStatus || 'draft').toLowerCase().replace(/ /g, '-');
                 const isVariation = inv.variationId ? '<span class="proposal-status status-pending" style="margin-left: 8px;">VARIATION</span>' : '';
                 
                 return `
                 <tr>
-                    <td><strong>${inv.invoiceNumber}</strong> ${isVariation}</td>
+                    <td><strong>${inv.invoiceNo || 'undefined'}</strong> ${isVariation}</td>
                     <td>${inv.projectName || 'N/A'}</td>
                     <td>${inv.clientCompany || 'N/A'}</td>
                     <td>${formatDate(inv.createdAt)}</td>
-                    <td>${formatDate(inv.dueDate)}</td>
-                    <td>${inv.currency} ${inv.amount}</td>
-                    <td><span class="proposal-status status-${statusClass}">${inv.status}</span></td>
+                    <td>${formatDate(inv.paymentDueDate)}</td>
+                    <td>${inv.currency} ${inv.invoiceAmount || 'undefined'}</td>
+                    <td><span class->"proposal-status status-${statusClass}">${inv.paymentStatus || 'undefined'}</span></td>
                     <td><button class="btn btn-outline btn-sm" onclick="viewPayment('${inv.id}')">View</A></td>
                 </tr>
                 `;
