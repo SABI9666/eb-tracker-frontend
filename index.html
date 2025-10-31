@@ -5273,7 +5273,7 @@ async function showPayments() {
 
             // 4. Create the 'projectsToInvoice' list
             const projectsToInvoice = projects
-                .filter(p => p.projectId && !invoicedProjectIds.has(p.projectId)) // Filter out invoiced
+               .filter(p => !invoicedProjectIds.has(p.id)) // <-- CORRECTED LINE
                 .map(p => {
                     // Try to find the matching proposal data
                     const proposal = proposalsMap.get(p.proposalId);
