@@ -5342,20 +5342,21 @@ const allocationData = {
             }
         }
 
-        /**
+      /**
          * Renders the view for the ACCOUNTANT role.
          * Shows projects ready to be invoiced and a list of existing invoices.
          */
         function renderPaymentsList(invoices, projectsToInvoice) {
             const main = document.getElementById('mainContent');
 
+            // --- START MODIFICATION ---
             // Section for creating new invoices
             const projectsToInvoiceHtml = projectsToInvoice.length > 0 ? projectsToInvoice.map(p => `
                 <div class="action-item">
                     <div class="action-content">
                         <strong>${p.projectName}</strong>
                         <div class="action-meta">
-                            Client: ${p.clientCompany} | Project #: ${p.pricing?.projectNumber || 'N/A'} | Won: ${formatDate(p.wonDate)}
+                            Client: ${p.clientCompany} | Project #: ${p.pricing?.projectNumber || 'N/A'} | Completed: ${formatDate(p.completedDate)}
                         </div>
                     </div>
                     <div class="action-buttons">
@@ -5364,7 +5365,8 @@ const allocationData = {
                         </button>
                     </div>
                 </div>
-            `).join('') : '<p>No new "WON" projects ready for invoicing.</p>';
+            `).join('') : '<p>No new completed projects ready for invoicing.</p>'; // <-- Updated text
+            // --- END MODIFICATION ---
 
             // Section for existing invoices
             const invoicesHtml = invoices.length > 0 ? invoices.map(p => {
