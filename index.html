@@ -5456,11 +5456,7 @@ function renderAccountsOverview(invoices) {
         </div>
     `;
 }
-
-/**
- * Shows the modal to create an invoice.
- * Fetches proposal data to autofill project name, client, and amount.
- */
+// This is your existing function from index (53).html (line 4426)
 async function showCreateInvoiceModal(projectId, proposalId) {
     if (!projectId || !proposalId) {
         alert('Error: Missing Project ID or Proposal ID.');
@@ -5469,7 +5465,7 @@ async function showCreateInvoiceModal(projectId, proposalId) {
 
     try {
         showLoading();
-        // Fetch the proposal to get project name, client, and value
+        // Fetches proposal data to autofill project name, client, and amount
         const { success, data: proposal } = await apiCall(`proposals?id=${proposalId}`);
         if (!success || !proposal) {
             throw new Error('Failed to load proposal data for autofill');
@@ -5552,6 +5548,7 @@ async function showCreateInvoiceModal(projectId, proposalId) {
         alert(`Error loading invoice form: ${error.message}`);
     }
 }
+
 /**
  * Handles the submission of the new invoice form.
  * Saves the invoice and triggers notifications to BDM, COO, and Director.
