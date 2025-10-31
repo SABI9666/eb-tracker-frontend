@@ -5458,7 +5458,7 @@ const allocationData = {
             `;
         }
 
-        /**
+/**
          * Shows the modal to create an invoice.
          * Fetches proposal data to autofill project name, client, and amount.
          */
@@ -5494,9 +5494,6 @@ const allocationData = {
                             <form id="createInvoiceForm" class="modal-form">
                                 <input type="hidden" id="inv_projectId" value="${projectId}">
                                 <input type="hidden" id="inv_proposalId" value="${proposalId}">
-                                <input type="hidden" id="inv_projectName" value="${projectName}">
-                                <input type="hidden" id="inv_clientCompany" value="${clientCompany}">
-                                <input type="hidden" id="inv_currency" value="${currency}">
 
                                 <div class="info-section">
                                     <h4>Autofilled Details</h4>
@@ -5508,7 +5505,7 @@ const allocationData = {
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>Invoice Number *</label>
-                                        <input type="text" id="inv_invoiceNumber" class="form-control" required>
+                                        <input type="text" id="inv_invoiceNo" class="form-control" required>
                                     </div>
                                     <div class="form-group">
                                         <label>Invoice Amount *</label>
@@ -5516,26 +5513,27 @@ const allocationData = {
                                     </div>
                                 </div>
                                 <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Due Date *</label>
-                                        <input type="date" id="inv_dueDate" class="form-control" required>
+                                     <div class="form-group">
+                                        <label>Invoice Date *</label>
+                                        <input type="date" id="inv_invoiceDate" class="form-control" value="${new Date().toISOString().split('T')[0]}" required>
                                     </div>
                                     <div class="form-group">
-                                        <label>Initial Status</label>
-                                        <select id="inv_status" class="form-control">
-                                            <option value="Submitted">Submitted</option>
-                                            <option value="Draft">Draft</option>
-                                        </select>
+                                        <label>Payment Due Date *</label>
+                                        <input type="date" id="inv_paymentDueDate" class="form-control" required>
                                     </div>
                                 </div>
+                                 <div class="form-group">
+                                    <label>Payment Terms</label>
+                                    <input type="text" id="inv_paymentTerms" class="form-control" placeholder="e.g., Net 30">
+                                </div>
                                 <div class="form-group">
-                                    <label>Notes</label>
-                                    <textarea id="inv_notes" class="form-control" rows="3"></textarea>
+                                    <label>Milestone / Description</label>
+                                    <textarea id="inv_milestoneDescription" class="form-control" rows="3" placeholder="e.g., Final payment for project completion"></textarea>
                                 </div>
 
                                 <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
                                     <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                                    <button type="submit" class="btn btn-primary">Save Invoice</button>
+                                    <button type="submit" class="btn btn-primary">Save & Send Notifications</button>
                                 </div>
                             </form>
                         </div>
@@ -5551,11 +5549,6 @@ const allocationData = {
                 alert(`Error loading invoice form: ${error.message}`);
             }
         }
-
-        /**
-         * Handles the submission of the new invoice form.
-         * Saves the invoice and triggers notifications to BDM, COO, and Director.
-         */
         async function createInvoiceAction(event) {
             event.preventDefault();
             showLoading();
