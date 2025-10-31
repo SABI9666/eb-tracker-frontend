@@ -5228,9 +5228,6 @@ const allocationData = {
         async function deleteDeliverable(deliverableId) { /* ... (Unchanged) ... */ }
 
         // ============================================
-        // PAYMENTS (Accounts)
-        // ============================================
-// ============================================
         // PAYMENTS (Accounts, BDM, COO, Director)
         // ============================================
 
@@ -5253,13 +5250,54 @@ const allocationData = {
                 const allInvoices = response.data || [];
 
                 if (currentUserRole === 'accounts') {
-                    // ACCOUNTANT VIEW: Show projects to invoice + existing invoices
-                    const projectsResponse = await apiCall('proposals?status=won');
+                    // --- START MODIFICATION ---
+                    // ACCOUNTANT VIEW: Show projects SUBMITTED BY DESIGN MANAGER (e.g., status 'completed')
+                    
+                    // 1. Fetch completed projects
+                    // We assume a 'completed' status is set by the Design Manager/Designer
+                    const projectsResponse = await apiCall('projects?status=completed');
                     const projects = projectsResponse.success ? projectsResponse.data : [];
                     
-                    // Filter out projects that already have an invoice
+                    // 2. Filter out projects that already have an invoice
                     const invoicedProjectIds = new Set(allInvoices.map(inv => inv.projectId));
-                    const projectsToInvoice = projects.filter(p => p.projectId && !invoicedProjectIds.has(p.projectId));
+                    
+                    // 3. Get the proposals for these completed projects to get financial data
+                    const proposalIds = projects.map(p => p.proposalId).filter(Boolean);
+                    let proposalsMap = new Map();
+                    if (proposalIds.length > 0) {
+                        // Fetch all 'won' proposals and filter.
+                        const proposalsResponse = await apiCall('proposals?status=won');
+                        if (proposalsResponse.success) {
+                            proposalsResponse.data.forEach(p => proposalsMap.set(p.id, p));
+                        }
+                    }
+
+                    // 4. Create the 'projectsToInvoice' list
+                    const projectsToInvoice = projects
+                        .filter(p => p.projectId && !invoicedProjectIds.has(p.projectId)) // Filter out invoiced
+                        .map(p => {
+                            // Try to find the matching proposal data
+                            const proposal = proposalsMap.get(p.proposalId);
+                            if (proposal) {
+                                // Combine project and proposal data
+                                return {
+                                    ...proposal, // Gets wonDate, clientCompany, projectName, pricing
+                                    projectId: p.id, // Ensure we use the project ID
+                                    id: proposal.id, // Use proposal ID for invoice creation
+                                    status: p.status, // Use the project's 'completed' status
+                                    completedDate: p.completedAt || p.updatedAt // Use project completion date
+                                };
+                            }
+                            // Fallback if proposal not found
+                            return {
+                                ...p,
+                                id: p.proposalId, // Fallback to proposalId
+                                wonDate: p.createdAt, // Fallback
+                                completedDate: p.updatedAt
+                            };
+                        });
+                    
+                    // --- END MODIFICATION ---
 
                     // TODO: Add logic to fetch approved variations that need invoicing
 
