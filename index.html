@@ -6093,16 +6093,21 @@ const allocationData = {
                             </button>` : ''}
                         <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
                         
-                        ${currentUserRole === 'design_lead' ? `
+                            ${currentUserRole === 'design_lead' ? `
                             <button onclick="showAddVariationModal('${project.id}', '${project.projectCode}', '${project.projectName}')" 
                                     style="background-color: var(--warning); color: white; border-color: var(--warning);">
                                 ➕ Add Variation
                             </button>
                         ` : ''}
+
+                        ${(currentUserRole === 'design_lead' && project.status !== 'completed') ? `
+                            <button onclick="markProjectComplete('${project.id}')" 
+                                    style="background-color: var(--success); color: white; border-color: var(--success);">
+                                ✅ Mark Complete
+                            </button>
+                        ` : ''}
                         </div>
                 </div>
-            `;
-        }
         // Function for Design Lead to assign designers
         async function assignDesigners(projectId) {
             const modal = document.getElementById('designerAssignmentModal');
