@@ -6126,12 +6126,10 @@ async function markProjectComplete(projectId) {
             }
         }
 
-
-    
-     // Function to create project card UI
+    // Function to create project card UI
         function createProjectCard(project) {
-             const allocDate = project.allocationDate ? formatDate(project.allocationDate) : 'Not set';
-             const targetDate = project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set';
+            const allocDate = project.allocationDate ? formatDate(project.allocationDate) : 'Not set';
+            const targetDate = project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set';
 
             // Find this function (around line 5200)
             // Add the "Add Variation" button inside the .project-actions div
@@ -6171,8 +6169,11 @@ async function markProjectComplete(projectId) {
                                 ✅ Mark Complete
                             </button>
                         ` : ''}
-                        </div>
+                    </div>
                 </div>
+            `; // <-- FIX 1: Added missing closing backtick and semicolon
+        } // <-- FIX 2: Added missing closing curly brace
+
         // Function for Design Lead to assign designers
         async function assignDesigners(projectId) {
             const modal = document.getElementById('designerAssignmentModal');
@@ -6219,45 +6220,43 @@ async function markProjectComplete(projectId) {
                     designerRow.className = 'designer-row';
                     designerRow.style.cssText = 'display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; padding: 1rem; border: 2px solid var(--border); border-radius: 8px; margin-bottom: 0.8rem; background: white;';
                     
-            designerRow.innerHTML = `
-    <div style="display: flex; align-items: center;">
-        <input type="checkbox" 
-               id="designer-${designer.uid}" 
-               value="${designer.uid}"
-               data-name="${designer.name}" 
-               data-email="${designer.email}" 
-               ${isAssigned ? 'checked' : ''}
-               onchange="toggleDesignerHoursInput(this)"
-               style="width: 20px; height: 20px; cursor: pointer;">
-    </div>
-    <div>
-        <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
-            ${designer.name}
-        </label>
-        <div style="font-size: 0.85rem; color: var(--text-light);">
-            ${designer.email} • ${designer.assignedProjects || 0} active projects
-        </div>
-    </div>
-    <div style="min-width: 150px;">
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <input type="number" 
-                   id="hours-${designer.uid}"
-                   class="form-control hours-input" 
-                   step="0.5" 
-                   min="0.5"
-                   ${maxHours > 0 ? `max="${totalAvailable}"` : ''}
-                   value="${currentHours}"
-                   placeholder="Hours"
-                   ${!isAssigned ? 'disabled' : ''}
-                   onchange="updateTotalAllocated()"
-                   style="width: 80px; padding: 0.5rem; text-align: center;">
-            <span style="font-size: 0.9rem; color: var(--text-light);">hrs</span>
-        </div>
-    </div>
-`;
-    
-    
-          
+                    designerRow.innerHTML = `
+                        <div style="display: flex; align-items: center;">
+                            <input type="checkbox" 
+                                    id="designer-${designer.uid}" 
+                                    value="${designer.uid}"
+                                    data-name="${designer.name}" 
+                                    data-email="${designer.email}" 
+                                    ${isAssigned ? 'checked' : ''}
+                                    onchange="toggleDesignerHoursInput(this)"
+                                    style="width: 20px; height: 20px; cursor: pointer;">
+                        </div>
+                        <div>
+                            <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
+                                ${designer.name}
+                            </label>
+                            <div style="font-size: 0.85rem; color: var(--text-light);">
+                                ${designer.email} • ${designer.assignedProjects || 0} active projects
+                            </div>
+                        </div>
+                        <div style="min-width: 150px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="number" 
+                                        id="hours-${designer.uid}"
+                                        class="form-control hours-input" 
+                                        step="0.5" 
+                                        min="0.5"
+                                        ${maxHours > 0 ? `max="${totalAvailable}"` : ''}
+                                        value="${currentHours}"
+                                        placeholder="Hours"
+                                        ${!isAssigned ? 'disabled' : ''}
+                                        onchange="updateTotalAllocated()"
+                                        style="width: 80px; padding: 0.5rem; text-align: center;">
+                                <span style="font-size: 0.9rem; color: var(--text-light);">hrs</span>
+                            </div>
+                        </div>
+                    `;
+                    
                     designersList.appendChild(designerRow);
                 });
 
@@ -6345,7 +6344,10 @@ async function markProjectComplete(projectId) {
             let totalAllocated = 0;
 
             // Collect selected designers and their hours
+            let hasError = false; // Flag to stop execution
             checkboxes.forEach(checkbox => {
+                if (hasError) return; // Don't process more if error found
+                
                 const uid = checkbox.value;
                 const hoursInput = document.getElementById(`hours-${uid}`);
                 const hours = parseFloat(hoursInput.value) || 0;
@@ -6353,7 +6355,8 @@ async function markProjectComplete(projectId) {
                 // Validate hours
                 if (hours < 0.5) {
                     alert(`Please allocate at least 0.5 hours for ${checkbox.dataset.name}`);
-                    throw new Error('Invalid hours');
+                    hasError = true; // Set flag
+                    return; // Exit forEach loop
                 }
                 
                 designerUids.push(uid);
@@ -6362,6 +6365,8 @@ async function markProjectComplete(projectId) {
                 designerHours[uid] = hours;
                 totalAllocated += hours;
             });
+
+            if (hasError) return; // Stop submission if invalid hours
             
             // Validate total hours against max hours
             if (maxHours > 0 && totalAllocated > maxHours) {
@@ -6392,7 +6397,7 @@ async function markProjectComplete(projectId) {
                     const summary = designerUids.length > 0 
                         ? `${designerUids.length} designer(s) assigned with total ${totalAllocated.toFixed(1)} hours allocated.`
                         : 'All designers unassigned from project.';
-                    showSuccessModal(`Designers assigned successfully! ${summary}`);
+                    showSuccessModal(`Designers assigned successfully!`, summary); // Pass summary as description
                     closeDesignerAssignmentModal();
                     showDesignLeadDashboard(); // Reload projects
                 } else {
@@ -6406,60 +6411,11 @@ async function markProjectComplete(projectId) {
                 hideLoading();
             }
         }
-        // Toggle hours input when checkbox is changed
-function toggleDesignerHoursInput(checkbox) {
-    const designerId = checkbox.value;
-    const hoursInput = document.getElementById(`hours-${designerId}`);
-    
-    if (checkbox.checked) {
-        hoursInput.disabled = false;
-        if (!hoursInput.value || hoursInput.value === '0') {
-            hoursInput.value = '1'; // Default to 1 hour when checked
-        }
-    } else {
-        hoursInput.disabled = true;
-        hoursInput.value = '0';
-    }
-    
-    updateTotalAllocated();
-}
 
-// Update total allocated hours display
-function updateTotalAllocated() {
-    let total = 0;
-    const hoursInputs = document.querySelectorAll('.hours-input:not([disabled])');
-    hoursInputs.forEach(input => {
-        const value = parseFloat(input.value) || 0;
-        total += value;
-    });
-    
-    const totalDisplay = document.getElementById('totalAllocatedHours');
-    if (totalDisplay) {
-        totalDisplay.textContent = total.toFixed(1);
-    }
-    
-    // Update remaining hours if max hours are set
-    const modal = document.getElementById('designerAssignmentModal');
-    const maxHours = parseFloat(modal.dataset.maxHours || 0);
-    if (maxHours > 0) {
-        const remaining = maxHours - total;
-        const remainingDisplay = document.getElementById('displayRemainingHours');
-        if (remainingDisplay) {
-            remainingDisplay.textContent = remaining.toFixed(1);
-            // Change color based on remaining hours
-            if (remaining < 0) {
-                remainingDisplay.style.color = 'var(--danger)';
-            } else if (remaining < maxHours * 0.2) {
-                remainingDisplay.style.color = 'var(--warning)';
-            } else {
-                remainingDisplay.style.color = 'var(--success)';
-            }
-        }
-    }
-}
+        // <-- FIX 3: Removed the duplicate toggleDesignerHoursInput and updateTotalAllocated functions here
 
         // Function to view BDM uploaded files
-              async function viewBDMFiles(projectId, proposalId) { // <-- Added proposalId
+            async function viewBDMFiles(projectId, proposalId) { // <-- Added proposalId
             try {
                 showLoading();
                 // const response = await apiCall(`projects?id=${projectId}`); // <-- REMOVED THIS FAILING CALL
@@ -6475,7 +6431,7 @@ function updateTotalAllocated() {
                 if (bdmFiles && bdmFiles.length > 0) {
                     displayBDMFiles(bdmFiles);
                 } else {
-                     showSuccessModal('No files uploaded by BDM for this project.', ''); // Use success modal for info
+                        showSuccessModal('No files uploaded by BDM for this project.', ''); // Use success modal for info
                     // alert('No files uploaded by BDM');
                 }
 
@@ -6512,6 +6468,8 @@ function updateTotalAllocated() {
 
             modal.style.display = 'flex';
         }
+    
+    
 
         // ============================================
         // MODAL HELPER FUNCTIONS (From new script)
