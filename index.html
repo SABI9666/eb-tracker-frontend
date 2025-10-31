@@ -5408,26 +5408,26 @@ const projectsToInvoiceHtml = projectsToInvoice.length > 0 ? projectsToInvoice.m
  * Renders the overview table for BDM, COO, and DIRECTOR roles.
  */
 function renderAccountsOverview(invoices) {
-    const main = document.getElementById('mainContent');
+            const main = document.getElementById('mainContent');
 
-    const invoicesHtml = invoices.length > 0 ? invoices.map(inv => {
-        const statusClass = (inv.status || 'draft').toLowerCase().replace(/ /g, '-');
-        // Check if it's a variation invoice
-        const isVariation = inv.variationId ? '<span class="proposal-status status-pending" style="margin-left: 8px;">VARIATION</span>' : '';
-        
-        return `
-        <tr>
-            <td><strong>${inv.invoiceNumber}</strong> ${isVariation}</td>
-            <td>${inv.projectName || 'N/A'}</td>
-            <td>${inv.clientCompany || 'N/A'}</td>
-            <td>${formatDate(inv.createdAt)}</td>
-            <td>${formatDate(inv.dueDate)}</td>
-            <td>${inv.currency} ${inv.amount}</td>
-            <td><span class="proposal-status status-${statusClass}">${inv.status}</span></td>
-            <td><button class="btn btn-outline btn-sm" onclick="viewPayment('${inv.id}')">View</A></td>
-        </tr>
-        `;
-    }).join('') : '<tr><td colspan="8" class="text-center">No invoices found.</td></tr>';
+            const invoicesHtml = invoices.length > 0 ? invoices.map(inv => {
+                const statusClass = (inv.status || 'draft').toLowerCase().replace(/ /g, '-');
+                // Check if it's a variation invoice
+                const isVariation = inv.variationId ? '<span class="proposal-status status-pending" style="margin-left: 8px;">VARIATION</span>' : '';
+                
+                return `
+                <tr>
+                    <td><strong>${inv.invoiceNumber}</strong> ${isVariation}</td>
+                    <td>${inv.projectName || 'N/A'}</td>
+                    <td>${inv.clientCompany || 'N/A'}</td>
+                    <td>${formatDate(inv.createdAt)}</td>
+                    <td>${formatDate(inv.dueDate)}</td>
+                    <td>${inv.currency} ${inv.amount}</td>
+                    <td><span class="proposal-status status-${statusClass}">${inv.status}</span></td>
+                    <td><button class="btn btn-outline btn-sm" onclick="viewPayment('${inv.id}')">View</A></td>
+                </tr>
+                `;
+            }).join('') : '<tr><td colspan="8" class="text-center">No invoices found.</td></tr>';
 
     main.innerHTML = `
         <div class="page-header">
