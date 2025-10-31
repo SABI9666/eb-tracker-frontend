@@ -5824,6 +5824,41 @@ const allocationData = {
                 hideLoading();
             }
         }
+         /**
+         * Called by Design Manager to mark a project as completed.
+         */
+        async function markProjectComplete(projectId) {
+            if (!confirm('Are you sure you want to mark this project as complete? This will notify the accounts team to begin invoicing.')) {
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await apiCall(`projects?id=${projectId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        action: 'mark_complete'
+                    })
+                });
+
+                if (response.success) {
+                    showSuccessModal('Project Marked Complete!', 'The accounts team has been notified and will prepare the invoice.');
+                    // Refresh the view
+                    if (typeof showDesignLeadDashboard === 'function') {
+                        showDesignLeadDashboard();
+                    } else if (typeof showProjects === 'function') {
+                        showProjects();
+                    }
+                } else {
+                    throw new Error(response.error || 'Failed to mark project complete');
+                }
+
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }                    
 
         // ============================================
         // OTHER PAGES (Activities, Settings, etc.)
