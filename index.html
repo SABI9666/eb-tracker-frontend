@@ -5549,27 +5549,36 @@ const allocationData = {
                 alert(`Error loading invoice form: ${error.message}`);
             }
         }
+        /**
+         * Handles the submission of the new invoice form.
+         * Saves the invoice and triggers notifications to BDM, COO, and Director.
+         */
         async function createInvoiceAction(event) {
             event.preventDefault();
             showLoading();
             
+            // This data structure matches payments (2).js
             const invoiceData = {
                 projectId: document.getElementById('inv_projectId').value,
-                proposalId: document.getElementById('inv_proposalId').value,
-                projectName: document.getElementById('inv_projectName').value,
-                clientCompany: document.getElementById('inv_clientCompany').value,
-                invoiceNumber: document.getElementById('inv_invoiceNumber').value,
+                invoiceNo: document.getElementById('inv_invoiceNo').value,
+                invoiceDate: document.getElementById('inv_invoiceDate').value,
                 amount: parseFloat(document.getElementById('inv_amount').value),
-                currency: document.getElementById('inv_currency').value,
-                dueDate: document.getElementById('inv_dueDate').value,
-                status: document.getElementById('inv_status').value,
-                notes: document.getElementById('inv_notes').value,
-                // variationId: null // TODO: Add logic for variation invoices
+                paymentDueDate: document.getElementById('inv_paymentDueDate').value,
+                paymentTerms: document.getElementById('inv_paymentTerms').value,
+                milestoneDescription: document.getElementById('inv_milestoneDescription').value,
             };
+
+            // Validation
+            if (!invoiceData.projectId || !invoiceData.invoiceNo || !invoiceData.invoiceDate || !invoiceData.amount || !invoiceData.paymentDueDate) {
+                 alert('Please fill out all required fields (*)');
+                 hideLoading();
+                 return;
+            }
 
             try {
                 // 1. Save the invoice
-                const response = await apiCall('payments', { // Uses 'payments' endpoint
+                // This POST request is handled by payments (2).js
+                const response = await apiCall('payments', { 
                     method: 'POST',
                     body: JSON.stringify(invoiceData)
                 });
@@ -5578,7 +5587,20 @@ const allocationData = {
                     throw new Error(response.error || 'Failed to save invoice');
                 }
                 
-                showNotification('Invoice created successfully!', 'success');
+                // The backend (payments (2).js) handles all notifications.
+                // We don't need to do it here.
+                console.log('Invoice created. Backend is handling notifications.');
+                showNotification('Invoice created successfully! BDM, COO, and Director notified.', 'success');
+                
+                closeModal();
+                showPayments(); // Refresh the payments page
+
+            } catch (error) {
+                alert(`Error creating invoice: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
                 
                 // 2. Trigger Email Notifications (using existing function)
                 try {
