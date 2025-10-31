@@ -5349,23 +5349,23 @@ function renderPaymentsList(invoices, projectsToInvoice) {
     const main = document.getElementById('mainContent');
 
     // --- START MODIFICATION ---
-    // Section for creating new invoices
-    const projectsToInvoiceHtml = projectsToInvoice.length > 0 ? projectsToInvoice.map(p => `
-        <div class="action-item">
-            <div class="action-content">
-                <strong>${p.projectName}</strong>
-                <div class="action-meta">
-                    Client: ${p.clientCompany} | Project #: ${p.pricing?.projectNumber || 'N/A'} | Completed: ${formatDate(p.completedDate)}
-                </div>
-            </div>
-            <div class="action-buttons">
-                <button class="btn btn-success btn-sm" onclick="showCreateInvoiceModal('${p.projectId}', '${p.id}')">
-                    Create Invoice
-                </button>
+    // This code is inside your renderPaymentsList function (line 4305)
+
+const projectsToInvoiceHtml = projectsToInvoice.length > 0 ? projectsToInvoice.map(p => `
+    <div class="action-item">
+        <div class="action-content">
+            <strong>${p.projectName}</strong>
+            <div class="action-meta">
+                Client: ${p.clientCompany} | Project #: ${p.pricing?.projectNumber || 'N/A'} | Completed: ${formatDate(p.completedDate)}
             </div>
         </div>
-    `).join('') : '<p>No new completed projects ready for invoicing.</p>'; // <-- Updated text
-    // --- END MODIFICATION ---
+        <div class="action-buttons">
+            <button class="btn btn-success btn-sm" onclick="showCreateInvoiceModal('${p.projectId}', '${p.id}')">
+                Create Invoice
+            </button>
+        </div>
+    </div>
+`).join('') : '<p>No new completed projects ready for invoicing.</p>'; // <-- Your current empty state
 
     // Section for existing invoices
     const invoicesHtml = invoices.length > 0 ? invoices.map(p => {
