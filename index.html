@@ -2372,13 +2372,21 @@
             // Handles Firebase timestamp objects OR ISO strings
             if (!ts) return 'N/A';
             let date;
-             if (ts.seconds) { // Firebase Timestamp
-                 date = new Date(ts.seconds * 1000);
+
+            // --- FIX: Check for _seconds OR seconds ---
+            if (ts.seconds || ts._seconds) { // Firebase Timestamp
+                 const seconds = ts.seconds || ts._seconds;
+                 date = new Date(seconds * 1000);
              } else if (typeof ts === 'string' && ts.includes('-')) { // ISO String check
                  date = new Date(ts);
              } else {
                  return 'Invalid Date'; // Handle other cases or return N/A
              }
+            
+            if (isNaN(date.getTime())) {
+                return 'Invalid Date'; // Check if date is valid
+            }
+
             return date.toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
