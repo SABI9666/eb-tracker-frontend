@@ -3234,18 +3234,17 @@ function renderExecutiveCharts(analytics) {
     if (barCtx) {
         const designerData = analytics.designerDuration.slice(0, 10); // Top 10 designers
         
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: designerData.map(d => d.name),
-                datasets: [{
-                    label: 'Total Hours',
-                    data: designerData.map(d => d.totalHours),
-                    backgroundColor: '#00BFFF',
-                    borderColor: '#0099CC',
-                    borderWidth: 1
-                }]
-            },
+     new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: labels.map(l => l.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+            datasets: [{
+                data: data,
+                backgroundColor: labels.map(l => statusColors[l] || '#' + Math.floor(Math.random()*16777215).toString(16)), // Random fallback
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
