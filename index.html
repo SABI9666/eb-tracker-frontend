@@ -3200,11 +3200,7 @@ function showExecutiveSection(section) {
 function renderExecutiveCharts(analytics) {
     // Pie Chart - Project Status Distribution
     const pieCtx = document.getElementById('projectStatusPieChart');
-   if (pieCtx) {
-        // --- START REPLACEMENT ---
-        // const exceededCount = analytics.exceededProjects.length;
-        // const withinCount = analytics.withinTimelineProjects.length;
-        
+    if (pieCtx) {
         const statusData = analytics.projectStatusDistribution || {};
         const labels = Object.keys(statusData);
         const data = Object.values(statusData);
@@ -3217,6 +3213,19 @@ function renderExecutiveCharts(analytics) {
             'pending_setup': '#fef3c7',
             'unknown': '#f3f4f6'
         };
+
+        // --- FIX 1: The 'new Chart' constructor was added here ---
+        new Chart(pieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.map(l => l.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
+                datasets: [{
+                    data: data,
+                    backgroundColor: labels.map(l => statusColors[l] || '#' + Math.floor(Math.random()*16777215).toString(16)), // Random fallback
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
@@ -3234,17 +3243,19 @@ function renderExecutiveCharts(analytics) {
     if (barCtx) {
         const designerData = analytics.designerDuration.slice(0, 10); // Top 10 designers
         
-     new Chart(pieCtx, {
-        type: 'doughnut',
-        data: {
-            labels: labels.map(l => l.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())),
-            datasets: [{
-                data: data,
-                backgroundColor: labels.map(l => statusColors[l] || '#' + Math.floor(Math.random()*16777215).toString(16)), // Random fallback
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
+        // --- FIX 2: This section is now a 'bar' chart using 'barCtx' and 'designerData' ---
+        new Chart(barCtx, {
+            type: 'bar', // Changed from 'doughnut'
+            data: {
+                labels: designerData.map(d => d.name), // Uses designerData
+                datasets: [{
+                    label: 'Total Hours', // Added a label
+                    data: designerData.map(d => d.totalHours), // Uses designerData
+                    backgroundColor: '#00BFFF', // Bar color
+                    borderColor: '#0099CC',
+                    borderWidth: 1
+                }]
+            },
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
@@ -3259,7 +3270,7 @@ function renderExecutiveCharts(analytics) {
                 },
                 plugins: {
                     legend: {
-                        display: false
+                        display: false // No legend needed for a single-dataset bar chart
                     }
                 }
             }
