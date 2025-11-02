@@ -9553,130 +9553,130 @@ function resetExecutiveDateFilter() {
 // ============================================
 
 /**
- * Show Timesheet Modal - Designer can log hours for assigned projects
- */
-async function showTimesheetModal(projectId = null) {
-    try {
-        showLoading();
-        
-        // Fetch all projects
-        const response = await apiCall('projects');
-        if (!response.success) {
-            throw new Error('Failed to load projects');
-        }
-        
-        const projects = response.data || [];
-        const assignedProjects = projects.filter(p => 
-            p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)
-        );
-        
-        if (assignedProjects.length === 0) {
-            alert('You are not assigned to any projects yet.');
-            hideLoading();
-            return;
-        }
-        
-        // Close any existing modals first
-        closeAllModals();
-        
-        const modalHtml = `
-            <div class="modal-overlay" id="timesheetModalOverlay" onclick="handleModalOverlayClick(event, 'timesheetModalOverlay')">
-                <div class="modal-content" style="max-width: 600px;">
-                    <div class="modal-header">
-                        <h2>📋 Log Hours</h2>
-                        <span class="close-modal" onclick="closeTimesheetModal()">&times;</span>
-                    </div>
-                    
-                    <div class="modal-body">
-                        <form id="timesheetForm" onsubmit="event.preventDefault(); submitTimesheet();">
-                            <div class="form-group">
-                                <label>Project <span class="required">*</span></label>
-                                <select id="timesheetProjectId" class="form-control" required>
-                                    <option value="">Select a project...</option>
-                                    ${assignedProjects.map(project => `
-                                        <option value="${project.id}" 
-                                                data-allocated="${project.allocatedHours || 0}" 
-                                                data-logged="${project.hoursLogged || 0}">
-                                            ${project.projectName} - ${project.clientCompany}
-                                        </option>
-                                    `).join('')}
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Date <span class="required">*</span></label>
-                                <input type="date" id="timesheetDate" class="form-control" 
-                                       max="${new Date().toISOString().split('T')[0]}" required>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Hours <span class="required">*</span></label>
-                                <input type="number" id="timesheetHours" class="form-control" 
-                                       min="0.25" max="24" step="0.25" required 
-                                       placeholder="e.g., 8 or 2.5">
-                            </div>
-
-                            <div class="form-group">
-                                <label>Description <span class="required">*</span></label>
-                                <textarea id="timesheetDescription" class="form-control" rows="4" 
-                                          placeholder="Describe what you worked on..." required></textarea>
-                            </div>
-
-                            <!-- Allocation Info Display -->
-                            <div id="timesheetAllocationInfo" 
-                                 style="display: none; padding: 1rem; background: #e3f2fd; 
-                                        border-radius: 8px; margin-top: 1rem; border-left: 4px solid #2196F3;">
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Hours Logged:</span>
-                                    <strong id="timesheetCurrentHours">0h</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                    <span>Hours Allocated:</span>
-                                    <strong id="timesheetAllocatedHours">0h</strong>
-                                </div>
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span>Hours Remaining:</span>
-                                    <strong id="timesheetRemainingHours" style="color: #4CAF50;">0h</strong>
-                                </div>
+         * Show Timesheet Modal - Designer can log hours for assigned projects
+         */
+        async function showTimesheetModal(projectId = null) {
+            try {
+                showLoading();
+                
+                // Fetch all projects
+                const response = await apiCall('projects');
+                if (!response.success) {
+                    throw new Error('Failed to load projects');
+                }
+                
+                const projects = response.data || [];
+                // Filter for projects assigned to the current designer
+                const assignedProjects = projects.filter(p => 
+                    p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)
+                );
+                
+                if (assignedProjects.length === 0) {
+                    alert('You are not assigned to any projects yet.');
+                    hideLoading();
+                    return;
+                }
+                
+                // Close any existing modals first
+                closeAllModals();
+                
+                const modalHtml = `
+                    <div class="modal-overlay" id="timesheetModalOverlay" onclick="handleModalOverlayClick(event, 'timesheetModalOverlay')">
+                        <div class="modal-content" style="max-width: 600px;">
+                            <div class="modal-header">
+                                <h2>📋 Log Hours</h2>
+                                <span class="close-modal" onclick="closeTimesheetModal()">&times;</span>
                             </div>
                             
-                            <div id="timesheetWarning" style="display: none; padding: 1rem; background: #fff3cd; 
-                                 border-radius: 8px; margin-top: 1rem; border-left: 4px solid #ff9800; color: #856404;">
-                                <strong>⚠️ Warning:</strong> <span id="timesheetWarningText"></span>
+                            <div class="modal-body">
+                                <form id="timesheetForm" onsubmit="event.preventDefault(); submitTimesheet();">
+                                    <div class="form-group">
+                                        <label>Project <span class="required">*</span></label>
+                                        <select id="timesheetProjectId" class="form-control" required>
+                                            <option value="">Select a project...</option>
+                                            ${assignedProjects.map(project => `
+                                                <option value="${project.id}" 
+                                                        data-allocated="${(project.maxAllocatedHours || 0) + (project.additionalHours || 0)}" 
+                                                        data-logged="${project.hoursLogged || 0}">
+                                                    ${project.projectName} - ${project.clientCompany}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Date <span class="required">*</span></label>
+                                        <input type="date" id="timesheetDate" class="form-control" 
+                                               max="${new Date().toISOString().split('T')[0]}" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Hours <span class="required">*</span></label>
+                                        <input type="number" id="timesheetHours" class="form-control" 
+                                               min="0.25" max="24" step="0.25" required 
+                                               placeholder="e.g., 8 or 2.5">
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Description <span class="required">*</span></label>
+                                        <textarea id="timesheetDescription" class="form-control" rows="4" 
+                                                  placeholder="Describe what you worked on..." required></textarea>
+                                    </div>
+
+                                    <div id="timesheetAllocationInfo" 
+                                         style="display: none; padding: 1rem; background: #e3f2fd; 
+                                                border-radius: 8px; margin-top: 1rem; border-left: 4px solid #2196F3;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span>Hours Logged:</span>
+                                            <strong id="timesheetCurrentHours">0h</strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span>Hours Allocated:</span>
+                                            <strong id="timesheetAllocatedHours">0h</strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span>Hours Remaining:</span>
+                                            <strong id="timesheetRemainingHours" style="color: #4CAF50;">0h</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="timesheetWarning" style="display: none; padding: 1rem; background: #fff3cd; 
+                                         border-radius: 8px; margin-top: 1rem; border-left: 4px solid #ff9800; color: #856404;">
+                                        <strong>⚠️ Warning:</strong> <span id="timesheetWarningText"></span>
+                                    </div>
+                                </form>
                             </div>
-                        </form>
+                            
+                            <div class="modal-footer">
+                                <button type="button" onclick="closeTimesheetModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="submitTimesheet()" class="btn btn-success">
+                                    Log Hours
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="modal-footer">
-                        <button type="button" onclick="closeTimesheetModal()" class="btn btn-outline">Cancel</button>
-                        <button type="button" onclick="submitTimesheet()" class="btn btn-success">
-                            Log Hours
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        document.getElementById('timesheetDate').value = new Date().toISOString().split('T')[0];
-        
-        // Add change listener for project selection
-        document.getElementById('timesheetProjectId').addEventListener('change', updateTimesheetAllocationInfo);
-        document.getElementById('timesheetHours').addEventListener('input', updateTimesheetAllocationInfo);
-        
-        if (projectId) {
-            document.getElementById('timesheetProjectId').value = projectId;
-            updateTimesheetAllocationInfo();
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                document.getElementById('timesheetDate').value = new Date().toISOString().split('T')[0];
+                
+                // Add change listener for project selection
+                document.getElementById('timesheetProjectId').addEventListener('change', updateTimesheetAllocationInfo);
+                document.getElementById('timesheetHours').addEventListener('input', updateTimesheetAllocationInfo);
+                
+                if (projectId) {
+                    document.getElementById('timesheetProjectId').value = projectId;
+                    updateTimesheetAllocationInfo();
+                }
+                
+                hideLoading();
+                
+            } catch (error) {
+                console.error('Error showing timesheet modal:', error);
+                alert('Error loading timesheet form: ' + error.message);
+                hideLoading();
+            }
         }
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Error showing timesheet modal:', error);
-        alert('Error loading timesheet form: ' + error.message);
-        hideLoading();
-    }
-}
 
 /**
  * Update allocation information when project or hours change
