@@ -3510,73 +3510,13 @@
                             </div>
 
                             ${p.estimation ? `
-                              <div class="form-section">
-    <h4>Estimation Details</h4>
-    
-    <!-- Manhours Input -->
-    <div class="form-group">
-        <label>Total Man-hours <span class="required">*</span></label>
-        <input type="number" id="totalManhours" class="form-control"
-             placeholder="Enter total man-hours" step="0.1" min="0" required>
-    </div>
-    
-    <!-- NEW: Tonnage Input -->
-    <div class="form-group">
-        <label>Tonnage (Optional)</label>
-        <input type="number" id="tonnage" class="form-control"
-             placeholder="Enter tonnage if applicable" step="0.01" min="0">
-        <small class="form-text text-muted">Enter tonnage for projects involving weight calculations</small>
-    </div>
-    
-    <!-- NEW: Rate Type Selection -->
-    <div class="form-group">
-        <label>Rate Calculation Method</label>
-        <select id="rateMethod" class="form-control">
-            <option value="none">No Rate (Manhours Only)</option>
-            <option value="hourly">Hourly Rate</option>
-            <option value="tonnage">Tonnage Rate</option>
-            <option value="combined">Combined (Hourly + Tonnage)</option>
-        </select>
-        <small class="form-text text-muted">Select how to calculate the estimated value</small>
-    </div>
-    
-    <!-- Hourly Rate Input (conditionally shown) -->
-    <div class="form-group" id="hourlyRateGroup" style="display: none;">
-        <label>Hourly Rate ($/hour)</label>
-        <input type="number" id="estimatorHourlyRate" class="form-control"
-             placeholder="Enter hourly rate" step="0.01" min="0">
-        <small class="form-text text-muted">Rate per hour for labor calculations</small>
-    </div>
-    
-    <!-- Tonnage Rate Input (conditionally shown) -->
-    <div class="form-group" id="tonnageRateGroup" style="display: none;">
-        <label>Tonnage Rate ($/ton)</label>
-        <input type="number" id="tonnageRate" class="form-control"
-             placeholder="Enter rate per ton" step="0.01" min="0">
-        <small class="form-text text-muted">Rate per ton for material/weight calculations</small>
-    </div>
-    
-    <!-- Calculated Estimated Value (Auto-calculated) -->
-    <div class="form-group">
-        <label>Estimated Value ($)</label>
-        <input type="number" id="estimatedValue" class="form-control"
-             placeholder="Auto-calculated or enter manually" step="0.01" min="0" readonly>
-        <small class="form-text text-muted">This will be auto-calculated based on rates entered</small>
-    </div>
-    
-    <!-- Estimation Notes -->
-    <div class="form-group">
-        <label>Estimation Notes</label>
-        <textarea id="estimationNotes" class="form-control" rows="4"
-             placeholder="Add any notes about the estimation..."></textarea>
-    </div>
-    
-    <!-- Estimation Breakdown Display -->
-    <div id="estimationBreakdown" class="info-box" style="display: none; margin-top: 1rem;">
-        <h5>Calculation Breakdown:</h5>
-        <div id="breakdownContent"></div>
-    </div>
-</div>
+                                <div class="form-section">
+                                    <h4>Estimation Details</h4>
+                                    <p><strong>Total Hours:</strong> ${p.estimation.totalHours || 'N/A'}</p>
+                                    <p><strong>Services:</strong> ${p.estimation.services?.join(', ') || 'N/A'}</p>
+                                    <p><strong>Estimated By:</strong> ${p.estimation.estimatedBy || 'N/A'}</p>
+                                    ${p.estimation.notes ? `<p><strong>Notes:</strong> ${p.estimation.notes}</p>` : ''}
+                                </div>
                             ` : ''}
 
                             ${estimationFilesHtml}
@@ -3643,305 +3583,140 @@
             return false;
         }
 
-       async function showEstimationModal(proposalId) {
-    try {
-        showLoading();
-        
-        // Fetch proposal details
-        const response = await apiCall(`proposals?id=${proposalId}`);
-        
-        if (!response.success) {
-            throw new Error(response.error || 'Failed to load proposal');
-        }
-        
-        const proposal = response.data;
-        
-        // Create modal HTML with COMPLETE FORM
-        const modalHtml = `
-            <div class="modal" id="estimationModal">
-                <div class="modal-content" style="max-width: 800px;">
-                    <div class="modal-header">
-                        <h3>Add Estimation for "${proposal.projectName}"</h3>
-                        <button onclick="closeModal()" class="close-btn">×</button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="estimationForm">
-                            <!-- Estimation Form -->
+        function showEstimationModal(id, projectName = 'N/A') {
+            // ... (This function remains unchanged)
+            closeModal();
+            const modalHtml = `
+                <div class="modal-overlay">
+                    <div class="modal-content" style="max-width: 1000px;">
+                        <div class="modal-header"><h2>Manhour Entry & Estimation</h2></div>
+                        <form id="estimationForm" class="modal-form">
+                        <input type="hidden" id="estProjectName" value="${projectName}">
                             <div class="form-section">
-                                <h4>Estimation Details</h4>
-                                
-                                <!-- Manhours Input -->
-                                <div class="form-group">
-                                    <label>Total Man-hours <span class="required">*</span></label>
-                                    <input type="number" id="totalManhours" class="form-control"
-                                         placeholder="Enter total man-hours" step="0.1" min="0" required>
+                                <h4>View Project Files</h4>
+                                <div id="projectFilesView">Loading...</div>
+                            </div>
+                            <div class="form-section">
+                                <h4>Manhour Breakdown</h4>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                    <div class="form-group"><label>Design Hours</label><input type="number" id="designHours" class="form-control" value="0" required></div>
+                                    <div class="form-group"><label>Detailing Hours</label><input type="number" id="detailingHours" class="form-control" value="0" required></div>
+                                    <div class="form-group"><label>Checking Hours</label><input type="number" id="checkingHours" class="form-control" value="0" required></div>
+                                    <div class="form-group"><label>Revision Hours</label><input type="number" id="revisionHours" class="form-control" value="0"></div>
+                                    <div class="form-group"><label>Project Management</label><input type="number" id="pmHours" class="form-control" value="0"></div>
+                                    <div class="form-group"><label>Total Hours</label><input type="number" id="totalHours" class="form-control" readonly style="background: var(--light-blue);" value="0"></div>
                                 </div>
-                                
-                                <!-- NEW: Tonnage Input -->
-                                <div class="form-group">
-                                    <label>Tonnage (Optional)</label>
-                                    <input type="number" id="tonnage" class="form-control"
-                                         placeholder="Enter tonnage if applicable" step="0.01" min="0">
-                                    <small class="form-text text-muted">Enter tonnage for projects involving weight calculations</small>
+                            </div>
+                            <div class="form-section">
+                                <h4>Select Services</h4>
+                                <div class="service-grid">
+                                    <label class="service-item"><input type="checkbox" name="services" value="Steel Detailing"><span>Steel Detailing</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Miscellaneous Steel Detailing"><span>Miscellaneous Steel</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Connection Design"><span>Connection Design</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="PE Stamping"><span>PE Stamping</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="Joist Detailing"><span>Joist Detailing</span></label>
+                                    <label class="service-item"><input type="checkbox" name="services" value="As-built Drawings"><span>As-built Drawings</span></label>
                                 </div>
-                                
-                                <!-- NEW: Rate Type Selection -->
-                                <div class="form-group">
-                                    <label>Rate Calculation Method</label>
-                                    <select id="rateMethod" class="form-control">
-                                        <option value="none">No Rate (Manhours Only)</option>
-                                        <option value="hourly">Hourly Rate</option>
-                                        <option value="tonnage">Tonnage Rate</option>
-                                        <option value="combined">Combined (Hourly + Tonnage)</option>
-                                    </select>
-                                    <small class="form-text text-muted">Select how to calculate the estimated value</small>
+                            </div>
+                            <div class="form-section">
+                                <h4>Upload BOQ & Calculation Files (Estimator Only)</h4>
+                                <div class="upload-area" id="boqUploadArea" onclick="document.getElementById('boqFileInput').click()">
+                                    <div class="upload-icon">📊</div>
+                                    <p>Upload BOQ, MTO, etc.</p>
+                                    <input type="file" id="boqFileInput" multiple style="display: none;">
                                 </div>
-                                
-                                <!-- Hourly Rate Input (conditionally shown) -->
-                                <div class="form-group" id="hourlyRateGroup" style="display: none;">
-                                    <label>Hourly Rate ($/hour)</label>
-                                    <input type="number" id="estimatorHourlyRate" class="form-control"
-                                         placeholder="Enter hourly rate" step="0.01" min="0">
-                                    <small class="form-text text-muted">Rate per hour for labor calculations</small>
-                                </div>
-                                
-                                <!-- Tonnage Rate Input (conditionally shown) -->
-                                <div class="form-group" id="tonnageRateGroup" style="display: none;">
-                                    <label>Tonnage Rate ($/ton)</label>
-                                    <input type="number" id="tonnageRate" class="form-control"
-                                         placeholder="Enter rate per ton" step="0.01" min="0">
-                                    <small class="form-text text-muted">Rate per ton for material/weight calculations</small>
-                                </div>
-                                
-                                <!-- Calculated Estimated Value (Auto-calculated) -->
-                                <div class="form-group">
-                                    <label>Estimated Value ($)</label>
-                                    <input type="number" id="estimatedValue" class="form-control"
-                                         placeholder="Auto-calculated or enter manually" step="0.01" min="0" readonly>
-                                    <small class="form-text text-muted">This will be auto-calculated based on rates entered</small>
-                                </div>
-                                
-                                <!-- Estimation Notes -->
-                                <div class="form-group">
-                                    <label>Estimation Notes</label>
-                                    <textarea id="estimationNotes" class="form-control" rows="4"
-                                         placeholder="Add any notes about the estimation..."></textarea>
-                                </div>
-                                
-                                <!-- Estimation Breakdown Display -->
-                                <div id="estimationBreakdown" class="info-box" style="display: none; margin-top: 1rem;">
-                                    <h5>Calculation Breakdown:</h5>
-                                    <div id="breakdownContent"></div>
-                                </div>
+                                <div id="boqFilePreview"></div>
+                            </div>
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="saveEstimation('${id}')" class="btn btn-success">Save Estimation</button>
                             </div>
                         </form>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                        <button type="button" onclick="submitEstimation('${proposalId}')" class="btn btn-primary">
-                            Submit Estimation
-                        </button>
-                    </div>
                 </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        
-        // Initialize the form
-        initializeEstimationForm();
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Error loading estimation form:', error);
-        alert('Error loading estimation form: ' + error.message);
-        hideLoading();
-    }
-} 
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-       async function submitEstimation(proposalId) {
-    // Get form values
-    const totalManhours = document.getElementById('totalManhours')?.value;
-    const tonnage = document.getElementById('tonnage')?.value;
-    const rateMethod = document.getElementById('rateMethod')?.value;
-    const hourlyRate = document.getElementById('estimatorHourlyRate')?.value;
-    const tonnageRate = document.getElementById('tonnageRate')?.value;
-    const estimatedValue = document.getElementById('estimatedValue')?.value;
-    const estimationNotes = document.getElementById('estimationNotes')?.value;
-    
-    // Validation
-    if (!totalManhours || parseFloat(totalManhours) <= 0) {
-        alert('Please enter valid total man-hours');
-        return;
-    }
-    
-    // Validate based on rate method
-    if (rateMethod === 'hourly' || rateMethod === 'combined') {
-        if (!hourlyRate || parseFloat(hourlyRate) <= 0) {
-            alert('Please enter a valid hourly rate');
-            return;
-        }
-    }
-    
-    if (rateMethod === 'tonnage' || rateMethod === 'combined') {
-        if (!tonnage || parseFloat(tonnage) <= 0) {
-            alert('Please enter valid tonnage');
-            return;
-        }
-        if (!tonnageRate || parseFloat(tonnageRate) <= 0) {
-            alert('Please enter a valid tonnage rate');
-            return;
-        }
-    }
-    
-    try {
-        showLoading();
-        
-        // Prepare estimation data
-        const estimationData = {
-            totalManhours: parseFloat(totalManhours),
-            tonnage: tonnage ? parseFloat(tonnage) : null,
-            rateMethod: rateMethod,
-            hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
-            tonnageRate: tonnageRate ? parseFloat(tonnageRate) : null,
-            estimatedValue: parseFloat(estimatedValue),
-            notes: estimationNotes || '',
-            estimatorName: currentUserName,
-            estimatorUid: currentUserUid,
-            estimatedAt: new Date().toISOString()
-        };
-        
-        // Calculate breakdown for storage
-        const breakdown = {};
-        if (rateMethod === 'hourly') {
-            breakdown.hourlyValue = parseFloat(totalManhours) * parseFloat(hourlyRate);
-        } else if (rateMethod === 'tonnage') {
-            breakdown.tonnageValue = parseFloat(tonnage) * parseFloat(tonnageRate);
-        } else if (rateMethod === 'combined') {
-            breakdown.hourlyValue = parseFloat(totalManhours) * parseFloat(hourlyRate);
-            breakdown.tonnageValue = parseFloat(tonnage) * parseFloat(tonnageRate);
-        }
-        estimationData.breakdown = breakdown;
-        
-        // Submit to backend
-        const response = await apiCall(`proposals?id=${proposalId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'add_estimation',
-                data: estimationData
-            })
-        });
-        
-        if (response.success) {
-            closeModal();
-            showNotification('Estimation submitted successfully!', 'success');
-            
-            // Refresh proposals list
-            showProposals();
-        } else {
-            throw new Error(response.error || 'Failed to submit estimation');
-        }
-        
-    } catch (error) {
-        console.error('Error submitting estimation:', error);
-        alert('Error submitting estimation: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-        // ========================================
-// HELPER FUNCTIONS FOR ESTIMATION FORM
-// ========================================
+            loadProjectFiles(id);
 
-function updateRateFieldsVisibility() {
-    const rateMethod = document.getElementById('rateMethod')?.value || 'none';
-    const hourlyRateGroup = document.getElementById('hourlyRateGroup');
-    const tonnageRateGroup = document.getElementById('tonnageRateGroup');
-    
-    if (hourlyRateGroup) {
-        hourlyRateGroup.style.display = 
-            (rateMethod === 'hourly' || rateMethod === 'combined') ? 'block' : 'none';
-    }
-    
-    if (tonnageRateGroup) {
-        tonnageRateGroup.style.display = 
-            (rateMethod === 'tonnage' || rateMethod === 'combined') ? 'block' : 'none';
-    }
-}
+            document.getElementById('boqFileInput').addEventListener('change', function() {
+                const files = this.files;
+                if (files.length > 0) {
+                    document.getElementById('boqFilePreview').innerHTML =
+                        '<h5>Files to Upload:</h5>' +
+                        Array.from(files).map(f => `<p>📄 ${f.name}</p>`).join('');
+                }
+            });
 
-function calculateEstimatedValue() {
-    const rateMethod = document.getElementById('rateMethod')?.value || 'none';
-    const manhours = parseFloat(document.getElementById('totalManhours')?.value) || 0;
-    const tonnage = parseFloat(document.getElementById('tonnage')?.value) || 0;
-    const hourlyRate = parseFloat(document.getElementById('estimatorHourlyRate')?.value) || 0;
-    const tonnageRate = parseFloat(document.getElementById('tonnageRate')?.value) || 0;
-    
-    let estimatedValue = 0;
-    let breakdown = [];
-    
-    switch (rateMethod) {
-        case 'hourly':
-            estimatedValue = manhours * hourlyRate;
-            breakdown.push(`Manhours: ${manhours} × $${hourlyRate}/hr = $${estimatedValue.toFixed(2)}`);
-            break;
-            
-        case 'tonnage':
-            estimatedValue = tonnage * tonnageRate;
-            breakdown.push(`Tonnage: ${tonnage} tons × $${tonnageRate}/ton = $${estimatedValue.toFixed(2)}`);
-            break;
-            
-        case 'combined':
-            const hourlyValue = manhours * hourlyRate;
-            const tonnageValue = tonnage * tonnageRate;
-            estimatedValue = hourlyValue + tonnageValue;
-            breakdown.push(`Manhours: ${manhours} × $${hourlyRate}/hr = $${hourlyValue.toFixed(2)}`);
-            breakdown.push(`Tonnage: ${tonnage} tons × $${tonnageRate}/ton = $${tonnageValue.toFixed(2)}`);
-            breakdown.push(`<strong>Total: $${estimatedValue.toFixed(2)}</strong>`);
-            break;
-            
-        case 'none':
-        default:
-            estimatedValue = 0;
-            breakdown.push('No rate calculation method selected');
-            break;
-    }
-    
-    const estimatedValueField = document.getElementById('estimatedValue');
-    if (estimatedValueField) {
-        estimatedValueField.value = estimatedValue.toFixed(2);
-    }
-    
-    const breakdownDiv = document.getElementById('estimationBreakdown');
-    const breakdownContent = document.getElementById('breakdownContent');
-    
-    if (breakdownDiv && breakdownContent && rateMethod !== 'none') {
-        breakdownContent.innerHTML = breakdown.map(b => `<p>${b}</p>`).join('');
-        breakdownDiv.style.display = 'block';
-    } else if (breakdownDiv) {
-        breakdownDiv.style.display = 'none';
-    }
-}
+            const hourInputs = ['designHours', 'detailingHours', 'checkingHours', 'revisionHours', 'pmHours'];
+            hourInputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', () => {
+                    const total = hourInputs.reduce((sum, inputId) => {
+                        return sum + (parseFloat(document.getElementById(inputId).value) || 0);
+                    }, 0);
+                    document.getElementById('totalHours').value = total;
+                });
+            });
 
-function initializeEstimationForm() {
-    updateRateFieldsVisibility();
-    
-    // Attach event listeners
-    const fields = ['totalManhours', 'tonnage', 'estimatorHourlyRate', 'tonnageRate', 'rateMethod'];
-    
-    fields.forEach(fieldId => {
-        const field = document.getElementById(fieldId);
-        if (field) {
-            field.addEventListener('input', calculateEstimatedValue);
-            field.addEventListener('change', calculateEstimatedValue);
+            document.querySelectorAll('.service-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.target.tagName !== 'INPUT') {
+                        const checkbox = this.querySelector('input[type="checkbox"]');
+                        checkbox.checked = !checkbox.checked;
+                    }
+                    this.classList.toggle('checked', this.querySelector('input[type="checkbox"]').checked);
+                });
+            });
         }
-    });
-}
 
-// ========================================
-// END OF HELPER FUNCTIONS
-// ========================================
+        async function saveEstimation(proposalId) {
+            // ... (This function remains unchanged)
+            const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => cb.value);
+            const totalHours = document.getElementById('totalHours').value || 0;
+
+            if (totalHours == 0) return alert('Please enter manhours.');
+            if (services.length === 0) return alert('Please select at least one service.');
+
+            const estimationData = {
+                designHours: document.getElementById('designHours').value || 0,
+                detailingHours: document.getElementById('detailingHours').value || 0,
+                checkingHours: document.getElementById('checkingHours').value || 0,
+                revisionHours: document.getElementById('revisionHours').value || 0,
+                pmHours: document.getElementById('pmHours').value || 0,
+                totalHours: totalHours,
+                services: services,
+                notes: 'Estimation completed'
+            };
+
+            try {
+                showLoading();
+                const fileInput = document.getElementById('boqFileInput');
+                if (fileInput.files.length > 0) {
+                    const formData = new FormData();
+                    Array.from(fileInput.files).forEach(file => formData.append('files', file));
+                    formData.append('proposalId', proposalId);
+                    formData.append('fileType', 'estimation');
+                    await apiCall('files', { method: 'POST', body: formData });
+                }
+
+                const response = await apiCall(`proposals?id=${proposalId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ action: 'add_estimation', data: estimationData })
+                });
+
+              if (response.success) {
+                    alert('Estimation saved successfully!');
+                    const projectName = document.getElementById('estProjectName')?.value || 'Unknown Project'; // <-- ADD THIS
+                    triggerEmailNotification('estimation.complete', { projectName: projectName }); // <-- ADD THIS
+                    closeModal();
+                    showDashboard();
+                }
+            } catch (error) {
+                alert('Error saving estimation: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
 
         async function loadProjectFiles(proposalId) {
             // ... (This function remains unchanged)
