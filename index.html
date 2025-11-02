@@ -4150,23 +4150,32 @@ async function showMyTimeRequests() {
 // INITIALIZE - Update pending requests badge
 // ============================================
 async function updatePendingRequestsBadge() {
-    if (!['coo', 'director'].includes(currentUser.role)) {
-        return;
-    }
-    
-    try {
-        const response = await apiCall('time-requests?status=pending');
-        if (response.success && response.count > 0) {
-            const badge = document.getElementById('pendingRequestsBadge');
-            if (badge) {
-                badge.textContent = response.count;
-                badge.style.display = 'inline-block';
+            // FIX: Check against the cleaned currentUserRole variable
+            if (!['coo', 'director'].includes(currentUserRole.trim().toLowerCase())) {
+                return;
+            }
+            
+            try {
+                const response = await apiCall('time-requests?status=pending');
+                
+                // FIX: Your API returns { success: true, data: [...] }
+                // We need the .length of the 'data' array, not a 'count' property.
+                const count = (response.success && Array.isArray(response.data)) ? response.data.length : 0;
+                
+                const badge = document.getElementById('pendingRequestsBadge');
+                if (badge) {
+                    if (count > 0) {
+                        badge.textContent = count;
+                        // FIX: Use 'inline-block' for proper flow in the nav item
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating badge:', error);
             }
         }
-    } catch (error) {
-        console.error('Error updating badge:', error);
-    }
-}
 
 // Call this periodically or on page load
 setInterval(updatePendingRequestsBadge, 60000); // Update every minute
