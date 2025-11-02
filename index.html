@@ -3200,21 +3200,23 @@ function showExecutiveSection(section) {
 function renderExecutiveCharts(analytics) {
     // Pie Chart - Project Status Distribution
     const pieCtx = document.getElementById('projectStatusPieChart');
-    if (pieCtx) {
-        const exceededCount = analytics.exceededProjects.length;
-        const withinCount = analytics.withinTimelineProjects.length;
+   if (pieCtx) {
+        // --- START REPLACEMENT ---
+        // const exceededCount = analytics.exceededProjects.length;
+        // const withinCount = analytics.withinTimelineProjects.length;
         
-        new Chart(pieCtx, {
-            type: 'pie',
-            data: {
-                labels: ['Exceeded Timeline', 'Within Timeline'],
-                datasets: [{
-                    data: [exceededCount, withinCount],
-                    backgroundColor: ['#E74C3C', '#27AE60'],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
+        const statusData = analytics.projectStatusDistribution || {};
+        const labels = Object.keys(statusData);
+        const data = Object.values(statusData);
+        
+        // Define colors for statuses
+        const statusColors = {
+            'assigned': '#ddd6fe',
+            'in_progress': '#bfdbfe',
+            'completed': '#bbf7d0',
+            'pending_setup': '#fef3c7',
+            'unknown': '#f3f4f6'
+        };
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
