@@ -9514,16 +9514,19 @@ function resetExecutiveDateFilter() {
     switchExecutiveTab('overview');
 }
 
+// ============================================
+// COMPLETE TIMESHEET WITH ADDITIONAL TIME REQUEST SYSTEM
+// Replace these functions in your index.html
+// ============================================
 
-// ===================================
-// TIMESHEET JAVASCRIPT
-// ===================================
-
-// Show timesheet modal
+/**
+ * Show Timesheet Modal - Designer can log hours for assigned projects
+ */
 async function showTimesheetModal(projectId = null) {
     try {
         showLoading();
         
+        // Fetch all projects
         const response = await apiCall('projects');
         if (!response.success) {
             throw new Error('Failed to load projects');
@@ -9540,22 +9543,27 @@ async function showTimesheetModal(projectId = null) {
             return;
         }
         
+        // Close any existing modals first
+        closeAllModals();
+        
         const modalHtml = `
-            <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
+            <div class="modal-overlay" id="timesheetModalOverlay" onclick="handleModalOverlayClick(event, 'timesheetModalOverlay')">
                 <div class="modal-content" style="max-width: 600px;">
                     <div class="modal-header">
-                        <h2>Log Hours</h2>
-                        <span class="close-modal" onclick="closeModal()">&times;</span>
+                        <h2>📋 Log Hours</h2>
+                        <span class="close-modal" onclick="closeTimesheetModal()">&times;</span>
                     </div>
                     
                     <div class="modal-body">
-                        <form id="timesheetForm">
+                        <form id="timesheetForm" onsubmit="event.preventDefault(); submitTimesheet();">
                             <div class="form-group">
                                 <label>Project <span class="required">*</span></label>
                                 <select id="timesheetProjectId" class="form-control" required>
                                     <option value="">Select a project...</option>
                                     ${assignedProjects.map(project => `
-                                        <option value="${project.id}" data-allocated="${project.allocatedHours || 0}" data-logged="${project.hoursLogged || 0}">
+                                        <option value="${project.id}" 
+                                                data-allocated="${project.allocatedHours || 0}" 
+                                                data-logged="${project.hoursLogged || 0}">
                                             ${project.projectName} - ${project.clientCompany}
                                         </option>
                                     `).join('')}
@@ -9571,7 +9579,8 @@ async function showTimesheetModal(projectId = null) {
                             <div class="form-group">
                                 <label>Hours <span class="required">*</span></label>
                                 <input type="number" id="timesheetHours" class="form-control" 
-                                       min="0.25" max="24" step="0.25" required placeholder="e.g., 8 or 2.5">
+                                       min="0.25" max="24" step="0.25" required 
+                                       placeholder="e.g., 8 or 2.5">
                             </div>
 
                             <div class="form-group">
@@ -9580,7 +9589,10 @@ async function showTimesheetModal(projectId = null) {
                                           placeholder="Describe what you worked on..." required></textarea>
                             </div>
 
-                            <div id="timesheetAllocationInfo" style="display: none; padding: 1rem; background: var(--light-blue); border-radius: 8px; margin-top: 1rem;">
+                            <!-- Allocation Info Display -->
+                            <div id="timesheetAllocationInfo" 
+                                 style="display: none; padding: 1rem; background: #e3f2fd; 
+                                        border-radius: 8px; margin-top: 1rem; border-left: 4px solid #2196F3;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                                     <span>Hours Logged:</span>
                                     <strong id="timesheetCurrentHours">0h</strong>
@@ -9591,14 +9603,19 @@ async function showTimesheetModal(projectId = null) {
                                 </div>
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>Hours Remaining:</span>
-                                    <strong id="timesheetRemainingHours" style="color: var(--success);">0h</strong>
+                                    <strong id="timesheetRemainingHours" style="color: #4CAF50;">0h</strong>
                                 </div>
+                            </div>
+                            
+                            <div id="timesheetWarning" style="display: none; padding: 1rem; background: #fff3cd; 
+                                 border-radius: 8px; margin-top: 1rem; border-left: 4px solid #ff9800; color: #856404;">
+                                <strong>⚠️ Warning:</strong> <span id="timesheetWarningText"></span>
                             </div>
                         </form>
                     </div>
                     
                     <div class="modal-footer">
-                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                        <button type="button" onclick="closeTimesheetModal()" class="btn btn-outline">Cancel</button>
                         <button type="button" onclick="submitTimesheet()" class="btn btn-success">
                             Log Hours
                         </button>
@@ -9610,30 +9627,13 @@ async function showTimesheetModal(projectId = null) {
         document.body.insertAdjacentHTML('beforeend', modalHtml);
         document.getElementById('timesheetDate').value = new Date().toISOString().split('T')[0];
         
-        document.getElementById('timesheetProjectId').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const infoDiv = document.getElementById('timesheetAllocationInfo');
-            
-            if (this.value) {
-                const allocated = parseFloat(selectedOption.dataset.allocated) || 0;
-                const logged = parseFloat(selectedOption.dataset.logged) || 0;
-                const remaining = allocated - logged;
-                
-                document.getElementById('timesheetCurrentHours').textContent = logged + 'h';
-                document.getElementById('timesheetAllocatedHours').textContent = allocated + 'h';
-                document.getElementById('timesheetRemainingHours').textContent = remaining + 'h';
-                document.getElementById('timesheetRemainingHours').style.color = 
-                    remaining < 5 ? 'var(--danger)' : 'var(--success)';
-                
-                infoDiv.style.display = 'block';
-            } else {
-                infoDiv.style.display = 'none';
-            }
-        });
+        // Add change listener for project selection
+        document.getElementById('timesheetProjectId').addEventListener('change', updateTimesheetAllocationInfo);
+        document.getElementById('timesheetHours').addEventListener('input', updateTimesheetAllocationInfo);
         
         if (projectId) {
             document.getElementById('timesheetProjectId').value = projectId;
-            document.getElementById('timesheetProjectId').dispatchEvent(new Event('change'));
+            updateTimesheetAllocationInfo();
         }
         
         hideLoading();
@@ -9645,13 +9645,57 @@ async function showTimesheetModal(projectId = null) {
     }
 }
 
-// Submit timesheet
+/**
+ * Update allocation information when project or hours change
+ */
+function updateTimesheetAllocationInfo() {
+    const projectSelect = document.getElementById('timesheetProjectId');
+    const hoursInput = document.getElementById('timesheetHours');
+    const infoDiv = document.getElementById('timesheetAllocationInfo');
+    const warningDiv = document.getElementById('timesheetWarning');
+    const warningText = document.getElementById('timesheetWarningText');
+    
+    if (!projectSelect || !projectSelect.value) {
+        infoDiv.style.display = 'none';
+        warningDiv.style.display = 'none';
+        return;
+    }
+    
+    const selectedOption = projectSelect.options[projectSelect.selectedIndex];
+    const allocated = parseFloat(selectedOption.dataset.allocated) || 0;
+    const logged = parseFloat(selectedOption.dataset.logged) || 0;
+    const remaining = allocated - logged;
+    const hoursToAdd = parseFloat(hoursInput.value) || 0;
+    const newTotal = logged + hoursToAdd;
+    
+    document.getElementById('timesheetCurrentHours').textContent = logged.toFixed(2) + 'h';
+    document.getElementById('timesheetAllocatedHours').textContent = allocated.toFixed(2) + 'h';
+    document.getElementById('timesheetRemainingHours').textContent = remaining.toFixed(2) + 'h';
+    document.getElementById('timesheetRemainingHours').style.color = 
+        remaining < 5 ? '#f44336' : '#4CAF50';
+    
+    infoDiv.style.display = 'block';
+    
+    // Show warning if exceeding allocation
+    if (hoursToAdd > 0 && newTotal > allocated && allocated > 0) {
+        const exceeded = newTotal - allocated;
+        warningText.textContent = `Adding ${hoursToAdd}h will exceed allocation by ${exceeded.toFixed(2)}h. You'll need to request additional time from COO.`;
+        warningDiv.style.display = 'block';
+    } else {
+        warningDiv.style.display = 'none';
+    }
+}
+
+/**
+ * Submit Timesheet Entry
+ */
 async function submitTimesheet() {
     const projectId = document.getElementById('timesheetProjectId').value;
     const date = document.getElementById('timesheetDate').value;
     const hours = parseFloat(document.getElementById('timesheetHours').value);
     const description = document.getElementById('timesheetDescription').value.trim();
     
+    // Validation
     if (!projectId || !date || !hours || !description) {
         alert('Please fill all required fields');
         return;
@@ -9672,13 +9716,25 @@ async function submitTimesheet() {
         });
         
         if (response.success) {
-            closeModal();
-            alert(`${hours} hours logged successfully for ${date}!`);
+            closeTimesheetModal();
+            alert(`✅ ${hours} hours logged successfully for ${date}!`);
             
-            // Check if timesheet section is active
-            if (document.getElementById('timesheetSection').style.display === 'block') {
+            // Refresh timesheet view if displayed
+            if (document.getElementById('timesheetSection')?.style.display === 'block') {
                 loadDesignerTimesheet();
             }
+            
+            // Refresh dashboard if displayed
+            if (typeof loadDesignerDashboard === 'function') {
+                loadDesignerDashboard();
+            }
+            
+        } else if (response.exceedsAllocation) {
+            // Hours exceed allocation - show request additional time modal
+            hideLoading();
+            closeTimesheetModal();
+            showRequestAdditionalTimeModal(response, { projectId, date, hours, description });
+            
         } else {
             throw new Error(response.error || 'Failed to log hours');
         }
@@ -9691,105 +9747,735 @@ async function submitTimesheet() {
     }
 }
 
-// Load timesheets
-async function loadTimesheets() {
-    try {
-        showLoading();
-        
-        const response = await apiCall('timesheets');
-        if (!response.success) {
-            throw new Error('Failed to load timesheets');
-        }
-        
-        const timesheets = response.data || [];
-        const tbody = document.getElementById('timesheetTableBody');
-        
-        if (timesheets.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem;">
-                        No timesheet entries yet. Click "Log Hours" to get started.
-                    </td>
-                </tr>
-            `;
-        } else {
-            tbody.innerHTML = timesheets.map(entry => `
-                <tr>
-                    <td>${new Date(entry.date.seconds * 1000).toLocaleDateString()}</td>
-                    <td>${entry.projectName}</td>
-                    <td><strong>${entry.hours}h</strong></td>
-                    <td>${entry.description}</td>
-                    <td>
-                        <span class="status-badge status-${entry.status}">
-                            ${entry.status}
-                        </span>
-                    </td>
-                    <td>
-                        ${entry.status === 'submitted' ? `
-                            <button onclick="deleteTimesheet('${entry.id}')" class="btn btn-sm btn-outline" style="color: var(--danger);">
-                                Delete
-                            </button>
-                        ` : '-'}
-                    </td>
-                </tr>
-            `).join('');
-        }
-        
-        // Update summary
-        const totalHours = timesheets.reduce((sum, e) => sum + e.hours, 0);
-        const projectCount = new Set(timesheets.map(e => e.projectId)).size;
-        
-        document.getElementById('timesheetSummary').innerHTML = `
-            <div class="summary-card">
-                <div class="label">Total Hours Logged</div>
-                <div class="number">${totalHours.toFixed(1)}h</div>
+/**
+ * Show Request Additional Time Modal
+ */
+function showRequestAdditionalTimeModal(allocationData, timesheetData) {
+    closeAllModals();
+    
+    const { totalHours, allocatedHours, exceededBy } = allocationData;
+    const { projectId, date, hours, description } = timesheetData;
+    
+    const modalHtml = `
+        <div class="modal-overlay" id="requestTimeModalOverlay" onclick="handleModalOverlayClick(event, 'requestTimeModalOverlay')">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>⏱️ Request Additional Time</h2>
+                    <span class="close-modal" onclick="closeRequestTimeModal()">&times;</span>
+                </div>
+                
+                <div class="modal-body">
+                    <div style="padding: 1rem; background: #fff3cd; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #ff9800;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #856404;">⚠️ Hours Exceed Allocation</h4>
+                        <p style="margin: 0; color: #856404;">
+                            <strong>Allocated:</strong> ${allocatedHours}h<br>
+                            <strong>Already Logged:</strong> ${totalHours}h<br>
+                            <strong>Trying to Add:</strong> ${hours}h<br>
+                            <strong>Exceeds by:</strong> ${exceededBy.toFixed(2)}h
+                        </p>
+                    </div>
+                    
+                    <form id="requestTimeForm" onsubmit="event.preventDefault(); submitAdditionalTimeRequest();">
+                        <input type="hidden" id="reqProjectId" value="${projectId}">
+                        <input type="hidden" id="reqDate" value="${date}">
+                        <input type="hidden" id="reqHours" value="${hours}">
+                        <input type="hidden" id="reqDescription" value="${description}">
+                        
+                        <div class="form-group">
+                            <label>Additional Hours Requested <span class="required">*</span></label>
+                            <input type="number" id="requestedHours" class="form-control" 
+                                   min="${exceededBy.toFixed(2)}" step="0.5" 
+                                   value="${Math.ceil(exceededBy)}" required>
+                            <small>Minimum: ${exceededBy.toFixed(2)}h (amount exceeded)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Reason for Additional Time <span class="required">*</span></label>
+                            <textarea id="requestReason" class="form-control" rows="5" 
+                                      placeholder="Explain why additional time is needed..." required></textarea>
+                            <small>Be specific: scope changes, unforeseen complexity, design revisions, etc.</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="requestSaveTimesheet" checked> 
+                                Save my timesheet entry for after approval
+                            </label>
+                            <small style="display: block; margin-top: 0.5rem;">
+                                If checked, your ${hours}h entry will be saved once COO approves the additional time.
+                            </small>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" onclick="closeRequestTimeModal()" class="btn btn-outline">Cancel</button>
+                    <button type="button" onclick="submitAdditionalTimeRequest()" class="btn btn-primary">
+                        Submit Request to COO
+                    </button>
+                </div>
             </div>
-            <div class="summary-card">
-                <div class="label">Projects Worked On</div>
-                <div class="number">${projectCount}</div>
-            </div>
-            <div class="summary-card">
-                <div class="label">Total Entries</div>
-                <div class="number">${timesheets.length}</div>
-            </div>
-        `;
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Error loading timesheets:', error);
-        alert('Error loading timesheets: ' + error.message);
-        hideLoading();
-    }
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
-// Delete timesheet entry
-async function deleteTimesheet(timesheetId) {
-    if (!confirm('Are you sure you want to delete this timesheet entry?')) {
+/**
+ * Submit Additional Time Request
+ */
+async function submitAdditionalTimeRequest() {
+    const projectId = document.getElementById('reqProjectId').value;
+    const requestedHours = parseFloat(document.getElementById('requestedHours').value);
+    const reason = document.getElementById('requestReason').value.trim();
+    const saveTimesheet = document.getElementById('requestSaveTimesheet').checked;
+    
+    if (!requestedHours || requestedHours <= 0) {
+        alert('Please enter valid hours');
+        return;
+    }
+    
+    if (!reason || reason.length < 20) {
+        alert('Please provide a detailed reason (at least 20 characters)');
         return;
     }
     
     try {
         showLoading();
         
-        const response = await apiCall(`timesheets?id=${timesheetId}`, {
-            method: 'DELETE'
+        // Submit time request
+        const response = await apiCall('time-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId,
+                requestedHours,
+                reason,
+                timesheetId: saveTimesheet ? 'pending' : null,
+                pendingTimesheetData: saveTimesheet ? {
+                    date: document.getElementById('reqDate').value,
+                    hours: parseFloat(document.getElementById('reqHours').value),
+                    description: document.getElementById('reqDescription').value
+                } : null
+            })
         });
         
         if (response.success) {
-            alert('Timesheet entry deleted successfully');
-            loadTimesheets();
+            closeRequestTimeModal();
+            alert(`✅ Request submitted successfully!\n\nRequested: ${requestedHours}h\nCOO will review your request shortly.`);
+            
+            // Show pending requests
+            if (typeof showPendingTimeRequests === 'function') {
+                showPendingTimeRequests();
+            }
         } else {
-            throw new Error(response.error || 'Failed to delete');
+            throw new Error(response.error || 'Failed to submit request');
         }
         
     } catch (error) {
-        console.error('Error deleting timesheet:', error);
-        alert('Error deleting timesheet: ' + error.message);
+        console.error('Error submitting time request:', error);
+        alert('Error: ' + error.message);
     } finally {
         hideLoading();
     }
 }
+
+/**
+ * Show Pending Time Requests (for designers)
+ */
+async function showPendingTimeRequests() {
+    try {
+        showLoading();
+        
+        const response = await apiCall('time-requests');
+        
+        if (!response.success) {
+            throw new Error('Failed to load time requests');
+        }
+        
+        const requests = response.data || [];
+        const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'info_requested');
+        
+        let requestsHtml = '';
+        
+        if (pendingRequests.length === 0) {
+            requestsHtml = `
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h3>No Pending Requests</h3>
+                    <p>You don't have any pending additional time requests.</p>
+                </div>
+            `;
+        } else {
+            requestsHtml = pendingRequests.map(req => `
+                <div class="card" style="margin-bottom: 1rem; border-left: 4px solid ${req.status === 'info_requested' ? '#ff9800' : '#2196F3'};">
+                    <div style="padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div>
+                                <h4 style="margin: 0;">${req.projectName}</h4>
+                                <small style="color: #666;">${req.clientCompany}</small>
+                            </div>
+                            <span class="badge" style="background: ${req.status === 'info_requested' ? '#ff9800' : '#2196F3'};">
+                                ${req.status === 'info_requested' ? 'Info Requested' : 'Pending Review'}
+                            </span>
+                        </div>
+                        
+                        <div style="margin: 1rem 0; padding: 0.75rem; background: #f5f5f5; border-radius: 4px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                <div><strong>Requested:</strong> ${req.requestedHours}h</div>
+                                <div><strong>Current:</strong> ${req.currentHoursLogged}h / ${req.currentAllocatedHours}h</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin: 1rem 0;">
+                            <strong>Reason:</strong>
+                            <p style="margin: 0.5rem 0; color: #555;">${req.reason}</p>
+                        </div>
+                        
+                        ${req.reviewComment ? `
+                            <div style="margin: 1rem 0; padding: 0.75rem; background: #fff3cd; border-radius: 4px;">
+                                <strong>COO Comment:</strong>
+                                <p style="margin: 0.5rem 0; color: #856404;">${req.reviewComment}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <small style="color: #666;">
+                            Submitted: ${req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="page-header">
+                <h2>⏱️ My Time Requests</h2>
+                <p class="subtitle">Track your additional time requests</p>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <button onclick="showTimesheet()" class="btn btn-outline">← Back to Timesheet</button>
+            </div>
+            
+            ${requestsHtml}
+        `;
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Error loading time requests:', error);
+        alert('Error: ' + error.message);
+        hideLoading();
+    }
+}
+
+/**
+ * Show COO Time Request Dashboard
+ */
+async function showCOOTimeRequests() {
+    if (!['coo', 'director'].includes(currentUser.role)) {
+        alert('Access denied. COO/Director only.');
+        return;
+    }
+    
+    try {
+        showLoading();
+        setActiveNav('nav-time-requests');
+        
+        const response = await apiCall('time-requests?status=pending');
+        
+        if (!response.success) {
+            throw new Error('Failed to load time requests');
+        }
+        
+        const requests = response.data || [];
+        
+        let requestsHtml = '';
+        
+        if (requests.length === 0) {
+            requestsHtml = `
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h3>All Caught Up!</h3>
+                    <p>No pending time requests to review.</p>
+                </div>
+            `;
+        } else {
+            requestsHtml = requests.map(req => `
+                <div class="card" style="margin-bottom: 1.5rem;">
+                    <div style="padding: 1.5rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                            <div>
+                                <h3 style="margin: 0 0 0.25rem 0;">${req.projectName}</h3>
+                                <small style="color: #666;">${req.projectCode} - ${req.clientCompany}</small>
+                            </div>
+                            <span class="badge" style="background: #ff9800;">Pending Review</span>
+                        </div>
+                        
+                        <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                <div>
+                                    <small style="color: #666;">Requested By</small>
+                                    <div style="font-weight: 600;">${req.designerName}</div>
+                                </div>
+                                <div>
+                                    <small style="color: #666;">Additional Hours</small>
+                                    <div style="font-weight: 600; color: #2196F3; font-size: 1.2rem;">${req.requestedHours}h</div>
+                                </div>
+                                <div>
+                                    <small style="color: #666;">Current Usage</small>
+                                    <div style="font-weight: 600;">${req.currentHoursLogged}h / ${req.currentAllocatedHours}h</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin: 1rem 0;">
+                            <strong>Reason for Additional Time:</strong>
+                            <p style="margin: 0.5rem 0; padding: 1rem; background: #fff; border-left: 3px solid #2196F3; color: #555;">
+                                ${req.reason}
+                            </p>
+                        </div>
+                        
+                        <div style="margin: 1rem 0;">
+                            <small style="color: #666;">
+                                Submitted: ${req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                            </small>
+                        </div>
+                        
+                        <div style="display: flex; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #ddd;">
+                            <button onclick="approveTimeRequest('${req.id}', ${req.requestedHours})" 
+                                    class="btn btn-success" style="flex: 1;">
+                                ✅ Approve ${req.requestedHours}h
+                            </button>
+                            <button onclick="showRejectTimeRequestModal('${req.id}')" 
+                                    class="btn btn-danger" style="flex: 1;">
+                                ❌ Reject
+                            </button>
+                            <button onclick="showRequestInfoModal('${req.id}')" 
+                                    class="btn btn-outline">
+                                💬 Request Info
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="page-header">
+                <h2>⏱️ Additional Time Requests</h2>
+                <p class="subtitle">Review and approve/reject designer requests for additional hours</p>
+            </div>
+            
+            <div class="dashboard-stats" style="margin-bottom: 2rem;">
+                <div class="stat-card">
+                    <div class="stat-number">${requests.length}</div>
+                    <div class="stat-label">Pending Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${requests.reduce((sum, r) => sum + r.requestedHours, 0).toFixed(1)}h</div>
+                    <div class="stat-label">Total Hours Requested</div>
+                </div>
+            </div>
+            
+            ${requestsHtml}
+        `;
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Error loading COO time requests:', error);
+        alert('Error: ' + error.message);
+        hideLoading();
+    }
+}
+
+/**
+ * Approve Time Request
+ */
+async function approveTimeRequest(requestId, hours) {
+    const comment = prompt(`Approve ${hours}h additional time?\n\nOptional comment for designer:`);
+    
+    if (comment === null) return; // Cancelled
+    
+    try {
+        showLoading();
+        
+        const response = await apiCall(`time-requests?id=${requestId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'approve',
+                approvedHours: hours,
+                comment: comment || 'Approved',
+                applyToTimesheet: true
+            })
+        });
+        
+        if (response.success) {
+            alert(`✅ Approved ${hours}h additional time!`);
+            showCOOTimeRequests(); // Refresh list
+        } else {
+            throw new Error(response.error || 'Failed to approve');
+        }
+        
+    } catch (error) {
+        console.error('Error approving time request:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Show Reject Time Request Modal
+ */
+function showRejectTimeRequestModal(requestId) {
+    closeAllModals();
+    
+    const modalHtml = `
+        <div class="modal-overlay" id="rejectModalOverlay" onclick="handleModalOverlayClick(event, 'rejectModalOverlay')">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2>❌ Reject Time Request</h2>
+                    <span class="close-modal" onclick="closeRejectModal()">&times;</span>
+                </div>
+                
+                <div class="modal-body">
+                    <input type="hidden" id="rejectRequestId" value="${requestId}">
+                    <div class="form-group">
+                        <label>Reason for Rejection <span class="required">*</span></label>
+                        <textarea id="rejectComment" class="form-control" rows="4" 
+                                  placeholder="Explain why this request is being rejected..." required></textarea>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" onclick="closeRejectModal()" class="btn btn-outline">Cancel</button>
+                    <button type="button" onclick="submitRejectTimeRequest()" class="btn btn-danger">
+                        Reject Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+/**
+ * Submit Rejection
+ */
+async function submitRejectTimeRequest() {
+    const requestId = document.getElementById('rejectRequestId').value;
+    const comment = document.getElementById('rejectComment').value.trim();
+    
+    if (!comment || comment.length < 10) {
+        alert('Please provide a detailed reason for rejection (at least 10 characters)');
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await apiCall(`time-requests?id=${requestId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'reject',
+                comment: comment
+            })
+        });
+        
+        if (response.success) {
+            closeRejectModal();
+            alert('❌ Request rejected');
+            showCOOTimeRequests(); // Refresh list
+        } else {
+            throw new Error(response.error || 'Failed to reject');
+        }
+        
+    } catch (error) {
+        console.error('Error rejecting time request:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Modal Close Functions - Fix for stuck modals
+ */
+function closeTimesheetModal() {
+    const modal = document.getElementById('timesheetModalOverlay');
+    if (modal) modal.remove();
+}
+
+function closeRequestTimeModal() {
+    const modal = document.getElementById('requestTimeModalOverlay');
+    if (modal) modal.remove();
+}
+
+function closeRejectModal() {
+    const modal = document.getElementById('rejectModalOverlay');
+    if (modal) modal.remove();
+}
+
+function closeAllModals() {
+    // Remove all modal overlays
+    const modals = document.querySelectorAll('.modal-overlay');
+    modals.forEach(modal => modal.remove());
+}
+
+function handleModalOverlayClick(event, modalId) {
+    // Close modal only if clicking directly on overlay (not on modal content)
+    if (event.target.id === modalId) {
+        document.getElementById(modalId).remove();
+    }
+}
+
+// Add keyboard ESC to close modals
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeAllModals();
+    }
+});
+
+// ============================================
+// INTEGRATION WITH EXECUTIVE DASHBOARD
+// ============================================
+
+/**
+ * Update Executive Dashboard to show projects exceeding allocation
+ * Add this to your renderExecutiveProjectsTable function
+ */
+function renderExecutiveProjectsTable(projects) {
+    if (!projects || projects.length === 0) {
+        return '<p style="text-align: center; padding: 2rem; color: #666;">No active projects found.</p>';
+    }
+    
+    // Separate projects by allocation status
+    const exceededProjects = projects.filter(p => 
+        p.hoursLogged > p.allocatedHours && p.allocatedHours > 0
+    );
+    const onTrackProjects = projects.filter(p => 
+        p.hoursLogged <= p.allocatedHours || p.allocatedHours === 0
+    );
+    
+    let html = '';
+    
+    // Show exceeded projects first
+    if (exceededProjects.length > 0) {
+        html += `
+            <div class="card" style="margin-bottom: 2rem; border-left: 4px solid #f44336;">
+                <div style="padding: 1rem; background: #ffebee;">
+                    <h3 style="margin: 0; color: #c62828;">⚠️ Projects Exceeding Allocation (${exceededProjects.length})</h3>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Allocated</th>
+                            <th>Logged</th>
+                            <th>Exceeded By</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${exceededProjects.map(p => `
+                            <tr>
+                                <td>
+                                    <strong>${p.projectName}</strong><br>
+                                    <small>${p.clientCompany}</small>
+                                </td>
+                                <td>${p.allocatedHours}h</td>
+                                <td style="color: #f44336; font-weight: 600;">${p.hoursLogged}h</td>
+                                <td style="color: #f44336; font-weight: 600;">
+                                    +${(p.hoursLogged - p.allocatedHours).toFixed(2)}h
+                                </td>
+                                <td>
+                                    <span class="badge" style="background: #f44336;">Over Allocated</span>
+                                </td>
+                                <td>
+                                    <button onclick="viewProjectTimesheetDetails('${p.id}')" class="btn btn-sm btn-outline">
+                                        View Details
+                                    </button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+    
+    // Show on-track projects
+    html += `
+        <div class="card">
+            <div style="padding: 1rem; background: #f5f5f5;">
+                <h3 style="margin: 0;">✅ On Track Projects (${onTrackProjects.length})</h3>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Project</th>
+                        <th>Allocated</th>
+                        <th>Logged</th>
+                        <th>Remaining</th>
+                        <th>Progress</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${onTrackProjects.map(p => {
+                        const remaining = p.allocatedHours - p.hoursLogged;
+                        const progress = p.allocatedHours > 0 ? (p.hoursLogged / p.allocatedHours * 100) : 0;
+                        const progressColor = progress > 90 ? '#ff9800' : progress > 75 ? '#2196F3' : '#4CAF50';
+                        
+                        return `
+                            <tr>
+                                <td>
+                                    <strong>${p.projectName}</strong><br>
+                                    <small>${p.clientCompany}</small>
+                                </td>
+                                <td>${p.allocatedHours}h</td>
+                                <td>${p.hoursLogged}h</td>
+                                <td style="color: ${remaining < 5 ? '#ff9800' : '#4CAF50'};">
+                                    ${remaining.toFixed(2)}h
+                                </td>
+                                <td>
+                                    <div style="width: 100px; background: #eee; height: 8px; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: ${Math.min(progress, 100)}%; background: ${progressColor}; height: 100%;"></div>
+                                    </div>
+                                    <small>${progress.toFixed(0)}%</small>
+                                </td>
+                                <td>
+                                    <button onclick="viewProjectTimesheetDetails('${p.id}')" class="btn btn-sm btn-outline">
+                                        View Details
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        </div>
+    `;
+    
+    return html;
+}
+
+/**
+ * View Project Timesheet Details
+ */
+async function viewProjectTimesheetDetails(projectId) {
+    try {
+        showLoading();
+        
+        const [projectResponse, timesheetsResponse] = await Promise.all([
+            apiCall(`projects?id=${projectId}`),
+            apiCall(`timesheets?projectId=${projectId}`)
+        ]);
+        
+        if (!projectResponse.success || !timesheetsResponse.success) {
+            throw new Error('Failed to load project details');
+        }
+        
+        const project = projectResponse.data;
+        const timesheets = timesheetsResponse.data || [];
+        
+        // Group by designer
+        const byDesigner = {};
+        timesheets.forEach(ts => {
+            if (!byDesigner[ts.designerUid]) {
+                byDesigner[ts.designerUid] = {
+                    name: ts.designerName,
+                    email: ts.designerEmail,
+                    hours: 0,
+                    entries: []
+                };
+            }
+            byDesigner[ts.designerUid].hours += ts.hours;
+            byDesigner[ts.designerUid].entries.push(ts);
+        });
+        
+        const designerSummary = Object.values(byDesigner).map(d => `
+            <tr>
+                <td>${d.name}</td>
+                <td>${d.email}</td>
+                <td><strong>${d.hours}h</strong></td>
+                <td>${d.entries.length}</td>
+            </tr>
+        `).join('');
+        
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="page-header">
+                <h2>📊 Project Timesheet Details</h2>
+                <button onclick="showExecutiveDashboard()" class="btn btn-outline">← Back to Dashboard</button>
+            </div>
+            
+            <div class="card" style="margin-bottom: 2rem;">
+                <div style="padding: 1.5rem;">
+                    <h3>${project.projectName}</h3>
+                    <p style="color: #666;">${project.clientCompany}</p>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+                        <div style="padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                            <small>Allocated Hours</small>
+                            <div style="font-size: 1.5rem; font-weight: 600;">${project.allocatedHours}h</div>
+                        </div>
+                        <div style="padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                            <small>Hours Logged</small>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: ${project.hoursLogged > project.allocatedHours ? '#f44336' : '#4CAF50'};">
+                                ${project.hoursLogged}h
+                            </div>
+                        </div>
+                        <div style="padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                            <small>${project.hoursLogged > project.allocatedHours ? 'Exceeded By' : 'Remaining'}</small>
+                            <div style="font-size: 1.5rem; font-weight: 600; color: ${project.hoursLogged > project.allocatedHours ? '#f44336' : '#4CAF50'};">
+                                ${Math.abs(project.allocatedHours - project.hoursLogged).toFixed(2)}h
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div style="padding: 1rem; background: #f5f5f5; border-bottom: 1px solid #ddd;">
+                    <h3 style="margin: 0;">Hours by Designer</h3>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Designer</th>
+                            <th>Email</th>
+                            <th>Total Hours</th>
+                            <th>Entries</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${designerSummary}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Error loading project details:', error);
+        alert('Error: ' + error.message);
+        hideLoading();
+    }
+}
+
+console.log('✅ Timesheet Additional Hours System Loaded');
+
+
 
 // ==========================================
 // ADDITIONAL WORKFLOW FUNCTIONS
