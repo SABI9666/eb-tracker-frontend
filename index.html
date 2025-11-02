@@ -10065,9 +10065,9 @@ async function showPendingTimeRequests() {
 /**
          * Show COO Time Request Dashboard
          */
-        async function showCOOTimeRequests() {
-            // FIX: Convert role to lowercase for case-insensitive check
-            const userRole = currentUser.role ? currentUser.role.trim().toLowerCase() : '';
+          async function showCOOTimeRequests() {
+            // FIX: Use the correct global variable 'currentUserRole'
+            const userRole = currentUserRole ? currentUserRole.trim().toLowerCase() : '';
             if (!['coo', 'director'].includes(userRole)) {
                 alert('Access denied. COO/Director only.');
                 return;
