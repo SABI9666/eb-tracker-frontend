@@ -3729,54 +3729,97 @@
             });
         }
 
-        async function saveEstimation(proposalId) {
-            // ... (This function remains unchanged)
-            const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => cb.value);
-            const totalHours = document.getElementById('totalHours').value || 0;
-
-            if (totalHours == 0) return alert('Please enter manhours.');
-            if (services.length === 0) return alert('Please select at least one service.');
-
-            const estimationData = {
-                designHours: document.getElementById('designHours').value || 0,
-                detailingHours: document.getElementById('detailingHours').value || 0,
-                checkingHours: document.getElementById('checkingHours').value || 0,
-                revisionHours: document.getElementById('revisionHours').value || 0,
-                pmHours: document.getElementById('pmHours').value || 0,
-                totalHours: totalHours,
-                services: services,
-                notes: 'Estimation completed'
-            };
-
-            try {
-                showLoading();
-                const fileInput = document.getElementById('boqFileInput');
-                if (fileInput.files.length > 0) {
-                    const formData = new FormData();
-                    Array.from(fileInput.files).forEach(file => formData.append('files', file));
-                    formData.append('proposalId', proposalId);
-                    formData.append('fileType', 'estimation');
-                    await apiCall('files', { method: 'POST', body: formData });
-                }
-
-                const response = await apiCall(`proposals?id=${proposalId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify({ action: 'add_estimation', data: estimationData })
-                });
-
-              if (response.success) {
-                    alert('Estimation saved successfully!');
-                    const projectName = document.getElementById('estProjectName')?.value || 'Unknown Project'; // <-- ADD THIS
-                    triggerEmailNotification('estimation.complete', { projectName: projectName }); // <-- ADD THIS
-                    closeModal();
-                    showDashboard();
-                }
-            } catch (error) {
-                alert('Error saving estimation: ' + error.message);
-            } finally {
-                hideLoading();
-            }
+       async function submitEstimation(proposalId) {
+    // Get form values
+    const totalManhours = document.getElementById('totalManhours')?.value;
+    const tonnage = document.getElementById('tonnage')?.value;
+    const rateMethod = document.getElementById('rateMethod')?.value;
+    const hourlyRate = document.getElementById('estimatorHourlyRate')?.value;
+    const tonnageRate = document.getElementById('tonnageRate')?.value;
+    const estimatedValue = document.getElementById('estimatedValue')?.value;
+    const estimationNotes = document.getElementById('estimationNotes')?.value;
+    
+    // Validation
+    if (!totalManhours || parseFloat(totalManhours) <= 0) {
+        alert('Please enter valid total man-hours');
+        return;
+    }
+    
+    // Validate based on rate method
+    if (rateMethod === 'hourly' || rateMethod === 'combined') {
+        if (!hourlyRate || parseFloat(hourlyRate) <= 0) {
+            alert('Please enter a valid hourly rate');
+            return;
         }
+    }
+    
+    if (rateMethod === 'tonnage' || rateMethod === 'combined') {
+        if (!tonnage || parseFloat(tonnage) <= 0) {
+            alert('Please enter valid tonnage');
+            return;
+        }
+        if (!tonnageRate || parseFloat(tonnageRate) <= 0) {
+            alert('Please enter a valid tonnage rate');
+            return;
+        }
+    }
+    
+    try {
+        showLoading();
+        
+        // Prepare estimation data
+        const estimationData = {
+            totalManhours: parseFloat(totalManhours),
+            tonnage: tonnage ? parseFloat(tonnage) : null,
+            rateMethod: rateMethod,
+            hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+            tonnageRate: tonnageRate ? parseFloat(tonnageRate) : null,
+            estimatedValue: parseFloat(estimatedValue),
+            notes: estimationNotes || '',
+            estimatorName: currentUserName,
+            estimatorUid: currentUserUid,
+            estimatedAt: new Date().toISOString()
+        };
+        
+        // Calculate breakdown for storage
+        const breakdown = {};
+        if (rateMethod === 'hourly') {
+            breakdown.hourlyValue = parseFloat(totalManhours) * parseFloat(hourlyRate);
+        } else if (rateMethod === 'tonnage') {
+            breakdown.tonnageValue = parseFloat(tonnage) * parseFloat(tonnageRate);
+        } else if (rateMethod === 'combined') {
+            breakdown.hourlyValue = parseFloat(totalManhours) * parseFloat(hourlyRate);
+            breakdown.tonnageValue = parseFloat(tonnage) * parseFloat(tonnageRate);
+        }
+        estimationData.breakdown = breakdown;
+        
+        // Submit to backend
+        const response = await apiCall(`proposals?id=${proposalId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'add_estimation',
+                data: estimationData
+            })
+        });
+        
+        if (response.success) {
+            closeModal();
+            showNotification('Estimation submitted successfully!', 'success');
+            
+            // Refresh proposals list
+            showProposals();
+        } else {
+            throw new Error(response.error || 'Failed to submit estimation');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting estimation:', error);
+        alert('Error submitting estimation: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
 
         async function loadProjectFiles(proposalId) {
             // ... (This function remains unchanged)
