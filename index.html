@@ -3585,6 +3585,10 @@ async function submitTimeRequest(event) {
     const requestedHours = parseFloat(document.getElementById('requestedHours').value);
     const reason = document.getElementById('requestReason').value;
     const attachmentFile = document.getElementById('requestAttachment').files[0];
+    // --- ADD THIS ---
+    const form = document.getElementById('requestTimeForm');
+    const pendingTimesheetData = JSON.parse(form.dataset.pendingTimesheet || 'null');
+    // --- END ADD ---
     
     try {
         showLoading();
