@@ -3510,13 +3510,73 @@
                             </div>
 
                             ${p.estimation ? `
-                                <div class="form-section">
-                                    <h4>Estimation Details</h4>
-                                    <p><strong>Total Hours:</strong> ${p.estimation.totalHours || 'N/A'}</p>
-                                    <p><strong>Services:</strong> ${p.estimation.services?.join(', ') || 'N/A'}</p>
-                                    <p><strong>Estimated By:</strong> ${p.estimation.estimatedBy || 'N/A'}</p>
-                                    ${p.estimation.notes ? `<p><strong>Notes:</strong> ${p.estimation.notes}</p>` : ''}
-                                </div>
+                              <div class="form-section">
+    <h4>Estimation Details</h4>
+    
+    <!-- Manhours Input -->
+    <div class="form-group">
+        <label>Total Man-hours <span class="required">*</span></label>
+        <input type="number" id="totalManhours" class="form-control"
+             placeholder="Enter total man-hours" step="0.1" min="0" required>
+    </div>
+    
+    <!-- NEW: Tonnage Input -->
+    <div class="form-group">
+        <label>Tonnage (Optional)</label>
+        <input type="number" id="tonnage" class="form-control"
+             placeholder="Enter tonnage if applicable" step="0.01" min="0">
+        <small class="form-text text-muted">Enter tonnage for projects involving weight calculations</small>
+    </div>
+    
+    <!-- NEW: Rate Type Selection -->
+    <div class="form-group">
+        <label>Rate Calculation Method</label>
+        <select id="rateMethod" class="form-control">
+            <option value="none">No Rate (Manhours Only)</option>
+            <option value="hourly">Hourly Rate</option>
+            <option value="tonnage">Tonnage Rate</option>
+            <option value="combined">Combined (Hourly + Tonnage)</option>
+        </select>
+        <small class="form-text text-muted">Select how to calculate the estimated value</small>
+    </div>
+    
+    <!-- Hourly Rate Input (conditionally shown) -->
+    <div class="form-group" id="hourlyRateGroup" style="display: none;">
+        <label>Hourly Rate ($/hour)</label>
+        <input type="number" id="estimatorHourlyRate" class="form-control"
+             placeholder="Enter hourly rate" step="0.01" min="0">
+        <small class="form-text text-muted">Rate per hour for labor calculations</small>
+    </div>
+    
+    <!-- Tonnage Rate Input (conditionally shown) -->
+    <div class="form-group" id="tonnageRateGroup" style="display: none;">
+        <label>Tonnage Rate ($/ton)</label>
+        <input type="number" id="tonnageRate" class="form-control"
+             placeholder="Enter rate per ton" step="0.01" min="0">
+        <small class="form-text text-muted">Rate per ton for material/weight calculations</small>
+    </div>
+    
+    <!-- Calculated Estimated Value (Auto-calculated) -->
+    <div class="form-group">
+        <label>Estimated Value ($)</label>
+        <input type="number" id="estimatedValue" class="form-control"
+             placeholder="Auto-calculated or enter manually" step="0.01" min="0" readonly>
+        <small class="form-text text-muted">This will be auto-calculated based on rates entered</small>
+    </div>
+    
+    <!-- Estimation Notes -->
+    <div class="form-group">
+        <label>Estimation Notes</label>
+        <textarea id="estimationNotes" class="form-control" rows="4"
+             placeholder="Add any notes about the estimation..."></textarea>
+    </div>
+    
+    <!-- Estimation Breakdown Display -->
+    <div id="estimationBreakdown" class="info-box" style="display: none; margin-top: 1rem;">
+        <h5>Calculation Breakdown:</h5>
+        <div id="breakdownContent"></div>
+    </div>
+</div>
                             ` : ''}
 
                             ${estimationFilesHtml}
