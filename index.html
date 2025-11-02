@@ -4150,11 +4150,11 @@ async function showMyTimeRequests() {
 // INITIALIZE - Update pending requests badge
 // ============================================
 async function updatePendingRequestsBadge() {
-            // FIX: Check against the cleaned currentUserRole variable
-            if (!['coo', 'director'].includes(currentUserRole.trim().toLowerCase())) {
+            // FIX: Use the correct variable (currentUser.role) and make it case-insensitive
+            const userRole = currentUser.role ? currentUser.role.trim().toLowerCase() : '';
+            if (!['coo', 'director'].includes(userRole)) {
                 return;
             }
-            
             try {
                 const response = await apiCall('time-requests?status=pending');
                 
