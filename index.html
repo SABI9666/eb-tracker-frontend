@@ -2269,6 +2269,19 @@
                  if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(roleForCheck)) ? 'block' : 'none';
                  else console.warn("Element 'executiveMonitoringNavItem' not found");
 
+                // START: ADD THIS VISIBILITY LOGIC
+                const timeRequestsNavItem = document.getElementById('timeRequestsNavItem');
+                if (timeRequestsNavItem) {
+                    const isVisible = ['coo', 'director'].includes(roleForCheck);
+                    timeRequestsNavItem.style.display = isVisible ? 'block' : 'none';
+                    // If the button is visible, update the pending count
+                    if (isVisible) {
+                        updatePendingRequestsBadge();
+                    }
+                }
+                else console.warn("Element 'timeRequestsNavItem' not found");
+                // END: ADD THIS VISIBILITY LOGIC
+
                 const timesheetNavItem = document.getElementById('timesheetNavItem');
                 if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
                 else console.warn("Element 'timesheetNavItem' not found");
