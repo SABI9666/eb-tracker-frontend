@@ -3548,12 +3548,23 @@ function showRequestTimeModal(allocationData) {
     const modal = document.getElementById('requestTimeModal');
     const requestedHours = document.getElementById('requestedHours');
     
-    // Pre-fill with exceeded amount
+// Pre-fill with exceeded amount
     if (allocationData && allocationData.exceededBy) {
-        requestedHours.value = allocationData.exceededBy.toFixed(1);
+        requestedHours.value = Math.ceil(allocationData.exceededBy * 2) / 2; // Round up to nearest 0.5
     }
-    
-    modal.style.display = 'flex';
+// --- ADD THIS ---
+// Store pending timesheet data in the form for submission
+const form = document.getElementById('requestTimeForm');
+const timesheetData = {
+    date: document.getElementById('timesheetDate').value,
+    hours: parseFloat(document.getElementById('timesheetHours').value),
+    description: document.getElementById('timesheetDescription').value,
+};
+form.dataset.pendingTimesheet = JSON.stringify(timesheetData);
+// --- END ADD ---
+modal.style.display = 'flex';
+
+
 }
 
 /**
