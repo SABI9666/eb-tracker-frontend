@@ -4149,9 +4149,9 @@ async function showMyTimeRequests() {
 // ============================================
 // INITIALIZE - Update pending requests badge
 // ============================================
-async function updatePendingRequestsBadge() {
-            // FIX: Use the correct variable (currentUser.role) and make it case-insensitive
-            const userRole = currentUser.role ? currentUser.role.trim().toLowerCase() : '';
+           async function updatePendingRequestsBadge() {
+            // FIX: Use the correct global variable 'currentUserRole'
+            const userRole = currentUserRole ? currentUserRole.trim().toLowerCase() : '';
             if (!['coo', 'director'].includes(userRole)) {
                 return;
             }
