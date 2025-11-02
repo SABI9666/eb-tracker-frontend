@@ -10066,10 +10066,12 @@ async function showPendingTimeRequests() {
  * Show COO Time Request Dashboard
  */
 async function showCOOTimeRequests() {
-    if (!['coo', 'director'].includes(currentUser.role)) {
-        alert('Access denied. COO/Director only.');
-        return;
-    }
+            // FIX: Convert role to lowercase for case-insensitive check
+            const userRole = currentUser.role ? currentUser.role.trim().toLowerCase() : '';
+            if (!['coo', 'director'].includes(userRole)) {
+                alert('Access denied. COO/Director only.');
+                return;
+            }
     
     try {
         showLoading();
