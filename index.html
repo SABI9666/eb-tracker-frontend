@@ -10063,16 +10063,15 @@ async function showPendingTimeRequests() {
 }
 
 /**
- * Show COO Time Request Dashboard
- */
-async function showCOOTimeRequests() {
+         * Show COO Time Request Dashboard
+         */
+        async function showCOOTimeRequests() {
             // FIX: Convert role to lowercase for case-insensitive check
             const userRole = currentUser.role ? currentUser.role.trim().toLowerCase() : '';
             if (!['coo', 'director'].includes(userRole)) {
                 alert('Access denied. COO/Director only.');
                 return;
             }
-    
     try {
         showLoading();
         setActiveNav('nav-time-requests');
