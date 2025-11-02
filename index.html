@@ -2975,7 +2975,7 @@ async function showExecutiveDashboard() {
             </div>
         `;
         
-        document.getElementById('main-content').innerHTML = dashboardHtml;
+        document.getElementById('mainContent').innerHTML = dashboardHtml;
         
         // Initialize charts if analytics section is visible
         setTimeout(() => {
@@ -3392,7 +3392,7 @@ async function showTimesheetForm(projectId = null) {
             </div>
         `;
         
-        document.getElementById('main-content').innerHTML = formHtml;
+        document.getElementById('mainContent').innerHTML = formHtml;
         
         // Set default date to today
         document.getElementById('timesheetDate').valueAsDate = new Date();
@@ -3697,7 +3697,7 @@ async function showPendingTimeRequests() {
             `}
         `;
         
-        document.getElementById('main-content').innerHTML = requestsHtml;
+        document.getElementById('mainContent').innerHTML = requestsHtml;
         
     } catch (error) {
         console.error('Error loading time requests:', error);
@@ -4085,7 +4085,7 @@ async function showMyTimeRequests() {
             `}
         `;
         
-        document.getElementById('main-content').innerHTML = requestsHtml;
+        document.getElementById('mainContent').innerHTML = requestsHtml;
         
     } catch (error) {
         console.error('Error loading time requests:', error);
@@ -11001,4 +11001,3 @@ async function submitDesignerUpload(event, projectId) {
 
 </body>
 </html>
-
