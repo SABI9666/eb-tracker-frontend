@@ -9720,65 +9720,97 @@ function updateTimesheetAllocationInfo() {
 }
 
 /**
- * Submit Timesheet Entry
- */
-async function submitTimesheet() {
-    const projectId = document.getElementById('timesheetProjectId').value;
-    const date = document.getElementById('timesheetDate').value;
-    const hours = parseFloat(document.getElementById('timesheetHours').value);
-    const description = document.getElementById('timesheetDescription').value.trim();
-    
-    // Validation
-    if (!projectId || !date || !hours || !description) {
-        alert('Please fill all required fields');
-        return;
-    }
-    
-    if (hours <= 0 || hours > 24) {
-        alert('Hours must be between 0.25 and 24');
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        const response = await apiCall('timesheets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ projectId, date, hours, description })
-        });
-        
-        if (response.success) {
-            closeTimesheetModal();
-            alert(`✅ ${hours} hours logged successfully for ${date}!`);
+         * Submit Timesheet Entry
+         */
+        async function submitTimesheet() {
+            const projectId = document.getElementById('timesheetProjectId').value;
+            const date = document.getElementById('timesheetDate').value;
+            const hours = parseFloat(document.getElementById('timesheetHours').value);
+            const description = document.getElementById('timesheetDescription').value.trim();
             
-            // Refresh timesheet view if displayed
-            if (document.getElementById('timesheetSection')?.style.display === 'block') {
-                loadDesignerTimesheet();
+            // Validation
+            if (!projectId || !date || !hours || !description) {
+                alert('Please fill all required fields');
+                return;
             }
             
-            // Refresh dashboard if displayed
-            if (typeof loadDesignerDashboard === 'function') {
-                loadDesignerDashboard();
+            if (hours <= 0 || hours > 24) {
+                alert('Hours must be between 0.25 and 24');
+                return;
             }
+
+            // --- START: NEW FRONTEND ALLOCATION CHECK ---
+            const projectSelect = document.getElementById('timesheetProjectId');
+            if (projectSelect) {
+                const selectedOption = projectSelect.options[projectSelect.selectedIndex];
+                // Get allocation data from the dropdown option, which was set when the modal opened
+                const allocated = parseFloat(selectedOption.dataset.allocated) || 0;
+                const logged = parseFloat(selectedOption.dataset.logged) || 0;
+                const newTotal = logged + hours;
+
+                if (newTotal > allocated && allocated > 0) {
+                    // Allocation exceeded. Manually trigger the "Request Time" flow without calling the API.
+                    console.warn(`Frontend check: Allocation exceeded. ${newTotal} > ${allocated}. Triggering request modal.`);
+                    
+                    const allocationData = {
+                        totalHours: logged, // Current hours logged
+                        allocatedHours: allocated, // Total allocated budget
+                        exceededBy: newTotal - allocated // How much it's over
+                    };
+                    const timesheetData = { projectId, date, hours, description };
+
+                    closeTimesheetModal(); // Close the log hours modal
+                    showRequestAdditionalTimeModal(allocationData, timesheetData); // Show the request modal
+                    
+                    return; // Stop before calling the API
+                }
+            }
+            // --- END: NEW FRONTEND ALLOCATION CHECK ---
             
-        } else if (response.exceedsAllocation) {
-            // Hours exceed allocation - show request additional time modal
-            hideLoading();
-            closeTimesheetModal();
-            showRequestAdditionalTimeModal(response, { projectId, date, hours, description });
-            
-        } else {
-            throw new Error(response.error || 'Failed to log hours');
+            try {
+                showLoading();
+                
+                const response = await apiCall('timesheets', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, date, hours, description })
+                });
+                
+                if (response.success) {
+                    closeTimesheetModal();
+                    alert(`✅ ${hours} hours logged successfully for ${date}!`);
+                    
+                    // Refresh timesheet view if displayed
+                    if (document.getElementById('timesheetSection')?.style.display === 'block') {
+                        loadDesignerTimesheet();
+                    }
+                    
+                    // Refresh dashboard if displayed
+                    if (typeof loadDesignerDashboard === 'function') {
+                        loadDesignerDashboard();
+                    }
+                    
+                } else if (response.exceedsAllocation) {
+                    // This is now a fallback in case the frontend check fails or data is stale
+                    console.warn("Backend check: Allocation exceeded. This should have been caught by the frontend.");
+                    hideLoading();
+                    closeTimesheetModal();
+                    showRequestAdditionalTimeModal(response, { projectId, date, hours, description });
+                    
+                } else {
+                    throw new Error(response.error || 'Failed to log hours');
+                }
+                
+            } catch (error) {
+                console.error('Error submitting timesheet:', error);
+                alert('Error logging hours: ' + error.message);
+            } finally {
+                // Only hide loading if it's not already hidden by the error path
+                if (document.getElementById('loadingSpinner').style.display === 'flex') {
+                    hideLoading();
+                }
+            }
         }
-        
-    } catch (error) {
-        console.error('Error submitting timesheet:', error);
-        alert('Error logging hours: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
 
 /**
  * Show Request Additional Time Modal
