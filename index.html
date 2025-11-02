@@ -3851,6 +3851,97 @@
         hideLoading();
     }
 }
+        // ========================================
+// HELPER FUNCTIONS FOR ESTIMATION FORM
+// ========================================
+
+function updateRateFieldsVisibility() {
+    const rateMethod = document.getElementById('rateMethod')?.value || 'none';
+    const hourlyRateGroup = document.getElementById('hourlyRateGroup');
+    const tonnageRateGroup = document.getElementById('tonnageRateGroup');
+    
+    if (hourlyRateGroup) {
+        hourlyRateGroup.style.display = 
+            (rateMethod === 'hourly' || rateMethod === 'combined') ? 'block' : 'none';
+    }
+    
+    if (tonnageRateGroup) {
+        tonnageRateGroup.style.display = 
+            (rateMethod === 'tonnage' || rateMethod === 'combined') ? 'block' : 'none';
+    }
+}
+
+function calculateEstimatedValue() {
+    const rateMethod = document.getElementById('rateMethod')?.value || 'none';
+    const manhours = parseFloat(document.getElementById('totalManhours')?.value) || 0;
+    const tonnage = parseFloat(document.getElementById('tonnage')?.value) || 0;
+    const hourlyRate = parseFloat(document.getElementById('estimatorHourlyRate')?.value) || 0;
+    const tonnageRate = parseFloat(document.getElementById('tonnageRate')?.value) || 0;
+    
+    let estimatedValue = 0;
+    let breakdown = [];
+    
+    switch (rateMethod) {
+        case 'hourly':
+            estimatedValue = manhours * hourlyRate;
+            breakdown.push(`Manhours: ${manhours} × $${hourlyRate}/hr = $${estimatedValue.toFixed(2)}`);
+            break;
+            
+        case 'tonnage':
+            estimatedValue = tonnage * tonnageRate;
+            breakdown.push(`Tonnage: ${tonnage} tons × $${tonnageRate}/ton = $${estimatedValue.toFixed(2)}`);
+            break;
+            
+        case 'combined':
+            const hourlyValue = manhours * hourlyRate;
+            const tonnageValue = tonnage * tonnageRate;
+            estimatedValue = hourlyValue + tonnageValue;
+            breakdown.push(`Manhours: ${manhours} × $${hourlyRate}/hr = $${hourlyValue.toFixed(2)}`);
+            breakdown.push(`Tonnage: ${tonnage} tons × $${tonnageRate}/ton = $${tonnageValue.toFixed(2)}`);
+            breakdown.push(`<strong>Total: $${estimatedValue.toFixed(2)}</strong>`);
+            break;
+            
+        case 'none':
+        default:
+            estimatedValue = 0;
+            breakdown.push('No rate calculation method selected');
+            break;
+    }
+    
+    const estimatedValueField = document.getElementById('estimatedValue');
+    if (estimatedValueField) {
+        estimatedValueField.value = estimatedValue.toFixed(2);
+    }
+    
+    const breakdownDiv = document.getElementById('estimationBreakdown');
+    const breakdownContent = document.getElementById('breakdownContent');
+    
+    if (breakdownDiv && breakdownContent && rateMethod !== 'none') {
+        breakdownContent.innerHTML = breakdown.map(b => `<p>${b}</p>`).join('');
+        breakdownDiv.style.display = 'block';
+    } else if (breakdownDiv) {
+        breakdownDiv.style.display = 'none';
+    }
+}
+
+function initializeEstimationForm() {
+    updateRateFieldsVisibility();
+    
+    // Attach event listeners
+    const fields = ['totalManhours', 'tonnage', 'estimatorHourlyRate', 'tonnageRate', 'rateMethod'];
+    
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.addEventListener('input', calculateEstimatedValue);
+            field.addEventListener('change', calculateEstimatedValue);
+        }
+    });
+}
+
+// ========================================
+// END OF HELPER FUNCTIONS
+// ========================================
 
         async function loadProjectFiles(proposalId) {
             // ... (This function remains unchanged)
