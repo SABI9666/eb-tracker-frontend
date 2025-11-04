@@ -4487,7 +4487,21 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                         });
                     }
                     alert('Proposal created successfully!');
-                    triggerEmailNotification('project.submitted', { projectName: formData.projectName });
+                    triggerEmailNotification('project.submitted', {
+                        projectName: formData.projectName,
+                        createdBy: currentUser.name || currentUser.email,
+                        createdByEmail: currentUser.email, // This adds the BDM to the recipient list
+                        date: new Date().toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        }),
+                        clientName: formData.clientCompany,
+                        description: formData.scopeOfWork,
+                        projectId: proposalId
+                    });
+                    // --- End of fix ---
+
                     closeModal();
                     showProposals();
                 } catch (error) {
