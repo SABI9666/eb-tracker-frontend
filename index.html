@@ -4589,18 +4589,21 @@ function showCreateProposalModal() {
 
             alert('Proposal created successfully!');
             
-            // 4. Trigger Notification (Fixed safe user name access)
+           // 4. Trigger Notification (Fixed safe user name access)
             try {
                  const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? 
                                   (currentUser.displayName || currentUser.email) : 'System User';
+                 const userEmail = (currentUser && currentUser.email) ? currentUser.email : '';
 
                  await triggerEmailNotification('project.submitted', {
                     projectName: formData.projectName,
                     createdBy: userName,
+                    bdmName: userName,       // ADDED: explicitly send BDM name for CC
+                    bdmEmail: userEmail,     // ADDED: explicitly send BDM email for CC
                     clientName: formData.clientCompany,
                     projectId: proposalId
                 });
-            } catch (err) {
+            }  catch (err) {
                 console.warn("Email notification non-fatal error:", err);
             }
 
