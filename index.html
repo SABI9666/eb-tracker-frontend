@@ -4527,12 +4527,11 @@ function showCreateProposalModal() {
         renderProposalStagedFiles();
     };
 
-    // --- Form Submission ---
+   // --- Form Submission ---
     const createForm = document.getElementById('createProposalForm');
-    if (createForm) {
-        createForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+     if (createForm) {
+     createForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
             // Get checked project types
             const selectedTypes = Array.from(document.querySelectorAll('input[name="projectType"]:checked')).map(cb => cb.value);
             if (selectedTypes.length === 0) {
