@@ -5533,23 +5533,23 @@ function showCreateProposalModal() {
             }
         }
      // ================================================================
-// UPDATED: FULL EDIT PROPOSAL MODAL (With Files, Links & Safe Defaults)
+// UPDATED: editProposal (2GB Total Limit / 100MB Per File)
 // ================================================================
 async function editProposal(proposalId) {
     try {
         showLoading();
-        // 1. Initialize staging for NEW files
         window.currentEditStagedFiles = [];
+        
+        // Constants for limits
+        const MAX_SINGLE_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+        const MAX_TOTAL_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 
-        // 2. Fetch proposal AND existing files in parallel
         const [proposalResponse, filesResponse] = await Promise.all([
             apiCall(`proposals?id=${proposalId}`),
             apiCall(`files?proposalId=${proposalId}`)
         ]);
 
-        if (!proposalResponse.success || !proposalResponse.data) {
-            throw new Error('Failed to load proposal details');
-        }
+        if (!proposalResponse.success || !proposalResponse.data) throw new Error('Failed to load proposal details');
 
         const p = proposalResponse.data;
         const allFiles = filesResponse.success ? filesResponse.data : [];
@@ -5563,7 +5563,6 @@ async function editProposal(proposalId) {
             'Joist Detailing', 'As-built Drawings'
         ];
 
-        // 3. Build the Modal HTML
         const modalHtml = `
             <div class="modal-overlay" id="editProposalOverlay">
                 <div class="modal-content" style="max-width: 900px; max-height: 95vh; overflow-y: auto;">
@@ -5634,16 +5633,12 @@ async function editProposal(proposalId) {
                         </div>
 
                         <div id="edit-files" class="edit-tab-content" style="display: none;">
-                            
                             <div class="form-section">
-                                <h4>Current Attached Files</h4>
+                                <h4>Current Files</h4>
                                 <div id="existingFilesList">
                                     ${existingProjectFiles.length > 0 ? existingProjectFiles.map(f => `
                                         <div class="file-item" id="file-${f.id}">
-                                            <div class="file-info">
-                                                <span class="file-name">📄 ${f.originalName}</span>
-                                                <span class="file-size">${formatFileSize(f.fileSize)} - ${formatDate(f.uploadedAt)}</span>
-                                            </div>
+                                            <div class="file-info"><span class="file-name">📄 ${f.originalName}</span><span class="file-size">${formatFileSize(f.fileSize)}</span></div>
                                             <button type="button" class="btn btn-danger btn-sm" style="width: auto;" onclick="deleteFileImmediate('${f.id}', 'file-${f.id}')">Delete</button>
                                         </div>
                                     `).join('') : '<p class="text-muted">No files currently attached.</p>'}
@@ -5652,11 +5647,20 @@ async function editProposal(proposalId) {
 
                             <div class="form-section">
                                 <h4>Upload New Files</h4>
-                                <div class="upload-area" id="editUploadArea" style="padding: 1rem;">
+                                <div class="upload-area" id="editUploadArea" style="padding: 1.5rem; border: 2px dashed var(--primary-blue);">
                                     <p>📁 Click to add more files</p>
+                                    <div style="color: var(--text-light); font-size: 0.9rem;">Max 100MB per file • 2GB Total</div>
                                     <input type="file" id="editFileInput" multiple style="display: none;">
                                 </div>
-                                <div id="editStagedFilesList" style="margin-top: 1rem;"></div>
+                                <div id="editFileUploadError" style="color: var(--danger); font-weight: 600; margin-top: 1rem;"></div>
+                                
+                                <div id="editStagedFilesContainer" style="margin-top: 1rem; display: none;">
+                                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                        <strong>New Files to Upload:</strong>
+                                        <span id="editTotalSizeIndicator" style="color: var(--text-light);">0 MB / 2048 MB</span>
+                                    </div>
+                                    <div id="editStagedFilesList"></div>
+                                </div>
                             </div>
 
                             <div class="form-section">
@@ -5664,10 +5668,7 @@ async function editProposal(proposalId) {
                                 <div id="existingLinksList">
                                      ${existingLinks.length > 0 ? existingLinks.map(l => `
                                         <div class="file-item" id="link-${l.id}">
-                                            <div class="file-info">
-                                                <span class="file-name">🔗 ${l.originalName || l.url}</span>
-                                                <a href="${l.url}" target="_blank" style="font-size: 0.85rem;">${l.url}</a>
-                                            </div>
+                                            <div class="file-info"><span class="file-name">🔗 ${l.originalName || l.url}</span><a href="${l.url}" target="_blank" style="font-size: 0.85rem;">${l.url}</a></div>
                                             <button type="button" class="btn btn-danger btn-sm" style="width: auto;" onclick="deleteFileImmediate('${l.id}', 'link-${l.id}')">Delete</button>
                                         </div>
                                     `).join('') : '<p class="text-muted">No links attached.</p>'}
@@ -5696,9 +5697,7 @@ async function editProposal(proposalId) {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        // --- Event Handlers for the new modal ---
-
-        // 4. Tab Switcher
+        // --- Event Handlers ---
         window.switchEditTab = function(e, tabId) {
             document.querySelectorAll('.edit-tab-content').forEach(el => el.style.display = 'none');
             document.getElementById(tabId).style.display = 'block';
@@ -5706,54 +5705,87 @@ async function editProposal(proposalId) {
             e.target.classList.add('active');
         };
 
-        // 5. File Staging Logic
         const editUploadArea = document.getElementById('editUploadArea');
         const editFileInput = document.getElementById('editFileInput');
+        const editErrorDiv = document.getElementById('editFileUploadError');
+
         if (editUploadArea && editFileInput) {
             editUploadArea.onclick = () => editFileInput.click();
-            editFileInput.onchange = function() {
-                Array.from(this.files).forEach(file => {
-                    if (!window.currentEditStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                        window.currentEditStagedFiles.push(file);
-                    }
-                });
-                this.value = ''; 
-                renderEditStagedFiles();
+            editFileInput.onchange = () => handleEditFiles(editFileInput.files);
+
+             // Drag and drop support for edit
+            editUploadArea.ondragover = (e) => { e.preventDefault(); editUploadArea.style.background = 'var(--light-blue)'; };
+            editUploadArea.ondragleave = () => { editUploadArea.style.background = ''; };
+            editUploadArea.ondrop = (e) => {
+                e.preventDefault();
+                editUploadArea.style.background = '';
+                handleEditFiles(e.dataTransfer.files);
             };
+        }
+
+        function handleEditFiles(files) {
+            editErrorDiv.textContent = '';
+            let currentTotalSize = window.currentEditStagedFiles.reduce((sum, f) => sum + f.size, 0);
+
+            Array.from(files).forEach(file => {
+                if (file.size > MAX_SINGLE_FILE_SIZE) {
+                    editErrorDiv.innerHTML += `<div style="margin-bottom: 0.25rem;">⚠️ Skipped <strong>${file.name}</strong>: Exceeds 100MB limit.</div>`;
+                    return;
+                }
+                if (currentTotalSize + file.size > MAX_TOTAL_UPLOAD_SIZE) {
+                    editErrorDiv.innerHTML += `<div style="margin-bottom: 0.25rem; color: var(--danger);">⛔ Skipped <strong>${file.name}</strong>: Would exceed 2GB total limit.</div>`;
+                    return;
+                }
+                if (!window.currentEditStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    window.currentEditStagedFiles.push(file);
+                    currentTotalSize += file.size;
+                }
+            });
+            if(editFileInput) editFileInput.value = '';
+            renderEditStagedFiles();
         }
 
         window.renderEditStagedFiles = function() {
             const container = document.getElementById('editStagedFilesList');
-            if (!container) return;
-            container.innerHTML = window.currentEditStagedFiles.map((file, index) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #E8F5E9; margin-bottom: 8px; border-radius: 6px;">
-                    <span>🆕 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
-                    <button type="button" onclick="window.currentEditStagedFiles.splice(${index}, 1); renderEditStagedFiles();" 
-                            style="background: none; border: none; cursor: pointer;">❌</button>
-                </div>
-            `).join('');
+            const mainContainer = document.getElementById('editStagedFilesContainer');
+            const totalIndicator = document.getElementById('editTotalSizeIndicator');
+
+            if (window.currentEditStagedFiles.length === 0) {
+                mainContainer.style.display = 'none';
+                return;
+            }
+
+            mainContainer.style.display = 'block';
+            let totalSize = 0;
+            container.innerHTML = window.currentEditStagedFiles.map((file, index) => {
+                 totalSize += file.size;
+                 return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #E8F5E9; margin-bottom: 8px; border-radius: 6px;">
+                        <span>🆕 ${file.name} (${formatFileSize(file.size)})</span>
+                        <button type="button" onclick="window.currentEditStagedFiles.splice(${index}, 1); renderEditStagedFiles();" 
+                                style="background: none; border: none; cursor: pointer; color: var(--danger);">✕</button>
+                    </div>
+                `;
+            }).join('');
+
+             // Update total size indicator
+            const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
+            const percent = Math.min((totalSize / MAX_TOTAL_UPLOAD_SIZE) * 100, 100).toFixed(0);
+            totalIndicator.textContent = `${totalMB} MB / 2048 MB (${percent}%)`;
+            totalIndicator.style.color = percent > 90 ? 'var(--danger)' : 'var(--text-light)';
         };
 
-        // 6. Immediate Delete for EXISTING files/links
         window.deleteFileImmediate = async function(fileId, elementId) {
             if(!confirm('Are you sure you want to delete this permanently?')) return;
             try {
                 const el = document.getElementById(elementId);
                 if(el) el.style.opacity = '0.5'; 
-                
                 const res = await apiCall(`files?id=${fileId}`, { method: 'DELETE' });
-                if (res.success) {
-                    if(el) el.remove();
-                } else {
-                    alert('Failed to delete file.');
-                    if(el) el.style.opacity = '1';
-                }
-            } catch(e) {
-                 alert('Error deleting file: ' + e.message);
-            }
+                if (res.success) { if(el) el.remove(); } 
+                else { alert('Failed to delete file.'); if(el) el.style.opacity = '1'; }
+            } catch(e) { alert('Error deleting file: ' + e.message); }
         };
 
-        // 7. Add Link Field Helper
         window.addEditLinkField = function() {
              const container = document.getElementById('editLinksContainer');
              const div = document.createElement('div');
@@ -5763,16 +5795,14 @@ async function editProposal(proposalId) {
              container.appendChild(div);
         }
 
-        // 8. FINAL SUBMIT HANDLER
         document.getElementById('editProposalForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             showLoading();
-
             try {
-                // A) Update Proposal Details with Safe Defaults to prevent "undefined" errors
                 const selectedTypes = Array.from(document.querySelectorAll('input[name="editProjectType"]:checked')).map(cb => cb.value);
                 if (selectedTypes.length === 0) throw new Error('Please select at least one Project Type.');
 
+                // Update details
                 await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ 
@@ -5783,13 +5813,13 @@ async function editProposal(proposalId) {
                             projectType: selectedTypes,
                             timeline: document.getElementById('editTimeline').value || '',
                             country: document.getElementById('editCountry').value || '',
-                            priority: document.getElementById('editPriority').value || 'Medium', // Safe default
+                            priority: document.getElementById('editPriority').value || 'Medium',
                             scopeOfWork: document.getElementById('editScopeOfWork').value || ''
                         } 
                     })
                 });
 
-                // B) Upload NEW Staged Files
+                // Upload new files
                 if (window.currentEditStagedFiles.length > 0) {
                     const fileFormData = new FormData();
                     window.currentEditStagedFiles.forEach(file => fileFormData.append('files', file));
@@ -5797,32 +5827,28 @@ async function editProposal(proposalId) {
                     fileFormData.append('fileType', 'project');
                     await apiCall('files', { method: 'POST', body: fileFormData });
                 }
-        // C) Save NEW Links
-        const newLinks = [];
-        document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
-            const urlInput = group.querySelector('input[type="url"]');
-            const titleInput = group.querySelector('input[type="text"]');
-            if (urlInput && urlInput.value) {
-                newLinks.push({ url: urlInput.value, title: titleInput.value || urlInput.value, description: titleInput.value });
-            }
-        });
-        if (newLinks.length > 0) {
-            await apiCall(`proposals?id=${proposalId}`, {
-                method: 'PUT',
-                body: JSON.stringify({ action: 'add_links', data: { links: newLinks } })
-            });
-        }
 
-        alert('✅ Proposal updated successfully!');
-        closeModal();
-                
-                // Refresh the appropriate view
+                // Save new links
+                const newLinks = [];
+                document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
+                    const url = group.querySelector('input[type="url"]').value;
+                    const title = group.querySelector('input[type="text"]').value;
+                    if (url) newLinks.push({ url, title: title || url, description: title });
+                });
+                if (newLinks.length > 0) {
+                    await apiCall('proposals?id=' + proposalId, { // Use proposal endpoint for adding links to array
+                         method: 'PUT',
+                         body: JSON.stringify({ action: 'add_links', data: { links: newLinks } })
+                    });
+                }
+
+                alert('✅ Proposal updated successfully!');
+                closeModal();
                 if (document.getElementById('nav-proposals').classList.contains('active')) {
                     showProposals();
                 } else {
-                    viewProposal(proposalId); 
+                    viewProposal(proposalId);
                 }
-
             } catch (err) {
                 alert('Error updating: ' + err.message);
             } finally {
