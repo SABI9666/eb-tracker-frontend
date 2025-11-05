@@ -12200,63 +12200,246 @@ function handleTonnageInput() {
         designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
         calculateTotalHours();
     }
-}  // CORRECTED UPLOAD FUNCTION - No 'updateStatus' dependency
-    async function uploadFileDirectly(file, proposalId, fileType) {
-        console.log(`🚀 Starting upload for: ${file.name}`);
+}  
+    // ============================================
+// IMPROVED uploadFileDirectly Function
+// Place this in your index.html <script> section
+// Replace the existing uploadFileDirectly function
+// ============================================
 
-        // STEP 1: Get the Magic URL from your server
-        // Uses existing apiCall which is already defined in your app
+async function uploadFileDirectly(file, proposalId, fileType) {
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`🚀 Starting upload for: ${file.name}`);
+    console.log(`📊 File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+    console.log(`📦 File type: ${file.type || 'unknown'}`);
+    console.log(`🎯 Proposal ID: ${proposalId || 'none'}`);
+    console.log(`🏷️  Upload type: ${fileType}`);
+
+    try {
+        // STEP 1: Get the signed URL from backend
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📤 STEP 1: Requesting signed URL from backend...');
+        
+        const urlRequestBody = {
+            action: 'get_upload_url',
+            fileName: file.name,
+            contentType: file.type || 'application/octet-stream',
+            size: file.size,
+            proposalId: proposalId,
+            fileType: fileType
+        };
+        
+        console.log('📋 Request payload:', JSON.stringify(urlRequestBody, null, 2));
+        
         const urlRes = await apiCall('files', {
             method: 'POST',
-            body: JSON.stringify({
-                action: 'get_upload_url',
-                fileName: file.name,
-                contentType: file.type,
-                size: file.size,
-                proposalId: proposalId,
-                fileType: fileType
-            })
+            body: JSON.stringify(urlRequestBody)
         });
 
+        console.log('📥 Backend response received');
+        console.log('Response status:', urlRes);
+        
+        // Validate backend response
+        if (!urlRes) {
+            console.error('❌ Backend returned null/undefined response');
+            throw new Error('No response from backend');
+        }
+
         if (!urlRes.success) {
-            throw new Error(urlRes.error || 'Failed to get upload URL');
+            console.error('❌ Backend failed:', urlRes);
+            throw new Error(urlRes.error || 'Failed to get upload URL from backend');
+        }
+
+        if (!urlRes.data) {
+            console.error('❌ Backend response missing data field');
+            throw new Error('Invalid response structure from backend');
         }
 
         const { uploadUrl, storagePath } = urlRes.data;
-
-        // STEP 2: Upload directly to Google Storage
-        // Uses standard fetch because this goes to Google, not your backend
-        const googleRes = await fetch(uploadUrl, {
-            method: 'PUT',
-            body: file,
-            headers: { 'Content-Type': file.type }
-        });
-
-        if (!googleRes.ok) {
-            throw new Error(`Cloud upload failed: ${googleRes.statusText}`);
+        
+        // CRITICAL: Verify uploadUrl exists and is valid
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🔍 Validating signed URL...');
+        console.log('uploadUrl exists:', uploadUrl ? '✅ YES' : '❌ NO');
+        console.log('uploadUrl type:', typeof uploadUrl);
+        console.log('uploadUrl length:', uploadUrl?.length || 0);
+        console.log('storagePath:', storagePath);
+        
+        if (!uploadUrl) {
+            console.error('❌ CRITICAL ERROR: uploadUrl is missing!');
+            console.error('Full response data:', JSON.stringify(urlRes.data, null, 2));
+            throw new Error('Backend returned empty upload URL. Check backend logs for Firebase errors.');
         }
 
-        // STEP 3: Finalize the upload in your backend
+        if (typeof uploadUrl !== 'string') {
+            console.error('❌ CRITICAL ERROR: uploadUrl is not a string!');
+            console.error('uploadUrl type:', typeof uploadUrl);
+            console.error('uploadUrl value:', uploadUrl);
+            throw new Error('Invalid upload URL format');
+        }
+
+        if (!uploadUrl.startsWith('http')) {
+            console.error('❌ CRITICAL ERROR: uploadUrl is not a valid URL!');
+            console.error('uploadUrl starts with:', uploadUrl.substring(0, 20));
+            throw new Error('Invalid upload URL: must start with http');
+        }
+
+        console.log('✅ Upload URL validated');
+        console.log('🎯 Target URL (first 100 chars):', uploadUrl.substring(0, 100) + '...');
+
+        // STEP 2: Upload directly to Google Cloud Storage
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('☁️  STEP 2: Uploading to Google Cloud Storage...');
+        console.log('⏰ Starting upload at:', new Date().toISOString());
+        
+        let googleRes;
+        try {
+            googleRes = await fetch(uploadUrl, {
+                method: 'PUT',
+                body: file,
+                headers: { 
+                    'Content-Type': file.type || 'application/octet-stream'
+                },
+                // Add signal for timeout (30 minutes for large files)
+                signal: AbortSignal.timeout(30 * 60 * 1000)
+            });
+            
+            console.log('📥 Google Storage responded');
+            console.log('Response status:', googleRes.status, googleRes.statusText);
+            console.log('Response ok:', googleRes.ok);
+
+        } catch (fetchError) {
+            console.error('❌ FETCH FAILED');
+            console.error('Error type:', fetchError.constructor.name);
+            console.error('Error message:', fetchError.message);
+            console.error('Error stack:', fetchError.stack);
+            
+            // Provide specific error messages
+            if (fetchError.name === 'TypeError' && fetchError.message.includes('Failed to fetch')) {
+                throw new Error(
+                    'Cannot connect to Google Cloud Storage.\n\n' +
+                    'Possible causes:\n' +
+                    '1. CORS not configured on storage bucket\n' +
+                    '2. Network/firewall blocking storage.googleapis.com\n' +
+                    '3. Invalid signed URL\n' +
+                    '4. Browser security policy\n\n' +
+                    'Check browser console and backend logs for details.'
+                );
+            } else if (fetchError.name === 'AbortError') {
+                throw new Error('Upload timed out (30 minutes). File may be too large or connection too slow.');
+            } else {
+                throw new Error(`Upload failed: ${fetchError.message}`);
+            }
+        }
+
+        // Check response status
+        if (!googleRes.ok) {
+            console.error('❌ Google Storage rejected upload');
+            let errorText = '';
+            try {
+                errorText = await googleRes.text();
+                console.error('Error response:', errorText);
+            } catch (e) {
+                console.error('Could not read error response');
+            }
+            
+            throw new Error(
+                `Cloud upload failed: ${googleRes.status} ${googleRes.statusText}\n` +
+                (errorText ? `Details: ${errorText}` : '')
+            );
+        }
+        
+        console.log('✅ Upload to Google Storage successful');
+        console.log('⏰ Upload completed at:', new Date().toISOString());
+
+        // STEP 3: Finalize the upload in backend
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ STEP 3: Finalizing upload in backend...');
+        
+        const finalizeBody = {
+            action: 'finalize_upload',
+            storagePath: storagePath,
+            originalName: file.name,
+            mimeType: file.type || 'application/octet-stream',
+            fileSize: file.size,
+            proposalId: proposalId,
+            fileType: fileType
+        };
+        
+        console.log('📋 Finalize payload:', JSON.stringify(finalizeBody, null, 2));
+        
         const finalRes = await apiCall('files', {
             method: 'POST',
-            body: JSON.stringify({
-                action: 'finalize_upload',
-                storagePath: storagePath,
-                originalName: file.name,
-                mimeType: file.type,
-                fileSize: file.size,
-                proposalId: proposalId,
-                fileType: fileType
-            })
+            body: JSON.stringify(finalizeBody)
         });
 
+        console.log('📥 Finalize response:', finalRes);
+
         if (!finalRes.success) {
-            throw new Error(finalRes.error || 'Failed to finalize file record');
+            console.error('❌ Finalization failed:', finalRes);
+            throw new Error(finalRes.error || 'Failed to finalize file record in database');
         }
 
-        console.log(`✅ Successfully uploaded: ${file.name}`);
+        console.log('✅ File record saved to database');
+        console.log('🎉 UPLOAD COMPLETE:', file.name);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
         return finalRes.data;
-    } 
+
+    } catch (error) {
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('❌ UPLOAD FAILED:', file.name);
+        console.error('Error details:', error);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        throw error;
+    }
+}
+
+// Optional: Add a function to test backend connection
+async function testFileUploadConnection() {
+    console.log('🧪 Testing file upload backend connection...');
+    
+    try {
+        // Test 1: Check if /api/files endpoint exists
+        const testRes = await apiCall('files', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'get_upload_url',
+                fileName: 'test.txt',
+                contentType: 'text/plain',
+                size: 100,
+                proposalId: null,
+                fileType: 'project'
+            })
+        });
+        
+        console.log('✅ Backend /api/files endpoint is responding');
+        console.log('Response:', testRes);
+        
+        if (testRes.success && testRes.data && testRes.data.uploadUrl) {
+            console.log('✅ Backend can generate signed URLs');
+            return true;
+        } else {
+            console.warn('⚠️  Backend responded but did not generate URL');
+            console.warn('This may indicate Firebase Storage configuration issues');
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Backend test failed:', error.message);
+        return false;
+    }
+}
+
+// Run test on page load (optional - remove if not needed)
+if (typeof document !== 'undefined') {
+    document.addEventListener('DOMContentLoaded', () => {
+        // Uncomment to run automatic test:
+        // testFileUploadConnection();
+    });
+}
 
 </script>
 
