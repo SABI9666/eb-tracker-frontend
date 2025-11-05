@@ -2199,6 +2199,63 @@
         async function logout() {
             await auth.signOut();
         }
+        // ============================================
+// NEW FORGOT PASSWORD FUNCTIONS
+// ============================================
+
+function showForgotPasswordView(e) {
+    if (e) e.preventDefault();
+    clearMessages();
+    // Hide tabs and other content
+    document.querySelector('.auth-tabs').style.display = 'none';
+    document.querySelectorAll('.auth-content').forEach(c => c.classList.remove('active'));
+    // Show forgot password content
+    document.getElementById('forgotPasswordContent').classList.add('active');
+}
+
+function hideForgotPasswordView() {
+    clearMessages();
+    // Show tabs again
+    document.querySelector('.auth-tabs').style.display = 'flex';
+    // Switch back to login view using your existing function
+    showTab('login');
+}
+
+async function handlePasswordReset(e) {
+    e.preventDefault();
+    const email = document.getElementById('resetEmail').value;
+    
+    if (!email) {
+        showMessage('Please enter your email address.', 'error');
+        return;
+    }
+
+    try {
+        showLoading();
+        // Using standard Firebase auth method
+        await auth.sendPasswordResetEmail(email);
+        
+        showMessage('✅ Password reset link sent! Check your email.', 'success');
+        document.getElementById('forgotPasswordForm').reset();
+        
+        // Optional: auto-redirect back to login after 3 seconds
+        setTimeout(() => {
+            if (document.getElementById('forgotPasswordContent').classList.contains('active')) {
+                hideForgotPasswordView();
+                showMessage('Please log in with your new password after resetting it.', 'info');
+            }
+        }, 4000);
+        
+    } catch (error) {
+        console.error('Reset password error:', error);
+        let errorMsg = "Failed to send reset link.";
+        if (error.code === 'auth/user-not-found') errorMsg = "No account found with this email.";
+        if (error.code === 'auth/invalid-email') errorMsg = "Invalid email format.";
+        showMessage(errorMsg, 'error');
+    } finally {
+        hideLoading();
+    }
+}
 
         // ============================================
         // UI & NAVIGATION
