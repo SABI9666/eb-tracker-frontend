@@ -4699,7 +4699,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             }
 
             const modalHtml = `
-                <div class="modal-overlay">
+<div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                     <div class="modal-content" style="max-width: 1000px;">
                         <div class="modal-header" style="text-align: left;"> <div> <h2 style="color: var(--text-dark); margin-bottom: 0;">${p.projectName}</h2> <div class="subtitle" style="text-align: left;">${p.clientCompany}</div> </div>
                              <span class="close-modal" onclick="closeModal()">&times;</span> </div>
