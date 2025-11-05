@@ -7967,7 +7967,7 @@ function showDirectorApprovalModal(proposalId, actionType) {
     const buttonText = isApprove ? '✅ Approve' : '❌ Reject';
     
     const modalHtml = `
-        <div class="modal-overlay">
+        <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
             <div class="modal-content" style="max-width: 600px;">
                 <div class="modal-header">
                     <h2>${title}</h2>
