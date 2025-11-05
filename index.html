@@ -4365,7 +4365,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>Project Type</label>
-                                        <select id="projectType" class="form-control">
+                                        <select id="projectType" class="form-control" multiple size="4">
                                             <option value="">Select Type</option>
                                             ${projectTypes.map(type => `<option value="${type}">${type}</option>`).join('')}
                                         </select>
