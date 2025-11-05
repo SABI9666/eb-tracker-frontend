@@ -4448,7 +4448,6 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             const fileInput = document.getElementById('fileInput');
             uploadArea.onclick = () => fileInput.click();
             let selectedFiles = [];
-            let selectedFiles = []; // This variable should already be here
     fileInput.onchange = function() {
         const files = Array.from(this.files);
         const errorDiv = document.getElementById('fileUploadError');
