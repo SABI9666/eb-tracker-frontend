@@ -4985,7 +4985,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                 const proposal = response.data;
                 const estimation = proposal.estimation || {};
                 const modalHtml = `
-                    <div class="modal-overlay">
+                    <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                         <div class="modal-content" style="max-width: 1200px;">
                             <div class="modal-header"><h2>Project Editor - COO Full Access</h2></div>
                             <form id="pricingForm" class="modal-form">
