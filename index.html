@@ -9552,112 +9552,66 @@ async function submitAllocation() {
 <!-- Add before closing </body> tag -->
 <!-- ============================================ -->
 <script>
-    // --- PASTE YOUR 'uploadFileDirectly' FUNCTION HERE ---
-        async function uploadFileDirectly(file, proposalId, fileType) {
-            // Ensure user is logged in first
-            const user = firebase.auth().currentUser;
-            if (!user) throw new Error("User not logged in");
-            const token = await user.getIdToken();
-            
-            // STEP 1: Get the Magic URL from your server
-            updateStatus(`Getting upload URL for ${file.name}...`);
-            const urlRes = await fetch('/api/files', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'get_upload_url',
-                    fileName: file.name,
-                    contentType: file.type,
-                    size: file.size,
-                    proposalId: proposalId,
-                    fileType: fileType
-                })
-            });
-            
-            if (!urlRes.ok) throw new Error((await urlRes.json()).error);
-            const { uploadUrl, storagePath } = (await urlRes.json()).data;
+    async function uploadFileDirectly(file, proposalId, fileType) {
+    // STEP 1: Get the Magic URL from your server using apiCall
+    // This automatically handles API_BASE and Auth Tokens
+    updateStatus(`Getting upload URL for ${file.name}...`);
+    
+    const urlRes = await apiCall('files', {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'get_upload_url',
+            fileName: file.name,
+            contentType: file.type,
+            size: file.size,
+            proposalId: proposalId,
+            fileType: fileType
+        })
+    });
+    
+    if (!urlRes.success) {
+        throw new Error(urlRes.error || 'Failed to get upload URL from server');
+    }
 
-            // STEP 2: Upload directly to Google
-            updateStatus(`Uploading ${file.name} to Storage... (This may take a while)`);
-            await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: {
-                    'Content-Type': file.type 
-                }
-            });
+    const { uploadUrl, storagePath } = urlRes.data;
 
-            // STEP 3: Finalize
-            updateStatus(`Finalizing ${file.name}...`);
-            const finalRes = await fetch('/api/files', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'finalize_upload',
-                    storagePath: storagePath,
-                    originalName: file.name,
-                    mimeType: file.type,
-                    fileSize: file.size,
-                    proposalId: proposalId,
-                    fileType: fileType
-                })
-            });
-
-            if (!finalRes.ok) throw new Error((await finalRes.json()).error);
-            return (await finalRes.json()).data;
+    // STEP 2: Upload directly to Google Storage
+    // We MUST use standard fetch here (not apiCall) because this goes to Google, not your backend
+    updateStatus(`Uploading ${file.name} to cloud storage...`);
+    const googleRes = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+            'Content-Type': file.type
+            // No Authorization header needed here, it's in the signed URL
         }
+    });
 
-        // --- NEW WRAPPER FUNCTION TO HANDLE THE HTML INPUT ---
-        async function handleUploads() {
-            const fileInput = document.getElementById('fileInput');
-            const files = fileInput.files;
-            const statusDiv = document.getElementById('status');
+    if (!googleRes.ok) {
+        throw new Error(`Cloud upload failed: ${googleRes.statusText}`);
+    }
 
-            if (files.length === 0) {
-                alert("Please select files first");
-                return;
-            }
+    // STEP 3: Finalize the upload in your backend
+    updateStatus(`Finalizing ${file.name}...`);
+    const finalRes = await apiCall('files', {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'finalize_upload',
+            storagePath: storagePath,
+            originalName: file.name,
+            mimeType: file.type,
+            fileSize: file.size,
+            proposalId: proposalId,
+            fileType: fileType
+        })
+    });
 
-            // Disable button during upload
-            document.getElementById('uploadBtn').disabled = true;
+    if (!finalRes.success) {
+        throw new Error(finalRes.error || 'Failed to finalize file record');
+    }
 
-            try {
-                // Example: Static proposal ID and type. Replace these with real values from your app.
-                const proposalId = 'PROPOSAL_123'; 
-                const fileType = 'project';
-
-                // Loop through all selected files and upload one by one
-                for (let i = 0; i < files.length; i++) {
-                    updateStatus(`Starting file ${i+1} of ${files.length}: ${files[i].name}`);
-                    await uploadFileDirectly(files[i], proposalId, fileType);
-                    updateStatus(`Completed: ${files[i].name}`);
-                }
-
-                updateStatus("All files uploaded successfully!", true);
-
-            } catch (error) {
-                console.error("Upload failed:", error);
-                updateStatus(`Error: ${error.message}`, true);
-            } finally {
-                document.getElementById('uploadBtn').disabled = false;
-            }
-        }
-
-        // Helper for showing status on screen
-        function updateStatus(msg, isFinal = false) {
-            const statusDiv = document.getElementById('status');
-            if (isFinal) {
-                statusDiv.innerHTML += `<br><strong>${msg}</strong>`;
-            } else {
-                statusDiv.innerHTML = msg;
-            }
-        }
+    return finalRes.data;
+}
 // ===================================
 // EXECUTIVE MONITORING JAVASCRIPT
 // ===================================
