@@ -9552,66 +9552,7 @@ async function submitAllocation() {
 <!-- Add before closing </body> tag -->
 <!-- ============================================ -->
 <script>
-    async function uploadFileDirectly(file, proposalId, fileType) {
-    // STEP 1: Get the Magic URL from your server using apiCall
-    // This automatically handles API_BASE and Auth Tokens
-    updateStatus(`Getting upload URL for ${file.name}...`);
     
-    const urlRes = await apiCall('files', {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'get_upload_url',
-            fileName: file.name,
-            contentType: file.type,
-            size: file.size,
-            proposalId: proposalId,
-            fileType: fileType
-        })
-    });
-    
-    if (!urlRes.success) {
-        throw new Error(urlRes.error || 'Failed to get upload URL from server');
-    }
-
-    const { uploadUrl, storagePath } = urlRes.data;
-
-    // STEP 2: Upload directly to Google Storage
-    // We MUST use standard fetch here (not apiCall) because this goes to Google, not your backend
-    updateStatus(`Uploading ${file.name} to cloud storage...`);
-    const googleRes = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: file,
-        headers: {
-            'Content-Type': file.type
-            // No Authorization header needed here, it's in the signed URL
-        }
-    });
-
-    if (!googleRes.ok) {
-        throw new Error(`Cloud upload failed: ${googleRes.statusText}`);
-    }
-
-    // STEP 3: Finalize the upload in your backend
-    updateStatus(`Finalizing ${file.name}...`);
-    const finalRes = await apiCall('files', {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'finalize_upload',
-            storagePath: storagePath,
-            originalName: file.name,
-            mimeType: file.type,
-            fileSize: file.size,
-            proposalId: proposalId,
-            fileType: fileType
-        })
-    });
-
-    if (!finalRes.success) {
-        throw new Error(finalRes.error || 'Failed to finalize file record');
-    }
-
-    return finalRes.data;
-}
 // ===================================
 // EXECUTIVE MONITORING JAVASCRIPT
 // ===================================
@@ -12259,7 +12200,63 @@ function handleTonnageInput() {
         designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
         calculateTotalHours();
     }
-}   
+}  // CORRECTED UPLOAD FUNCTION - No 'updateStatus' dependency
+    async function uploadFileDirectly(file, proposalId, fileType) {
+        console.log(`🚀 Starting upload for: ${file.name}`);
+
+        // STEP 1: Get the Magic URL from your server
+        // Uses existing apiCall which is already defined in your app
+        const urlRes = await apiCall('files', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'get_upload_url',
+                fileName: file.name,
+                contentType: file.type,
+                size: file.size,
+                proposalId: proposalId,
+                fileType: fileType
+            })
+        });
+
+        if (!urlRes.success) {
+            throw new Error(urlRes.error || 'Failed to get upload URL');
+        }
+
+        const { uploadUrl, storagePath } = urlRes.data;
+
+        // STEP 2: Upload directly to Google Storage
+        // Uses standard fetch because this goes to Google, not your backend
+        const googleRes = await fetch(uploadUrl, {
+            method: 'PUT',
+            body: file,
+            headers: { 'Content-Type': file.type }
+        });
+
+        if (!googleRes.ok) {
+            throw new Error(`Cloud upload failed: ${googleRes.statusText}`);
+        }
+
+        // STEP 3: Finalize the upload in your backend
+        const finalRes = await apiCall('files', {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'finalize_upload',
+                storagePath: storagePath,
+                originalName: file.name,
+                mimeType: file.type,
+                fileSize: file.size,
+                proposalId: proposalId,
+                fileType: fileType
+            })
+        });
+
+        if (!finalRes.success) {
+            throw new Error(finalRes.error || 'Failed to finalize file record');
+        }
+
+        console.log(`✅ Successfully uploaded: ${file.name}`);
+        return finalRes.data;
+    } 
 
 </script>
 
