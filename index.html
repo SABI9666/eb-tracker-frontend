@@ -2385,16 +2385,31 @@
             const c = document.getElementById('authMessages');
             if(c) c.innerHTML = '';
         }
-     // REPLACE YOUR EXISTING closeModal FUNCTION WITH THIS:
-      function closeModal() {
-    // Remove all dynamically created overlays
-    document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.remove());
+// ================================================================
+// REPLACEMENT: Robust closeModal (Fixes stuck forms)
+// ================================================================
+function closeModal() {
+    // 1. Remove all overlays
+    document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
     
-    // Hide all pre-existing static modals
-    document.querySelectorAll('.modal').forEach(modal => {
-        modal.style.display = 'none';
+    // 2. Hide all standard modals
+    document.querySelectorAll('.modal').forEach(el => el.style.display = 'none');
+    
+    // 3. Force remove specific dynamically created modals if they are stuck
+    const dynamicIds = [
+        'createProposalOverlay', 'projectDetailsModal', 'designerUploadModal', 
+        'clientOutcomeModal', 'submitDesignModal', 'allocationModal', 
+        'designerAssignmentModal', 'bdmFilesModal', 'successModal',
+        'addVariationModal', 'variationApprovalModal', 'projectNumberModal',
+        'rejectionReasonModal', 'timeRequestReviewModal', 'rejectModalOverlay',
+        'requestTimeModalOverlay', 'timesheetModalOverlay'
+    ];
+
+    dynamicIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.remove();
     });
-  }
+}
         function formatDate(ts) {
             // Handles Firebase timestamp objects OR ISO strings
             if (!ts) return 'N/A';
