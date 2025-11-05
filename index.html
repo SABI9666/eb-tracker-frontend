@@ -5504,9 +5504,8 @@ function showCreateProposalModal() {
                 hideLoading();
             }
         }
-      // ================================================================
-// ================================================================
-// UPDATED: FULL EDIT PROPOSAL MODAL (With Files & Links)
+     // ================================================================
+// UPDATED: FULL EDIT PROPOSAL MODAL (With Files, Links & Safe Defaults)
 // ================================================================
 async function editProposal(proposalId) {
     try {
@@ -5542,7 +5541,7 @@ async function editProposal(proposalId) {
                 <div class="modal-content" style="max-width: 900px; max-height: 95vh; overflow-y: auto;">
                     <div class="modal-header">
                         <h2>Edit Proposal</h2>
-                        <div class="subtitle">${p.projectName}</div>
+                        <div class="subtitle">${p.projectName || 'Untitled Project'}</div>
                         <span class="close-modal" onclick="closeModal()">&times;</span>
                     </div>
 
@@ -5591,6 +5590,14 @@ async function editProposal(proposalId) {
                                         </select>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Priority</label>
+                                <select id="editPriority" class="form-control">
+                                    <option value="Medium" ${p.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                                    <option value="High" ${p.priority === 'High' ? 'selected' : ''}>High</option>
+                                    <option value="Low" ${p.priority === 'Low' ? 'selected' : ''}>Low</option>
+                                </select>
                             </div>
                              <div class="form-group">
                                 <label>Scope of Work *</label>
@@ -5671,14 +5678,13 @@ async function editProposal(proposalId) {
             e.target.classList.add('active');
         };
 
-        // 5. File Staging Logic (similar to Create Proposal)
+        // 5. File Staging Logic
         const editUploadArea = document.getElementById('editUploadArea');
         const editFileInput = document.getElementById('editFileInput');
         if (editUploadArea && editFileInput) {
             editUploadArea.onclick = () => editFileInput.click();
             editFileInput.onchange = function() {
                 Array.from(this.files).forEach(file => {
-                    // Avoid exact duplicates in staging
                     if (!window.currentEditStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
                         window.currentEditStagedFiles.push(file);
                     }
@@ -5705,7 +5711,7 @@ async function editProposal(proposalId) {
             if(!confirm('Are you sure you want to delete this permanently?')) return;
             try {
                 const el = document.getElementById(elementId);
-                if(el) el.style.opacity = '0.5'; // Visual feedback
+                if(el) el.style.opacity = '0.5'; 
                 
                 const res = await apiCall(`files?id=${fileId}`, { method: 'DELETE' });
                 if (res.success) {
@@ -5735,7 +5741,7 @@ async function editProposal(proposalId) {
             showLoading();
 
             try {
-                // A) Update Proposal Details
+                // A) Update Proposal Details with Safe Defaults to prevent "undefined" errors
                 const selectedTypes = Array.from(document.querySelectorAll('input[name="editProjectType"]:checked')).map(cb => cb.value);
                 if (selectedTypes.length === 0) throw new Error('Please select at least one Project Type.');
 
@@ -5744,12 +5750,13 @@ async function editProposal(proposalId) {
                     body: JSON.stringify({ 
                         action: 'update_details', 
                         data: {
-                            projectName: document.getElementById('editProjectName').value,
-                            clientCompany: document.getElementById('editClientCompany').value,
+                            projectName: document.getElementById('editProjectName').value || '',
+                            clientCompany: document.getElementById('editClientCompany').value || '',
                             projectType: selectedTypes,
-                            timeline: document.getElementById('editTimeline').value,
-                            country: document.getElementById('editCountry').value,
-                            scopeOfWork: document.getElementById('editScopeOfWork').value
+                            timeline: document.getElementById('editTimeline').value || '',
+                            country: document.getElementById('editCountry').value || '',
+                            priority: document.getElementById('editPriority').value || 'Medium', // Safe default
+                            scopeOfWork: document.getElementById('editScopeOfWork').value || ''
                         } 
                     })
                 });
@@ -5784,7 +5791,7 @@ async function editProposal(proposalId) {
                 if (document.getElementById('nav-proposals').classList.contains('active')) {
                     showProposals();
                 } else {
-                    viewProposal(proposalId); // Refresh details view if that's where we came from
+                    viewProposal(proposalId); 
                 }
 
             } catch (err) {
@@ -5801,6 +5808,7 @@ async function editProposal(proposalId) {
         hideLoading();
     }
 }
+
 // REPLACE YOUR EXISTING deleteProposal FUNCTION WITH THIS:
     async function deleteProposal(proposalId) {
     if (!confirm('Are you VERY SURE you want to delete this proposal? This action cannot be undone.')) return;
