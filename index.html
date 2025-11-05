@@ -4609,14 +4609,24 @@ function showCreateProposalModal() {
             if (!response.success || !response.data) throw new Error('Invalid response from server');
             const proposalId = response.data.id;
 
-            // 2. Upload Files (if any)
-          if (window.currentStagedFiles.length > 0) {
-          const fileFormData = new FormData();
-         window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
-         fileFormData.append('proposalId', proposalId);
-        fileFormData.append('fileType', 'project');
-        await apiCall('files', { method: 'POST', body: fileFormData });
+            // 2. Upload Files (using new direct method)
+       if (window.currentStagedFiles.length > 0) {
+    // Optional: Add a temporary status message if you have a status element, 
+    // otherwise you can remove the next line.
+    console.log("Starting file uploads..."); 
+
+    // Loop through each staged file and upload one by one
+    for (const file of window.currentStagedFiles) {
+        try {
+            await uploadFileDirectly(file, proposalId, 'project');
+            console.log(`✅ Uploaded: ${file.name}`);
+        } catch (uploadError) {
+            console.error(`❌ Failed to upload ${file.name}:`, uploadError);
+            alert(`Failed to upload ${file.name}: ${uploadError.message}`);
+             // Optional: throw error here if you want to stop the whole process on first failure
         }
+    }
+}
             // 3. Save Links (if added via files endpoint for consistency)
             if (projectLinks.length > 0) {
                 await apiCall('files', {
