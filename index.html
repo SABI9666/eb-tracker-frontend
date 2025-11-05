@@ -4539,16 +4539,16 @@ function showCreateProposalModal() {
                 return;
             }
 
-            // Gather links
-            const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
-            const projectLinks = [];
-            linkInputs.forEach(group => {
-                const urlInput = group.querySelector('input[type="url"]');
-                const titleInput = group.querySelector('input[type="text"]');
-                if (urlInput && urlInput.value) { 
-                    projectLinks.push({ url: urlInput.value, title: titleInput.value || urlInput.value, description: titleInput.value }); 
-                }
-            });
+           // Gather links
+        const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
+        const projectLinks = [];
+        linkInputs.forEach(group => {
+            const urlInput = group.querySelector('input[type="url"]');
+            const titleInput = group.querySelector('input[type="text"]');
+            if (urlInput && urlInput.value) { 
+                projectLinks.push({ url: urlInput.value, title: titleInput.value || urlInput.value, description: titleInput.value }); 
+            }
+        });
 
             const formData = {
                 projectName: document.getElementById('projectName').value,
