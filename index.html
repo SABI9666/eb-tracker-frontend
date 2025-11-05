@@ -5400,40 +5400,34 @@ function showCreateProposalModal() {
                 hideLoading();
             }
         }
-        async function deleteProposal(proposalId) {
-            // ... (This function remains unchanged)
-            if (!confirm('Are you sure you want to delete this proposal?')) return;
-            try {
-                showLoading();
-                const response = await apiCall(`proposals?id=${proposalId}`, { method: 'DELETE' });
-                if (response.success) {
-                    alert('Proposal deleted successfully!');
-                    closeModal();
-                    showProposals();
-                }
-            } catch (error) {
-                alert('Error deleting proposal: ' + error.message);
-            } finally {
-                hideLoading();
-            }
+// REPLACE YOUR EXISTING deleteProposal FUNCTION WITH THIS:
+    async function deleteProposal(proposalId) {
+    if (!confirm('Are you VERY SURE you want to delete this proposal? This action cannot be undone.')) return;
+    
+    try {
+        showLoading();
+        const response = await apiCall(`proposals?id=${proposalId}`, { 
+            method: 'DELETE' 
+        });
+        
+        if (response.success) {
+            alert('Proposal deleted successfully!');
+            closeModal(); // Close details modal if open
+            // Force a slight delay to ensure backend processes before re-fetching
+            setTimeout(() => {
+                showProposals(); 
+            }, 500);
+        } else {
+            throw new Error(response.error || 'Failed to delete proposal');
         }
-        async function deleteProposal(proposalId) {
-            // ... (This function remains unchanged)
-            if (!confirm('Are you sure you want to delete this proposal?')) return;
-            try {
-                showLoading();
-                const response = await apiCall(`proposals?id=${proposalId}`, { method: 'DELETE' });
-                if (response.success) {
-                    alert('Proposal deleted successfully!');
-                    closeModal();
-                    showProposals();
-                }
-            } catch (error) {
-                alert('Error deleting proposal: ' + error.message);
-            } finally {
-                hideLoading();
-            }
-        }   // ← LINE 3582 - ADD CODE AFTER THIS LINE
+    } catch (error) {
+        console.error('Delete error:', error);
+        alert('Error deleting proposal: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+    
 
         // ============================================
         // NEW FUNCTIONS ADDED FROM PROMPT
