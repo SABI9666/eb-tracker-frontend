@@ -4627,18 +4627,18 @@ function showCreateProposalModal() {
 }
       
 
-        function addLinkField() {
-            // ... (This function remains unchanged)
-            const container = document.getElementById('linksContainer');
-            const newLinkGroup = document.createElement('div');
-            newLinkGroup.className = 'link-input-group';
-            newLinkGroup.style.marginBottom = '1rem';
-            newLinkGroup.innerHTML = `
-                <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
-                <input type="text" class="form-control" placeholder="Link title/description (optional)">
-            `;
-            container.appendChild(newLinkGroup);
-        }
+      function addLinkField() {
+    const container = document.getElementById('linksContainer');
+    const newLinkGroup = document.createElement('div');
+    newLinkGroup.className = 'link-input-group';
+    newLinkGroup.style.marginBottom = '1rem';
+    newLinkGroup.innerHTML = `
+        <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
+        <input type="text" class="form-control" placeholder="Link title/description (optional)">
+        <button type="button" class="btn btn-danger btn-sm" onclick="this.parentElement.remove()" style="margin-top: 0.5rem;">Remove</button>
+    `;
+    container.appendChild(newLinkGroup);
+}
 
         async function viewProposal(proposalId) {
             // ... (This function remains unchanged)
