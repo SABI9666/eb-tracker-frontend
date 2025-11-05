@@ -4406,15 +4406,22 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                             <textarea id="projectComments" class="form-control" rows="3" placeholder="Add any additional comments or notes..."></textarea>
                         </div>
 
-                            <div class="form-section">
-                                <h4>Upload Project Files (RFQ, Tender Documents, Drawings)</h4>
-                                <div class="upload-area" id="uploadArea">
-                                    <div class="upload-icon">📁</div>
-                                    <p>Click to upload or drag and drop files</p>
-                                    <input type="file" id="fileInput" multiple style="display: none;">
-                                </div>
-                                <div id="filePreview"></div>
-                            </div>
+                          <div class="form-section">
+                        <h4>Upload Project Files (RFQ, Tender Documents, Drawings)</h4>
+                        <div class="upload-area" id="uploadArea">
+                            <div class="upload-icon">📁</div>
+                            <p>Click to upload or drag and drop files</p>
+                            <small style="color: var(--text-light); margin-top: 0.5rem; display: block;">
+                                Max 10 files. Total 100MB. (PDF, DOC, DOCX, JPG, PNG)
+                            </small>
+                            <input type="file" id="fileInput" multiple 
+                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
+                                   style="display: none;">
+                        </div>
+                        <!-- This is the new div for showing file errors -->
+                        <div id="fileUploadError" style="color: var(--danger); font-weight: 600; margin-top: 1rem;"></div>
+                        <div id="filePreview" style="margin-top: 1rem;"></div>
+                      </div>
 
                             <div class="form-section">
                                 <h4>Add Project Links</h4>
