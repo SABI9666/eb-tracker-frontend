@@ -5430,19 +5430,30 @@ function showCreateProposalModal() {
             }
         }
       // ================================================================
-// UPDATED: FULL EDIT PROPOSAL MODAL
+// ================================================================
+// UPDATED: FULL EDIT PROPOSAL MODAL (With Files & Links)
 // ================================================================
 async function editProposal(proposalId) {
     try {
         showLoading();
-        // 1. Fetch current proposal data to pre-fill the form
-        const response = await apiCall(`proposals?id=${proposalId}`);
-        if (!response.success || !response.data) {
+        // 1. Initialize staging for NEW files
+        window.currentEditStagedFiles = [];
+
+        // 2. Fetch proposal AND existing files in parallel
+        const [proposalResponse, filesResponse] = await Promise.all([
+            apiCall(`proposals?id=${proposalId}`),
+            apiCall(`files?proposalId=${proposalId}`)
+        ]);
+
+        if (!proposalResponse.success || !proposalResponse.data) {
             throw new Error('Failed to load proposal details');
         }
-        const p = response.data;
-        
-        // 2. Close any open modals (like the details view)
+
+        const p = proposalResponse.data;
+        const allFiles = filesResponse.success ? filesResponse.data : [];
+        const existingProjectFiles = allFiles.filter(f => !f.fileType || f.fileType === 'project');
+        const existingLinks = allFiles.filter(f => f.fileType === 'link');
+
         closeModal();
 
         const projectTypes = [
@@ -5450,20 +5461,24 @@ async function editProposal(proposalId) {
             'Joist Detailing', 'As-built Drawings'
         ];
 
-        // 3. Create the Edit Modal HTML with pre-filled values
+        // 3. Build the Modal HTML
         const modalHtml = `
             <div class="modal-overlay" id="editProposalOverlay">
-                <div class="modal-content" style="max-width: 800px;">
+                <div class="modal-content" style="max-width: 900px; max-height: 95vh; overflow-y: auto;">
                     <div class="modal-header">
                         <h2>Edit Proposal</h2>
-                        <div class="subtitle">Update project details</div>
+                        <div class="subtitle">${p.projectName}</div>
                         <span class="close-modal" onclick="closeModal()">&times;</span>
                     </div>
 
                     <form id="editProposalForm" class="modal-form">
-                        <div class="form-section">
-                            <h4>Project Information</h4>
-                            <div class="form-row">
+                        <div class="auth-tabs" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                            <button type="button" class="auth-tab active" onclick="switchEditTab(event, 'edit-details')">Details</button>
+                            <button type="button" class="auth-tab" onclick="switchEditTab(event, 'edit-files')">Files & Links</button>
+                        </div>
+
+                        <div id="edit-details" class="edit-tab-content active">
+                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Project Name *</label>
                                     <input type="text" id="editProjectName" class="form-control" value="${p.projectName || ''}" required>
@@ -5478,14 +5493,10 @@ async function editProposal(proposalId) {
                                     <label>Project Type *</label>
                                     <div class="checkbox-list" style="max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: white;">
                                         ${projectTypes.map(type => {
-                                            // Check if this type is in the existing projectType array
                                             const isChecked = Array.isArray(p.projectType) && p.projectType.includes(type) ? 'checked' : '';
-                                            return `
-                                                <label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer;">
-                                                    <input type="checkbox" name="editProjectType" value="${type}" ${isChecked} style="margin-right: 10px; width: 18px; height: 18px;">
-                                                    ${type}
-                                                </label>
-                                            `;
+                                            return `<label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer;">
+                                                        <input type="checkbox" name="editProjectType" value="${type}" ${isChecked} style="margin-right: 10px;"> ${type}
+                                                    </label>`;
                                         }).join('')}
                                     </div>
                                 </div>
@@ -5506,24 +5517,68 @@ async function editProposal(proposalId) {
                                     </div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label>Priority</label>
-                                <select id="editPriority" class="form-control">
-                                    <option value="Medium" ${p.priority === 'Medium' ? 'selected' : ''}>Medium</option>
-                                    <option value="High" ${p.priority === 'High' ? 'selected' : ''}>High</option>
-                                    <option value="Low" ${p.priority === 'Low' ? 'selected' : ''}>Low</option>
-                                </select>
+                             <div class="form-group">
+                                <label>Scope of Work *</label>
+                                <textarea id="editScopeOfWork" class="form-control" rows="6" required>${p.scopeOfWork || ''}</textarea>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>Scope of Work *</label>
-                            <textarea id="editScopeOfWork" class="form-control" rows="6" required>${p.scopeOfWork || ''}</textarea>
+                        <div id="edit-files" class="edit-tab-content" style="display: none;">
+                            
+                            <div class="form-section">
+                                <h4>Current Attached Files</h4>
+                                <div id="existingFilesList">
+                                    ${existingProjectFiles.length > 0 ? existingProjectFiles.map(f => `
+                                        <div class="file-item" id="file-${f.id}">
+                                            <div class="file-info">
+                                                <span class="file-name">📄 ${f.originalName}</span>
+                                                <span class="file-size">${formatFileSize(f.fileSize)} - ${formatDate(f.uploadedAt)}</span>
+                                            </div>
+                                            <button type="button" class="btn btn-danger btn-sm" style="width: auto;" onclick="deleteFileImmediate('${f.id}', 'file-${f.id}')">Delete</button>
+                                        </div>
+                                    `).join('') : '<p class="text-muted">No files currently attached.</p>'}
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>Upload New Files</h4>
+                                <div class="upload-area" id="editUploadArea" style="padding: 1rem;">
+                                    <p>📁 Click to add more files</p>
+                                    <input type="file" id="editFileInput" multiple style="display: none;">
+                                </div>
+                                <div id="editStagedFilesList" style="margin-top: 1rem;"></div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>Current Links</h4>
+                                <div id="existingLinksList">
+                                     ${existingLinks.length > 0 ? existingLinks.map(l => `
+                                        <div class="file-item" id="link-${l.id}">
+                                            <div class="file-info">
+                                                <span class="file-name">🔗 ${l.originalName || l.url}</span>
+                                                <a href="${l.url}" target="_blank" style="font-size: 0.85rem;">${l.url}</a>
+                                            </div>
+                                            <button type="button" class="btn btn-danger btn-sm" style="width: auto;" onclick="deleteFileImmediate('${l.id}', 'link-${l.id}')">Delete</button>
+                                        </div>
+                                    `).join('') : '<p class="text-muted">No links attached.</p>'}
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h4>Add New Links</h4>
+                                <div id="editLinksContainer">
+                                    <div class="link-input-group" style="margin-bottom: 1rem;">
+                                        <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
+                                        <input type="text" class="form-control" placeholder="Link title (optional)">
+                                    </div>
+                                </div>
+                                <button type="button" onclick="addEditLinkField()" class="btn btn-outline btn-sm" style="width: auto;">+ Add Another Link</button>
+                            </div>
                         </div>
 
                         <div class="modal-footer">
                             <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="submit" class="btn btn-primary">Save All Changes</button>
                         </div>
                     </form>
                 </div>
@@ -5531,57 +5586,141 @@ async function editProposal(proposalId) {
         `;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-        // 4. Attach Submit Handler
+        // --- Event Handlers for the new modal ---
+
+        // 4. Tab Switcher
+        window.switchEditTab = function(e, tabId) {
+            document.querySelectorAll('.edit-tab-content').forEach(el => el.style.display = 'none');
+            document.getElementById(tabId).style.display = 'block';
+            document.querySelectorAll('#editProposalForm .auth-tab').forEach(el => el.classList.remove('active'));
+            e.target.classList.add('active');
+        };
+
+        // 5. File Staging Logic (similar to Create Proposal)
+        const editUploadArea = document.getElementById('editUploadArea');
+        const editFileInput = document.getElementById('editFileInput');
+        if (editUploadArea && editFileInput) {
+            editUploadArea.onclick = () => editFileInput.click();
+            editFileInput.onchange = function() {
+                Array.from(this.files).forEach(file => {
+                    // Avoid exact duplicates in staging
+                    if (!window.currentEditStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                        window.currentEditStagedFiles.push(file);
+                    }
+                });
+                this.value = ''; 
+                renderEditStagedFiles();
+            };
+        }
+
+        window.renderEditStagedFiles = function() {
+            const container = document.getElementById('editStagedFilesList');
+            if (!container) return;
+            container.innerHTML = window.currentEditStagedFiles.map((file, index) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #E8F5E9; margin-bottom: 8px; border-radius: 6px;">
+                    <span>🆕 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    <button type="button" onclick="window.currentEditStagedFiles.splice(${index}, 1); renderEditStagedFiles();" 
+                            style="background: none; border: none; cursor: pointer;">❌</button>
+                </div>
+            `).join('');
+        };
+
+        // 6. Immediate Delete for EXISTING files/links
+        window.deleteFileImmediate = async function(fileId, elementId) {
+            if(!confirm('Are you sure you want to delete this permanently?')) return;
+            try {
+                const el = document.getElementById(elementId);
+                if(el) el.style.opacity = '0.5'; // Visual feedback
+                
+                const res = await apiCall(`files?id=${fileId}`, { method: 'DELETE' });
+                if (res.success) {
+                    if(el) el.remove();
+                } else {
+                    alert('Failed to delete file.');
+                    if(el) el.style.opacity = '1';
+                }
+            } catch(e) {
+                 alert('Error deleting file: ' + e.message);
+            }
+        };
+
+        // 7. Add Link Field Helper
+        window.addEditLinkField = function() {
+             const container = document.getElementById('editLinksContainer');
+             const div = document.createElement('div');
+             div.className = 'link-input-group';
+             div.style.marginBottom = '1rem';
+             div.innerHTML = '<input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;"><input type="text" class="form-control" placeholder="Link title (optional)">';
+             container.appendChild(div);
+        }
+
+        // 8. FINAL SUBMIT HANDLER
         document.getElementById('editProposalForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
-            const selectedTypes = Array.from(document.querySelectorAll('input[name="editProjectType"]:checked')).map(cb => cb.value);
-            if (selectedTypes.length === 0) {
-                alert('Please select at least one Project Type.');
-                return;
-            }
-
-            const updateData = {
-                projectName: document.getElementById('editProjectName').value,
-                clientCompany: document.getElementById('editClientCompany').value,
-                projectType: selectedTypes,
-                timeline: document.getElementById('editTimeline').value,
-                country: document.getElementById('editCountry').value,
-                priority: document.getElementById('editPriority').value,
-                scopeOfWork: document.getElementById('editScopeOfWork').value
-            };
+            showLoading();
 
             try {
-                showLoading();
-                const updateResponse = await apiCall(`proposals?id=${proposalId}`, {
+                // A) Update Proposal Details
+                const selectedTypes = Array.from(document.querySelectorAll('input[name="editProjectType"]:checked')).map(cb => cb.value);
+                if (selectedTypes.length === 0) throw new Error('Please select at least one Project Type.');
+
+                await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ 
                         action: 'update_details', 
-                        data: updateData 
+                        data: {
+                            projectName: document.getElementById('editProjectName').value,
+                            clientCompany: document.getElementById('editClientCompany').value,
+                            projectType: selectedTypes,
+                            timeline: document.getElementById('editTimeline').value,
+                            country: document.getElementById('editCountry').value,
+                            scopeOfWork: document.getElementById('editScopeOfWork').value
+                        } 
                     })
                 });
 
-                if (updateResponse.success) {
-                    alert('✅ Proposal updated successfully!');
-                    closeModal();
-                    // Refresh view based on where we are
-                    if (document.getElementById('nav-proposals').classList.contains('active')) {
-                        showProposals();
-                    } else {
-                        showDashboard();
-                    }
-                } else {
-                    throw new Error(updateResponse.error || 'Update failed');
+                // B) Upload NEW Staged Files
+                if (window.currentEditStagedFiles.length > 0) {
+                    const fileFormData = new FormData();
+                    window.currentEditStagedFiles.forEach(file => fileFormData.append('files', file));
+                    fileFormData.append('proposalId', proposalId);
+                    fileFormData.append('fileType', 'project');
+                    await apiCall('files', { method: 'POST', body: fileFormData });
                 }
+
+                // C) Save NEW Links
+                const newLinks = [];
+                document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
+                    const url = group.querySelector('input[type="url"]').value;
+                    const title = group.querySelector('input[type="text"]').value;
+                    if (url) newLinks.push({ url, title: title || url, description: title });
+                });
+                if (newLinks.length > 0) {
+                    await apiCall('files', {
+                        method: 'POST',
+                        body: JSON.stringify({ links: newLinks, proposalId: proposalId, fileType: 'link' })
+                    });
+                }
+
+                alert('✅ Proposal updated successfully!');
+                closeModal();
+                
+                // Refresh the appropriate view
+                if (document.getElementById('nav-proposals').classList.contains('active')) {
+                    showProposals();
+                } else {
+                    viewProposal(proposalId); // Refresh details view if that's where we came from
+                }
+
             } catch (err) {
-                alert('Error updating proposal: ' + err.message);
+                alert('Error updating: ' + err.message);
             } finally {
                 hideLoading();
             }
         });
 
     } catch (error) {
-        console.error('Edit proposal error:', error);
+        console.error('Edit error:', error);
         alert('Error loading edit form: ' + error.message);
     } finally {
         hideLoading();
