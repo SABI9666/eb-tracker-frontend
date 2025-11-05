@@ -5768,23 +5768,24 @@ async function editProposal(proposalId) {
                     fileFormData.append('fileType', 'project');
                     await apiCall('files', { method: 'POST', body: fileFormData });
                 }
+        // C) Save NEW Links
+        const newLinks = [];
+        document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
+            const urlInput = group.querySelector('input[type="url"]');
+            const titleInput = group.querySelector('input[type="text"]');
+            if (urlInput && urlInput.value) {
+                newLinks.push({ url: urlInput.value, title: titleInput.value || urlInput.value, description: titleInput.value });
+            }
+        });
+        if (newLinks.length > 0) {
+            await apiCall(`proposals?id=${proposalId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ action: 'add_links', data: { links: newLinks } })
+            });
+        }
 
-                // C) Save NEW Links
-                const newLinks = [];
-                document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
-                    const url = group.querySelector('input[type="url"]').value;
-                    const title = group.querySelector('input[type="text"]').value;
-                    if (url) newLinks.push({ url, title: title || url, description: title });
-                });
-                if (newLinks.length > 0) {
-                    await apiCall('files', {
-                        method: 'POST',
-                        body: JSON.stringify({ links: newLinks, proposalId: proposalId, fileType: 'link' })
-                    });
-                }
-
-                alert('✅ Proposal updated successfully!');
-                closeModal();
+        alert('✅ Proposal updated successfully!');
+        closeModal();
                 
                 // Refresh the appropriate view
                 if (document.getElementById('nav-proposals').classList.contains('active')) {
