@@ -4448,14 +4448,53 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             const fileInput = document.getElementById('fileInput');
             uploadArea.onclick = () => fileInput.click();
             let selectedFiles = [];
-            fileInput.onchange = function() {
-                selectedFiles = Array.from(this.files);
-                if (selectedFiles.length > 0) {
-                    document.getElementById('filePreview').innerHTML =
-                        '<h5>Files to Upload:</h5>' +
-                        selectedFiles.map(f => `<p>📄 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</p>`).join('');
-                }
-            };
+            let selectedFiles = []; // This variable should already be here
+    fileInput.onchange = function() {
+        const files = Array.from(this.files);
+        const errorDiv = document.getElementById('fileUploadError');
+        const previewDiv = document.getElementById('filePreview');
+        errorDiv.textContent = '';
+        previewDiv.innerHTML = '';
+
+        // 1. Check file count
+        if (files.length > 10) {
+            errorDiv.textContent = 'Error: You can only upload a maximum of 10 files.';
+            this.value = ''; // Clear selection
+            selectedFiles = [];
+            return;
+        }
+
+        // 2. Check file size
+        const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+        const maxSize = 1000 * 1024 * 1024; // 100MB
+        if (totalSize > maxSize) {
+            errorDiv.textContent = `Error: Total file size (${(totalSize / 1024 / 1024).toFixed(2)} MB) exceeds the 100MB limit.`;
+            this.value = ''; // Clear selection
+            selectedFiles = [];
+            return;
+        }
+
+        // 3. Check file types (already handled by 'accept' but good to double-check)
+        const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+
+        const invalidFiles = files.filter(file => {
+            const extension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            return !allowedExtensions.includes(extension);
+        });
+
+        if (invalidFiles.length > 0) {
+            errorDiv.textContent = `Error: Invalid file type detected (${invalidFiles[0].name}). Please upload only PDF, Word, or Image files.`;
+            this.value = ''; // Clear selection
+            selectedFiles = [];
+            return;
+        }
+
+        // All checks passed
+        selectedFiles = files;
+        previewDiv.innerHTML = '<h5>Files to Upload:</h5>' +
+            selectedFiles.map(f => `<p>📄 ${f.name} (${(f.size / 1024 / 1024).toFixed(2)} MB)</p>`).join('');
+    };
+
 
             document.getElementById('createProposalForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
