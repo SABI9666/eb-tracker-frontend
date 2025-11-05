@@ -4348,15 +4348,16 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             currentProjectFilter = filterType;
             renderAllProjects();
         }
-    // ================================================================
-// UPDATED: showCreateProposalModal (Auto-cleans before opening)
+  // ================================================================
+// UPDATED: showCreateProposalModal (2GB Total Limit / 100MB Per File)
 // ================================================================
 function showCreateProposalModal() {
-    // STEP 1: Force close any existing modals first to prevent stuck overlays
     closeModal();
+    window.currentStagedFiles = []; // Reset staged files
 
-    // Initialize staging array for files specifically for this modal session
-    window.currentStagedFiles = [];
+    // Constants for limits
+    const MAX_SINGLE_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+    const MAX_TOTAL_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024; // 2GB
 
     const projectTypes = [
         'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
@@ -4368,13 +4369,17 @@ function showCreateProposalModal() {
             <div class="modal-content" onclick="event.stopPropagation()">
                 <div class="modal-header">
                     <h2>Create New Proposal</h2>
-                    <div class="subtitle">Start a new project with file uploads</div>
+                    <div class="subtitle">Start a new project</div>
                     <span class="close-modal" onclick="closeModal()">&times;</span>
                 </div>
 
                 <form id="createProposalForm" class="modal-form">
-                    <div class="form-section">
-                        <h4>Project Information</h4>
+                    <div class="auth-tabs" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+                        <button type="button" class="auth-tab active" onclick="switchProposalTab(event, 'create-details')">Details</button>
+                        <button type="button" class="auth-tab" onclick="switchProposalTab(event, 'create-files')">Files & Links</button>
+                    </div>
+
+                    <div id="create-details" class="proposal-tab-content active">
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Project Name *</label>
@@ -4396,70 +4401,78 @@ function showCreateProposalModal() {
                                         </label>
                                     `).join('')}
                                 </div>
-                                <small class="form-text">Select all that apply</small>
                             </div>
                             <div class="form-group">
-                                <label>Timeline (Days)</label>
-                                <input type="text" id="timeline" class="form-control" placeholder="Project timeline">
+                                <div style="margin-bottom: 1rem;">
+                                    <label>Timeline (Days)</label>
+                                    <input type="text" id="timeline" class="form-control" placeholder="e.g., 15">
+                                </div>
+                                <div>
+                                    <label>Country</label>
+                                    <select id="country" class="form-control">
+                                        <option value="">Select Country</option>
+                                        <option value="Australia">Australia</option>
+                                        <option value="USA">USA</option>
+                                        <option value="Canada">Canada</option>
+                                        <option value="UK">UK</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Country</label>
-                                <select id="country" class="form-control">
-                                    <option value="">Select Country</option>
-                                    <option value="Australia">Australia</option>
-                                    <option value="USA">USA</option>
-                                    <option value="Canada">Canada</option>
-                                    <option value="UK">UK</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Priority</label>
-                                <select id="priority" class="form-control">
-                                    <option value="Medium">Medium</option>
-                                    <option value="High">High</option>
-                                    <option value="Low">Low</option>
-                                </select>
-                            </div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select id="priority" class="form-control">
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                                <option value="Low">Low</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Scope of Work *</label>
+                            <textarea id="scopeOfWork" class="form-control" rows="4" placeholder="Describe the project scope..." required></textarea>
+                        </div>
+                         <div class="form-group">
+                            <label>Comments (Optional)</label>
+                            <textarea id="projectComments" class="form-control" rows="3" placeholder="Internal notes..."></textarea>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Scope of Work *</label>
-                        <textarea id="scopeOfWork" class="form-control" rows="4" placeholder="Describe the project scope..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Comments (Optional)</label>
-                        <textarea id="projectComments" class="form-control" rows="3" placeholder="Add any additional comments or notes..."></textarea>
-                    </div>
-
-                    <div class="form-section">
-                        <h4>Upload Project Files (RFQ, Tender Documents, Drawings)</h4>
-                        <div class="upload-area" id="proposalUploadArea" style="padding: 1.5rem;">
-                            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
-                            <p>Click to add files</p>
-                            <small style="color: var(--text-light);">Supported: PDF, DOC, DOCX, JPG, PNG (Max 100MB total)</small>
-                            <input type="file" id="proposalFileInput" multiple 
-                                   accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
-                                   style="display: none;">
-                        </div>
-                        <div id="proposalFileUploadError" style="color: var(--danger); font-weight: 600; margin-top: 1rem;"></div>
-                        <div id="proposalStagedFilesList" style="margin-top: 1rem;"></div>
-                    </div>
-
-                    <div class="form-section">
-                        <h4>Add Project Links</h4>
-                        <div id="linksContainer">
-                            <div class="link-input-group" style="margin-bottom: 1rem;">
-                                <input type="url" class="form-control" placeholder="Enter URL" style="margin-bottom: 0.5rem;">
-                                <input type="text" class="form-control" placeholder="Link title/description (optional)">
+                    <div id="create-files" class="proposal-tab-content" style="display: none;">
+                        <div class="form-section">
+                            <h4>Upload Project Files</h4>
+                            <div class="upload-area" id="proposalUploadArea" style="padding: 2rem; border: 2px dashed var(--primary-blue);">
+                                <div style="font-size: 2.5rem; margin-bottom: 1rem;">📁</div>
+                                <p>Click or Drag & Drop files here</p>
+                                <div style="color: var(--text-light); font-size: 0.9rem; margin-top: 0.5rem;">
+                                    Max 100MB per file • 2GB Total Capacity<br>
+                                    Supported: PDF, DOCX, DWG, ZIP, JPG, PNG
+                                </div>
+                                <input type="file" id="proposalFileInput" multiple style="display: none;">
+                            </div>
+                            <div id="proposalFileUploadError" style="color: var(--danger); font-weight: 600; margin-top: 1rem;"></div>
+                            
+                            <div id="proposalStagedFilesContainer" style="margin-top: 1.5rem; display: none;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <strong>Selected Files:</strong>
+                                    <span id="totalSizeIndicator" style="color: var(--text-light);">0 MB / 2048 MB</span>
+                                </div>
+                                <div id="proposalStagedFilesList" style="max-height: 300px; overflow-y: auto;"></div>
                             </div>
                         </div>
-                        <button type="button" onclick="addLinkField()" class="btn btn-outline btn-sm" style="width: auto;">+ Add Another Link</button>
+
+                        <div class="form-section">
+                            <h4>Project Links</h4>
+                            <div id="linksContainer">
+                                <div class="link-input-group" style="margin-bottom: 1rem;">
+                                    <input type="url" class="form-control" placeholder="https://" style="margin-bottom: 0.5rem;">
+                                    <input type="text" class="form-control" placeholder="Link Title (e.g., Dropbox Folder)">
+                                </div>
+                            </div>
+                            <button type="button" onclick="addLinkField()" class="btn btn-outline btn-sm" style="width: auto;">+ Add Another Link</button>
+                        </div>
                     </div>
 
-                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <div class="modal-footer">
                         <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
                         <button type="submit" class="btn btn-primary">Create Proposal</button>
                     </div>
@@ -4469,160 +4482,176 @@ function showCreateProposalModal() {
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // --- File Handling Logic ---
+    // --- Tab Switcher ---
+    window.switchProposalTab = function(e, tabId) {
+        document.querySelectorAll('.proposal-tab-content').forEach(el => el.style.display = 'none');
+        document.getElementById(tabId).style.display = 'block';
+        document.querySelectorAll('#createProposalForm .auth-tab').forEach(el => el.classList.remove('active'));
+        e.target.classList.add('active');
+    };
+
+    // --- File Handling ---
     const uploadArea = document.getElementById('proposalUploadArea');
     const fileInput = document.getElementById('proposalFileInput');
-    
-    if (uploadArea && fileInput) {
-        uploadArea.onclick = () => fileInput.click();
+    const errorDiv = document.getElementById('proposalFileUploadError');
 
-        fileInput.onchange = function() {
-            const newFiles = Array.from(this.files);
-            const errorDiv = document.getElementById('proposalFileUploadError');
-            errorDiv.textContent = '';
+    uploadArea.onclick = () => fileInput.click();
 
-            for (let file of newFiles) {
-                if (file.size > 100 * 1024 * 1024) { // 100MB individual limit check
-                     errorDiv.textContent = `Error: ${file.name} is too large (max 100MB).`;
-                     continue;
-                }
-                // Avoid exact duplicates
-                if (!window.currentStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                    window.currentStagedFiles.push(file);
-                }
+    // Drag and drop support
+    uploadArea.ondragover = (e) => { e.preventDefault(); uploadArea.style.background = 'var(--light-blue)'; };
+    uploadArea.ondragleave = () => { uploadArea.style.background = ''; };
+    uploadArea.ondrop = (e) => {
+        e.preventDefault();
+        uploadArea.style.background = '';
+        handleFiles(e.dataTransfer.files);
+    };
+
+    fileInput.onchange = () => handleFiles(fileInput.files);
+
+    function handleFiles(files) {
+        errorDiv.textContent = '';
+        let currentTotalSize = window.currentStagedFiles.reduce((sum, f) => sum + f.size, 0);
+
+        Array.from(files).forEach(file => {
+            if (file.size > MAX_SINGLE_FILE_SIZE) {
+                errorDiv.innerHTML += `<div style="margin-bottom: 0.25rem;">⚠️ Skipped <strong>${file.name}</strong>: Exceeds 100MB limit.</div>`;
+                return;
             }
-            this.value = ''; // Reset input to allow re-selecting same file if needed
-            renderProposalStagedFiles();
-        };
+            if (currentTotalSize + file.size > MAX_TOTAL_UPLOAD_SIZE) {
+                errorDiv.innerHTML += `<div style="margin-bottom: 0.25rem; color: var(--danger);">⛔ Skipped <strong>${file.name}</strong>: Would exceed 2GB total limit.</div>`;
+                return;
+            }
+            // Check for duplicates
+            if (!window.currentStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                window.currentStagedFiles.push(file);
+                currentTotalSize += file.size;
+            }
+        });
+
+        fileInput.value = ''; // Reset input
+        renderStagedFiles();
     }
 
-    // Render the list of files currently staged for upload
-    window.renderProposalStagedFiles = function() {
+    window.renderStagedFiles = function() {
         const container = document.getElementById('proposalStagedFilesList');
-        if (!container) return;
+        const mainContainer = document.getElementById('proposalStagedFilesContainer');
+        const totalIndicator = document.getElementById('totalSizeIndicator');
         
         if (window.currentStagedFiles.length === 0) {
-            container.innerHTML = '';
+            mainContainer.style.display = 'none';
             return;
         }
-        
-        container.innerHTML = '<h5 style="margin-bottom:0.5rem;">Files selected for upload:</h5>' + 
-            window.currentStagedFiles.map((file, index) => `
+
+        mainContainer.style.display = 'block';
+        let totalSize = 0;
+
+        container.innerHTML = window.currentStagedFiles.map((file, index) => {
+            totalSize += file.size;
+            return `
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
                     <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                         📄 <span style="font-weight: 500;">${file.name}</span> 
-                        <span style="color: var(--text-light); font-size: 0.85rem; margin-left: 8px;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                        <span style="color: var(--text-light); font-size: 0.85rem; margin-left: 8px;">(${formatFileSize(file.size)})</span>
                     </div>
-                    <button type="button" onclick="removeProposalStagedFile(${index})" 
-                            style="background: #fee2e2; border: none; color: var(--danger); cursor: pointer; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
-                        ❌
+                    <button type="button" onclick="removeStagedFile(${index})" 
+                            style="background: #fee2e2; border: none; color: var(--danger); cursor: pointer; padding: 4px 8px; border-radius: 4px;">
+                        ✕
                     </button>
                 </div>
-            `).join('');
+            `;
+        }).join('');
+
+        // Update total size indicator
+        const totalMB = (totalSize / (1024 * 1024)).toFixed(0);
+        const percent = Math.min((totalSize / MAX_TOTAL_UPLOAD_SIZE) * 100, 100).toFixed(0);
+        totalIndicator.textContent = `${totalMB} MB / 2048 MB (${percent}%)`;
+        totalIndicator.style.color = percent > 90 ? 'var(--danger)' : 'var(--text-light)';
     };
 
-    // Remove a file from the staging area
-    window.removeProposalStagedFile = function(index) {
+    window.removeStagedFile = function(index) {
         window.currentStagedFiles.splice(index, 1);
-        renderProposalStagedFiles();
+        renderStagedFiles();
     };
 
-   // --- Form Submission ---
-    const createForm = document.getElementById('createProposalForm');
-     if (createForm) {
-     createForm.addEventListener('submit', async (e) => {
+    // --- Form Submission ---
+    document.getElementById('createProposalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-            // Get checked project types
-            const selectedTypes = Array.from(document.querySelectorAll('input[name="projectType"]:checked')).map(cb => cb.value);
-            if (selectedTypes.length === 0) {
-                alert('Please select at least one Project Type.');
-                return;
-            }
+        
+        const selectedTypes = Array.from(document.querySelectorAll('input[name="projectType"]:checked')).map(cb => cb.value);
+        if (selectedTypes.length === 0) {
+            alert('Please select at least one Project Type.');
+            return;
+        }
 
-           // Gather links
-        const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
         const projectLinks = [];
-        linkInputs.forEach(group => {
-            const urlInput = group.querySelector('input[type="url"]');
-            const titleInput = group.querySelector('input[type="text"]');
-            if (urlInput && urlInput.value) { 
-                projectLinks.push({ url: urlInput.value, title: titleInput.value || urlInput.value, description: titleInput.value }); 
-            }
+        document.querySelectorAll('#linksContainer .link-input-group').forEach(group => {
+            const url = group.querySelector('input[type="url"]').value;
+            const title = group.querySelector('input[type="text"]').value;
+            if (url) projectLinks.push({ url, title: title || url, description: title });
         });
 
-            const formData = {
-                projectName: document.getElementById('projectName').value,
-                clientCompany: document.getElementById('clientCompany').value,
-                projectType: selectedTypes,
-                country: document.getElementById('country').value,
-                timeline: document.getElementById('timeline').value,
-                priority: document.getElementById('priority').value,
-                scopeOfWork: document.getElementById('scopeOfWork').value,
-                projectComments: document.getElementById('projectComments').value,
-                projectLinks: projectLinks
-            };
+        const formData = {
+            projectName: document.getElementById('projectName').value,
+            clientCompany: document.getElementById('clientCompany').value,
+            projectType: selectedTypes,
+            country: document.getElementById('country').value,
+            timeline: document.getElementById('timeline').value,
+            priority: document.getElementById('priority').value,
+            scopeOfWork: document.getElementById('scopeOfWork').value,
+            projectComments: document.getElementById('projectComments').value,
+            projectLinks: projectLinks
+        };
 
-            try {
-                showLoading();
-                // 1. Create Proposal
-                const response = await apiCall('proposals', {
+        try {
+            showLoading();
+            // 1. Create Proposal
+            const response = await apiCall('proposals', { method: 'POST', body: JSON.stringify(formData) });
+            if (!response.success || !response.data) throw new Error('Invalid response from server');
+            const proposalId = response.data.id;
+
+            // 2. Upload Files (if any)
+            if (window.currentStagedFiles.length > 0) {
+                const fileFormData = new FormData();
+                window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
+                fileFormData.append('proposalId', proposalId);
+                fileFormData.append('fileType', 'project');
+                await apiCall('files', { method: 'POST', body: fileFormData });
+            }
+
+            // 3. Save Links (if added via files endpoint for consistency)
+            if (projectLinks.length > 0) {
+                await apiCall('files', {
                     method: 'POST',
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify({ links: projectLinks, proposalId: proposalId, fileType: 'link' })
                 });
-
-                if (!response.success || !response.data) {
-                    throw new Error('Failed to create proposal: Invalid response');
-                }
-
-                const proposalId = response.data.id;
-
-                // 2. Upload Staged Files
-                if (window.currentStagedFiles.length > 0) {
-                    const fileFormData = new FormData();
-                    window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
-                    fileFormData.append('proposalId', proposalId);
-                    fileFormData.append('fileType', 'project');
-                    await apiCall('files', { method: 'POST', body: fileFormData });
-                }
-
-                // 3. Save Links (if any extra generic ones were added via files endpoint)
-                if (projectLinks.length > 0) {
-                    await apiCall('files', {
-                        method: 'POST',
-                        body: JSON.stringify({ links: projectLinks, proposalId: proposalId, fileType: 'link' })
-                    });
-                }
-
-                alert('Proposal created successfully!');
-                
-               // 4. Trigger Notification (Fixed safe user name access)
-                try {
-                     const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? 
-                                      (currentUser.displayName || currentUser.email) : 'System User';
-                     const userEmail = (currentUser && currentUser.email) ? currentUser.email : '';
-
-                     await triggerEmailNotification('project.submitted', {
-                        projectName: formData.projectName,
-                        createdBy: userName,
-                        bdmName: userName,       // ADDED: explicitly send BDM name for CC
-                        bdmEmail: userEmail,     // ADDED: explicitly send BDM email for CC
-                        clientName: formData.clientCompany,
-                        projectId: proposalId
-                    });
-                }  catch (err) {
-                    console.warn("Email notification non-fatal error:", err);
-                }
-
-                closeModal();
-                showProposals();
-            } catch (error) {
-                console.error('❌ Proposal creation failed:', error);
-                alert(`Creation failed: ${error.message}`);
-            } finally {
-                hideLoading();
             }
-        });
-    }
+
+            // 4. Notifications
+             try {
+                 const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? 
+                                  (currentUser.displayName || currentUser.email) : 'System User';
+                 const userEmail = (currentUser && currentUser.email) ? currentUser.email : '';
+
+                 await triggerEmailNotification('project.submitted', {
+                    projectName: formData.projectName,
+                    createdBy: userName,
+                    bdmName: userName,
+                    bdmEmail: userEmail,
+                    clientName: formData.clientCompany,
+                    projectId: proposalId
+                });
+            } catch (err) { console.warn("Email notification non-fatal error:", err); }
+
+            alert('✅ Proposal created successfully!');
+            closeModal();
+            showProposals();
+        } catch (error) {
+            console.error('Creation failed:', error);
+            alert(`Creation failed: ${error.message}`);
+        } finally {
+            hideLoading();
+        }
+    });
 }
       
 
