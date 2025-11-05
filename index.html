@@ -4932,16 +4932,48 @@ function showCreateProposalModal() {
                                 <h4>View Project Files</h4>
                                 <div id="projectFilesView">Loading...</div>
                             </div>
-                            <div class="form-section">
-                                <h4>Manhour Breakdown</h4>
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
-                                    <div class="form-group"><label>Design Hours</label><input type="number" id="designHours" class="form-control" value="0" required></div>
-                                    <div class="form-group"><label>Detailing Hours</label><input type="number" id="detailingHours" class="form-control" value="0" required></div>
-                                    <div class="form-group"><label>Checking Hours</label><input type="number" id="checkingHours" class="form-control" value="0" required></div>
-                                    <div class="form-group"><label>Revision Hours</label><input type="number" id="revisionHours" class="form-control" value="0"></div>
-                                    <div class="form-group"><label>Project Management</label><input type="number" id="pmHours" class="form-control" value="0"></div>
-                                    <div class="form-group"><label>Total Hours</label><input type="number" id="totalHours" class="form-control" readonly style="background: var(--light-blue);" value="0"></div>
-                                </div>
+                            <div class="manhour-breakdown-section">
+    <h4>Manhour Breakdown</h4>
+    <div class="input-row">
+        <div class="input-group">
+            <label for="designHours">Design Hours</label>
+            <input type="number" id="designHours" value="0" oninput="calculateTotalHours()">
+        </div>
+        <div class="input-group">
+            <label for="detailingHours">Detailing Hours</label>
+            <input type="number" id="detailingHours" value="0" oninput="calculateTotalHours()">
+        </div>
+        <div class="input-group">
+            <label for="checkingHours">Checking Hours</label>
+            <input type="number" id="checkingHours" value="0" oninput="calculateTotalHours()">
+        </div>
+    </div>
+    <div class="input-row">
+        <div class="input-group">
+            <label for="revisionHours">Revision Hours</label>
+            <input type="number" id="revisionHours" value="0" oninput="calculateTotalHours()">
+        </div>
+        <div class="input-group">
+            <label for="projectManagement">Project Management</label>
+            <input type="number" id="projectManagement" value="0" oninput="calculateTotalHours()">
+        </div>
+        <div class="input-group">
+            <label for="totalHours">Total Hours</label>
+            <input type="number" id="totalHours" value="0" readonly>
+        </div>
+    </div>
+
+    <div class="input-row">
+        <div class="input-group">
+            <label for="tonnageInput">Tonnage (optional)</label>
+            <input type="number" id="tonnageInput" value="0" oninput="handleTonnageInput()">
+        </div>
+        <div class="input-group checkbox-group">
+            <input type="checkbox" id="useTonnageForDesign" onchange="toggleDesignHours()">
+            <label for="useTonnageForDesign">Use Tonnage for Design Hours Calculation</label>
+        </div>
+    </div>
+    </div>
                             </div>
                             <div class="form-section">
                                 <h4>Select Services</h4>
