@@ -2385,17 +2385,14 @@
             const c = document.getElementById('authMessages');
             if(c) c.innerHTML = '';
         }
-// ================================================================
-// REPLACEMENT: Robust closeModal (Fixes stuck forms)
-// ================================================================
 function closeModal() {
     // 1. Remove all overlays
     document.querySelectorAll('.modal-overlay').forEach(el => el.remove());
     
-    // 2. Hide all standard modals
+    // 2. Hide all standard static modals
     document.querySelectorAll('.modal').forEach(el => el.style.display = 'none');
     
-    // 3. Force remove specific dynamically created modals if they are stuck
+    // 3. Force remove specific dynamically created modals if they are stuck by ID
     const dynamicIds = [
         'createProposalOverlay', 'projectDetailsModal', 'designerUploadModal', 
         'clientOutcomeModal', 'submitDesignModal', 'allocationModal', 
