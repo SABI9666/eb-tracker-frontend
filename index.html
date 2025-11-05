@@ -4342,7 +4342,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                 'Joist Detailing', 'As-built Drawings'
             ];
             const modalHtml = `
-                <div class="modal-overlay">
+                <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                     <div class="modal-content">
                         <div class="modal-header">
                             <h2>Create New Proposal</h2>
