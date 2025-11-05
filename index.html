@@ -2143,6 +2143,8 @@
             });
             document.getElementById('loginForm').addEventListener('submit', handleLogin);
             document.getElementById('registerForm').addEventListener('submit', handleRegister);
+            // NEW LISTENER
+          document.getElementById('forgotPasswordForm').addEventListener('submit', handlePasswordReset);
         }
 
         async function handleLogin(e) {
