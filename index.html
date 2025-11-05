@@ -5164,7 +5164,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             closeModal(); // Close proposal detail modal first
             
             const modalHtml = `
-                <div class="modal-overlay">
+                <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                     <div class="modal-content" style="max-width: 600px;">
                         <div class="modal-header" style="background: var(--danger); color: white;">
                             <h2>❌ Reject Proposal</h2>
