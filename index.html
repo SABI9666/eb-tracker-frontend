@@ -7003,7 +7003,7 @@ async function showUpdatePaymentModal(paymentId) {
         closeModal(); // Close the view modal if open
 
         const modalHtml = `
-            <div class="modal-overlay">
+           <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                 <div class="modal-content" style="max-width: 500px;">
                     <div class="modal-header">
                         <h2>Update Payment Status</h2>
