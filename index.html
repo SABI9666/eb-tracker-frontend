@@ -12142,48 +12142,53 @@ async function submitDesignerUpload(event, projectId) {
                 hideLoading();
             }
         }
-       function calculateTotalHours() {
-        const design = parseFloat(document.getElementById('designHours').value) || 0;
-        const detailing = parseFloat(document.getElementById('detailingHours').value) || 0;
-        const checking = parseFloat(document.getElementById('checkingHours').value) || 0;
-        const revision = parseFloat(document.getElementById('revisionHours').value) || 0;
-        const projectManagement = parseFloat(document.getElementById('projectManagement').value) || 0;
+    // ============================================
+// GLOBAL HELPER FUNCTIONS FOR ESTIMATION MODAL
+// ============================================
 
-        const total = design + detailing + checking + revision + projectManagement;
-        document.getElementById('totalHours').value = total.toFixed(2); // Display with 2 decimal places
+function calculateTotalHours() {
+    const designInput = document.getElementById('designHours');
+    if (!designInput) return; // Stop if modal is not open
+
+    const design = parseFloat(designInput.value) || 0;
+    const detailing = parseFloat(document.getElementById('detailingHours').value) || 0;
+    const checking = parseFloat(document.getElementById('checkingHours').value) || 0;
+    const revision = parseFloat(document.getElementById('revisionHours').value) || 0;
+    const projectManagement = parseFloat(document.getElementById('projectManagement').value) || 0;
+
+    const total = design + detailing + checking + revision + projectManagement;
+    document.getElementById('totalHours').value = total.toFixed(2);
+}
+
+function toggleDesignHours() {
+    const useTonnage = document.getElementById('useTonnageForDesign');
+    if (!useTonnage) return;
+
+    const designHoursInput = document.getElementById('designHours');
+    const tonnageInput = document.getElementById('tonnageInput');
+
+    if (useTonnage.checked) {
+        designHoursInput.setAttribute('readonly', true);
+        designHoursInput.style.backgroundColor = '#e9ecef'; // Visual cue that it's readonly
+        // Example calculation: 10 hours per ton. Adjust multiplier as needed.
+        designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
+    } else {
+        designHoursInput.removeAttribute('readonly');
+        designHoursInput.style.backgroundColor = ''; // Reset background
     }
+    calculateTotalHours();
+}
 
-    function toggleDesignHours() {
-        const useTonnage = document.getElementById('useTonnageForDesign').checked;
-        const designHoursInput = document.getElementById('designHours');
+function handleTonnageInput() {
+    const useTonnage = document.getElementById('useTonnageForDesign');
+    if (useTonnage && useTonnage.checked) {
         const tonnageInput = document.getElementById('tonnageInput');
-
-        if (useTonnage) {
-            // If tonnage is used, disable manual design hours and populate from tonnage (example calculation)
-            designHoursInput.setAttribute('readonly', true);
-            // Example: 10 design hours per ton
-            designHoursInput.value = (parseFloat(tonnageInput.value) * 10).toFixed(2);
-        } else {
-            // If not using tonnage, enable manual design hours
-            designHoursInput.removeAttribute('readonly');
-        }
-        calculateTotalHours(); // Recalculate total hours
-    }
-
-    function handleTonnageInput() {
-        const tonnageInput = document.getElementById('tonnageInput');
-        const useTonnage = document.getElementById('useTonnageForDesign').checked;
         const designHoursInput = document.getElementById('designHours');
-
-        if (useTonnage) {
-            // Update design hours based on new tonnage value if the checkbox is checked
-            designHoursInput.value = (parseFloat(tonnageInput.value) * 10).toFixed(2);
-            calculateTotalHours();
-        }
+        // Update design hours dynamically if checkbox is checked
+        designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
+        calculateTotalHours();
     }
-
-    // Initial calculation when the page loads
-    document.addEventListener('DOMContentLoaded', calculateTotalHours);
+}   
 
 </script>
 
