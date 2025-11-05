@@ -5429,40 +5429,160 @@ function showCreateProposalModal() {
                 hideLoading();
             }
         }
-        // ADD THIS NEW FUNCTION:
+      // ================================================================
+// UPDATED: FULL EDIT PROPOSAL MODAL
+// ================================================================
 async function editProposal(proposalId) {
-    // For now, a simple alert as a placeholder, or implement full edit logic similar to create.
-    // Implementing full edit requires pre-filling the create modal which is complex.
-    // A quick fix is to allow editing basic fields via prompts or a simpler modal.
-    
-    const newScope = prompt("Edit Scope of Work (leave blank to keep current):");
-    if (newScope === null) return; // User cancelled
-
     try {
         showLoading();
-        // Assuming your backend supports partial updates via PUT
-        const updateData = {};
-        if (newScope) updateData.scopeOfWork = newScope;
-        
-        if (Object.keys(updateData).length === 0) {
-             hideLoading();
-             return;
+        // 1. Fetch current proposal data to pre-fill the form
+        const response = await apiCall(`proposals?id=${proposalId}`);
+        if (!response.success || !response.data) {
+            throw new Error('Failed to load proposal details');
         }
+        const p = response.data;
+        
+        // 2. Close any open modals (like the details view)
+        closeModal();
 
-        const response = await apiCall(`proposals?id=${proposalId}`, {
-            method: 'PUT',
-            body: JSON.stringify({ action: 'update_details', data: updateData })
+        const projectTypes = [
+            'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
+            'Joist Detailing', 'As-built Drawings'
+        ];
+
+        // 3. Create the Edit Modal HTML with pre-filled values
+        const modalHtml = `
+            <div class="modal-overlay" id="editProposalOverlay">
+                <div class="modal-content" style="max-width: 800px;">
+                    <div class="modal-header">
+                        <h2>Edit Proposal</h2>
+                        <div class="subtitle">Update project details</div>
+                        <span class="close-modal" onclick="closeModal()">&times;</span>
+                    </div>
+
+                    <form id="editProposalForm" class="modal-form">
+                        <div class="form-section">
+                            <h4>Project Information</h4>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Project Name *</label>
+                                    <input type="text" id="editProjectName" class="form-control" value="${p.projectName || ''}" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Client Company *</label>
+                                    <input type="text" id="editClientCompany" class="form-control" value="${p.clientCompany || ''}" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Project Type *</label>
+                                    <div class="checkbox-list" style="max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: white;">
+                                        ${projectTypes.map(type => {
+                                            // Check if this type is in the existing projectType array
+                                            const isChecked = Array.isArray(p.projectType) && p.projectType.includes(type) ? 'checked' : '';
+                                            return `
+                                                <label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer;">
+                                                    <input type="checkbox" name="editProjectType" value="${type}" ${isChecked} style="margin-right: 10px; width: 18px; height: 18px;">
+                                                    ${type}
+                                                </label>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div style="margin-bottom: 1rem;">
+                                        <label>Timeline (Days)</label>
+                                        <input type="text" id="editTimeline" class="form-control" value="${p.timeline || ''}">
+                                    </div>
+                                     <div>
+                                        <label>Country</label>
+                                        <select id="editCountry" class="form-control">
+                                            <option value="">Select Country</option>
+                                            <option value="Australia" ${p.country === 'Australia' ? 'selected' : ''}>Australia</option>
+                                            <option value="USA" ${p.country === 'USA' ? 'selected' : ''}>USA</option>
+                                            <option value="Canada" ${p.country === 'Canada' ? 'selected' : ''}>Canada</option>
+                                            <option value="UK" ${p.country === 'UK' ? 'selected' : ''}>UK</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Priority</label>
+                                <select id="editPriority" class="form-control">
+                                    <option value="Medium" ${p.priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                                    <option value="High" ${p.priority === 'High' ? 'selected' : ''}>High</option>
+                                    <option value="Low" ${p.priority === 'Low' ? 'selected' : ''}>Low</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Scope of Work *</label>
+                            <textarea id="editScopeOfWork" class="form-control" rows="6" required>${p.scopeOfWork || ''}</textarea>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // 4. Attach Submit Handler
+        document.getElementById('editProposalForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const selectedTypes = Array.from(document.querySelectorAll('input[name="editProjectType"]:checked')).map(cb => cb.value);
+            if (selectedTypes.length === 0) {
+                alert('Please select at least one Project Type.');
+                return;
+            }
+
+            const updateData = {
+                projectName: document.getElementById('editProjectName').value,
+                clientCompany: document.getElementById('editClientCompany').value,
+                projectType: selectedTypes,
+                timeline: document.getElementById('editTimeline').value,
+                country: document.getElementById('editCountry').value,
+                priority: document.getElementById('editPriority').value,
+                scopeOfWork: document.getElementById('editScopeOfWork').value
+            };
+
+            try {
+                showLoading();
+                const updateResponse = await apiCall(`proposals?id=${proposalId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ 
+                        action: 'update_details', 
+                        data: updateData 
+                    })
+                });
+
+                if (updateResponse.success) {
+                    alert('✅ Proposal updated successfully!');
+                    closeModal();
+                    // Refresh view based on where we are
+                    if (document.getElementById('nav-proposals').classList.contains('active')) {
+                        showProposals();
+                    } else {
+                        showDashboard();
+                    }
+                } else {
+                    throw new Error(updateResponse.error || 'Update failed');
+                }
+            } catch (err) {
+                alert('Error updating proposal: ' + err.message);
+            } finally {
+                hideLoading();
+            }
         });
 
-        if (response.success) {
-            alert('Proposal updated successfully!');
-            closeModal();
-            viewProposal(proposalId); // Refresh view
-        } else {
-             throw new Error(response.error || 'Update failed');
-        }
     } catch (error) {
-        alert('Error updating proposal: ' + error.message);
+        console.error('Edit proposal error:', error);
+        alert('Error loading edit form: ' + error.message);
     } finally {
         hideLoading();
     }
