@@ -8100,7 +8100,7 @@ async function showAllocationModal(proposalId) {
         }
         
         const modalHtml = `
-            <div class="modal-overlay">
+           <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                 <div class="modal-content allocation-modal-large" style="max-width: 800px;">
                     <div class="modal-header">
                         <div>
