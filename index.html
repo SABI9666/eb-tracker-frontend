@@ -1753,72 +1753,73 @@
                 </div>
             </div>
             <div class="login-right">
-                <div class="auth-tabs">
-                    <button class="auth-tab active" onclick="showTab('login')">Login</button>
-                    <button class="auth-tab" onclick="showTab('register')">Register</button>
-                </div>
-                <div id="authMessages"></div>
-                <div id="loginContent" class="auth-content active">
-                    <form id="loginForm">
-                        <div class="form-group">
-                            <label for="loginEmail">Email</label>
-                            <input type="email" id="loginEmail" class="form-control" required>
-                        </div>
-                       <div class="form-group">
-        <label for="loginPassword">Password</label>
-        <input type="password" id="loginPassword" class="form-control" required>
+    <div class="auth-tabs">
+        <button class="auth-tab active" onclick="showTab('login')">Login</button>
+        <button class="auth-tab" onclick="showTab('register')">Register</button>
     </div>
-    <div style="text-align: right; margin-bottom: 1rem;">
-        <a href="#" onclick="showForgotPasswordView(event)" style="color: var(--primary-blue); text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
-    </div>
-    <button type="submit" class="btn btn-primary">Login</button>
-                    </form>
-                </div>
-                <div id="registerContent" class="auth-content">
-                    <form id="registerForm">
-                        <div class="role-selector">
-                            <label>Select Role:</label>
-                            <div class="role-buttons">
-                                <div class="role-btn active" data-role="bdm">BDM</div>
-                                <div class="role-btn" data-role="estimator">Estimator</div>
-                                <div class="role-btn" data-role="coo">COO</div>
-                                <div class="role-btn" data-role="director">Director</div>
-                                <div class="role-btn" data-role="design_lead">Design Manager</div>
-                                <div class="role-btn" data-role="designer">Designer</div>
-                                <div class="role-btn" data-role="accounts">Accounts</div>
-                            </div>
-                            <input type="hidden" id="selectedRole" value="bdm">
-                        </div>
-                        <div class="form-group">
-                            <label for="registerName">Full Name</label>
-                            <input type="text" id="registerName" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="registerEmail">Email</label>
-                            <input type="email" id="registerEmail" class="form-control" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="registerPassword">Password</label>
-                            <input type="password" id="registerPassword" class="form-control" required minlength="6">
-                        </div>
-                        <button type="submit" class="btn btn-success">Register</button>
-                    </form>
-                </div>
+    <div id="authMessages"></div>
+    
+    <div id="loginContent" class="auth-content active">
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="loginEmail">Email</label>
+                <input type="email" id="loginEmail" class="form-control" required>
             </div>
-        </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" class="form-control" required>
+            </div>
+            <div style="text-align: right; margin-bottom: 1rem;">
+                <a href="#" onclick="showForgotPasswordView(event)" style="color: var(--primary-blue); text-decoration: none; font-size: 0.9rem;">Forgot Password?</a>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
     </div>
+
+    <div id="registerContent" class="auth-content">
+        <form id="registerForm">
+            <div class="role-selector">
+                <label>Select Role:</label>
+                <div class="role-buttons">
+                    <div class="role-btn active" data-role="bdm">BDM</div>
+                    <div class="role-btn" data-role="estimator">Estimator</div>
+                    <div class="role-btn" data-role="coo">COO</div>
+                    <div class="role-btn" data-role="director">Director</div>
+                    <div class="role-btn" data-role="design_lead">Design Manager</div>
+                    <div class="role-btn" data-role="designer">Designer</div>
+                    <div class="role-btn" data-role="accounts">Accounts</div>
+                </div>
+                <input type="hidden" id="selectedRole" value="bdm">
+            </div>
+            <div class="form-group">
+                <label for="registerName">Full Name</label>
+                <input type="text" id="registerName" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="registerEmail">Email</label>
+                <input type="email" id="registerEmail" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" class="form-control" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-success">Register</button>
+        </form>
+    </div>
+
     <div id="forgotPasswordContent" class="auth-content">
-    <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Reset Password</h3>
-    <p style="margin-bottom: 1.5rem; color: var(--text-light);">Enter your email address and we'll send you a link to reset your password.</p>
-    <form id="forgotPasswordForm">
-        <div class="form-group">
-            <label for="resetEmail">Email Address</label>
-            <input type="email" id="resetEmail" class="form-control" required>
-        </div>
-        <button type="submit" class="btn btn-primary" style="margin-bottom: 1rem;">Send Reset Link</button>
-        <button type="button" class="btn btn-outline" onclick="hideForgotPasswordView()">Back to Login</button>
-    </form>
+        <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Reset Password</h3>
+        <p style="margin-bottom: 1.5rem; color: var(--text-light);">Enter your email address and we'll send you a link to reset your password.</p>
+        <form id="forgotPasswordForm">
+            <div class="form-group">
+                <label for="resetEmail">Email Address</label>
+                <input type="email" id="resetEmail" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-bottom: 1rem;">Send Reset Link</button>
+            <button type="button" class="btn btn-outline" onclick="hideForgotPasswordView()">Back to Login</button>
+        </form>
     </div>
+</div>
 
     <div id="appContainer" class="app-container">
         <div class="loading" id="loadingSpinner">
