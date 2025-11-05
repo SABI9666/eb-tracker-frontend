@@ -2385,14 +2385,16 @@
             const c = document.getElementById('authMessages');
             if(c) c.innerHTML = '';
         }
-         function closeModal() {
-            // Close the BDM's proposal modal
-            document.querySelector('.modal-overlay')?.remove();
-            
-            // Also close all other modal styles
-            const newModals = document.querySelectorAll('.modal');
-            newModals.forEach(m => m.style.display = 'none');
-        }
+     // REPLACE YOUR EXISTING closeModal FUNCTION WITH THIS:
+      function closeModal() {
+    // Remove all dynamically created overlays
+    document.querySelectorAll('.modal-overlay').forEach(overlay => overlay.remove());
+    
+    // Hide all pre-existing static modals
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.style.display = 'none';
+    });
+  }
         function formatDate(ts) {
             // Handles Firebase timestamp objects OR ISO strings
             if (!ts) return 'N/A';
