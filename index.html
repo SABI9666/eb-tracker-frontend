@@ -5400,6 +5400,44 @@ function showCreateProposalModal() {
                 hideLoading();
             }
         }
+        // ADD THIS NEW FUNCTION:
+async function editProposal(proposalId) {
+    // For now, a simple alert as a placeholder, or implement full edit logic similar to create.
+    // Implementing full edit requires pre-filling the create modal which is complex.
+    // A quick fix is to allow editing basic fields via prompts or a simpler modal.
+    
+    const newScope = prompt("Edit Scope of Work (leave blank to keep current):");
+    if (newScope === null) return; // User cancelled
+
+    try {
+        showLoading();
+        // Assuming your backend supports partial updates via PUT
+        const updateData = {};
+        if (newScope) updateData.scopeOfWork = newScope;
+        
+        if (Object.keys(updateData).length === 0) {
+             hideLoading();
+             return;
+        }
+
+        const response = await apiCall(`proposals?id=${proposalId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ action: 'update_details', data: updateData })
+        });
+
+        if (response.success) {
+            alert('Proposal updated successfully!');
+            closeModal();
+            viewProposal(proposalId); // Refresh view
+        } else {
+             throw new Error(response.error || 'Update failed');
+        }
+    } catch (error) {
+        alert('Error updating proposal: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
 // REPLACE YOUR EXISTING deleteProposal FUNCTION WITH THIS:
     async function deleteProposal(proposalId) {
     if (!confirm('Are you VERY SURE you want to delete this proposal? This action cannot be undone.')) return;
