@@ -4336,11 +4336,12 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             currentProjectFilter = filterType;
             renderAllProjects();
         }
-
-       // REPLACE THE ENTIRE showCreateProposalModal FUNCTION WITH THIS:
+     // ================================================================
+// REPLACEMENT: showCreateProposalModal (Fixes Project Type & File Uploads)
+// ================================================================
 function showCreateProposalModal() {
-    // Initialize staging array for files
-    let stagedFiles = [];
+    // Initialize staging array for files specifically for this modal session
+    window.currentStagedFiles = [];
 
     const projectTypes = [
         'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
@@ -4353,7 +4354,7 @@ function showCreateProposalModal() {
                 <div class="modal-header">
                     <h2>Create New Proposal</h2>
                     <div class="subtitle">Start a new project with file uploads</div>
-                    <span class="close-modal" onclick="closeCreateProposalModal()">&times;</span>
+                    <span class="close-modal" onclick="closeModal()">&times;</span>
                 </div>
 
                 <form id="createProposalForm" class="modal-form">
@@ -4372,14 +4373,15 @@ function showCreateProposalModal() {
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Project Type *</label>
-                                <div class="checkbox-list" style="max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                                <div class="checkbox-list" style="max-height: 150px; overflow-y: auto; padding: 10px; border: 1px solid var(--border); border-radius: 8px; background: white;">
                                     ${projectTypes.map(type => `
-                                        <label style="display: flex; align-items: center; margin-bottom: 5px; cursor: pointer;">
-                                            <input type="checkbox" name="projectType" value="${type}" style="margin-right: 10px; width: auto;">
+                                        <label style="display: flex; align-items: center; margin-bottom: 8px; cursor: pointer;">
+                                            <input type="checkbox" name="projectType" value="${type}" style="margin-right: 10px; width: 18px; height: 18px;">
                                             ${type}
                                         </label>
                                     `).join('')}
                                 </div>
+                                <small class="form-text">Select all that apply</small>
                             </div>
                             <div class="form-group">
                                 <label>Timeline (Days)</label>
@@ -4419,16 +4421,16 @@ function showCreateProposalModal() {
 
                     <div class="form-section">
                         <h4>Upload Project Files (RFQ, Tender Documents, Drawings)</h4>
-                        <div class="upload-area" id="uploadArea" style="padding: 1.5rem;">
+                        <div class="upload-area" id="proposalUploadArea" style="padding: 1.5rem;">
                             <div style="font-size: 2rem; margin-bottom: 0.5rem;">📁</div>
                             <p>Click to add files</p>
                             <small style="color: var(--text-light);">Supported: PDF, DOC, DOCX, JPG, PNG (Max 100MB total)</small>
-                            <input type="file" id="fileInput" multiple 
+                            <input type="file" id="proposalFileInput" multiple 
                                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,image/jpeg,image/png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
                                    style="display: none;">
                         </div>
-                        <div id="fileUploadError" style="color: var(--danger); font-weight: 600; margin-top: 1rem;"></div>
-                        <div id="stagedFilesList" style="margin-top: 1rem;"></div>
+                        <div id="proposalFileUploadError" style="color: var(--danger); font-weight: 600; margin-top: 1rem;"></div>
+                        <div id="proposalStagedFilesList" style="margin-top: 1rem;"></div>
                     </div>
 
                     <div class="form-section">
@@ -4443,7 +4445,7 @@ function showCreateProposalModal() {
                     </div>
 
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                        <button type="button" onclick="closeCreateProposalModal()" class="btn btn-outline">Cancel</button>
+                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
                         <button type="submit" class="btn btn-primary">Create Proposal</button>
                     </div>
                 </form>
@@ -4452,81 +4454,74 @@ function showCreateProposalModal() {
     `;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // --- Event Listeners & Helper Functions for this modal ---
-
-    // 1. Robust Close Function
-    window.closeCreateProposalModal = function() {
-        const overlay = document.getElementById('createProposalOverlay');
-        if (overlay) overlay.remove();
-    };
-
-    // 2. File Upload Logic (Append instead of replace)
-    const uploadArea = document.getElementById('uploadArea');
-    const fileInput = document.getElementById('fileInput');
+    // --- File Handling Logic ---
+    const uploadArea = document.getElementById('proposalUploadArea');
+    const fileInput = document.getElementById('proposalFileInput');
     
     uploadArea.onclick = () => fileInput.click();
 
     fileInput.onchange = function() {
         const newFiles = Array.from(this.files);
-        const errorDiv = document.getElementById('fileUploadError');
+        const errorDiv = document.getElementById('proposalFileUploadError');
         errorDiv.textContent = '';
 
-        // Validate and add new files to stagedFiles array
         for (let file of newFiles) {
-            // Basic validation example (size < 50MB per file for safety)
-            if (file.size > 50 * 1024 * 1024) {
-                 errorDiv.textContent = `Error: ${file.name} is too large (max 50MB).`;
+            if (file.size > 100 * 1024 * 1024) { // 100MB individual limit check
+                 errorDiv.textContent = `Error: ${file.name} is too large (max 100MB).`;
                  continue;
             }
-            // Prevent exact duplicates by name and size
-            if (!stagedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                stagedFiles.push(file);
+            // Avoid exact duplicates
+            if (!window.currentStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                window.currentStagedFiles.push(file);
             }
         }
-
-        // Reset input so selecting the same file again triggers 'change' if needed later
-        this.value = ''; 
-        renderStagedFiles();
+        this.value = ''; // Reset input to allow re-selecting same file if needed
+        renderProposalStagedFiles();
     };
 
-    // 3. Render Staged Files with Delete Buttons
-    window.renderStagedFiles = function() {
-        const container = document.getElementById('stagedFilesList');
-        if (stagedFiles.length === 0) {
+    // Render the list of files currently staged for upload
+    window.renderProposalStagedFiles = function() {
+        const container = document.getElementById('proposalStagedFilesList');
+        if (!container) return;
+        
+        if (window.currentStagedFiles.length === 0) {
             container.innerHTML = '';
             return;
         }
-        container.innerHTML = '<h5>Files selected for upload:</h5>' + 
-            stagedFiles.map((file, index) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: #f8fafc; margin-bottom: 5px; border-radius: 4px; border: 1px solid var(--border);">
-                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        📄 ${file.name} <small>(${(file.size / 1024 / 1024).toFixed(2)} MB)</small>
-                    </span>
-                    <button type="button" onclick="removeStagedFile(${index})" 
-                            style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.1rem; padding: 0 5px;">
+        
+        container.innerHTML = '<h5 style="margin-bottom:0.5rem;">Files selected for upload:</h5>' + 
+            window.currentStagedFiles.map((file, index) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #f8fafc; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        📄 <span style="font-weight: 500;">${file.name}</span> 
+                        <span style="color: var(--text-light); font-size: 0.85rem; margin-left: 8px;">(${(file.size / 1024 / 1024).toFixed(2)} MB)</span>
+                    </div>
+                    <button type="button" onclick="removeProposalStagedFile(${index})" 
+                            style="background: #fee2e2; border: none; color: var(--danger); cursor: pointer; padding: 4px 8px; border-radius: 4px; display: flex; align-items: center; justify-content: center;">
                         ❌
                     </button>
                 </div>
             `).join('');
     };
 
-    // 4. Remove a specific file from staging
-    window.removeStagedFile = function(index) {
-        stagedFiles.splice(index, 1);
-        renderStagedFiles();
+    // Remove a file from the staging area
+    window.removeProposalStagedFile = function(index) {
+        window.currentStagedFiles.splice(index, 1);
+        renderProposalStagedFiles();
     };
 
-    // 5. Form Submission
+    // --- Form Submission ---
     document.getElementById('createProposalForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
-        // Get selected project types from checkboxes
+        // Get checked project types
         const selectedTypes = Array.from(document.querySelectorAll('input[name="projectType"]:checked')).map(cb => cb.value);
         if (selectedTypes.length === 0) {
             alert('Please select at least one Project Type.');
             return;
         }
 
+        // Gather links
         const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
         const projectLinks = [];
         linkInputs.forEach(group => {
@@ -4538,7 +4533,7 @@ function showCreateProposalModal() {
         const formData = {
             projectName: document.getElementById('projectName').value,
             clientCompany: document.getElementById('clientCompany').value,
-            projectType: selectedTypes, // Uses the new checkbox array
+            projectType: selectedTypes,
             country: document.getElementById('country').value,
             timeline: document.getElementById('timeline').value,
             priority: document.getElementById('priority').value,
@@ -4549,6 +4544,7 @@ function showCreateProposalModal() {
 
         try {
             showLoading();
+            // 1. Create Proposal
             const response = await apiCall('proposals', {
                 method: 'POST',
                 body: JSON.stringify(formData)
@@ -4560,15 +4556,16 @@ function showCreateProposalModal() {
 
             const proposalId = response.data.id;
 
-            // Upload staged files if any
-            if (stagedFiles.length > 0) {
+            // 2. Upload Staged Files
+            if (window.currentStagedFiles.length > 0) {
                 const fileFormData = new FormData();
-                stagedFiles.forEach(file => fileFormData.append('files', file));
+                window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
                 fileFormData.append('proposalId', proposalId);
                 fileFormData.append('fileType', 'project');
                 await apiCall('files', { method: 'POST', body: fileFormData });
             }
 
+            // 3. Save Links (if any extra generic ones were added via files endpoint)
             if (projectLinks.length > 0) {
                 await apiCall('files', {
                     method: 'POST',
@@ -4578,15 +4575,22 @@ function showCreateProposalModal() {
 
             alert('Proposal created successfully!');
             
-            // Trigger notification
-            triggerEmailNotification('project.submitted', {
-                projectName: formData.projectName,
-                createdBy: currentUser.displayName || currentUser.email,
-                clientName: formData.clientCompany,
-                projectId: proposalId
-            });
+            // 4. Trigger Notification (Fixed safe user name access)
+            try {
+                 const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? 
+                                  (currentUser.displayName || currentUser.email) : 'System User';
 
-            closeCreateProposalModal();
+                 await triggerEmailNotification('project.submitted', {
+                    projectName: formData.projectName,
+                    createdBy: userName,
+                    clientName: formData.clientCompany,
+                    projectId: proposalId
+                });
+            } catch (err) {
+                console.warn("Email notification non-fatal error:", err);
+            }
+
+            closeModal();
             showProposals();
         } catch (error) {
             console.error('❌ Proposal creation failed:', error);
@@ -4596,6 +4600,7 @@ function showCreateProposalModal() {
         }
     });
 }
+      
 
         function addLinkField() {
             // ... (This function remains unchanged)
