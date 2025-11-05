@@ -4790,7 +4790,6 @@ function showCreateProposalModal() {
                                         <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
                                         <button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">Download</button>
                                         ${file.canDelete ? `
-                                            <button class="btn btn-warning btn-sm" onclick="editFile('${file.id}', '${p.id}')">✏️ Edit</button>
                                             <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>
                                         ` : ''}
                                     </div>
