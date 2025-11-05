@@ -6712,7 +6712,7 @@ async function showCreateInvoiceModal(projectId, proposalId) {
         const currency = proposal.pricing?.currency || 'USD';
 
         const modalHtml = `
-            <div class="modal-overlay">
+            <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                 <div class="modal-content" style="max-width: 700px;">
                     <div class="modal-header">
                         <h2>Create New Invoice</h2>
