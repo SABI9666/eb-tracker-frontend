@@ -5065,14 +5065,19 @@ function showCreateProposalModal() {
 
        async function saveEstimation(proposalId) {
     const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => cb.value);
-    const totalHours = document.getElementById('totalHours').value || 0;
+    
+    // Get both values
+    const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
+    const tonnage = parseFloat(document.getElementById('tonnageInput').value) || 0;
 
-    if (totalHours == 0) return alert('Please enter manhours.');
+    // MODIFIED VALIDATION: Allow if EITHER Total Hours OR Tonnage is greater than 0
+    if (totalHours === 0 && tonnage === 0) {
+        return alert('Please enter either Manhours OR Tonnage to proceed.');
+    }
     if (services.length === 0) return alert('Please select at least one service.');
 
     const estimationData = {
-        // ... existing data ...
-        tonnage: document.getElementById('tonnageInput').value || 0, // ADDED TONNAGE
+        tonnage: tonnage,
         designHours: document.getElementById('designHours').value || 0,
         detailingHours: document.getElementById('detailingHours').value || 0,
         checkingHours: document.getElementById('checkingHours').value || 0,
@@ -5086,7 +5091,7 @@ function showCreateProposalModal() {
     try {
         showLoading();
         
-        // 1. Collect ALL files from BOTH inputs
+        // 1. Collect ALL files from BOTH inputs (BOQ and Images)
         const boqFiles = Array.from(document.getElementById('boqFileInput').files);
         const imageFiles = Array.from(document.getElementById('imageFileInput').files);
         const allFiles = [...boqFiles, ...imageFiles];
@@ -5109,7 +5114,10 @@ function showCreateProposalModal() {
         if (response.success) {
             alert('Estimation saved successfully!');
             const projectName = document.getElementById('estProjectName')?.value || 'Unknown Project';
-            triggerEmailNotification('estimation.complete', { projectName: projectName });
+            // Ensure triggerEmailNotification exists before calling
+            if (typeof triggerEmailNotification === 'function') {
+                 triggerEmailNotification('estimation.complete', { projectName: projectName });
+            }
             closeModal();
             showDashboard();
         } else {
