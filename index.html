@@ -4610,14 +4610,13 @@ function showCreateProposalModal() {
             const proposalId = response.data.id;
 
             // 2. Upload Files (if any)
-            if (window.currentStagedFiles.length > 0) {
-                const fileFormData = new FormData();
-                window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
-                fileFormData.append('proposalId', proposalId);
-                fileFormData.append('fileType', 'project');
-                await apiCall('files', { method: 'POST', body: fileFormData });
-            }
-
+          if (window.currentStagedFiles.length > 0) {
+          const fileFormData = new FormData();
+         window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
+         fileFormData.append('proposalId', proposalId);
+        fileFormData.append('fileType', 'project');
+        await apiCall('files', { method: 'POST', body: fileFormData });
+        }
             // 3. Save Links (if added via files endpoint for consistency)
             if (projectLinks.length > 0) {
                 await apiCall('files', {
