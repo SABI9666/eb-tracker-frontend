@@ -2184,173 +2184,97 @@
             await auth.signOut();
         }
 
-        // ============================================
-        // UI & NAVIGATION
-        // ============================================
-           function showApp(){
-            // --- FIX: Wrap entire function in a setTimeout to fix race condition ---
-            setTimeout(() => { // <--- Start of setTimeout callback
-                console.log('--- showApp() EXECUTING (after timeout) ---');
-                // Ensure core elements exist before proceeding
-                const loginPage = document.getElementById('loginPage');
-                const appContainer = document.getElementById('appContainer');
-                const userWelcome = document.getElementById('userWelcome');
-                const userRoleDisplay = document.getElementById('userRole');
+       function showApp() {
+    // Use a small timeout to ensure DOM elements are ready
+    setTimeout(() => {
+        console.log('--- showApp() EXECUTING ---');
+        try {
+            const loginPage = document.getElementById('loginPage');
+            const appContainer = document.getElementById('appContainer');
+            const userWelcome = document.getElementById('userWelcome');
+            const userRoleDisplay = document.getElementById('userRole');
 
-                // -------- START: ADD THIS CHECK --------
-                const sidebarElement = document.querySelector('.sidebar'); // Find the main sidebar
-                if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay || !sidebarElement) {
-                    console.error("Core UI elements (login, app, user info, or sidebar) missing! Cannot initialize app view.");
-                    // Attempt to wait a fraction longer and retry ONCE
-                    if (!showApp.retried) {
-                        console.warn("Retrying showApp() in 100ms...");
-                        showApp.retried = true; // Mark as retried to prevent infinite loop
-                        setTimeout(showApp, 100);
-                    } else {
-                         console.error("showApp() retry failed. Aborting.");
-                    }
-                    return; // Stop execution if essential elements are missing
+            if (!loginPage || !appContainer || !userWelcome || !userRoleDisplay) {
+                console.error("Core UI elements missing! Retrying...");
+                // Simple retry mechanism
+                if (!showApp.retried) {
+                    showApp.retried = true;
+                    setTimeout(showApp, 100);
+                    return;
                 }
-                showApp.retried = false; // Reset retry flag if successful
-                // -------- END: ADD THIS CHECK --------
+                throw new Error("Critical UI elements not found after retry.");
+            }
 
-                // --- FIX: Trim whitespace AND convert to lowercase ---
-                const roleForCheck = currentUserRole.trim().toLowerCase();
-                console.log('Original role:', currentUserRole, '| Cleaned roleForCheck:', roleForCheck);
+            // 1. Update User Info
+            const roleForCheck = (currentUserRole || '').trim().toLowerCase();
+            userWelcome.textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
+            userRoleDisplay.textContent = roleForCheck.replace('_', ' ').toUpperCase();
 
-                // =============================================================
-                // >>>>> ALL THIS CODE MUST BE INSIDE THE setTimeout <<<<<
-                // =============================================================
+            // 2. Switch Views
+            loginPage.style.display = 'none';
+            appContainer.style.display = 'block';
 
-                loginPage.style.display = 'none';
-                appContainer.style.display = 'block';
-                userWelcome.textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
-                userRoleDisplay.textContent = `${currentUserRole.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`;
+            // 3. Set Nav Visibility based on Role
+            const setDisplay = (id, visible) => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = visible ? 'block' : 'none';
+            };
 
-                console.log("showApp: Setting element visibility based on role:", currentUserRole, "(checking as:", roleForCheck, ")");
+            setDisplay('newProposalNavItem', roleForCheck === 'bdm');
+            setDisplay('analyticsNavItem', ['bdm', 'coo', 'director'].includes(roleForCheck));
+            setDisplay('workflowNavItem', ['estimator', 'coo'].includes(roleForCheck));
+            setDisplay('reportsNavItem', false); // Always hidden for now
+            setDisplay('settingsNavItem', roleForCheck === 'director');
+            setDisplay('allProjectsNavItem', ['director', 'coo'].includes(roleForCheck));
+            setDisplay('projectsNavItem', ['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck));
+            setDisplay('tasksNavItem', roleForCheck === 'designer');
+            setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck));
+            setDisplay('executiveMonitoringNavItem', ['coo', 'director', 'design_lead'].includes(roleForCheck));
+            setDisplay('timeRequestsNavItem', ['coo', 'director'].includes(roleForCheck));
+            setDisplay('timesheetNavItem', roleForCheck === 'designer');
 
-                // --- Role-based UI updates with null checks (USING roleForCheck) ---
-                const newProposalNavItem = document.getElementById('newProposalNavItem');
-                if (newProposalNavItem) newProposalNavItem.style.display = (roleForCheck === 'bdm') ? 'block' : 'none';
-                else console.warn("Element 'newProposalNavItem' not found");
+            // Special case for Dashboard & Files (hidden for BDM/COO/Director in favor of their specific views)
+            const isManagement = ['bdm', 'coo', 'director'].includes(roleForCheck);
+            setDisplay('dashboardNavItem', !isManagement);
+            setDisplay('filesNavItem', !isManagement);
 
-                const analyticsNavItem = document.getElementById('analyticsNavItem');
-                if (analyticsNavItem) analyticsNavItem.style.display = (['bdm', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
-                else console.warn("Element 'analyticsNavItem' not found");
+            // 4. Update Badges (if applicable)
+            if (['coo', 'director'].includes(roleForCheck)) {
+                updatePendingRequestsBadge();
+            }
 
-                const workflowNavItem = document.getElementById('workflowNavItem');
-                 if (workflowNavItem) workflowNavItem.style.display = (['estimator', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
-                 else console.warn("Element 'workflowNavItem' not found");
-
-                 const reportsNavItem = document.getElementById('reportsNavItem');
-                 if (reportsNavItem) reportsNavItem.style.display = 'none'; // Always hidden
-                 else console.warn("Element 'reportsNavItem' not found");
-
-                 const settingsNavItem = document.getElementById('settingsNavItem');
-                 if (settingsNavItem) settingsNavItem.style.display = (roleForCheck === 'director') ? 'block' : 'none';
-                 else console.warn("Element 'settingsNavItem' not found");
-
-                 const allProjectsNavItem = document.getElementById('allProjectsNavItem');
-                 if (allProjectsNavItem) allProjectsNavItem.style.display = (['director', 'coo'].includes(roleForCheck)) ? 'block' : 'none';
-                 else console.warn("Element 'allProjectsNavItem' not found");
-
-                 const projectsNavItem = document.getElementById('projectsNavItem');
-                 if (projectsNavItem) projectsNavItem.style.display = (['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck)) ? 'block' : 'none';
-                 else console.warn("Element 'projectsNavItem' not found");
-
-                 const tasksNavItem = document.getElementById('tasksNavItem');
-                 if (tasksNavItem) tasksNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
-                 else console.warn("Element 'tasksNavItem' not found");
-
-                 const paymentsNavItem = document.getElementById('paymentsNavItem');
-                if (paymentsNavItem) paymentsNavItem.style.display = (['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck)) ? 'block' : 'none';
-                 else console.warn("Element 'paymentsNavItem' not found");
-
-                 const executiveMonitoringNavItem = document.getElementById('executiveMonitoringNavItem');
-                 if (executiveMonitoringNavItem) executiveMonitoringNavItem.style.display = (['coo', 'director', 'design_lead'].includes(roleForCheck)) ? 'block' : 'none';
-                 else console.warn("Element 'executiveMonitoringNavItem' not found");
-
-                // START: ADD THIS VISIBILITY LOGIC
-                const timeRequestsNavItem = document.getElementById('timeRequestsNavItem');
-                if (timeRequestsNavItem) {
-                    const isVisible = ['coo', 'director'].includes(roleForCheck);
-                    timeRequestsNavItem.style.display = isVisible ? 'block' : 'none';
-                    // If the button is visible, update the pending count
-                    if (isVisible) {
-                        updatePendingRequestsBadge();
-                    }
-                }
-                else console.warn("Element 'timeRequestsNavItem' not found");
-                // END: ADD THIS VISIBILITY LOGIC
-
-                const timesheetNavItem = document.getElementById('timesheetNavItem');
-                if (timesheetNavItem) timesheetNavItem.style.display = (roleForCheck === 'designer') ? 'block' : 'none';
-                else console.warn("Element 'timesheetNavItem' not found");
-
-                // User Requested Modifications: Hide Dashboard (USING roleForCheck)
-                const dashboardNavItem = document.getElementById('dashboardNavItem');
-                let isDashboardHidden = false;
-                if (dashboardNavItem) {
-                     isDashboardHidden = ['bdm', 'coo', 'director'].includes(roleForCheck);
-                     console.log('Checking for roles [bdm, coo, director]. Found match?', isDashboardHidden);
-                    dashboardNavItem.style.display = isDashboardHidden ? 'none' : 'block';
-                    console.log(`showApp: Dashboard Nav Item ${isDashboardHidden ? 'hidden' : 'shown'}`);
+            // 5. Route to Initial View
+            if (roleForCheck === 'designer') {
+                showTasks(); // Designers go straight to their tasks/projects
+            } else if (roleForCheck === 'design_lead') {
+                showDesignLeadDashboard();
+            } else if (roleForCheck === 'bdm') {
+                showProposals();
+            } else if (['coo', 'director'].includes(roleForCheck)) {
+                showAllProjects();
+            } else {
+                // Default Fallback
+                if (!isManagement) {
+                    showDashboard();
                 } else {
-                    console.error("Element with ID 'dashboardNavItem' not found AFTER sidebar check! Check HTML.");
+                    showProposals();
                 }
+            }
 
-                const filesNavItem = document.getElementById('filesNavItem');
-                if (filesNavItem) {
-                    const isFileManagerHidden = ['bdm', 'coo', 'director'].includes(roleForCheck);
-                    filesNavItem.style.display = isFileManagerHidden ? 'none' : 'block';
-                     console.log(`showApp: Files Nav Item ${isFileManagerHidden ? 'hidden' : 'shown'}`);
-                } else {
-                     console.error("Element with ID 'filesNavItem' not found!");
-                }
-                // END OF MODIFIED LINES
+            // 6. Load Notifications
+            loadNotifications();
 
-                // --- Show role-specific dashboard or default view (USING roleForCheck) ---
-                console.log("showApp: Determining initial view...");
-                console.log('Routing check: is roleForCheck "bdm"?', roleForCheck === 'bdm');
-                console.log('Routing check: is roleForCheck "coo" or "director"?', roleForCheck === 'coo' || roleForCheck === 'director');
-
-                loadNotifications(); // <-- Load notifications AFTER setting up the main view
-
-                if (roleForCheck === 'designer') {
-                    console.log("showApp: Loading Designer Dashboard");
-                    showDesignerDashboard();
-                } else if (roleForCheck === 'design_lead') {
-                     console.log("showApp: Loading Design Lead Dashboard");
-                    showDesignLeadDashboard();
-                } else if (roleForCheck === 'bdm') {
-                     console.log("showApp: Loading Proposals (BDM default)");
-                    showProposals(); // New default for BDM
-                } else if (roleForCheck === 'coo' || roleForCheck === 'director') {
-                     console.log("showApp: Loading All Projects (COO/Director default)");
-                    showAllProjects(); // New default for COO & Director
-                } else {
-                     console.log("Routing check: entering FINAL else block.");
-                     console.log("showApp: Loading default for other roles (Estimator/Accounts)");
-                     if (!isDashboardHidden) {
-                        console.log('Routing check: dashboard hidden?', isDashboardHidden, '-> Calling showDashboard()');
-                        console.log("showApp: Loading Dashboard (default)");
-                        showDashboard();
-                     } else {
-                         console.log("showApp: Dashboard hidden, loading Proposals (fallback)");
-                        showProposals();
-                     }
-                }
-                 console.log("showApp: Finished setting up view.");
-
-                // =============================================================
-                // >>>>> THE END OF THE CODE THAT NEEDED TO BE MOVED BACK IN <<<<<
-                // =============================================================
-
-            }, 0); // <-- This marks the CORRECT END of the setTimeout callback
-        } // <-- This marks the CORRECT END of the showApp function definition
-
-        // Add this line OUTSIDE the function to initialize the retry flag
-        showApp.retried = false;
+        } catch (error) {
+            console.error("Error in showApp:", error);
+            alert("An error occurred while loading the application. Please refresh.");
+        } finally {
+            // ALWAYS hide loading spinner at the end
+            hideLoading();
+        }
+    }, 50);
+}
+// Initialize retry flag
+showApp.retried = false;
 
            
         function showLogin() {
