@@ -6930,7 +6930,7 @@ async function viewPayment(paymentId) {
         const statusClass = (invoice.status || 'draft').toLowerCase().replace(/ /g, '-');
 
         const modalHtml = `
-            <div class="modal-overlay">
+            <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
                 <div class="modal-content" style="max-width: 800px;">
                     <div class="modal-header">
                         <div>
