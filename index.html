@@ -4347,10 +4347,13 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             currentProjectFilter = filterType;
             renderAllProjects();
         }
-     // ================================================================
-// REPLACEMENT: showCreateProposalModal (Fixes Project Type & File Uploads)
+    // ================================================================
+// UPDATED: showCreateProposalModal (Auto-cleans before opening)
 // ================================================================
 function showCreateProposalModal() {
+    // STEP 1: Force close any existing modals first to prevent stuck overlays
+    closeModal();
+
     // Initialize staging array for files specifically for this modal session
     window.currentStagedFiles = [];
 
@@ -4455,10 +4458,10 @@ function showCreateProposalModal() {
                         <button type="button" onclick="addLinkField()" class="btn btn-outline btn-sm" style="width: auto;">+ Add Another Link</button>
                     </div>
 
-                   <div class="modal-footer" style="padding: 2rem 3rem; margin-top: 2rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 1rem;">
-    <button onclick="closeModal()" class="btn btn-outline" style="width: auto;">Close</button>
-    ${actionsHtml}
-</div>
+                    <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create Proposal</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -4469,26 +4472,28 @@ function showCreateProposalModal() {
     const uploadArea = document.getElementById('proposalUploadArea');
     const fileInput = document.getElementById('proposalFileInput');
     
-    uploadArea.onclick = () => fileInput.click();
+    if (uploadArea && fileInput) {
+        uploadArea.onclick = () => fileInput.click();
 
-    fileInput.onchange = function() {
-        const newFiles = Array.from(this.files);
-        const errorDiv = document.getElementById('proposalFileUploadError');
-        errorDiv.textContent = '';
+        fileInput.onchange = function() {
+            const newFiles = Array.from(this.files);
+            const errorDiv = document.getElementById('proposalFileUploadError');
+            errorDiv.textContent = '';
 
-        for (let file of newFiles) {
-            if (file.size > 100 * 1024 * 1024) { // 100MB individual limit check
-                 errorDiv.textContent = `Error: ${file.name} is too large (max 100MB).`;
-                 continue;
+            for (let file of newFiles) {
+                if (file.size > 100 * 1024 * 1024) { // 100MB individual limit check
+                     errorDiv.textContent = `Error: ${file.name} is too large (max 100MB).`;
+                     continue;
+                }
+                // Avoid exact duplicates
+                if (!window.currentStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                    window.currentStagedFiles.push(file);
+                }
             }
-            // Avoid exact duplicates
-            if (!window.currentStagedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                window.currentStagedFiles.push(file);
-            }
-        }
-        this.value = ''; // Reset input to allow re-selecting same file if needed
-        renderProposalStagedFiles();
-    };
+            this.value = ''; // Reset input to allow re-selecting same file if needed
+            renderProposalStagedFiles();
+        };
+    }
 
     // Render the list of files currently staged for upload
     window.renderProposalStagedFiles = function() {
@@ -4522,97 +4527,102 @@ function showCreateProposalModal() {
     };
 
     // --- Form Submission ---
-    document.getElementById('createProposalForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        // Get checked project types
-        const selectedTypes = Array.from(document.querySelectorAll('input[name="projectType"]:checked')).map(cb => cb.value);
-        if (selectedTypes.length === 0) {
-            alert('Please select at least one Project Type.');
-            return;
-        }
+    const createForm = document.getElementById('createProposalForm');
+    if (createForm) {
+        createForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Get checked project types
+            const selectedTypes = Array.from(document.querySelectorAll('input[name="projectType"]:checked')).map(cb => cb.value);
+            if (selectedTypes.length === 0) {
+                alert('Please select at least one Project Type.');
+                return;
+            }
 
-        // Gather links
-        const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
-        const projectLinks = [];
-        linkInputs.forEach(group => {
-            const url = group.querySelector('input[type="url"]').value;
-            const title = group.querySelector('input[type="text"]').value;
-            if (url) { projectLinks.push({ url, title: title || url, description: title }); }
-        });
-
-        const formData = {
-            projectName: document.getElementById('projectName').value,
-            clientCompany: document.getElementById('clientCompany').value,
-            projectType: selectedTypes,
-            country: document.getElementById('country').value,
-            timeline: document.getElementById('timeline').value,
-            priority: document.getElementById('priority').value,
-            scopeOfWork: document.getElementById('scopeOfWork').value,
-            projectComments: document.getElementById('projectComments').value,
-            projectLinks: projectLinks
-        };
-
-        try {
-            showLoading();
-            // 1. Create Proposal
-            const response = await apiCall('proposals', {
-                method: 'POST',
-                body: JSON.stringify(formData)
+            // Gather links
+            const linkInputs = document.querySelectorAll('#linksContainer .link-input-group');
+            const projectLinks = [];
+            linkInputs.forEach(group => {
+                const urlInput = group.querySelector('input[type="url"]');
+                const titleInput = group.querySelector('input[type="text"]');
+                if (urlInput && urlInput.value) { 
+                    projectLinks.push({ url: urlInput.value, title: titleInput.value || urlInput.value, description: titleInput.value }); 
+                }
             });
 
-            if (!response.success || !response.data) {
-                throw new Error('Failed to create proposal: Invalid response');
-            }
+            const formData = {
+                projectName: document.getElementById('projectName').value,
+                clientCompany: document.getElementById('clientCompany').value,
+                projectType: selectedTypes,
+                country: document.getElementById('country').value,
+                timeline: document.getElementById('timeline').value,
+                priority: document.getElementById('priority').value,
+                scopeOfWork: document.getElementById('scopeOfWork').value,
+                projectComments: document.getElementById('projectComments').value,
+                projectLinks: projectLinks
+            };
 
-            const proposalId = response.data.id;
-
-            // 2. Upload Staged Files
-            if (window.currentStagedFiles.length > 0) {
-                const fileFormData = new FormData();
-                window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
-                fileFormData.append('proposalId', proposalId);
-                fileFormData.append('fileType', 'project');
-                await apiCall('files', { method: 'POST', body: fileFormData });
-            }
-
-            // 3. Save Links (if any extra generic ones were added via files endpoint)
-            if (projectLinks.length > 0) {
-                await apiCall('files', {
-                    method: 'POST',
-                    body: JSON.stringify({ links: projectLinks, proposalId: proposalId, fileType: 'link' })
-                });
-            }
-
-            alert('Proposal created successfully!');
-            
-           // 4. Trigger Notification (Fixed safe user name access)
             try {
-                 const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? 
-                                  (currentUser.displayName || currentUser.email) : 'System User';
-                 const userEmail = (currentUser && currentUser.email) ? currentUser.email : '';
-
-                 await triggerEmailNotification('project.submitted', {
-                    projectName: formData.projectName,
-                    createdBy: userName,
-                    bdmName: userName,       // ADDED: explicitly send BDM name for CC
-                    bdmEmail: userEmail,     // ADDED: explicitly send BDM email for CC
-                    clientName: formData.clientCompany,
-                    projectId: proposalId
+                showLoading();
+                // 1. Create Proposal
+                const response = await apiCall('proposals', {
+                    method: 'POST',
+                    body: JSON.stringify(formData)
                 });
-            }  catch (err) {
-                console.warn("Email notification non-fatal error:", err);
-            }
 
-            closeModal();
-            showProposals();
-        } catch (error) {
-            console.error('❌ Proposal creation failed:', error);
-            alert(`Creation failed: ${error.message}`);
-        } finally {
-            hideLoading();
-        }
-    });
+                if (!response.success || !response.data) {
+                    throw new Error('Failed to create proposal: Invalid response');
+                }
+
+                const proposalId = response.data.id;
+
+                // 2. Upload Staged Files
+                if (window.currentStagedFiles.length > 0) {
+                    const fileFormData = new FormData();
+                    window.currentStagedFiles.forEach(file => fileFormData.append('files', file));
+                    fileFormData.append('proposalId', proposalId);
+                    fileFormData.append('fileType', 'project');
+                    await apiCall('files', { method: 'POST', body: fileFormData });
+                }
+
+                // 3. Save Links (if any extra generic ones were added via files endpoint)
+                if (projectLinks.length > 0) {
+                    await apiCall('files', {
+                        method: 'POST',
+                        body: JSON.stringify({ links: projectLinks, proposalId: proposalId, fileType: 'link' })
+                    });
+                }
+
+                alert('Proposal created successfully!');
+                
+               // 4. Trigger Notification (Fixed safe user name access)
+                try {
+                     const userName = (currentUser && (currentUser.displayName || currentUser.email)) ? 
+                                      (currentUser.displayName || currentUser.email) : 'System User';
+                     const userEmail = (currentUser && currentUser.email) ? currentUser.email : '';
+
+                     await triggerEmailNotification('project.submitted', {
+                        projectName: formData.projectName,
+                        createdBy: userName,
+                        bdmName: userName,       // ADDED: explicitly send BDM name for CC
+                        bdmEmail: userEmail,     // ADDED: explicitly send BDM email for CC
+                        clientName: formData.clientCompany,
+                        projectId: proposalId
+                    });
+                }  catch (err) {
+                    console.warn("Email notification non-fatal error:", err);
+                }
+
+                closeModal();
+                showProposals();
+            } catch (error) {
+                console.error('❌ Proposal creation failed:', error);
+                alert(`Creation failed: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        });
+    }
 }
       
 
