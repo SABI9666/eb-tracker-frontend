@@ -1807,6 +1807,18 @@
             </div>
         </div>
     </div>
+    <div id="forgotPasswordContent" class="auth-content">
+    <h3 style="margin-bottom: 1rem; color: var(--text-dark);">Reset Password</h3>
+    <p style="margin-bottom: 1.5rem; color: var(--text-light);">Enter your email address and we'll send you a link to reset your password.</p>
+    <form id="forgotPasswordForm">
+        <div class="form-group">
+            <label for="resetEmail">Email Address</label>
+            <input type="email" id="resetEmail" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary" style="margin-bottom: 1rem;">Send Reset Link</button>
+        <button type="button" class="btn btn-outline" onclick="hideForgotPasswordView()">Back to Login</button>
+    </form>
+    </div>
 
     <div id="appContainer" class="app-container">
         <div class="loading" id="loadingSpinner">
