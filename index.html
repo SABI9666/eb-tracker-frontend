@@ -5753,14 +5753,19 @@ async function editProposal(proposalId) {
                     })
                 });
 
-                // Upload new files
-                if (window.currentEditStagedFiles.length > 0) {
-                    const fileFormData = new FormData();
-                    window.currentEditStagedFiles.forEach(file => fileFormData.append('files', file));
-                    fileFormData.append('proposalId', proposalId);
-                    fileFormData.append('fileType', 'project');
-                    await apiCall('files', { method: 'POST', body: fileFormData });
-                }
+               // Upload new files (using new direct method)
+if (window.currentEditStagedFiles.length > 0) {
+    console.log("Starting edit file uploads...");
+    for (const file of window.currentEditStagedFiles) {
+        try {
+            await uploadFileDirectly(file, proposalId, 'project');
+            console.log(`✅ Uploaded: ${file.name}`);
+        } catch (uploadError) {
+            console.error(`❌ Failed to upload ${file.name}:`, uploadError);
+            alert(`Failed to upload ${file.name}: ${uploadError.message}`);
+        }
+    }
+}
 
                 // Save new links
                 const newLinks = [];
