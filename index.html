@@ -492,87 +492,63 @@ body.modal-open {
     50% { transform: scale(1.1); }
 }
 
+
 /* ============================== */
-/* FIXED NOTIFICATION STYLES */
-/* ============================== */
-/* ============================== */
-/* FIXED NOTIFICATION PANEL */
+/* 🔔 FINAL FIXED NOTIFICATION CSS */
 /* ============================== */
 .notification-panel {
     position: fixed;
-    top: 85px;               /* Just below the header */
-    right: 30px;             /* Anchored to the right */
-    width: 400px;            /* Fixed, professional width */
-    max-height: 80vh;        /* Prevents it from being too tall */
+    top: 70px;
+    right: 20px;
+    width: 380px;
+    max-height: 80vh; /* Limits height to 80% of screen */
     background: white;
-    border-radius: 16px;     /* Nice rounded corners */
-    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.3); /* Deep shadow for "floating" effect */
-    z-index: 1100;           /* Above standard content, below modals */
-    display: none;           /* Hidden by default */
-    flex-direction: column;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.4);
+    z-index: 1100;
+    display: none; /* Hidden by default */
+    flex-direction: column; /* CRITICAL for scrolling */
     border: 1px solid #e5e7eb;
-    overflow: hidden;
+    overflow: hidden; /* Hides overflow of the panel itself */
     animation: slideInPanel 0.3s ease forwards;
 }
 
-/* Smooth slide-in animation */
-@keyframes slideInPanel {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 .notification-panel.active {
-    display: flex;
+    display: flex !important; /* Forces flex mode when active */
 }
 
-/* Responsive fix for phones only */
-@media (max-width: 480px) {
-    .notification-panel {
-        width: auto;
-        right: 10px;
-        left: 10px;
-        top: 70px;
-    }
+.notification-header {
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-bottom: 1px solid #dee2e6;
+    flex-shrink: 0; /* Prevents header from shrinking when list is long */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.notification-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--text-dark);
 }
 
 .notification-list {
-    overflow-y: auto; /* Enables vertical scrolling */
-    flex: 1;          /* Takes up remaining space in panel */
-    min-height: 0;    /* Crucial for nested flex scrolling */
-    
-    /* Firefox Scrollbar */
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 #f1f5f9;
-}
-
-/* Chrome/Edge/Safari Custom Scrollbar */
-.notification-list::-webkit-scrollbar {
-    width: 8px;
-}
-
-.notification-list::-webkit-scrollbar-track {
-    background: #f8fafc;
-    border-radius: 0 0 16px 0;
-}
-
-.notification-list::-webkit-scrollbar-thumb {
-    background-color: #cbd5e1;
-    border-radius: 4px;
-    border: 2px solid #f8fafc;
-}
-
-.notification-list::-webkit-scrollbar-thumb:hover {
-    background-color: #94a3b8;
+    flex: 1; /* Takes up all remaining space */
+    overflow-y: auto; /* Enables scrolling ONLY on this element */
+    min-height: 0; /* Crucial fix for flex scrolling bugs */
+    padding: 0;
 }
 
 .notification-item {
     padding: 1rem 1.25rem;
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid #f1f3f5;
     cursor: pointer;
-    transition: background 0.2s ease;
     display: flex;
     gap: 1rem;
-    align-items: flex-start;
+    transition: all 0.2s ease;
+    background: white;
+    text-align: left;
 }
 
 .notification-item:hover {
@@ -580,8 +556,20 @@ body.modal-open {
 }
 
 .notification-item.unread {
-    background: #eff6ff; /* Light blue for unread */
+    background: #eff6ff;
     border-left: 4px solid var(--primary-blue);
+}
+
+/* Custom scrollbar for a pro look */
+.notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+.notification-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+.notification-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
 }
 
 .notification-icon {
