@@ -4123,21 +4123,32 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             // --- MODIFIED: Build project table only if not showing variations ---
             if (currentProjectFilter !== 'pendingVariations') {
                 const projectsHtml = filteredProjects.map(p => {
-                    const allocationStatus = p.designLeadAssigned ? 
-                        '<span class="proposal-status status-allocated">Allocated</span>' : 
-                        (p.status === 'won' ? '<span class="proposal-status status-needs-allocation">To Be Allocated</span>' : 
-                        '<span class="proposal-status status-pending">-</span>');
-                    
-                    let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
-                    
-                    if (currentUserRole === 'coo' && p.status === 'won' && !p.designLeadAssigned && p.pricing?.projectNumber) {
-                        actionButtons = `
-                            <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-primary btn-sm">🎯 Allocate</button>
-                            ${actionButtons}
-                        `;
-                    }
-                    
-                    return `
+    // 1. Define clear allocation status indicators
+    const allocationStatus = p.designLeadAssigned ? 
+        '<span class="proposal-status status-approved">✅ Allocated</span>' : 
+        (p.status === 'won' ? '<span class="proposal-status status-warning">⏳ To Be Allocated</span>' : 
+        '<span class="proposal-status status-pending">-</span>');
+    
+    // 2. Default action button
+    let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
+    
+    // 3. Check if user is management (COO or Director)
+    const isManagement = ['coo', 'director'].includes(currentUserRole);
+
+    // 4. Add "Allocate" button ONLY if it's won, has a project number, AND is NOT yet allocated
+    if (isManagement && p.status === 'won' && !p.designLeadAssigned && p.pricing?.projectNumber) {
+        actionButtons = `
+            <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-success btn-sm">🎯 Allocate</button>
+            ${actionButtons}
+        `;
+    } 
+    // Optional: If already allocated, you might want a button to view the allocated project directly
+    else if (p.designLeadAssigned && p.projectId && isManagement) {
+         // Optional: Uncomment if you want a direct link to the running project view
+         // actionButtons = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">📂 View Project</button> ` + actionButtons;
+    }
+    
+    return `
                         <tr>
                             <td><strong>${p.projectName}</strong></td>
                             <td>${p.clientCompany}</td>
