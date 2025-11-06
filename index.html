@@ -974,11 +974,31 @@ body.modal-open {
     z-index: 9999;
     backdrop-filter: blur(4px);
     overflow-y: auto;
-    padding: 0;
-    
-    /* KEY FIX: Flexbox centering */
+    padding: 2rem 0;
+    /* CRITICAL CHANGES: */
     align-items: center;
     justify-content: center;
+}
+
+.modal.show {
+    display: flex !important; /* Changed from display: block */
+}
+
+.modal-content {
+    background: white;
+    margin: auto; /* Added auto margin */
+    padding: 0;
+    border-radius: 20px;
+    max-width: 900px;
+    width: 90%;
+    max-height: 85vh;
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    animation: modalSlideIn 0.3s ease;
+    position: relative;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-self: center; /* Added for centering */
 }
 
 .modal.show {
