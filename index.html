@@ -1327,6 +1327,107 @@ body.modal-open {
     font-weight: 700;
     color: var(--text-dark);
 }
+        /* ============================== */
+/* PROJECTS SUMMARY & FILTERS */
+/* ============================== */
+.projects-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.summary-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 16px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border);
+    text-align: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--card-shadow-hover);
+}
+
+.summary-card h4 {
+    color: var(--text-light);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.5rem;
+}
+
+.summary-card .number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    line-height: 1.2;
+}
+
+/* Specific colors for summary cards */
+.summary-card.won { border-top: 4px solid var(--success); }
+.summary-card.won .number { color: var(--success); }
+
+.summary-card.loss { border-top: 4px solid var(--danger); }
+.summary-card.loss .number { color: var(--danger); }
+
+.summary-card.pending { border-top: 4px solid var(--warning); }
+.summary-card.pending .number { color: var(--warning); }
+
+.summary-card.allocated { border-top: 4px solid var(--primary-blue); }
+.summary-card.allocated .number { color: var(--primary-blue); }
+
+/* Filter Tabs Styling */
+.project-filter-tabs {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem; /* Space for scrollbar if needed */
+}
+
+.filter-tab {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 50px; /* Pill shape */
+    font-weight: 600;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.filter-tab:hover {
+    border-color: var(--primary-blue);
+    color: var(--primary-blue);
+    background: var(--light-blue);
+}
+
+.filter-tab.active {
+    background: var(--primary-blue);
+    color: white;
+    border-color: var(--primary-blue);
+    box-shadow: 0 4px 6px rgba(30, 64, 175, 0.25);
+}
+
+.filter-tab .count {
+    background: rgba(0, 0, 0, 0.1);
+    padding: 0.15rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+.filter-tab.active .count {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+}
 
 /* ============================== */
 /* RESPONSIVE DESIGN */
