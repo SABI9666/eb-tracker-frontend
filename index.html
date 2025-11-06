@@ -494,34 +494,35 @@ body.modal-open {
 
 
 /* ============================== */
-/* 🔔 FINAL FIXED NOTIFICATION CSS */
+/* 🔔 FINAL FIXED NOTIFICATION CSS (ROBUST SCROLL) */
 /* ============================== */
 .notification-panel {
     position: fixed;
     top: 70px;
     right: 20px;
     width: 380px;
-    max-height: 80vh; /* Limits height to 80% of screen */
+    max-height: 80vh !important; /* Force max height so it can overflow */
     background: white;
     border-radius: 16px;
     box-shadow: 0 10px 40px -10px rgba(0,0,0,0.4);
     z-index: 1100;
-    display: none; /* Hidden by default */
-    flex-direction: column; /* CRITICAL for scrolling */
+    display: none; 
+    flex-direction: column !important; /* CRITICAL for scrolling to work */
     border: 1px solid #e5e7eb;
-    overflow: hidden; /* Hides overflow of the panel itself */
+    overflow: hidden; 
     animation: slideInPanel 0.3s ease forwards;
 }
 
+/* MUST use flex to enable the inner scrolling area */
 .notification-panel.active {
-    display: flex !important; /* Forces flex mode when active */
+    display: flex !important; 
 }
 
 .notification-header {
     padding: 1rem 1.25rem;
     background: linear-gradient(135deg, #f8f9fa, #e9ecef);
     border-bottom: 1px solid #dee2e6;
-    flex-shrink: 0; /* Prevents header from shrinking when list is long */
+    flex-shrink: 0; /* Never let the header shrink */
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -534,10 +535,12 @@ body.modal-open {
 }
 
 .notification-list {
-    flex: 1; /* Takes up all remaining space */
-    overflow-y: auto; /* Enables scrolling ONLY on this element */
-    min-height: 0; /* Crucial fix for flex scrolling bugs */
+    flex: 1 1 auto;              /* Grow and shrink as needed */
+    overflow-y: auto !important; /* FORCE vertical scrolling */
+    overflow-x: hidden;          /* Prevent horizontal scrollbars */
+    min-height: 0;               /* Crucial fix for flex scrolling */
     padding: 0;
+    overscroll-behavior: contain; /* Prevents scrolling the page behind it */
 }
 
 .notification-item {
@@ -549,6 +552,7 @@ body.modal-open {
     transition: all 0.2s ease;
     background: white;
     text-align: left;
+    align-items: flex-start; /* Ensures icon stays at top if message is long */
 }
 
 .notification-item:hover {
@@ -558,6 +562,31 @@ body.modal-open {
 .notification-item.unread {
     background: #eff6ff;
     border-left: 4px solid var(--primary-blue);
+}
+
+.notification-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    padding-top: 0.2rem;
+}
+
+.notification-content {
+    flex: 1; /* Ensures text takes up remaining width */
+    min-width: 0; /* fix for text truncation in flex items */
+}
+
+.notification-message {
+    font-size: 0.95rem;
+    color: var(--text-dark);
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
+    word-wrap: break-word; /* Prevents long text from breaking layout */
+}
+
+.notification-meta {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    display: block;
 }
 
 /* Custom scrollbar for a pro look */
@@ -570,29 +599,6 @@ body.modal-open {
 .notification-list::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 10px;
-}
-
-.notification-icon {
-    font-size: 1.4rem;
-    flex-shrink: 0;
-    padding-top: 0.2rem;
-}
-
-.notification-content {
-    flex: 1;
-}
-
-.notification-message {
-    font-size: 0.95rem;
-    color: var(--text-dark);
-    line-height: 1.4;
-    margin-bottom: 0.25rem;
-}
-
-.notification-meta {
-    font-size: 0.75rem;
-    color: var(--text-light);
-    display: block;
 }
 
 /* ============================== */
