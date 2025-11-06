@@ -4123,32 +4123,35 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
             // --- MODIFIED: Build project table only if not showing variations ---
             if (currentProjectFilter !== 'pendingVariations') {
                 const projectsHtml = filteredProjects.map(p => {
-    // 1. Define clear allocation status indicators
-    const allocationStatus = p.designLeadAssigned ? 
-        '<span class="proposal-status status-approved">✅ Allocated</span>' : 
-        (p.status === 'won' ? '<span class="proposal-status status-warning">⏳ To Be Allocated</span>' : 
-        '<span class="proposal-status status-pending">-</span>');
-    
-    // 2. Default action button
-    let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
-    
-    // 3. Check if user is management (COO or Director)
-    const isManagement = ['coo', 'director'].includes(currentUserRole);
+                    // 1. Robust Allocation Check: Check multiple flags to ensure accuracy
+                    const isAllocated = p.allocationStatus === 'allocated' || p.projectCreated || p.designLeadAssigned;
+                    const isManagement = ['coo', 'director'].includes(currentUserRole);
 
-    // 4. Add "Allocate" button ONLY if it's won, has a project number, AND is NOT yet allocated
-    if (isManagement && p.status === 'won' && !p.designLeadAssigned && p.pricing?.projectNumber) {
-        actionButtons = `
-            <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-success btn-sm">🎯 Allocate</button>
-            ${actionButtons}
-        `;
-    } 
-    // Optional: If already allocated, you might want a button to view the allocated project directly
-    else if (p.designLeadAssigned && p.projectId && isManagement) {
-         // Optional: Uncomment if you want a direct link to the running project view
-         // actionButtons = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">📂 View Project</button> ` + actionButtons;
-    }
-    
-    return `
+                    // 2. Define clear allocation status indicators based on the robust check
+                    const allocationStatusDisplay = isAllocated ? 
+                        '<span class="proposal-status status-approved">✅ Allocated</span>' : 
+                        (p.status === 'won' ? '<span class="proposal-status status-warning">⏳ To Be Allocated</span>' : 
+                        '<span class="proposal-status status-pending">-</span>');
+                    
+                    // 3. Default action button
+                    let actionButtons = `<button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>`;
+                    
+                    // 4. Management Actions
+                    if (isManagement) {
+                        // ONLY show "Allocate" if it's WON, needs a number, and is NOT yet allocated
+                        if (p.status === 'won' && !isAllocated && p.pricing?.projectNumber) {
+                            actionButtons = `
+                                <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-success btn-sm">🎯 Allocate</button>
+                                ${actionButtons}
+                            `;
+                        } 
+                        // Optional: If it IS allocated and has a project ID, show a button to jump to the project view
+                        else if (isAllocated && p.projectId) {
+                             // actionButtons = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">📂 Open Project</button> ` + actionButtons;
+                        }
+                    }
+                    
+                    return `
                         <tr>
                             <td><strong>${p.projectName}</strong></td>
                             <td>${p.clientCompany}</td>
@@ -4158,7 +4161,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                                 `<span class="project-number-badge" style="font-size: 0.9rem;">${p.pricing.projectNumber}</span>` : 
                                 '<span class="proposal-status status-pending">Not Assigned</span>'}</td>
                             <td><span class="proposal-status status-${p.status}">${p.status.toUpperCase()}</span></td>
-                            <td>${allocationStatus}</td>
+                            <td>${allocationStatusDisplay}</td>
                             <td><div class="action-buttons">${actionButtons}</div></td>
                         </tr>
                     `;
