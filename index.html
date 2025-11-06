@@ -536,8 +536,33 @@ body.modal-open {
 }
 
 .notification-list {
-    overflow-y: auto;
-    flex: 1; /* Takes remaining height */
+    overflow-y: auto; /* Enables vertical scrolling */
+    flex: 1;          /* Takes up remaining space in panel */
+    min-height: 0;    /* Crucial for nested flex scrolling */
+    
+    /* Firefox Scrollbar */
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Chrome/Edge/Safari Custom Scrollbar */
+.notification-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.notification-list::-webkit-scrollbar-track {
+    background: #f8fafc;
+    border-radius: 0 0 16px 0;
+}
+
+.notification-list::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 4px;
+    border: 2px solid #f8fafc;
+}
+
+.notification-list::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
 }
 
 .notification-item {
