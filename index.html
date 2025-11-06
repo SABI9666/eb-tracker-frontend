@@ -1019,6 +1019,27 @@ body.modal-open {
 .data-table tbody tr:last-child td {
     border-bottom: none;
 }
+ /* ADD THIS NEW CSS CLASS */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.65);
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}       
 
 /* ============================== */
 /* PROFESSIONAL MODALS - PROPERLY CENTERED */
