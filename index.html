@@ -2121,6 +2121,22 @@ showApp.retried = false;
             const c = document.getElementById('authMessages');
             if(c) c.innerHTML = '';
         }
+        function openModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (!modal) {
+        console.error('Modal not found:', modalId);
+        return;
+    }
+    
+    modal.classList.add('show');
+    document.body.classList.add('modal-open');
+    modal.style.display = 'flex'; // Changed from 'block'
+    
+    setTimeout(() => {
+        const firstInput = modal.querySelector('input, textarea, select');
+        if (firstInput) firstInput.focus();
+    }, 100);
+}
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
