@@ -495,14 +495,44 @@ body.modal-open {
 /* ============================== */
 /* FIXED NOTIFICATION STYLES */
 /* ============================== */
+/* ============================== */
+/* FIXED NOTIFICATION PANEL */
+/* ============================== */
 .notification-panel {
-    /* ... keep your existing properties if you want, but ensure these are present: */
-    color: var(--text-dark) !important; /* CRITICAL: Overrides header's white text */
-    text-align: left;
-    /* Ensure it has a fixed height and scrolls if too long */
-    display: flex;
+    position: fixed;
+    top: 85px;               /* Just below the header */
+    right: 30px;             /* Anchored to the right */
+    width: 400px;            /* Fixed, professional width */
+    max-height: 80vh;        /* Prevents it from being too tall */
+    background: white;
+    border-radius: 16px;     /* Nice rounded corners */
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.3); /* Deep shadow for "floating" effect */
+    z-index: 1100;           /* Above standard content, below modals */
+    display: none;           /* Hidden by default */
     flex-direction: column;
-    max-height: 80vh; /* Prevent it from going off-screen */
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    animation: slideInPanel 0.3s ease forwards;
+}
+
+/* Smooth slide-in animation */
+@keyframes slideInPanel {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.notification-panel.active {
+    display: flex;
+}
+
+/* Responsive fix for phones only */
+@media (max-width: 480px) {
+    .notification-panel {
+        width: auto;
+        right: 10px;
+        left: 10px;
+        top: 70px;
+    }
 }
 
 .notification-list {
