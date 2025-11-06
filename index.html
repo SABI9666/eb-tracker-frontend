@@ -4756,76 +4756,90 @@ function showCreateProposalModal() {
                 }
             }
 
-            const modalHtml = `
-<div class="modal-overlay" onclick="if(event.target === this) closeModal()">
-                    <div class="modal-content" style="max-width: 1000px;">
-                        <div class="modal-header" style="text-align: left;"> <div> <h2 style="color: var(--text-dark); margin-bottom: 0;">${p.projectName}</h2> <div class="subtitle" style="text-align: left;">${p.clientCompany}</div> </div>
-                             <span class="close-modal" onclick="closeModal()">&times;</span> </div>
-                        <div style="margin-bottom: 2rem; padding: 0 3rem;"> <strong>Status:</strong>
-                            <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">
-                                ${p.status.replace(/_/g, ' ').toUpperCase()}
-                            </span>
+           const modalHtml = `
+                <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
+                    <div class="modal-content" style="max-width: 1000px; max-height: 90vh; display: flex; flex-direction: column;">
+                        
+                        <div class="modal-header" style="text-align: left; flex-shrink: 0;"> 
+                            <div> 
+                                <h2 style="color: white; margin-bottom: 0;">${p.projectName}</h2> 
+                                <div class="subtitle" style="color: rgba(255,255,255,0.9); text-align: left;">${p.clientCompany}</div> 
+                            </div>
+                            <span class="close-modal" onclick="closeModal()">&times;</span> 
                         </div>
-                        <div style="display: grid; gap: 2rem; padding: 0 3rem;"> <div class="form-section">
-                                <h4>Project Details</h4>
-                                <p><strong>Scope:</strong> ${p.scopeOfWork || 'N/A'}</p>
-                                <p><strong>Timeline:</strong> ${p.timeline || 'N/A'}</p>
-                                <p><strong>Country:</strong> ${p.country || 'N/A'}</p>
-                                <p><strong>Created by:</strong> ${p.createdByName || 'N/A'} on ${formatDate(p.createdAt)}</p>
+
+                        <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 2rem 3rem;">
+                            <div style="margin-bottom: 2rem;"> 
+                                <strong>Status:</strong>
+                                <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">
+                                    ${p.status.replace(/_/g, ' ').toUpperCase()}
+                                </span>
                             </div>
 
-                            ${linksHtml}
+                            <div style="display: grid; gap: 2rem;"> 
+                                <div class="form-section">
+                                    <h4>Project Details</h4>
+                                    <p><strong>Scope:</strong> ${p.scopeOfWork || 'N/A'}</p>
+                                    <p><strong>Timeline:</strong> ${p.timeline || 'N/A'}</p>
+                                    <p><strong>Country:</strong> ${p.country || 'N/A'}</p>
+                                    <p><strong>Created by:</strong> ${p.createdByName || 'N/A'} on ${formatDate(p.createdAt)}</p>
+                                </div>
 
-                            <div class="form-section">
-                                <h4>Project Files ${getFileAccessIndicator({ fileType: 'project' }, p.status)}</h4>
-                                ${projectFiles.length ? projectFiles.map(file => `
-                                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #fff; border-radius: 5px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
-                                        <span>📄 ${file.originalName}</span>
-                                        <div>
-                                            <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
-                                            <button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">Download</button>
-                                            ${file.canDelete ? `
-                                                <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>
-                                            ` : ''}
+                                ${linksHtml}
+
+                                <div class="form-section">
+                                    <h4>Project Files ${getFileAccessIndicator({ fileType: 'project' }, p.status)}</h4>
+                                    ${projectFiles.length ? projectFiles.map(file => `
+                                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #fff; border-radius: 5px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
+                                            <span>📄 ${file.originalName}</span>
+                                            <div>
+                                                <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
+                                                <button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">Download</button>
+                                                ${file.canDelete ? `
+                                                    <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `).join('') : '<p>No project files uploaded.</p>'}
+                                </div>
+
+                                ${p.estimation ? `
+                                    <div class="form-section">
+                                        <h4>Estimation Details</h4>
+                                        <p><strong>Total Hours:</strong> ${p.estimation.totalHours || 'N/A'}</p>
+                                        <p><strong>Services:</strong> ${p.estimation.services?.join(', ') || 'N/A'}</p>
+                                        <p><strong>Estimated By:</strong> ${p.estimation.estimatedBy || 'N/A'}</p>
+                                        ${p.estimation.notes ? `<p><strong>Notes:</strong> ${p.estimation.notes}</p>` : ''}
                                     </div>
-                                `).join('') : '<p>No project files uploaded.</p>'}
+                                ` : ''}
+
+                                ${estimationFilesHtml}
+
+                                ${p.pricing ? `
+                                    <div class="form-section">
+                                        <h4>Pricing Information</h4>
+                                        <p><strong>Project Number:</strong> ${p.pricing.projectNumber || 'N/A'}</p>
+                                        <p><strong>Quote Value:</strong> ${p.pricing.quoteValue || 'N/A'} ${p.pricing.currency || ''}</p>
+                                        <p><strong>Profit Margin:</strong> ${p.pricing.profitMargin || 'N/A'}%</p>
+                                        <p><strong>Hourly Rate:</strong> ${p.pricing.hourlyRate || 'N/A'}</p>
+                                        <p><strong>Priced By:</strong> ${p.pricing.pricedBy || 'N/A'}</p>
+                                    </div>
+                                ` : ''}
+
+                                ${p.directorApproval ? `
+                                    <div class="form-section">
+                                        <h4>Director Approval</h4>
+                                        <p><strong>Status:</strong> ${p.directorApproval.approved ? 'Approved' : 'Rejected'}</p>
+                                        ${p.directorApproval.comments ? `<p><strong>Comments:</strong> ${p.directorApproval.comments}</p>` : ''}
+                                        <p><strong>By:</strong> ${p.directorApproval.approvedBy || p.directorApproval.rejectedBy || 'N/A'}</p>
+                                        <p><strong>Date:</strong> ${formatDate(p.directorApproval.approvedAt || p.directorApproval.rejectedAt)}</p>
+                                    </div>
+                                ` : ''}
                             </div>
-
-                            ${p.estimation ? `
-                                <div class="form-section">
-                                    <h4>Estimation Details</h4>
-                                    <p><strong>Total Hours:</strong> ${p.estimation.totalHours || 'N/A'}</p>
-                                    <p><strong>Services:</strong> ${p.estimation.services?.join(', ') || 'N/A'}</p>
-                                    <p><strong>Estimated By:</strong> ${p.estimation.estimatedBy || 'N/A'}</p>
-                                    ${p.estimation.notes ? `<p><strong>Notes:</strong> ${p.estimation.notes}</p>` : ''}
-                                </div>
-                            ` : ''}
-
-                            ${estimationFilesHtml}
-
-                            ${p.pricing ? `
-                                <div class="form-section">
-                                    <h4>Pricing Information</h4>
-                                    <p><strong>Project Number:</strong> ${p.pricing.projectNumber || 'N/A'}</p>
-                                    <p><strong>Quote Value:</strong> ${p.pricing.quoteValue || 'N/A'} ${p.pricing.currency || ''}</p>
-                                    <p><strong>Profit Margin:</strong> ${p.pricing.profitMargin || 'N/A'}%</p>
-                                    <p><strong>Hourly Rate:</strong> ${p.pricing.hourlyRate || 'N/A'}</p>
-                                    <p><strong>Priced By:</strong> ${p.pricing.pricedBy || 'N/A'}</p>
-                                </div>
-                            ` : ''}
-
-                            ${p.directorApproval ? `
-                                <div class="form-section">
-                                    <h4>Director Approval</h4>
-                                    <p><strong>Status:</strong> ${p.directorApproval.approved ? 'Approved' : 'Rejected'}</p>
-                                    ${p.directorApproval.comments ? `<p><strong>Comments:</strong> ${p.directorApproval.comments}</p>` : ''}
-                                    <p><strong>By:</strong> ${p.directorApproval.approvedBy || p.directorApproval.rejectedBy || 'N/A'}</p>
-                                    <p><strong>Date:</strong> ${formatDate(p.directorApproval.approvedAt || p.directorApproval.rejectedAt)}</p>
-                                </div>
-                            ` : ''}
                         </div>
 
-                        <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center; margin-top: 2rem; padding: 2rem 3rem 0; border-top: 1px solid var(--border);"> <button onclick="closeModal()" class="btn btn-outline">Close</button>
+                        <div class="modal-footer" style="flex-shrink: 0; padding: 1.5rem 3rem; background: #f9fafb; border-top: 1px solid var(--border);"> 
+                            <button onclick="closeModal()" class="btn btn-outline">Close</button>
                             ${actionsHtml}
                         </div>
                     </div>
