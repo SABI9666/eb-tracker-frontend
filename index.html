@@ -10722,6 +10722,13 @@ async function approveTimeRequest(requestId, hours) {
         
         if (response.success) {
             alert(`✅ Approved ${hours}h additional time!`);
+            // --- ADD THIS LINE ---
+           // You might need to pass designerEmail to this function or let backend fetch it
+           triggerEmailNotification('time_request.approved', { 
+           requestId: requestId,
+           hours: hours 
+    });
+    // --------------------
             showCOOTimeRequests(); // Refresh list
         } else {
             throw new Error(response.error || 'Failed to approve');
