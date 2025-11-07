@@ -7335,19 +7335,18 @@ async function createInvoiceAction(event) {
         
         // ***FIX***: The notification logic is now INSIDE the async function
         
-        // 2. Trigger Email Notifications (using existing function)
-        try {
-            await triggerEmailNotification('invoice.created', {
-                invoiceNumber: invoiceData.invoiceNo,
-                projectName: invoiceData.projectName,
-                // ***FIX***: Corrected variable names
-                amount: `${invoiceData.currency} ${invoiceData.amount}`,
-                dueDate: formatDate(invoiceData.paymentDueDate) 
-            });
-            console.log('Email notification queued for invoice.created');
-        } catch (emailError) {
-            console.warn('Failed to send email notification:', emailError.message);
-        }
+        // ============================================================
+        // 🟢 PASTE YOUR NEW CODE HERE
+        // ============================================================
+        await triggerEmailNotification('invoice.saved', {
+            projectId: invoiceData.projectId,
+            invoiceNumber: invoiceData.invoiceNo,
+            amount: invoiceData.currency + ' ' + invoiceData.amount,
+            // Add these two lines so the email template has the data it needs:
+            projectName: invoiceData.projectName,
+            clientName: invoiceData.clientCompany 
+        });
+        // ============================================================
 
         // 3. Trigger Internal Notifications (Bell Icon)
         // We need to find the BDM's UID from the proposal.
