@@ -12257,62 +12257,7 @@ function handleTonnageInput() {
         calculateTotalHours();
     }
 }  
-   // ============================================
-// FRONTEND CODE - Replace uploadFileDirectly function
-// This handles:
-// - PDFs/Files → Upload through backend (no CORS issues)
-// - URLs → Keep working the same way as now
-// ============================================
-// Find this function in your index.html (around line 12204)
-// and REPLACE it with this version
-// ============================================
-
-async function uploadFileDirectly(file, proposalId, fileType) {
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log(`🚀 Uploading: ${file.name}`);
-    console.log(`📊 File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
-    console.log(`📦 File type: ${file.type || 'unknown'}`);
-    console.log(`🎯 Proposal ID: ${proposalId || 'none'}`);
-    console.log(`🏷️  Upload type: ${fileType || 'project'}`);
-    
-    try {
-        // Create FormData with file and metadata
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('proposalId', proposalId || '');
-        formData.append('fileType', fileType || 'project');
-        
-        console.log('📤 Sending to backend (no CORS issues)...');
-        
-        // Upload through backend - NO CORS needed!
-        const response = await apiCall('files/upload-file', {
-            method: 'POST',
-            body: formData
-            // Important: Don't set Content-Type - browser sets it automatically
-        });
-        
-        console.log('📥 Backend response:', response);
-        
-        if (!response.success) {
-            console.error('❌ Upload failed:', response);
-            throw new Error(response.error || 'Upload failed');
-        }
-        
-        console.log('✅ Upload successful!');
-        console.log('📄 File ID:', response.data.id);
-        console.log('🔗 File URL:', response.data.url);
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        
-        return response.data;
-        
-    } catch (error) {
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.error('❌ UPLOAD FAILED:', file.name);
-        console.error('Error:', error.message);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        throw error;
-    }
-}
+  
 
 // ============================================
     // ✅ GLOBAL FILE UPLOAD FUNCTION (MUST BE HERE)
