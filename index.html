@@ -5428,6 +5428,10 @@ function showCreateProposalModal() {
                 });
                 if (response.success) {
                     alert('✅ Proposal marked as WON!\n\nCOO will be notified.');
+                    // --- ADD THIS LINE ---
+                    // Note: You might need to pass clientName/projectName to this function or fetch it
+                     triggerEmailNotification('project.won', { proposalId: proposalId }); 
+                     // --------------------
                     closeModal();
                     showProposals();
                 } else {
