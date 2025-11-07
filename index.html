@@ -12147,7 +12147,7 @@ async function submitDesignerUpload(event, projectId) {
             const variationId = document.getElementById('approvalVariationId').value;
             const parentProjectId = document.getElementById('approvalParentProjectId').value;
             const notes = document.getElementById('approvalNotes').value.trim();
-            const hours = parseFloat(document.getElementById('app-estimatedHours').textContent);
+            const hours = parseFloat(document.getElementById('app-estimatedHours').textContent) || 0;
 
             if (decision === 'rejected' && !notes) {
                 alert('A reason is required for rejection.');
@@ -12180,31 +12180,40 @@ async function submitDesignerUpload(event, projectId) {
                     })
                 });
 
-              if (response.success) {
-              closeModal();
-              showSuccessModal(...);
+                if (response.success) {
+                    closeModal();
+                    
+                    // 1. Show success message
+                    const actionText = decision === 'approved' ? 'Approved' : 'Rejected';
+                    showSuccessModal(
+                        `Variation ${actionText}`, 
+                        `The variation request has been successfully ${actionText.toLowerCase()}.`
+                    );
 
-             // --- ADD THESE LINES ---
-            if (decision === 'approved') {
-             triggerEmailNotification('variation.approved', { 
-             variationId: variationId,
-             projectId: parentProjectId, // Important: this helps find the BDM
-             hours: hours
-             // Add projectName if you have it available in scope
-         });
-    } else {
-         // Optional: Add rejection notification
-         triggerEmailNotification('variation.rejected', { variationId: variationId, projectId: parentProjectId });
-    }
-    // -----------------------
+                    // 2. Trigger email notifications
+                    if (decision === 'approved') {
+                        await triggerEmailNotification('variation.approved', { 
+                            variationId: variationId,
+                            projectId: parentProjectId,
+                            hours: hours
+                        });
+                    } else {
+                        await triggerEmailNotification('variation.rejected', { 
+                            variationId: variationId, 
+                            projectId: parentProjectId,
+                            reason: notes 
+                        });
+                    }
 
-    await showAllProjects();
-}
+                    // 3. Refresh view
+                    await showAllProjects();
+                    
                 } else {
                     throw new Error(response.error || 'Failed to process variation.');
                 }
 
             } catch (error) {
+                console.error('Variation approval error:', error);
                 alert(`Error: ${error.message}`);
             } finally {
                 hideLoading();
