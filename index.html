@@ -5458,6 +5458,9 @@ function showCreateProposalModal() {
                 });
                 if (response.success) {
                     alert('Proposal marked as LOST.');
+                    // --- ADD THIS LINE ---
+                    triggerEmailNotification('project.lost', { proposalId: proposalId, reason: reason });
+                    // --------------------
                     closeModal();
                     showProposals();
                 } else {
