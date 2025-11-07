@@ -6078,6 +6078,13 @@ if (window.currentEditStagedFiles.length > 0) {
                 if (response.success) {
                     closeModal();
                     showNotification('Pricing added successfully!', 'success');
+                    // --- ADD THIS LINE ---
+                    triggerEmailNotification('pricing.complete', { 
+                     proposalId: proposalId,
+                     // You might need to fetch these values from the DOM if not already available
+                     quoteValue: document.getElementById('currency').value + ' ' + document.getElementById('quoteValue').value,
+                    projectName: document.querySelector('.modal.show .subtitle')?.textContent || 'Project'
+                    });
                                 
                     // Refresh proposals list or show allocation option
                     showProposals();
