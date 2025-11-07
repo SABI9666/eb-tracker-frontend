@@ -10460,6 +10460,14 @@ async function submitAdditionalTimeRequest() {
         if (response.success) {
             closeRequestTimeModal();
             alert(`✅ Request submitted successfully!\n\nRequested: ${requestedHours}h\nCOO will review your request shortly.`);
+
+            // --- ADD THIS LINE ---
+          triggerEmailNotification('time_request.created', {
+          projectId: projectId,
+           hours: requestedHours,
+           reason: reason,
+           designerName: currentUser.displayName // Assuming currentUser is global
+    });
             
             // Show pending requests
             if (typeof showPendingTimeRequests === 'function') {
