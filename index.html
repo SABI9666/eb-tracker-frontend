@@ -12166,15 +12166,26 @@ async function submitDesignerUpload(event, projectId) {
                     })
                 });
 
-                if (response.success) {
-                    closeModal();
-                    showSuccessModal(
-                        `Variation ${decision.charAt(0).toUpperCase() + decision.slice(1)}!`,
-                        `The variation has been processed and the team will be notified.`
-                    );
-                    
-                    // Refresh the COO dashboard
-                    await showAllProjects();
+              if (response.success) {
+              closeModal();
+              showSuccessModal(...);
+
+             // --- ADD THESE LINES ---
+            if (decision === 'approved') {
+             triggerEmailNotification('variation.approved', { 
+             variationId: variationId,
+             projectId: parentProjectId, // Important: this helps find the BDM
+             hours: hours
+             // Add projectName if you have it available in scope
+         });
+    } else {
+         // Optional: Add rejection notification
+         triggerEmailNotification('variation.rejected', { variationId: variationId, projectId: parentProjectId });
+    }
+    // -----------------------
+
+    await showAllProjects();
+}
                 } else {
                     throw new Error(response.error || 'Failed to process variation.');
                 }
