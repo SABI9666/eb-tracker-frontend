@@ -12315,26 +12315,37 @@ async function uploadFileDirectly(file, proposalId, fileType) {
 }
 
 // ============================================
-// URL/LINK UPLOAD - KEEP YOUR EXISTING CODE
-// ============================================
-// Your existing code that uploads links already works fine!
-// It should look something like this in your proposal form:
-
-/*
-// Example of existing link upload code (keep this as-is):
-if (projectLinks.length > 0) {
-    await apiCall('files', {
-        method: 'POST',
-        body: JSON.stringify({ 
-            links: projectLinks, 
-            proposalId: proposalId, 
-            fileType: 'link' 
-        })
-    });
-}
-*/
-
-// That's it! No changes needed for link uploads.
+    // ✅ GLOBAL FILE UPLOAD FUNCTION (MUST BE HERE)
+    // ============================================
+    async function uploadFileDirectly(file, proposalId, fileType) {
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`🚀 Uploading: ${file.name}`);
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('proposalId', proposalId || '');
+            formData.append('fileType', fileType || 'project');
+            
+            // console.log('📤 Sending to backend...');
+            
+            const response = await apiCall('files/upload-file', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.success) {
+                throw new Error(response.error || 'Upload failed');
+            }
+            
+            console.log('✅ Upload successful!');
+            return response.data;
+            
+        } catch (error) {
+            console.error('❌ UPLOAD FAILED:', file.name, error.message);
+            throw error;
+        }
+    }
 
 </script>
 
