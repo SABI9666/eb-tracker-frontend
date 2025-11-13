@@ -5857,24 +5857,23 @@ if (window.currentEditStagedFiles.length > 0) {
                     hideLoading();
                     return;
                 }
-                
-                // ====================== MODIFICATION START ======================
-                // Logic to prepare display values
-                const estimation = proposal.estimation || {};
-                const totalHours = estimation.manhours || estimation.totalHours || 0;
-                const tonnage = estimation.tonnage || 0;
-                
-                // Prepare HTML for Hours
-                // If hours are 0 but tonnage exists, display N/A for hours
-                const displayHours = (totalHours == 0 && tonnage > 0) ? 'N/A' : totalHours;
-                const hoursHtml = `<div><strong>Total Hours:</strong> ${displayHours}</div>`;
+           // ====================== MODIFICATION START ======================
+          // Logic to prepare display values
+          const estimation = proposal.estimation || {};
+          const totalHours = estimation.manhours || estimation.totalHours || 0;
+          const tonnage = estimation.tonnage || 0;
 
-                // Prepare HTML for Tonnage
-                // Only show tonnage if it's greater than 0
-                const tonnageHtml = tonnage > 0 
-                    ? `<div><strong>Tonnage:</strong> ${tonnage}</div>` 
-                    : '';
-                // ======================= MODIFICATION END =======================
+         // Prepare HTML for Hours
+        // If hours are 0 but tonnage exists, display N/A for hours
+         const displayHours = (totalHours == 0 && tonnage > 0) ? 'N/A' : totalHours;
+        const hoursHtml = `<div><strong>Total Hours:</strong> ${displayHours}</div>`;
+
+         // Prepare HTML for Tonnage
+       // Only show tonnage if it's greater than 0
+       const tonnageHtml = tonnage > 0 
+    ? `<div><strong>Tonnage:</strong> ${tonnage}</div>` 
+    : '';
+// ======================= MODIFICATION END =======================
                         
                 const modalHtml = `
                     <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
