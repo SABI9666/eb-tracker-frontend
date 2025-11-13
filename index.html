@@ -5023,7 +5023,7 @@ function showCreateProposalModal() {
     });
 }
 
-       async function saveEstimation(proposalId) {
+      async function saveEstimation(proposalId) {
     const services = Array.from(document.querySelectorAll('input[name="services"]:checked')).map(cb => cb.value);
     
     // Get both values
@@ -5044,6 +5044,7 @@ function showCreateProposalModal() {
         revisionHours: document.getElementById('revisionHours').value || 0,
         pmHours: document.getElementById('pmHours').value || 0,
         totalHours: totalHours,
+        manhours: totalHours, // <-- ✅ THIS IS THE FIX
         services: services,
         notes: 'Estimation completed'
     };
