@@ -5890,12 +5890,12 @@ if (window.currentEditStagedFiles.length > 0) {
                                 <div class="form-section" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                                     <h4>Estimation Summary</h4>
                                     
-                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                                        ${hoursHtml}
-                                        ${tonnageHtml} 
-                                        <div><strong>Estimated By:</strong> ${estimation.estimatorName || estimation.estimatedBy || 'N/A'}</div>
-                                        <div><strong>Services:</strong> ${estimation.services?.join(', ') || 'N/A'}</div>
-                                    </div>
+                                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+                                  ${hoursHtml}
+                                  ${tonnageHtml}  // <-- THIS IS THE LINE THAT ADDS TONNAGE
+                                  <div><strong>Estimated By:</strong> ${estimation.estimatorName || estimation.estimatedBy || 'N/A'}</div>
+                                  <div><strong>Services:</strong> ${estimation.services?.join(', ') || 'N/A'}</div>
+                                 </div>
                                     
                                 </div>
                                                         
