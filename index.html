@@ -5862,6 +5862,21 @@ if (window.currentEditStagedFiles.length > 0) {
                     hideLoading();
                     return;
                 }
+                
+                // ====================== MODIFICATION START ======================
+                // Logic to prepare display values
+                const estimation = proposal.estimation || {};
+                const totalHours = estimation.manhours || estimation.totalHours || 0;
+                const tonnage = estimation.tonnage || 0;
+                
+                // If hours are 0 but tonnage exists, display N/A for hours to highlight tonnage
+                const displayHours = (totalHours == 0 && tonnage > 0) ? 'N/A' : totalHours;
+                
+                // Only show tonnage if it's greater than 0
+                const tonnageHtml = tonnage > 0 
+                    ? `<div><strong>Tonnage:</strong> ${tonnage}</div>` 
+                    : '';
+                // ======================= MODIFICATION END =======================
                         
                 const modalHtml = `
                     <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
@@ -5877,11 +5892,14 @@ if (window.currentEditStagedFiles.length > 0) {
                             <div class="modal-body">
                                 <div class="form-section" style="background: var(--light-blue); padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
                                     <h4>Estimation Summary</h4>
+                                    
                                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                                        <div><strong>Total Hours:</strong> ${proposal.estimation.manhours || proposal.estimation.totalHours || 0}</div>
-                                        <div><strong>Estimated By:</strong> ${proposal.estimation.estimatorName || 'N/A'}</div>
-                                        <div><strong>Services:</strong> ${proposal.estimation.services?.join(', ') || 'N/A'}</div>
+                                        <div><strong>Total Hours:</strong> ${displayHours}</div>
+                                        ${tonnageHtml} 
+                                        <div><strong>Estimated By:</strong> ${estimation.estimatorName || estimation.estimatedBy || 'N/A'}</div>
+                                        <div><strong>Services:</strong> ${estimation.services?.join(', ') || 'N/A'}</div>
                                     </div>
+                                    
                                 </div>
                                                         
                                 <form id="cooPricingForm">
