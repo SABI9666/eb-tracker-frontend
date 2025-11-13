@@ -4809,11 +4809,11 @@ function showCreateProposalModal() {
                                         
                                         <p><strong>Total Hours:</strong> ${p.estimation.manhours || p.estimation.totalHours || 'N/A'}</p>
                                         
-                                        ${(p.estimation.tonnage && p.estimation.tonnage > 0) ? `<p><strong>Tonnage:</strong> ${p.estimation.tonnage}</p>` : ''}
+                                        <p><strong>Tonnage:</strong> ${p.estimation.tonnage || 'N/A'}</p>
                                         
                                         <p><strong>Services:</strong> ${p.estimation.services?.join(', ') || 'N/A'}</p>
                                         
-                                        <p><strong>Estimated By:</strong> ${p.estimation.estimatedBy || p.estimation.estimatedByName || 'N/A'}</p>
+                                        <p><strong>Estimated By:</strong> ${p.estimation.estimatorName || p.estimation.estimatedByName || p.estimation.estimatedBy || 'N/A'}</p>
                                         
                                         ${p.estimation.notes ? `<p><strong>Notes:</strong> ${p.estimation.notes}</p>` : ''}
                                     </div>
