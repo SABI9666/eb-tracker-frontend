@@ -5837,12 +5837,7 @@ if (window.currentEditStagedFiles.length > 0) {
     }
 }
     
-
-        // ============================================
-        // NEW FUNCTIONS ADDED FROM PROMPT
-        // ============================================
-        
-        // ============================================
+// ============================================
         // COO PRICING FORM WITH PROJECT NUMBER CREATION
         // ============================================
         async function showCOOPricingForm(proposalId) {
@@ -5869,9 +5864,12 @@ if (window.currentEditStagedFiles.length > 0) {
                 const totalHours = estimation.manhours || estimation.totalHours || 0;
                 const tonnage = estimation.tonnage || 0;
                 
-                // If hours are 0 but tonnage exists, display N/A for hours to highlight tonnage
+                // Prepare HTML for Hours
+                // If hours are 0 but tonnage exists, display N/A for hours
                 const displayHours = (totalHours == 0 && tonnage > 0) ? 'N/A' : totalHours;
-                
+                const hoursHtml = `<div><strong>Total Hours:</strong> ${displayHours}</div>`;
+
+                // Prepare HTML for Tonnage
                 // Only show tonnage if it's greater than 0
                 const tonnageHtml = tonnage > 0 
                     ? `<div><strong>Tonnage:</strong> ${tonnage}</div>` 
@@ -5894,7 +5892,7 @@ if (window.currentEditStagedFiles.length > 0) {
                                     <h4>Estimation Summary</h4>
                                     
                                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
-                                        <div><strong>Total Hours:</strong> ${displayHours}</div>
+                                        ${hoursHtml}
                                         ${tonnageHtml} 
                                         <div><strong>Estimated By:</strong> ${estimation.estimatorName || estimation.estimatedBy || 'N/A'}</div>
                                         <div><strong>Services:</strong> ${estimation.services?.join(', ') || 'N/A'}</div>
@@ -5910,6 +5908,7 @@ if (window.currentEditStagedFiles.length > 0) {
                                             <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
                                                 <input type="text" id="projectNumber" class="form-control"
                                                        placeholder="Enter manually or click Generate" 
+                                                       value="${proposal.pricing?.projectNumber || ''}"
                                                        required>
                                                 <button type="button" onclick="generateProjectNumber('${proposal.clientCompany}')"
                                                         class="btn btn-outline" style="width: auto; white-space: nowrap;">
@@ -5927,16 +5926,17 @@ if (window.currentEditStagedFiles.length > 0) {
                                             <div class="form-group">
                                                 <label>Quote Value <span class="required">*</span></label>
                                                 <input type="number" id="quoteValue" class="form-control"
-                                                     placeholder="Enter quote value" step="0.01" required>
+                                                     placeholder="Enter quote value" step="0.01" 
+                                                     value="${proposal.pricing?.quoteValue || ''}" required>
                                             </div>
                                             <div class="form-group">
                                                 <label>Currency <span class="required">*</span></label>
                                                 <select id="currency" class="form-control" required>
-                                                    <option value="USD">USD ($)</option>
-                                                    <option value="AUD">AUD (A$)</option>
-                                                    <option value="CAD">CAD (C$)</option>
-                                                    <option value="GBP">GBP (£)</option>
-                                                    <option value="EUR">EUR (€)</option>
+                                                    <option value="USD" ${proposal.pricing?.currency === 'USD' ? 'selected' : ''}>USD ($)</option>
+                                                    <option value="AUD" ${proposal.pricing?.currency === 'AUD' ? 'selected' : ''}>AUD (A$)</option>
+                                                    <option value="CAD" ${proposal.pricing?.currency === 'CAD' ? 'selected' : ''}>CAD (C$)</option>
+                                                    <option value="GBP" ${proposal.pricing?.currency === 'GBP' ? 'selected' : ''}>GBP (£)</option>
+                                                    <option value="EUR" ${proposal.pricing?.currency === 'EUR' ? 'selected' : ''}>EUR (€)</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -5945,19 +5945,21 @@ if (window.currentEditStagedFiles.length > 0) {
                                             <div class="form-group">
                                                 <label>Hourly Rate</label>
                                                 <input type="number" id="hourlyRate" class="form-control"
-                                                     placeholder="Enter hourly rate" step="0.01">
+                                                     placeholder="Enter hourly rate" step="0.01"
+                                                     value="${proposal.pricing?.hourlyRate || ''}">
                                             </div>
                                             <div class="form-group">
                                                 <label>Profit Margin (%)</label>
                                                 <input type="number" id="profitMargin" class="form-control"
-                                                     placeholder="Enter profit margin" step="0.01" min="0" max="100">
+                                                     placeholder="Enter profit margin" step="0.01" min="0" max="100"
+                                                     value="${proposal.pricing?.profitMargin || ''}">
                                             </div>
                                         </div>
                                                                         
                                         <div class="form-group">
                                             <label>Pricing Notes</label>
                                             <textarea id="pricingNotes" class="form-control" rows="3"
-                                                 placeholder="Add any pricing notes or special conditions..."></textarea>
+                                                 placeholder="Add any pricing notes or special conditions...">${proposal.pricing?.notes || ''}</textarea>
                                         </div>
                                     </div>
                                                                 
@@ -5967,24 +5969,28 @@ if (window.currentEditStagedFiles.length > 0) {
                                             <div class="form-group">
                                                 <label>Material Costs</label>
                                                 <input type="number" id="materialCosts" class="form-control"
-                                                     placeholder="0.00" step="0.01">
+                                                     placeholder="0.00" step="0.01"
+                                                     value="${proposal.pricing?.costBreakdown?.material || ''}">
                                             </div>
                                             <div class="form-group">
                                                 <label>Labor Costs</label>
                                                 <input type="number" id="laborCosts" class="form-control"
-                                                     placeholder="0.00" step="0.01">
+                                                     placeholder="0.00" step="0.01"
+                                                     value="${proposal.pricing?.costBreakdown?.labor || ''}">
                                             </div>
                                         </div>
                                         <div class="form-row">
                                             <div class="form-group">
                                                 <label>Overhead Costs</label>
                                                 <input type="number" id="overheadCosts" class="form-control"
-                                                     placeholder="0.00" step="0.01">
+                                                     placeholder="0.00" step="0.01"
+                                                     value="${proposal.pricing?.costBreakdown?.overhead || ''}">
                                             </div>
                                             <div class="form-group">
                                                 <label>Other Costs</label>
                                                 <input type="number" id="otherCosts" class="form-control"
-                                                     placeholder="0.00" step="0.01">
+                                                     placeholder="0.00" step="0.01"
+                                                     value="${proposal.pricing?.costBreakdown?.other || ''}">
                                             </div>
                                         </div>
                                     </div>
