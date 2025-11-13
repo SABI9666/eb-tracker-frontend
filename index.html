@@ -12219,7 +12219,9 @@ async function submitDesignerUpload(event, projectId) {
                 hideLoading();
             }
         }
-    // ============================================
+ 
+
+// ============================================
 // GLOBAL HELPER FUNCTIONS FOR ESTIMATION MODAL
 // ============================================
 
@@ -12231,10 +12233,19 @@ function calculateTotalHours() {
     const detailing = parseFloat(document.getElementById('detailingHours').value) || 0;
     const checking = parseFloat(document.getElementById('checkingHours').value) || 0;
     const revision = parseFloat(document.getElementById('revisionHours').value) || 0;
-    const projectManagement = parseFloat(document.getElementById('projectManagement').value) || 0;
+    
+    // ====================== THIS IS THE FIXED LINE ======================
+    // The ID in the HTML is "pmHours", not "projectManagement"
+    const projectManagement = parseFloat(document.getElementById('pmHours').value) || 0;
+    // ====================================================================
 
     const total = design + detailing + checking + revision + projectManagement;
-    document.getElementById('totalHours').value = total.toFixed(2);
+    
+    // Ensure totalHours is written back to the correct input
+    const totalHoursInput = document.getElementById('totalHours');
+    if (totalHoursInput) {
+        totalHoursInput.value = total.toFixed(2);
+    }
 }
 
 function toggleDesignHours() {
@@ -12265,7 +12276,7 @@ function handleTonnageInput() {
         designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
         calculateTotalHours();
     }
-}  
+}
   
 
 // ============================================
