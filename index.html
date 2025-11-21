@@ -1909,13 +1909,13 @@ body.modal-open {
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
     <script>
-      const firebaseConfig = {
-            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
-            authDomain: "eb-tracker-42881.firebaseapp.com",
-            projectId: "eb-tracker-42881",
-            storageBucket: "eb-tracker-42881.firebasestorage.app",
-            messagingSenderId: "922340749018",
-            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+        const firebaseConfig = {
+            apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U", // Replace with your actual config
+            authDomain: "eb-tracker-ff945.firebaseapp.com",
+            projectId: "eb-tracker-ff945",
+            storageBucket: "eb-tracker-ff945.firebasestorage.app",
+            messagingSenderId: "854824137821",
+            appId: "1:854824137821:web:7a408282c2f7c1816c89b4"
         };
 
         firebase.initializeApp(firebaseConfig);
@@ -1927,8 +1927,7 @@ body.modal-open {
         // ============================================
 
         // FIXED: Direct backend URL configuration
-        const API_BASE = 'https://eb-tracker-backend.onrender.com';
-
+        const API_BASE = 'https://eb-backend-rxu6.onrender.com';
         console.log('🔧 Backend URL configured:', API_BASE);
 
         const authorizedUsers = {
@@ -2747,6 +2746,9 @@ function renderProposals(proposals) {
     // Filter proposals based on current filter
     let filteredProposals = proposals;
     if (currentUserRole === 'director' && currentProposalFilter !== 'all') {
+        console.log('🔍 Applying filter:', currentProposalFilter);
+        console.log('📊 Total proposals before filter:', proposals.length);
+        
         if (currentProposalFilter === 'pending_approval') {
             filteredProposals = proposals.filter(p => {
                 const statusLower = (p.status || '').toLowerCase().replace(/\s+/g, '_');
@@ -2769,6 +2771,8 @@ function renderProposals(proposals) {
                        statusLower !== 'lost';
             });
         }
+        
+        console.log('📊 Filtered proposals:', filteredProposals.length);
     }
 
     const approvedProposals = filteredProposals.filter(p => p.status === 'approved');
@@ -2937,11 +2941,12 @@ function renderProposals(proposals) {
 }
 
 // ============================================
-// NEW FUNCTION - Add this to your JavaScript
+// FILTER PROPOSALS FUNCTION
 // ============================================
 function filterProposals(filterType) {
+    console.log('🔍 Filtering proposals by:', filterType);
     currentProposalFilter = filterType;
-    loadProposals(); // This will re-render with the new filter
+    showProposals(); // This will re-render with the new filter
 }
          let currentProjectFilter = 'all';
         let allProjectsData = [];
