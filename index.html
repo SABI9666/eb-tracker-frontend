@@ -1945,9 +1945,9 @@ body.modal-open {
                     <a href="#" onclick="showAnalyticsDashboard()" id="nav-analytics">
                     <span class="nav-icon">📈</span>Analytics</a>
                 </li>
-                <li><a href="#" onclick="showProposals()" id="nav-proposals">
+                <li><a href="#" onclick="currentUserRole==='coo'?showAllProjects():showProposals()" id="nav-proposals">
                     <span class="nav-icon">📋</span>All Proposals</a></li>
-                <li id="allProjectsNavItem" style="display: none;">
+                <li id="allProjectsNavItem">
                     <a href="#" onclick="showAllProjects()" id="nav-all-projects">
                     <span class="nav-icon">📁</span>All Projects</a></li>
                 <li id="filesNavItem"><a href="#" onclick="showFileUpload()" id="nav-files">
