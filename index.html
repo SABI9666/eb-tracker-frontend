@@ -2338,10 +2338,7 @@ body.modal-open {
             setDisplay('executiveMonitoringNavItem', isManagement);
             setDisplay('timeRequestsNavItem', isManagement);
 
-            // Special case for Dashboard & Files (hidden for BDM/COO/Director in favor of their specific views)
-            const isManagement = ['bdm', 'coo', 'director'].includes(roleForCheck);
-            setDisplay('dashboardNavItem', !isManagement);
-            setDisplay('filesNavItem', !isManagement);
+            
 
             // 4. Update Badges (if applicable)
             if (['coo', 'director'].includes(roleForCheck)) {
