@@ -2804,6 +2804,14 @@ function renderProposals(proposals) {
     // Filter Buttons for Director AND COO
     let directorFilterButtons = '';
     if (currentUserRole === 'director' || currentUserRole === 'coo') {
+        // Calculate pending allocation count for COO
+        const pendingAllocationCount = proposals.filter(p => 
+            p.status === 'won' && 
+            p.pricing && 
+            p.pricing.projectNumber && 
+            !p.projectCreated
+        ).length;
+        
         directorFilterButtons = `
             <div class="filter-buttons-container">
                 <button class="filter-btn filter-btn-all ${currentProposalFilter === 'all' ? 'active' : ''}" 
@@ -2826,13 +2834,20 @@ function renderProposals(proposals) {
                     📊 Pending Estimation
                     <span class="filter-count">${pendingEstimationCount}</span>
                 </button>
+                ${currentUserRole === 'coo' ? `
+                <button class="filter-btn filter-btn-pending ${currentProposalFilter === 'pending_allocation' ? 'active' : ''}" 
+                        onclick="filterProposals('pending_allocation')">
+                    🎯 Pending Allocation
+                    <span class="filter-count">${pendingAllocationCount}</span>
+                </button>
+                ` : ''}
             </div>
         `;
     }
 
-    // Filter proposals based on current filter
+    // Filter proposals based on current filter (WORKS FOR BOTH DIRECTOR AND COO NOW)
     let filteredProposals = proposals;
-    if (currentUserRole === 'director' && currentProposalFilter !== 'all') {
+    if ((currentUserRole === 'director' || currentUserRole === 'coo') && currentProposalFilter !== 'all') {
         console.log('🔍 Applying filter:', currentProposalFilter);
         console.log('📊 Total proposals before filter:', proposals.length);
         
@@ -2857,6 +2872,14 @@ function renderProposals(proposals) {
                        statusLower !== 'won' && 
                        statusLower !== 'lost';
             });
+        } else if (currentProposalFilter === 'pending_allocation') {
+            // COO-specific filter for won proposals needing allocation
+            filteredProposals = proposals.filter(p => 
+                p.status === 'won' && 
+                p.pricing && 
+                p.pricing.projectNumber && 
+                !p.projectCreated
+            );
         }
         
         console.log('📊 Filtered proposals:', filteredProposals.length);
