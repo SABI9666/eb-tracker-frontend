@@ -7734,7 +7734,7 @@ const allocationData = {
                 hideLoading();
             }
         }
-        // ============================================
+       // ============================================
 // DESIGNER ALLOCATIONS VIEW (Fixed Filtering)
 // ============================================
 async function showDesignerAllocations() {
@@ -7746,24 +7746,26 @@ async function showDesignerAllocations() {
     try {
         // 1. Fetch projects
         const response = await apiCall('projects'); 
-        
+
         if (!response.success) {
             throw new Error('Failed to load projects');
         }
 
         const allProjects = response.data || [];
-        
+
         console.log("All Projects fetched:", allProjects.length);
         console.log("Current User ID:", currentUser.uid);
 
         // 2. Filter: Check BOTH 'assignedDesignerUids' (New) and 'assignedDesigners' (Legacy)
         const myProjects = allProjects.filter(p => {
+            // Note: If p.assignedDesigners contains the designer's NAME instead of UID, 
+            // you must adjust the `hasLegacy` check to compare names.
             const hasNew = p.assignedDesignerUids && Array.isArray(p.assignedDesignerUids) && p.assignedDesignerUids.includes(currentUser.uid);
             const hasLegacy = p.assignedDesigners && Array.isArray(p.assignedDesigners) && p.assignedDesigners.includes(currentUser.uid);
-            
+
             // Debug log to help identify why a project matches or fails
             // console.log(`Project ${p.projectCode}: New=${hasNew}, Legacy=${hasLegacy}`);
-            
+
             return hasNew || hasLegacy;
         });
 
@@ -7790,18 +7792,17 @@ async function showDesignerAllocations() {
             const maxHours = parseFloat(p.maxAllocatedHours) || 0;
             const addHours = parseFloat(p.additionalHours) || 0;
             const totalBudget = maxHours + addHours;
-            
-            // hoursLogged might be undefined on legacy projects
+
             const usedHours = parseFloat(p.hoursLogged) || 0;
             const remaining = totalBudget - usedHours;
-            
+
             // Calculate percentage for progress bar
             const percentUsed = totalBudget > 0 ? (usedHours / totalBudget) * 100 : 0;
-            
-            // Status Color
+
+            // Status Logic
             let statusColor = 'var(--success)'; // Green
             let statusText = 'On Track';
-            
+
             if (remaining < 0) {
                 statusColor = 'var(--danger)'; // Red
                 statusText = 'Over Budget';
@@ -7810,7 +7811,7 @@ async function showDesignerAllocations() {
                 statusText = 'Low Budget';
             }
 
-            // Date formatting helper
+            // Date formatting helper (assumes formatDate is available)
             const targetDate = p.targetCompletionDate ? formatDate(p.targetCompletionDate) : 'N/A';
 
             return `
@@ -7821,7 +7822,7 @@ async function showDesignerAllocations() {
                     </td>
                     <td>${p.clientCompany || 'N/A'}</td>
                     <td>${targetDate}</td>
-                    
+
                     <td style="text-align: center;">
                         <span style="font-weight: bold; font-size: 1.1em;">${totalBudget.toFixed(1)}h</span>
                         ${addHours > 0 ? `<br><small class="text-muted" style="font-size:0.8em;">(+${addHours}h added)</small>` : ''}
@@ -7836,8 +7837,12 @@ async function showDesignerAllocations() {
                         <span style="font-weight: bold; color: ${statusColor};">${remaining.toFixed(1)}h</span>
                         <br><small style="font-size: 0.75rem; color: ${statusColor}">${statusText}</small>
                     </td>
-                    
-                    <td>
+
+                    <td class="action-column"> 
+                        <button class="btn btn-secondary btn-sm" 
+                                onclick="showProjectFilesModal('${p.id}', '${p.projectName.replace(/'/g, "\\'")}')">
+                            📂 View Files
+                        </button>
                         <button class="btn btn-primary btn-sm" onclick="showTimesheetModal('${p.id}')">
                             ⏱️ Log Time
                         </button>
