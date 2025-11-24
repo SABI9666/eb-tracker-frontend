@@ -179,23 +179,28 @@ async function loadAnalyticsData(role) {
         monthlyRevenue[label] = 0;
     }
 
-    wonProposals.forEach(p => {
-        let date;
-        if (p.wonDate) {
-             date = new Date(p.wonDate.seconds ? p.wonDate.seconds * 1000 : p.wonDate);
-        } else if (p.updatedAt) {
-             date = new Date(p.updatedAt.seconds ? p.updatedAt.seconds * 1000 : p.updatedAt);
-        }
-
-        if (date) {
-            const year = date.getFullYear();
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const label = `${year}-${month}`;
-            if (monthlyRevenue.hasOwnProperty(label)) {
-                monthlyRevenue[label] += (p.pricing?.quoteValue || 0);
+   wonProposals.forEach(p => {
+            let date;
+            // Handle Firestore Timestamp or ISO string
+            if (p.wonDate) {
+                date = new Date(p.wonDate.seconds ? p.wonDate.seconds * 1000 : p.wonDate);
+            } else if (p.updatedAt) {
+                // Fallback to updatedAt if wonDate is missing
+                date = new Date(p.updatedAt.seconds ? p.updatedAt.seconds * 1000 : p.updatedAt);
             }
-        }
-    });
+
+            // FIX: Check if date is valid before calling getWeekStartDate
+            if (date && !isNaN(date.getTime())) { 
+                try {
+                    const weekStart = getWeekStartDate(date);
+                    if (weeklyRevenue.hasOwnProperty(weekStart)) {
+                        weeklyRevenue[weekStart] += (p.pricing?.quoteValue || 0);
+                    }
+                } catch (e) {
+                    console.warn("Skipping invalid date for proposal:", p.projectName);
+                }
+            }
+        });
 
     // --- Process Status Counts (Pie Chart) ---
     const statusCounts = {
