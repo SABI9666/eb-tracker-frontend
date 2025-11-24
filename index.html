@@ -3043,43 +3043,112 @@ function filterProposals(filterType) {
         let allProjectsData = [];
         let allVariationsData = []; // <-- NEW: Add this line
 
-        async function showAllProjects() {
-            setActiveNav('nav-all-projects');
-            const main = document.getElementById('mainContent');
-            showLoading();
-            main.innerHTML = '';
-            try {
-                console.log('🔄 Fetching all projects and variations...');
-                
-                // --- MODIFIED: Fetch projects AND variations ---
-                const [projectsResponse, variationsResponse] = await Promise.all([
-                    apiCall('proposals'), // This still fetches proposals, which you are treating as projects
-                    apiCall('variations?status=pending_coo_approval') // <-- NEW: Fetch pending variations
-                ]);
-                
-                if (projectsResponse.success && projectsResponse.data) {
-                    allProjectsData = projectsResponse.data;
-                } else {
-                    throw new Error('Invalid proposals response');
-                }
-                
-                if (variationsResponse.success && variationsResponse.data) {
-                    allVariationsData = variationsResponse.data; // <-- NEW: Store variations
-                } else {
-                    console.warn('Could not load variations:', variationsResponse.error);
-                    allVariationsData = [];
-                }
-                
-                renderAllProjects();
-                // --- END OF MODIFICATION ---
-
-            } catch (error) {
-                console.error('❌ Error fetching all projects:', error);
-                main.innerHTML = `<div class="error-message"><h3>Error Loading Projects</h3><p>${error.message}</p></div>`;
-            } finally {
-                hideLoading();
-            }
+       async function showAllProjects() {
+    try {
+        showLoading();
+        
+        const response = await apiCall('proposals');
+        
+        if (!response.success) {
+            throw new Error(response.error || 'Failed to load proposals.');
         }
+        
+        let allProposals = response.data || [];
+        
+        // Separate proposals and variations
+        const proposals = allProposals.filter(p => !p.isVariation);
+        const variations = allProposals.filter(p => p.isVariation);
+        
+        // Count proposals by status for filter buttons
+        const statusCounts = {
+            all: proposals.length,
+            estimation: proposals.filter(p => p.status === 'estimation_completed').length,
+            pricing: proposals.filter(p => p.status === 'pricing_pending').length,
+            pending: proposals.filter(p => p.status === 'project_pending_allocation').length
+        };
+        
+        // Filter proposals based on current filter
+        let filteredProposals = proposals;
+        if (currentFilter === 'estimation') {
+            filteredProposals = proposals.filter(p => p.status === 'estimation_completed');
+        } else if (currentFilter === 'pricing') {
+            filteredProposals = proposals.filter(p => p.status === 'pricing_pending');
+        } else if (currentFilter === 'pending') {
+            filteredProposals = proposals.filter(p => p.status === 'project_pending_allocation');
+        }
+        
+        const content = document.getElementById('content');
+        
+        content.innerHTML = `
+            <h1>COO Dashboard</h1>
+            
+            <!-- Filter Buttons -->
+            <div class="filter-buttons-container">
+                <button class="filter-btn filter-btn-all ${currentFilter === 'all' ? 'active' : ''}" 
+                        onclick="filterProposals('all')">
+                    📊 All Proposals
+                    <span class="filter-count">${statusCounts.all}</span>
+                </button>
+                
+                <button class="filter-btn filter-btn-estimation ${currentFilter === 'estimation' ? 'active' : ''}" 
+                        onclick="filterProposals('estimation')">
+                    ✅ Estimation Completed
+                    <span class="filter-count">${statusCounts.estimation}</span>
+                </button>
+                
+                <button class="filter-btn filter-btn-pricing ${currentFilter === 'pricing' ? 'active' : ''}" 
+                        onclick="filterProposals('pricing')">
+                    💰 Pricing Pending
+                    <span class="filter-count">${statusCounts.pricing}</span>
+                </button>
+                
+                <button class="filter-btn filter-btn-pending ${currentFilter === 'pending' ? 'active' : ''}" 
+                        onclick="filterProposals('pending')">
+                    📋 Pending Allocation
+                    <span class="filter-count">${statusCounts.pending}</span>
+                </button>
+            </div>
+            
+            <!-- Tabs for Proposals and Variations -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab(this, 'proposals-section')">
+                    Active Proposals (${filteredProposals.length})
+                </button>
+                <button class="tab-btn" onclick="switchTab(this, 'variations-section')">
+                    Pending Variations (${variations.filter(v => v.status === 'pending').length})
+                </button>
+            </div>
+            
+            <!-- Proposals Section -->
+            <div id="proposals-section" class="tab-content active">
+                ${renderProposalsTable(filteredProposals)}
+            </div>
+            
+            <!-- Variations Section -->
+            <div id="variations-section" class="tab-content">
+                ${renderPendingVariationsTable(variations.filter(v => v.status === 'pending'))}
+            </div>
+        `;
+        
+    } catch (error) {
+        console.error('COO Dashboard error:', error);
+        document.getElementById('content').innerHTML = `
+            <div class="error-message">
+                <h2>⚠️ Error Loading Dashboard</h2>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="showAllProjects()">Retry</button>
+            </div>
+        `;
+    } finally {
+        hideLoading();
+    }
+}
+
+// New function to handle filter changes
+function filterProposals(filterType) {
+    currentFilter = filterType;
+    showAllProjects(); // Reload with new filter
+}
         
 // EXECUTIVE TIMESHEET MONITORING DASHBOARD
 // Add these functions to your index.html <script> section
