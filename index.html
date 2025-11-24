@@ -6488,6 +6488,100 @@ async function showEditPricingModal(proposalId) {
         hideLoading();
     }
 }
+    /**
+ * Submits the edited pricing information to the backend
+ */
+async function submitEditedPricing() {
+    const proposalId = document.getElementById('editProposalId').value;
+    const projectNumber = document.getElementById('editProjectNumber').value;
+    const quoteValue = document.getElementById('editQuoteValue').value;
+    const currency = document.getElementById('editCurrency').value;
+    const hourlyRate = document.getElementById('editHourlyRate').value;
+    const profitMargin = document.getElementById('editProfitMargin').value;
+    const pricingNotes = document.getElementById('editPricingNotes').value;
+    
+    // Optional cost breakdown
+    const materialCosts = document.getElementById('editMaterialCosts').value || 0;
+    const laborCosts = document.getElementById('editLaborCosts').value || 0;
+    const overheadCosts = document.getElementById('editOverheadCosts').value || 0;
+    const otherCosts = document.getElementById('editOtherCosts').value || 0;
+    
+    // Validation
+    if (!projectNumber) {
+        alert('Project number is required');
+        document.getElementById('editProjectNumber').focus();
+        return;
+    }
+    
+    if (!quoteValue || parseFloat(quoteValue) <= 0) {
+        alert('Please enter a valid quote value');
+        document.getElementById('editQuoteValue').focus();
+        return;
+    }
+    
+    // Confirmation dialog
+    if (!confirm('Are you sure you want to update the pricing information? This action will modify the existing pricing data.')) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        const pricingData = {
+            projectNumber: projectNumber,
+            quoteValue: parseFloat(quoteValue),
+            currency: currency,
+            hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+            profitMargin: profitMargin ? parseFloat(profitMargin) : null,
+            notes: pricingNotes,
+            costBreakdown: {
+                material: parseFloat(materialCosts),
+                labor: parseFloat(laborCosts),
+                overhead: parseFloat(overheadCosts),
+                other: parseFloat(otherCosts),
+                total: parseFloat(materialCosts) + parseFloat(laborCosts) +
+                       parseFloat(overheadCosts) + parseFloat(otherCosts)
+            },
+            lastEditedBy: currentUser.name,
+            lastEditedAt: new Date().toISOString()
+        };
+        
+        const response = await apiCall(`proposals?id=${proposalId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_pricing',
+                data: pricingData
+            })
+        });
+        
+        if (response.success) {
+            closeModal();
+            showSuccessModal('Pricing Updated!', 'The pricing information has been successfully updated.');
+            
+            // Trigger email notification
+            await triggerEmailNotification('pricing.updated', { 
+                proposalId: proposalId,
+                quoteValue: currency + ' ' + quoteValue,
+                projectNumber: projectNumber
+            });
+            
+            // Refresh the proposals view
+            setTimeout(() => {
+                showProposals();
+            }, 1500);
+            
+        } else {
+            throw new Error(response.error || 'Failed to update pricing');
+        }
+        
+    } catch (error) {
+        console.error('Error updating pricing:', error);
+        alert('Error updating pricing: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
 
         // ============================================
         // PROJECT ALLOCATION TO DESIGN MANAGER
