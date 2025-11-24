@@ -1937,15 +1937,25 @@ body.modal-open {
                 <li id="dashboardNavItem"><a href="#" onclick="showDashboard()" class="active" id="nav-dashboard">
                     <span class="nav-icon">📊</span>Dashboard</a></li>
                 
+              <li id="dashboardNavItem"><a href="#" onclick="showDashboard()" class="active" id="nav-dashboard">
+                    <span class="nav-icon">📊</span>Dashboard</a></li>
+                
                 <li id="newProposalNavItem" style="display: none;">
                     <a href="#" onclick="showCreateProposalModal()">
                     <span class="nav-icon">➕</span>New Proposal</a></li>
+
                 <li id="analyticsNavItem" style="display: none;">
                     <a href="#" onclick="showAnalyticsDashboard()" id="nav-analytics">
                     <span class="nav-icon">📈</span>Analytics</a>
                 </li>
-                <li><a href="#" onclick="showProposals()" id="nav-proposals">
+
+                <li id="proposalsNavItem"><a href="#" onclick="showProposals()" id="nav-proposals">
                     <span class="nav-icon">📋</span>All Proposals</a></li>
+
+                <li id="designerAllocationsNavItem" style="display: none;">
+                    <a href="#" onclick="showDesignerAllocations()" id="nav-designer-alloc">
+                    <span class="nav-icon">⏳</span>Project Allocations</a>
+                </li>
                 <li id="filesNavItem"><a href="#" onclick="showFileUpload()" id="nav-files">
                     <span class="nav-icon">📁</span>File Manager</a></li>
                 <li id="workflowNavItem" style="display: none;">
