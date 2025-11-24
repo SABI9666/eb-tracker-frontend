@@ -1947,9 +1947,6 @@ body.modal-open {
                 </li>
                 <li><a href="#" onclick="showProposals()" id="nav-proposals">
                     <span class="nav-icon">📋</span>All Proposals</a></li>
-                <li id="projectsNavItem" style="display: none;">
-                    <a href="#" onclick="showAllProjects()" id="nav-all-projects">
-                    <span class="nav-icon">📁</span>All Projects</a></li>
                 <li id="filesNavItem"><a href="#" onclick="showFileUpload()" id="nav-files">
                     <span class="nav-icon">📁</span>File Manager</a></li>
                 <li id="workflowNavItem" style="display: none;">
@@ -2311,7 +2308,6 @@ body.modal-open {
             setDisplay('workflowNavItem', ['estimator', 'coo'].includes(roleForCheck));
             setDisplay('reportsNavItem', false); // Always hidden for now
             setDisplay('settingsNavItem', roleForCheck === 'director');
-            setDisplay('allProjectsNavItem', ['director', 'coo'].includes(roleForCheck));
             setDisplay('projectsNavItem', ['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck));
             setDisplay('tasksNavItem', roleForCheck === 'designer');
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck));
@@ -2805,9 +2801,9 @@ function renderProposals(proposals) {
                statusLower !== 'lost';
     }).length;
 
-    // Director Filter Buttons
+    // Filter Buttons for Director AND COO
     let directorFilterButtons = '';
-    if (currentUserRole === 'director') {
+    if (currentUserRole === 'director' || currentUserRole === 'coo') {
         directorFilterButtons = `
             <div class="filter-buttons-container">
                 <button class="filter-btn filter-btn-all ${currentProposalFilter === 'all' ? 'active' : ''}" 
