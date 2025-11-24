@@ -1812,20 +1812,46 @@ body.modal-open {
 }
 
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js">function showDesignerDocTab(tabName) {
-    document.querySelectorAll('#designerProjectModal .doc-tab').forEach(tab => {
-        tab.classList.remove('active');
-    });
-    document.querySelectorAll('#designerProjectModal .doc-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    event.target.classList.add('active');
-    document.getElementById(`designer-tab-${tabName}`).classList.add('active');
-}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
 
-</script>
-    <script src="analytics.js"></script>
+    </script>
+    <script src="analytics.js">
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
+
+    </script>
 </head>
 <body>
     <div id="loginPage" class="login-page">
@@ -1946,11 +1972,9 @@ body.modal-open {
         <div class="main-layout">
             <nav class="sidebar">
             <ul class="nav-menu">
-                <li id="dashboardNavItem"><a href="#" onclick="showDashboard()" class="active" id="nav-dashboard">
-                    <span class="nav-icon">📊</span>Dashboard</a></li>
                 
-              <li id="dashboardNavItem"><a href="#" onclick="showDashboard()" class="active" id="nav-dashboard">
-                    <span class="nav-icon">📊</span>Dashboard</a></li>
+                
+              
                 
                 <li id="newProposalNavItem" style="display: none;">
                     <a href="#" onclick="showCreateProposalModal()">
@@ -2029,9 +2053,66 @@ body.modal-open {
     </div>
 </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js">
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
+
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js">
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
+
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js">
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
+
+    </script>
     <script>
       const firebaseConfig = {
             apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
@@ -2352,7 +2433,7 @@ body.modal-open {
             setDisplay('settingsNavItem', roleForCheck === 'director');
             
             // Designer Specifics: Hide Dashboard & Proposals, Show specific tools
-            setDisplay('dashboardNavItem', !isDesigner && !isManagement); // Hide for Designer & Mgmt (Mgmt has Executive Dash)
+            setDisplay('dashboardNavItem', false); // Dashboard hidden for all users // Hide for Designer & Mgmt (Mgmt has Executive Dash)
             setDisplay('proposalsNavItem', !isDesigner); // HIDE All Proposals for Designer
             setDisplay('filesNavItem', !isDesigner && !isManagement);
             
@@ -2363,7 +2444,7 @@ body.modal-open {
             setDisplay('designerAllocationsNavItem', isDesigner); // SHOW New Menu
 
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck));
-            setDisplay('executiveMonitoringNavItem', isManagement);
+            setDisplay('executiveMonitoringNavItem', false); // Executive Dashboard hidden
             setDisplay('timeRequestsNavItem', isManagement);
 
             
@@ -2379,7 +2460,7 @@ body.modal-open {
             } else if (isBDM || isManagement) {
                 showProposals();
             } else {
-                showDashboard();
+                showProposals();
             }
 
             // 6. Load Notifications
@@ -2570,7 +2651,7 @@ async function triggerEmailNotification(eventName, data = {}) {
         // DASHBOARD
         // ============================================
 
-        async function showDashboard() {
+        async function showProposals() {
             setActiveNav('nav-dashboard');
             const main = document.getElementById('mainContent');
             main.style.display = 'block';
@@ -2610,7 +2691,7 @@ async function triggerEmailNotification(eventName, data = {}) {
                     <div class="error-message">
                         <h3>⚠️ Dashboard Error</h3>
                         <p>${error.message}</p>
-                        <button onclick="showDashboard()" class="btn btn-primary">Retry</button>
+                        <button onclick="showProposals()" class="btn btn-primary">Retry</button>
                         <button onclick="runDiagnostics()" class="btn btn-outline">Run Diagnostics</button>
                     </div>
                 `;
@@ -5579,7 +5660,7 @@ function showCreateProposalModal() {
                  triggerEmailNotification('estimation.complete', { projectName: projectName });
             }
             closeModal();
-            showDashboard();
+            showProposals();
         } else {
              throw new Error(response.error || 'Failed to save estimation');
         }
@@ -5726,7 +5807,7 @@ function showCreateProposalModal() {
                 });
                 if (success) {
                     closeModal();
-                    showDashboard();
+                    showProposals();
                     alert(msg);
                 }
             } catch(err) {
@@ -5793,7 +5874,7 @@ function showCreateProposalModal() {
                     if (typeof showProposals === 'function') {
                         showProposals();
                     } else if (typeof showDashboard === 'function') {
-                        showDashboard();
+                        showProposals();
                     }
                 } else {
                     throw new Error(response.error || 'Failed to approve proposal');
@@ -5870,7 +5951,7 @@ function showCreateProposalModal() {
                     if (typeof showProposals === 'function') {
                         showProposals();
                     } else if (typeof showDashboard === 'function') {
-                        showDashboard();
+                        showProposals();
                     }
                 } else {
                     throw new Error(response.error || 'Failed to reject proposal');
@@ -8066,66 +8147,153 @@ async function showProjectFilesModal(projectId, projectName) {
         // ============================================
 
         async function showDesignerDashboard() { /* ... (Unchanged) ... */ }
-        async function viewDesignerProject(projectId) {
-    try {
-        showLoading();
-        const response = await apiCall(`projects?id=${projectId}`);
-        
-        if (!response.success) {
-            throw new Error(response.error || 'Failed to fetch project details');
+                async function viewDesignerProject(projectId) {
+            console.log('👀 Opening project:', projectId);
+            setActiveNav('');
+            
+            try {
+                showLoading();
+                
+                // Fetch project details
+                const projectResponse = await apiCall(`projects?id=${projectId}`);
+                if (!projectResponse.success) {
+                    throw new Error(projectResponse.error || 'Failed to fetch project');
+                }
+                
+                const project = projectResponse.data;
+                console.log('📦 Project data:', project);
+                
+                // Fetch proposal to get project files
+                const proposalResponse = await apiCall(`proposals?id=${project.proposalId}`);
+                const proposal = proposalResponse.success ? proposalResponse.data : null;
+                
+                // Fetch files for this project/proposal
+                const filesResponse = await apiCall(`files/list?proposalId=${project.proposalId || project.id}`);
+                const files = filesResponse.success ? filesResponse.data : [];
+                
+                console.log('📁 Files found:', files);
+                
+                // Separate files by type
+                const drawings = files.filter(f => 
+                    f.fileType === 'drawing' || 
+                    f.fileType === 'project' || 
+                    f.fileName.match(/\.(dwg|dxf|pdf)$/i)
+                );
+                const specifications = files.filter(f => 
+                    f.fileType === 'specification' || 
+                    f.fileName.match(/\.(doc|docx|pdf|txt)$/i)
+                );
+                
+                const drawingsHtml = drawings.length > 0 
+                    ? drawings.map(file => `
+                        <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-weight: 500;">📄 ${file.fileName}</span>
+                                <br>
+                                <small style="color: #6b7280;">Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</small>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="${file.fileUrl}" target="_blank" class="btn btn-primary btn-sm" 
+                                   style="text-decoration: none; display: inline-block;">
+                                    👁️ View
+                                </a>
+                                <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-success btn-sm"
+                                   style="text-decoration: none; display: inline-block;">
+                                    ⬇️ Download
+                                </a>
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<p style="color: #6b7280; text-align: center; padding: 20px;">No drawings available for this project</p>';
+                
+                const specsHtml = specifications.length > 0
+                    ? specifications.map(file => `
+                        <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;">
+                            <div>
+                                <span style="font-weight: 500;">📄 ${file.fileName}</span>
+                                <br>
+                                <small style="color: #6b7280;">Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</small>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="${file.fileUrl}" target="_blank" class="btn btn-primary btn-sm"
+                                   style="text-decoration: none; display: inline-block;">
+                                    👁️ View
+                                </a>
+                                <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-success btn-sm"
+                                   style="text-decoration: none; display: inline-block;">
+                                    ⬇️ Download
+                                </a>
+                            </div>
+                        </div>
+                    `).join('')
+                    : '<p style="color: #6b7280; text-align: center; padding: 20px;">No specifications available for this project</p>';
+                
+                // Display the project details modal
+                document.getElementById('mainContent').innerHTML = `
+                    <div class="page-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h1 class="page-title">${project.projectName}</h1>
+                                <p class="page-subtitle">Project Number: ${project.projectNumber || 'N/A'}</p>
+                            </div>
+                            <button class="btn btn-secondary" onclick="showDesignerDashboard()">
+                                ← Back to Projects
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="content-section" style="margin-bottom: 20px;">
+                        <h3 style="color: var(--primary-blue); margin-bottom: 15px;">Project Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Client Name</div>
+                                <div class="info-value">${project.clientName || 'N/A'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Allocated Hours</div>
+                                <div class="info-value">${project.allocatedHours || 0}h</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Designer</div>
+                                <div class="info-value">${project.assignedDesignerName || 'Not assigned'}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Status</div>
+                                <div class="info-value">
+                                    <span class="status-badge ${getStatusBadgeClass(project.status)}">${getStatusText(project.status)}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-section">
+                        <div class="document-tabs">
+                            <button class="doc-tab active" onclick="switchDesignerTab('drawings')">
+                                📐 Drawings (${drawings.length})
+                            </button>
+                            <button class="doc-tab" onclick="switchDesignerTab('specifications')">
+                                📋 Specifications (${specifications.length})
+                            </button>
+                        </div>
+                        
+                        <div id="designer-drawings-content" class="doc-content active" style="margin-top: 20px;">
+                            ${drawingsHtml}
+                        </div>
+                        
+                        <div id="designer-specs-content" class="doc-content" style="margin-top: 20px; display: none;">
+                            ${specsHtml}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Error loading project:', error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
         }
-        
-        const project = response.data;
-        
-        document.getElementById('designerProjectId').value = project.id;
-        document.getElementById('designerProjectTitle').textContent = `${project.projectName} - Files`;
-        document.getElementById('designer-projectNumber').textContent = project.projectNumber || '-';
-        document.getElementById('designer-projectName').textContent = project.projectName;
-        document.getElementById('designer-clientName').textContent = project.clientName;
-        document.getElementById('designer-allocatedHours').textContent = `${project.allocatedHours || 0}h`;
-        
-        // Fetch and display project files
-        const filesResponse = await apiCall(`files/list?proposalId=${project.id}`);
-        
-        if (filesResponse.success && filesResponse.data) {
-            const files = filesResponse.data;
-            
-            // Filter drawings
-            const drawings = files.filter(f => f.fileType === 'drawing' || f.fileType === 'project');
-            const drawingsHTML = drawings.length > 0 ? drawings.map(file => `
-                <div class="file-item">
-                    <span class="file-item-name">📄 ${file.fileName}</span>
-                    <a href="${file.fileUrl}" target="_blank" class="btn btn-primary btn-sm">View</a>
-                </div>
-            `).join('') : '<p class="text-muted">No drawings available</p>';
-            
-            document.getElementById('designer-drawingsList').innerHTML = drawingsHTML;
-            
-            // Filter specifications
-            const specs = files.filter(f => f.fileType === 'specification');
-            const specsHTML = specs.length > 0 ? specs.map(file => `
-                <div class="file-item">
-                    <span class="file-item-name">📄 ${file.fileName}</span>
-                    <a href="${file.fileUrl}" target="_blank" class="btn btn-primary btn-sm">View</a>
-                </div>
-            `).join('') : '<p class="text-muted">No specifications available</p>';
-            
-            document.getElementById('designer-specsList').innerHTML = specsHTML;
-        } else {
-            document.getElementById('designer-drawingsList').innerHTML = '<p class="text-muted">No files available</p>';
-            document.getElementById('designer-specsList').innerHTML = '<p class="text-muted">No files available</p>';
-        }
-        
-        // Show the modal
-        document.getElementById('designerProjectModal').style.display = 'flex';
-        document.body.classList.add('modal-open');
-        
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    } finally {
-        hideLoading();
-    }
-}
+        function showUploadDeliverablesModal(projectId) { /* ... (Unchanged) ... */ }
         function switchUploadTab(tab) { /* ... (Unchanged) ... */ }
         function addDeliverableLinkField() { /* ... (Unchanged) ... */ }
         async function uploadDeliverables(projectId) { /* ... (Unchanged) ... */ }
@@ -10027,6 +10195,25 @@ async function submitAllocation() {
     }
 }
 
+
+    
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
 
     </script>
 
@@ -12387,7 +12574,7 @@ async function submitClientOutcome(proposalId) {
             if (typeof showProposals === 'function') {
                 showProposals();
             } else if (typeof showDashboard === 'function') {
-                showDashboard();
+                showProposals();
             }
         } else {
             throw new Error(response.error || 'Failed to submit outcome');
@@ -12504,7 +12691,7 @@ async function submitFinalDesign(projectId) {
             if (typeof showProjects === 'function') {
                 showProjects();
             } else if (typeof showDashboard === 'function') {
-                showDashboard();
+                showProposals();
             }
         } else {
             throw new Error(response.error || 'Failed to submit design');
@@ -12536,7 +12723,7 @@ async function markComplete(projectId) {
             if (typeof showProjects === 'function') {
                 showProjects();
             } else if (typeof showDashboard === 'function') {
-                showDashboard();
+                showProposals();
             }
         } else {
             throw new Error(response.error || 'Failed to mark complete');
@@ -13501,7 +13688,26 @@ function handleTonnageInput() {
         }
     }
 
-</script>
+
+        function switchDesignerTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.doc-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content visibility
+            document.getElementById('designer-drawings-content').style.display = 'none';
+            document.getElementById('designer-specs-content').style.display = 'none';
+            
+            if (tabName === 'drawings') {
+                document.getElementById('designer-drawings-content').style.display = 'block';
+            } else {
+                document.getElementById('designer-specs-content').style.display = 'block';
+            }
+        }
+
+    </script>
 
 
 </body>
