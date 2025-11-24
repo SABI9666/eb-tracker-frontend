@@ -3135,25 +3135,53 @@ function filterProposals(filterType) {
         const proposals = allProposals.filter(p => !p.isVariation);
         const variations = allProposals.filter(p => p.isVariation);
         
-        // Count proposals by status for filter buttons
+        // Count proposals by CORRECT status values for COO
         const statusCounts = {
             all: proposals.length,
-            estimation: proposals.filter(p => p.status === 'estimation_completed').length,
-            pricing: proposals.filter(p => p.status === 'pricing_pending').length,
-            pending: proposals.filter(p => p.status === 'project_pending_allocation').length
+            // Estimation Completed = proposals with estimation data
+            estimation: proposals.filter(p => 
+                p.status === 'estimated' || 
+                (p.estimation && p.estimation.totalHours)
+            ).length,
+            // Pricing Pending = estimated but no pricing yet
+            pricing: proposals.filter(p => 
+                (p.status === 'estimated' || p.estimation) && 
+                (!p.pricing || !p.pricing.projectNumber)
+            ).length,
+            // Pending Allocation = won proposals with pricing but not yet allocated
+            pending: proposals.filter(p => 
+                p.status === 'won' && 
+                p.pricing && 
+                p.pricing.projectNumber && 
+                !p.projectCreated
+            ).length
         };
         
         // Filter proposals based on current filter
         let filteredProposals = proposals;
         if (currentFilter === 'estimation') {
-            filteredProposals = proposals.filter(p => p.status === 'estimation_completed');
+            // Show all proposals with estimation
+            filteredProposals = proposals.filter(p => 
+                p.status === 'estimated' || 
+                (p.estimation && p.estimation.totalHours)
+            );
         } else if (currentFilter === 'pricing') {
-            filteredProposals = proposals.filter(p => p.status === 'pricing_pending');
+            // Show estimated proposals waiting for pricing
+            filteredProposals = proposals.filter(p => 
+                (p.status === 'estimated' || p.estimation) && 
+                (!p.pricing || !p.pricing.projectNumber)
+            );
         } else if (currentFilter === 'pending') {
-            filteredProposals = proposals.filter(p => p.status === 'project_pending_allocation');
+            // Show won proposals waiting for allocation
+            filteredProposals = proposals.filter(p => 
+                p.status === 'won' && 
+                p.pricing && 
+                p.pricing.projectNumber && 
+                !p.projectCreated
+            );
         }
         
-        const content = document.getElementById('mainContent');
+        const content = document.getElementById('content');
         
         content.innerHTML = `
             <h1>COO Dashboard</h1>
@@ -3208,7 +3236,7 @@ function filterProposals(filterType) {
         
     } catch (error) {
         console.error('COO Dashboard error:', error);
-        document.getElementById('mainContent').innerHTML = `
+        document.getElementById('content').innerHTML = `
             <div class="error-message">
                 <h2>⚠️ Error Loading Dashboard</h2>
                 <p>${error.message}</p>
