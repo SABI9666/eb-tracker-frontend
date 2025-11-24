@@ -3153,7 +3153,7 @@ function filterProposals(filterType) {
             filteredProposals = proposals.filter(p => p.status === 'project_pending_allocation');
         }
         
-        const content = document.getElementById('content');
+        const content = document.getElementById('mainContent');
         
         content.innerHTML = `
             <h1>COO Dashboard</h1>
@@ -3208,7 +3208,7 @@ function filterProposals(filterType) {
         
     } catch (error) {
         console.error('COO Dashboard error:', error);
-        document.getElementById('content').innerHTML = `
+        document.getElementById('mainContent').innerHTML = `
             <div class="error-message">
                 <h2>⚠️ Error Loading Dashboard</h2>
                 <p>${error.message}</p>
