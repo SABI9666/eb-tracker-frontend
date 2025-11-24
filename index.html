@@ -7884,25 +7884,27 @@ async function showDesignerAllocations() {
         hideLoading();
     }
 }
-        // ============================================
+     // ============================================
 // PROJECT FILES MODAL FUNCTIONALITY
 // ============================================
 async function showProjectFilesModal(projectId, projectName) {
+    // 1. Get DOM elements
     const modal = document.getElementById('projectFilesModal');
     const title = document.getElementById('projectFilesModalTitle');
     const subtitle = document.getElementById('projectFilesModalSubtitle');
     const content = document.getElementById('projectFilesContent');
 
+    // 2. Set initial state (Title and Loading spinner)
     title.textContent = `Project Files: ${projectName}`;
     subtitle.textContent = `Loading files for project ID: ${projectId}`;
-    content.innerHTML = '<div class="loading-spinner"></div>'; // Show spinner
+    content.innerHTML = '<div class="loading-spinner"></div>';
 
-    // Assumes you have a global openModal function
+    // 3. Open the modal (Assumes openModal is a global function)
     openModal('projectFilesModal'); 
 
     try {
-        // Fetch files associated with the projectId
-        // This relies on your backend having an endpoint to list files by project ID.
+        // 4. Fetch files (API call)
+        // Ensure your backend has an endpoint at /files?projectId={id}
         const response = await apiCall(`files?projectId=${projectId}`);
 
         if (!response.success) {
@@ -7916,7 +7918,7 @@ async function showProjectFilesModal(projectId, projectName) {
             return;
         }
 
-        // Build the file list HTML
+        // 5. Build the file list HTML
         const fileListHtml = files.map(file => {
             const fileTypeLabel = file.fileType || 'General';
             const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
@@ -7939,7 +7941,7 @@ async function showProjectFilesModal(projectId, projectName) {
             `;
         }).join('');
 
-        // Apply basic styling for the list
+        // 6. Inject the list with styling
         content.innerHTML = `
             <style>
                 .file-item {
