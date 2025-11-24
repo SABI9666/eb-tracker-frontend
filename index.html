@@ -7496,10 +7496,13 @@ const allocationData = {
             let allProjects = projects;
             if (currentUserRole === 'design_lead') {
                 allProjects = projects.filter(p => p.designLeadUid === currentUser.uid);
-            } else if (currentUserRole === 'designer') {
-              allProjects = projects.filter(p => p.assignedDesigners?.includes(currentUser.uid));
+           } else if (currentUserRole === 'designer') {
+              // FIX: Check both assignedDesigners AND assignedDesignerUids
+              allProjects = projects.filter(p => 
+                  (p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)) ||
+                  (p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid))
+              );
             }
-            
             // Count projects by status for filter buttons (for COO/Director)
             let filterButtons = '';
             if (currentUserRole === 'coo' || currentUserRole === 'director') {
