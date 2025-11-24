@@ -3043,7 +3043,7 @@ function filterProposals(filterType) {
         let allProjectsData = [];
         let allVariationsData = []; // <-- NEW: Add this line
 
-       async function showAllProjects() {
+   async function showAllProjects() {
     try {
         showLoading();
         
@@ -3144,11 +3144,13 @@ function filterProposals(filterType) {
     }
 }
 
-// New function to handle filter changes
+// ⭐ ADD THIS NEW FUNCTION AFTER showAllProjects()
 function filterProposals(filterType) {
     currentFilter = filterType;
-    showAllProjects(); // Reload with new filter
-}
+    showAllProjects();
+}    
+
+
         
 // EXECUTIVE TIMESHEET MONITORING DASHBOARD
 // Add these functions to your index.html <script> section
