@@ -179,25 +179,33 @@ async function loadAnalyticsData(role) {
         monthlyRevenue[label] = 0;
     }
 
-   wonProposals.forEach(p => {
-            let date;
-            // Handle Firestore Timestamp or ISO string
+   // --- Safe Weekly Revenue Calculation ---
+        wonProposals.forEach(p => {
+            let dateObj = null;
+
+            // 1. Try to parse the date from various fields
             if (p.wonDate) {
-                date = new Date(p.wonDate.seconds ? p.wonDate.seconds * 1000 : p.wonDate);
+                // Handle Firestore Timestamp ({seconds: ...}) or String
+                dateObj = new Date(p.wonDate.seconds ? p.wonDate.seconds * 1000 : p.wonDate);
             } else if (p.updatedAt) {
-                // Fallback to updatedAt if wonDate is missing
-                date = new Date(p.updatedAt.seconds ? p.updatedAt.seconds * 1000 : p.updatedAt);
+                dateObj = new Date(p.updatedAt.seconds ? p.updatedAt.seconds * 1000 : p.updatedAt);
+            } else if (p.createdAt) {
+                dateObj = new Date(p.createdAt.seconds ? p.createdAt.seconds * 1000 : p.createdAt);
             }
 
-            // FIX: Check if date is valid before calling getWeekStartDate
-            if (date && !isNaN(date.getTime())) { 
+            // 2. Validate the Date Object
+            // isValid is true if time is a number and not NaN
+            const isValid = dateObj && !isNaN(dateObj.getTime());
+
+            if (isValid) {
                 try {
-                    const weekStart = getWeekStartDate(date);
+                    const weekStart = getWeekStartDate(dateObj);
+                    // Ensure the week key exists in our template before adding
                     if (weeklyRevenue.hasOwnProperty(weekStart)) {
                         weeklyRevenue[weekStart] += (p.pricing?.quoteValue || 0);
                     }
-                } catch (e) {
-                    console.warn("Skipping invalid date for proposal:", p.projectName);
+                } catch (err) {
+                    console.warn("Skipping calculation for proposal due to date error:", p.projectName);
                 }
             }
         });
