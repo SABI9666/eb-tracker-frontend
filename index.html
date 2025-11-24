@@ -1865,7 +1865,6 @@ body.modal-open {
                                 <div class="role-btn" data-role="estimator">Estimator</div>
                                 <div class="role-btn" data-role="coo">COO</div>
                                 <div class="role-btn" data-role="director">Director</div>
-                                <div class="role-btn" data-role="design_lead">Design Manager</div>
                                 <div class="role-btn" data-role="designer">Designer</div>
                                 <div class="role-btn" data-role="accounts">Accounts</div>
                             </div>
@@ -2308,10 +2307,10 @@ body.modal-open {
             setDisplay('workflowNavItem', ['estimator', 'coo'].includes(roleForCheck));
             setDisplay('reportsNavItem', false); // Always hidden for now
             setDisplay('settingsNavItem', roleForCheck === 'director');
-            setDisplay('projectsNavItem', ['design_lead', 'designer', 'coo', 'director'].includes(roleForCheck));
+            setDisplay('projectsNavItem', ['designer', 'coo', 'director'].includes(roleForCheck));
             setDisplay('tasksNavItem', roleForCheck === 'designer');
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck));
-            setDisplay('executiveMonitoringNavItem', ['coo', 'director', 'design_lead'].includes(roleForCheck));
+            setDisplay('executiveMonitoringNavItem', ['coo', 'director'].includes(roleForCheck));
             setDisplay('timeRequestsNavItem', ['coo', 'director'].includes(roleForCheck));
             setDisplay('timesheetNavItem', roleForCheck === 'designer');
 
@@ -2328,8 +2327,6 @@ body.modal-open {
             // 5. Route to Initial View
             if (roleForCheck === 'designer') {
                 showTasks(); // Designers go straight to their tasks/projects
-            } else if (roleForCheck === 'design_lead') {
-                showDesignLeadDashboard();
             } else if (roleForCheck === 'bdm') {
                 showProposals();
             } else if (['coo', 'director'].includes(roleForCheck)) {
@@ -8753,14 +8750,14 @@ async function markProjectComplete(projectId) {
                             </button>` : ''}
                         <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
                         
-                            ${currentUserRole === 'design_lead' ? `
+                            ${(currentUserRole === 'coo' || currentUserRole === 'director') ? `
                             <button onclick="showAddVariationModal('${project.id}', '${project.projectCode}', '${project.projectName}')" 
                                     style="background-color: var(--warning); color: white; border-color: var(--warning);">
                                 ➕ Add Variation
                             </button>
                         ` : ''}
 
-                        ${(currentUserRole === 'design_lead' && project.status !== 'completed') ? `
+                        ${((currentUserRole === 'coo' || currentUserRole === 'director') && project.status !== 'completed') ? `
                             <button onclick="markProjectComplete('${project.id}')" 
                                     style="background-color: var(--success); color: white; border-color: var(--success);">
                                 ✅ Mark Complete
