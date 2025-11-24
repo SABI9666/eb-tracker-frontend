@@ -3083,33 +3083,17 @@ function filterProposals(filterType) {
         content.innerHTML = `
             <h1>COO Dashboard</h1>
             
-            <!-- Filter Buttons -->
-            <div class="filter-buttons-container">
-                <button class="filter-btn filter-btn-all ${currentFilter === 'all' ? 'active' : ''}" 
-                        onclick="filterProposals('all')">
-                    📊 All Proposals
-                    <span class="filter-count">${statusCounts.all}</span>
-                </button>
-                
-                <button class="filter-btn filter-btn-estimation ${currentFilter === 'estimation' ? 'active' : ''}" 
-                        onclick="filterProposals('estimation')">
-                    ✅ Estimation Completed
-                    <span class="filter-count">${statusCounts.estimation}</span>
-                </button>
-                
-                <button class="filter-btn filter-btn-pricing ${currentFilter === 'pricing' ? 'active' : ''}" 
-                        onclick="filterProposals('pricing')">
-                    💰 Pricing Pending
-                    <span class="filter-count">${statusCounts.pricing}</span>
-                </button>
-                
-                <button class="filter-btn filter-btn-pending ${currentFilter === 'pending' ? 'active' : ''}" 
-                        onclick="filterProposals('pending')">
-                    📋 Pending Allocation
-                    <span class="filter-count">${statusCounts.pending}</span>
-                </button>
-            </div>
-            
+            <button class="filter-btn filter-btn-all ${currentFilter === 'all' ? 'active' : ''}" 
+        onclick="filterCOOProposals('all')">
+
+<button class="filter-btn filter-btn-estimation ${currentFilter === 'estimation' ? 'active' : ''}" 
+        onclick="filterCOOProposals('estimation')">
+
+<button class="filter-btn filter-btn-pricing ${currentFilter === 'pricing' ? 'active' : ''}" 
+        onclick="filterCOOProposals('pricing')">
+
+<button class="filter-btn filter-btn-pending ${currentFilter === 'pending' ? 'active' : ''}" 
+        onclick="filterCOOProposals('pending')">
             <!-- Tabs for Proposals and Variations -->
             <div class="tabs">
                 <button class="tab-btn active" onclick="switchTab(this, 'proposals-section')">
