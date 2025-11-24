@@ -4972,16 +4972,40 @@ function showCreateProposalModal() {
 
                                 ${estimationFilesHtml}
 
-                                ${p.pricing ? `
-                                    <div class="form-section">
-                                        <h4>Pricing Information</h4>
-                                        <p><strong>Project Number:</strong> ${p.pricing.projectNumber || 'N/A'}</p>
-                                        <p><strong>Quote Value:</strong> ${p.pricing.quoteValue || 'N/A'} ${p.pricing.currency || ''}</p>
-                                        <p><strong>Profit Margin:</strong> ${p.pricing.profitMargin || 'N/A'}%</p>
-                                        <p><strong>Hourly Rate:</strong> ${p.pricing.hourlyRate || 'N/A'}</p>
-                                        <p><strong>Priced By:</strong> ${p.pricing.pricedBy || 'N/A'}</p>
-                                    </div>
-                                ` : ''}
+                              ${p.pricing ? `
+    <div class="form-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h4>Pricing Information 💰</h4>
+            ${['coo', 'director'].includes(currentUserRole) && p.status !== 'won' && p.status !== 'lost' ? `
+                <button class="btn btn-warning btn-sm" onclick="event.stopPropagation(); showEditPricingModal('${p.id}')">
+                    ✏️ Edit Pricing
+                </button>
+            ` : ''}
+        </div>
+        <p><strong>Project Number:</strong> ${p.pricing.projectNumber || 'N/A'}</p>
+        <p><strong>Quote Value:</strong> ${p.pricing.currency || ''} ${p.pricing.quoteValue || 'N/A'}</p>
+        <p><strong>Profit Margin:</strong> ${p.pricing.profitMargin || 'N/A'}%</p>
+        <p><strong>Hourly Rate:</strong> ${p.pricing.hourlyRate || 'N/A'}</p>
+        <p><strong>Priced By:</strong> ${p.pricing.pricedBy || 'N/A'}</p>
+        ${p.pricing.costBreakdown ? `
+            <div style="margin-top: 1rem; padding: 1rem; background: var(--light-blue); border-radius: 8px;">
+                <strong>Cost Breakdown:</strong>
+                <div style="margin-top: 0.5rem;">
+                    <span>Material: ${p.pricing.currency || ''} ${p.pricing.costBreakdown.material || 0}</span> |
+                    <span>Labor: ${p.pricing.currency || ''} ${p.pricing.costBreakdown.labor || 0}</span> |
+                    <span>Overhead: ${p.pricing.currency || ''} ${p.pricing.costBreakdown.overhead || 0}</span> |
+                    <span>Other: ${p.pricing.currency || ''} ${p.pricing.costBreakdown.other || 0}</span>
+                </div>
+            </div>
+        ` : ''}
+        ${p.pricing.notes ? `
+            <div style="margin-top: 0.5rem;">
+                <strong>Notes:</strong> 
+                <p style="white-space: pre-wrap; background: #f9fafb; padding: 0.75rem; border-radius: 4px; margin-top: 0.25rem;">${p.pricing.notes}</p>
+            </div>
+        ` : ''}
+    </div>
+` : ''}
 
                                 ${p.directorApproval ? `
                                     <div class="form-section">
