@@ -10927,10 +10927,12 @@ function resetExecutiveDateFilter() {
                 
                 const projects = response.data || [];
                 // Filter for projects assigned to the current designer
-                const assignedProjects = projects.filter(p => 
-                    p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)
-                );
-                
+                // FIX: robust check for designer UID in either property
+                const assignedProjects = projects.filter(p => {
+                    const inDesigners = p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid);
+                    const inUids = p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid);
+                    return inDesigners || inUids;
+                });
                 if (assignedProjects.length === 0) {
                     alert('You are not assigned to any projects yet.');
                     hideLoading();
