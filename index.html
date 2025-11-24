@@ -12327,14 +12327,20 @@ async function showTasks() {
     showLoading();
     
     try {
-        // Fetch projects assigned to this designer
+       // Fetch projects assigned to this designer
         const response = await apiCall('projects?assignedToMe=true');
         
         if (!response.success) {
             throw new Error('Failed to load projects');
         }
         
-        const projects = response.data || [];
+        let rawProjects = response.data || [];
+        
+        // FIX: Ensure specific client-side filtering just in case backend returns all
+        const projects = rawProjects.filter(p => 
+            (p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)) ||
+            (p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid))
+        );
         
         const projectsHtml = projects.length > 0 ? projects.map(project => `
             <div class="project-card">
