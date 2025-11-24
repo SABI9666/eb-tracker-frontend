@@ -2000,6 +2000,22 @@ body.modal-open {
             <main class="main-content" id="mainContent"></main>
         </div>
     </div>
+    <div id="projectFilesModal" class="modal">
+    <div class="modal-content large">
+        <span class="close-button" onclick="closeModal('projectFilesModal')">&times;</span>
+        <h3 id="projectFilesModalTitle">Project Files</h3>
+        <p class="text-muted" id="projectFilesModalSubtitle">Files attached to this project.</p>
+        <hr>
+
+        <div id="projectFilesContent">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="closeModal('projectFilesModal')">Close</button>
+        </div>
+    </div>
+</div>
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
