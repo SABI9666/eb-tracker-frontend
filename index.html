@@ -7462,7 +7462,7 @@ const allocationData = {
             }
         }
 
-        // REPLACED IMPLEMENTATION
+        // REPLACED IMPLEMENTATION WITH FILTER BUTTONS
         function renderProjectsList(projects) {
             const main = document.getElementById('mainContent');
             
@@ -7470,23 +7470,90 @@ const allocationData = {
             let createProjectBtn = '';
             if (currentUserRole === 'coo' || currentUserRole === 'director') {
                 createProjectBtn = `
-                    <button onclick="showCreateProjectFromWonProposal()" class="btn btn-success" style="margin-bottom: 2rem; width: auto;">
-                        Create Project from WON Proposal
+                    <button onclick="showCreateProjectFromWonProposal()" class="btn btn-success" style="margin-bottom: 1rem; width: auto;">
+                        ➕ Create Project from WON Proposal
                     </button>
                 `;
             }
 
             // Filter projects based on role
-            let relevantProjects = projects;
+            let allProjects = projects;
             if (currentUserRole === 'design_lead') {
-                relevantProjects = projects.filter(p => p.designLeadUid === currentUser.uid);
+                allProjects = projects.filter(p => p.designLeadUid === currentUser.uid);
             } else if (currentUserRole === 'designer') {
-              relevantProjects = projects.filter(p => p.assignedDesigners?.includes(currentUser.uid));
+              allProjects = projects.filter(p => p.assignedDesigners?.includes(currentUser.uid));
             }
-            // COO/Director see all
+            
+            // Count projects by status for filter buttons (for COO/Director)
+            let filterButtons = '';
+            if (currentUserRole === 'coo' || currentUserRole === 'director') {
+                const statusCounts = {
+                    all: allProjects.length,
+                    active: allProjects.filter(p => 
+                        p.status !== 'completed' && 
+                        p.status !== 'on_hold' && 
+                        p.status !== 'cancelled'
+                    ).length,
+                    pending: allProjects.filter(p => 
+                        p.status === 'pending' || 
+                        !p.designLeadUid
+                    ).length,
+                    completed: allProjects.filter(p => 
+                        p.status === 'completed'
+                    ).length
+                };
+                
+                filterButtons = `
+                    <div class="filter-buttons-container" style="margin-bottom: 1.5rem;">
+                        <button class="filter-btn filter-btn-all ${currentProjectFilter === 'all' ? 'active' : ''}" 
+                                onclick="filterProjects('all')">
+                            📊 All Projects
+                            <span class="filter-count">${statusCounts.all}</span>
+                        </button>
+                        
+                        <button class="filter-btn filter-btn-estimation ${currentProjectFilter === 'active' ? 'active' : ''}" 
+                                onclick="filterProjects('active')">
+                            ✅ Active Projects
+                            <span class="filter-count">${statusCounts.active}</span>
+                        </button>
+                        
+                        <button class="filter-btn filter-btn-pricing ${currentProjectFilter === 'pending' ? 'active' : ''}" 
+                                onclick="filterProjects('pending')">
+                            ⏰ Pending Allocation
+                            <span class="filter-count">${statusCounts.pending}</span>
+                        </button>
+                        
+                        <button class="filter-btn filter-btn-pending ${currentProjectFilter === 'completed' ? 'active' : ''}" 
+                                onclick="filterProjects('completed')">
+                            🎉 Completed
+                            <span class="filter-count">${statusCounts.completed}</span>
+                        </button>
+                    </div>
+                `;
+            }
+            
+            // Apply current filter
+            let filteredProjects = allProjects;
+            if (currentUserRole === 'coo' || currentUserRole === 'director') {
+                if (currentProjectFilter === 'active') {
+                    filteredProjects = allProjects.filter(p => 
+                        p.status !== 'completed' && 
+                        p.status !== 'on_hold' && 
+                        p.status !== 'cancelled'
+                    );
+                } else if (currentProjectFilter === 'pending') {
+                    filteredProjects = allProjects.filter(p => 
+                        p.status === 'pending' || 
+                        !p.designLeadUid
+                    );
+                } else if (currentProjectFilter === 'completed') {
+                    filteredProjects = allProjects.filter(p => 
+                        p.status === 'completed'
+                    );
+                }
+            }
 
-            const projectsHtml = relevantProjects.length ? relevantProjects.map(p => 
-                // Using existing function createProjectCard
+            const projectsHtml = filteredProjects.length ? filteredProjects.map(p => 
                 createProjectCard(p)
             ).join('') : '<p>No projects found matching your criteria.</p>';
 
@@ -7496,11 +7563,18 @@ const allocationData = {
                     <div class="subtitle">Manage all active and pending projects.</div>
                 </div>
                 ${createProjectBtn}
+                ${filterButtons}
                 <div class="action-section">
-                    <h3>Project List</h3>
+                    <h3>Project List (${filteredProjects.length})</h3>
                     ${projectsHtml}
                 </div>
             `;
+        }
+        
+        // Filter function for All Projects menu
+        function filterProjects(filterType) {
+            currentProjectFilter = filterType;
+            showProjects(); // Reload projects with new filter
         }
 
         // REPLACED IMPLEMENTATION
