@@ -7735,7 +7735,7 @@ const allocationData = {
             }
         }
         // ============================================
-// DESIGNER ALLOCATIONS VIEW
+// DESIGNER ALLOCATIONS VIEW (Fixed Filtering)
 // ============================================
 async function showDesignerAllocations() {
     setActiveNav('nav-designer-alloc');
@@ -7744,8 +7744,7 @@ async function showDesignerAllocations() {
     showLoading();
 
     try {
-        // 1. Fetch projects assigned to this designer
-        // We use the generic projects endpoint, then filter client-side to be safe
+        // 1. Fetch projects
         const response = await apiCall('projects'); 
         
         if (!response.success) {
@@ -7754,12 +7753,21 @@ async function showDesignerAllocations() {
 
         const allProjects = response.data || [];
         
-        // Filter: Look for current User's UID in assignedDesignerUids array
-        const myProjects = allProjects.filter(p => 
-            p.assignedDesignerUids && 
-            Array.isArray(p.assignedDesignerUids) && 
-            p.assignedDesignerUids.includes(currentUser.uid)
-        );
+        console.log("All Projects fetched:", allProjects.length);
+        console.log("Current User ID:", currentUser.uid);
+
+        // 2. Filter: Check BOTH 'assignedDesignerUids' (New) and 'assignedDesigners' (Legacy)
+        const myProjects = allProjects.filter(p => {
+            const hasNew = p.assignedDesignerUids && Array.isArray(p.assignedDesignerUids) && p.assignedDesignerUids.includes(currentUser.uid);
+            const hasLegacy = p.assignedDesigners && Array.isArray(p.assignedDesigners) && p.assignedDesigners.includes(currentUser.uid);
+            
+            // Debug log to help identify why a project matches or fails
+            // console.log(`Project ${p.projectCode}: New=${hasNew}, Legacy=${hasLegacy}`);
+            
+            return hasNew || hasLegacy;
+        });
+
+        console.log("My Projects found:", myProjects.length);
 
         if (myProjects.length === 0) {
             main.innerHTML = `
@@ -7776,43 +7784,57 @@ async function showDesignerAllocations() {
             return;
         }
 
-        // 2. Build the Table
+        // 3. Build the Table
         const rows = myProjects.map(p => {
-            // Calculate hours specific to this project
-            const maxHours = parseFloat(p.maxAllocatedHours || 0);
-            const addHours = parseFloat(p.additionalHours || 0);
+            // Handle numeric conversions safely
+            const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+            const addHours = parseFloat(p.additionalHours) || 0;
             const totalBudget = maxHours + addHours;
             
-            // Get logged hours. 
-            // Note: p.hoursLogged is usually total for project. 
-            // If you need hours specific to THIS designer, we'd need to fetch timesheets or 
-            // rely on backend to send 'myHoursLogged'. 
-            // For now, we show Project Total Usage vs Budget.
-            const usedHours = parseFloat(p.hoursLogged || 0);
+            // hoursLogged might be undefined on legacy projects
+            const usedHours = parseFloat(p.hoursLogged) || 0;
             const remaining = totalBudget - usedHours;
+            
+            // Calculate percentage for progress bar
+            const percentUsed = totalBudget > 0 ? (usedHours / totalBudget) * 100 : 0;
             
             // Status Color
             let statusColor = 'var(--success)'; // Green
-            if (remaining < 0) statusColor = 'var(--danger)'; // Red
-            else if (remaining < (totalBudget * 0.2)) statusColor = 'var(--warning)'; // Orange
+            let statusText = 'On Track';
+            
+            if (remaining < 0) {
+                statusColor = 'var(--danger)'; // Red
+                statusText = 'Over Budget';
+            } else if (totalBudget > 0 && remaining < (totalBudget * 0.2)) {
+                statusColor = 'var(--warning)'; // Orange
+                statusText = 'Low Budget';
+            }
+
+            // Date formatting helper
+            const targetDate = p.targetCompletionDate ? formatDate(p.targetCompletionDate) : 'N/A';
 
             return `
                 <tr>
                     <td>
-                        <strong>${p.projectName}</strong><br>
+                        <strong>${p.projectName || 'Unknown Project'}</strong><br>
                         <small style="color: var(--text-light);">${p.projectCode || 'No Code'}</small>
                     </td>
                     <td>${p.clientCompany || 'N/A'}</td>
-                    <td>${formatDate(p.allocationDate || p.createdAt)}</td>
-                    <td>${formatDate(p.targetCompletionDate)}</td>
+                    <td>${targetDate}</td>
                     
                     <td style="text-align: center;">
-                        <span style="font-weight: bold;">${totalBudget.toFixed(1)}h</span>
-                        <br><small class="text-muted">(${maxHours} + ${addHours})</small>
+                        <span style="font-weight: bold; font-size: 1.1em;">${totalBudget.toFixed(1)}h</span>
+                        ${addHours > 0 ? `<br><small class="text-muted" style="font-size:0.8em;">(+${addHours}h added)</small>` : ''}
                     </td>
-                    <td style="text-align: center;">${usedHours.toFixed(1)}h</td>
-                    <td style="text-align: center; font-weight: bold; color: ${statusColor};">
-                        ${remaining.toFixed(1)}h
+                    <td style="text-align: center;">
+                         <div>${usedHours.toFixed(1)}h</div>
+                         <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-top: 5px;">
+                            <div style="width: ${Math.min(percentUsed, 100)}%; background: ${statusColor}; height: 100%; border-radius: 3px;"></div>
+                         </div>
+                    </td>
+                    <td style="text-align: center;">
+                        <span style="font-weight: bold; color: ${statusColor};">${remaining.toFixed(1)}h</span>
+                        <br><small style="font-size: 0.75rem; color: ${statusColor}">${statusText}</small>
                     </td>
                     
                     <td>
@@ -7836,7 +7858,6 @@ async function showDesignerAllocations() {
                         <tr>
                             <th>Project</th>
                             <th>Client</th>
-                            <th>Allocated Date</th>
                             <th>Target Date</th>
                             <th style="text-align: center;">Total Budget</th>
                             <th style="text-align: center;">Used (Total)</th>
