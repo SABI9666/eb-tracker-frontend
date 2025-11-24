@@ -10375,6 +10375,23 @@ async function submitAllocation() {
         <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
             <!-- Will be populated by JavaScript -->
         </div>
+                                
+        <div id="projectFilesModal" class="modal">
+       <div class="modal-content large">
+        <span class="close-button" onclick="closeModal('projectFilesModal')">&times;</span>
+        <h3 id="projectFilesModalTitle">Project Files</h3>
+        <p class="text-muted" id="projectFilesModalSubtitle">Files attached to this project.</p>
+        <hr>
+
+        <div id="projectFilesContent">
+            <div class="loading-spinner"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="closeModal('projectFilesModal')">Close</button>
+        </div>
+    </div>
+</div>
 
         <!-- Timesheet Entries Table -->
         <table class="data-table">
