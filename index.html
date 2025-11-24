@@ -2302,17 +2302,31 @@ body.modal-open {
                 if (el) el.style.display = visible ? 'block' : 'none';
             };
 
-            setDisplay('newProposalNavItem', roleForCheck === 'bdm');
-            setDisplay('analyticsNavItem', ['bdm', 'coo', 'director'].includes(roleForCheck));
+            // --- Role Checks ---
+            const isDesigner = roleForCheck === 'designer';
+            const isManagement = ['coo', 'director'].includes(roleForCheck);
+            const isBDM = roleForCheck === 'bdm';
+
+            // --- Menu Visibility ---
+            setDisplay('newProposalNavItem', isBDM);
+            setDisplay('analyticsNavItem', isBDM || isManagement);
             setDisplay('workflowNavItem', ['estimator', 'coo'].includes(roleForCheck));
-            setDisplay('reportsNavItem', false); // Always hidden for now
             setDisplay('settingsNavItem', roleForCheck === 'director');
-            setDisplay('projectsNavItem', ['designer', 'coo', 'director'].includes(roleForCheck));
-            setDisplay('tasksNavItem', roleForCheck === 'designer');
+            
+            // Designer Specifics: Hide Dashboard & Proposals, Show specific tools
+            setDisplay('dashboardNavItem', !isDesigner && !isManagement); // Hide for Designer & Mgmt (Mgmt has Executive Dash)
+            setDisplay('proposalsNavItem', !isDesigner); // HIDE All Proposals for Designer
+            setDisplay('filesNavItem', !isDesigner && !isManagement);
+            
+            // Designer specific menus
+            setDisplay('projectsNavItem', isManagement); // Designers use "My Tasks" or "Allocations"
+            setDisplay('tasksNavItem', isDesigner);
+            setDisplay('timesheetNavItem', isDesigner);
+            setDisplay('designerAllocationsNavItem', isDesigner); // SHOW New Menu
+
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck));
-            setDisplay('executiveMonitoringNavItem', ['coo', 'director'].includes(roleForCheck));
-            setDisplay('timeRequestsNavItem', ['coo', 'director'].includes(roleForCheck));
-            setDisplay('timesheetNavItem', roleForCheck === 'designer');
+            setDisplay('executiveMonitoringNavItem', isManagement);
+            setDisplay('timeRequestsNavItem', isManagement);
 
             // Special case for Dashboard & Files (hidden for BDM/COO/Director in favor of their specific views)
             const isManagement = ['bdm', 'coo', 'director'].includes(roleForCheck);
@@ -2325,19 +2339,12 @@ body.modal-open {
             }
 
             // 5. Route to Initial View
-            if (roleForCheck === 'designer') {
-                showTasks(); // Designers go straight to their tasks/projects
-            } else if (roleForCheck === 'bdm') {
+            if (isDesigner) {
+                showDesignerAllocations(); // Redirect Designer to new view immediately
+            } else if (isBDM || isManagement) {
                 showProposals();
-            } else if (['coo', 'director'].includes(roleForCheck)) {
-                showProposals(); // Both COO and Director start with proposals view
             } else {
-                // Default Fallback
-                if (!isManagement) {
-                    showDashboard();
-                } else {
-                    showProposals();
-                }
+                showDashboard();
             }
 
             // 6. Load Notifications
