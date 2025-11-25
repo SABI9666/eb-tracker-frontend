@@ -2259,47 +2259,169 @@ body.modal-open {
         let authToken = '';
 
         // ============================================
-        // GLOBAL WRAPPER FUNCTIONS - IMMEDIATE AVAILABILITY
+        // DIRECT FUNCTION DEFINITIONS - NO WRAPPERS
         // ============================================
-        // These are defined FIRST so onclick handlers can always find them
-        // They will call the actual implementation functions defined later
+        // Define these functions DIRECTLY here so onclick can find them
         
-        window.viewProject = function(projectId) {
-            console.log('🔍 viewProject wrapper called with ID:', projectId);
-            // Call the actual implementation
-            if (typeof viewProjectDetails === 'function') {
-                return viewProjectDetails(projectId);
-            } else if (typeof window._viewProjectImpl === 'function') {
-                return window._viewProjectImpl(projectId);
-            } else {
-                console.error('❌ viewProjectDetails not yet loaded');
-                setTimeout(() => window.viewProject(projectId), 100);
-            }
-        };
+        // Store references that will be set later
+        let _assignDesignersFunc = null;
+        let _viewBDMFilesFunc = null;
+        let _viewProjectDetailsFunc = null;
         
+        // Direct global functions - these MUST work
         window.assignDesigners = function(projectId) {
-            console.log('👥 assignDesigners wrapper called with ID:', projectId);
-            // Call the actual implementation
-            if (typeof window._assignDesignersImpl === 'function') {
-                return window._assignDesignersImpl(projectId);
-            } else {
-                console.error('❌ assignDesigners implementation not yet loaded');
-                setTimeout(() => window.assignDesigners(projectId), 100);
+            console.log('👥 assignDesigners called with ID:', projectId);
+            
+            // Try to call the implementation
+            if (_assignDesignersFunc) {
+                return _assignDesignersFunc(projectId);
             }
+            
+            // Implementation not set yet, define it inline
+            const modal = document.getElementById('designerAssignmentModal');
+            if (!modal) {
+                alert('Designer assignment modal not found. Please refresh the page.');
+                return;
+            }
+            
+            // Open the modal
+            modal.style.display = 'flex';
+            
+            // Load designers
+            apiCall('users?role=designer').then(response => {
+                if (!response.success) {
+                    alert('Failed to load designers');
+                    return;
+                }
+                
+                const designers = response.data || [];
+                const designersList = document.getElementById('designersList');
+                if (!designersList) return;
+                
+                designersList.innerHTML = '';
+                designers.forEach(designer => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'padding: 10px; border: 1px solid #ddd; margin: 5px 0;';
+                    row.innerHTML = `
+                        <input type="checkbox" id="designer-${designer.uid}" value="${designer.uid}" 
+                               data-name="${designer.name}" data-email="${designer.email}">
+                        <label for="designer-${designer.uid}">${designer.name} (${designer.email})</label>
+                    `;
+                    designersList.appendChild(row);
+                });
+                
+                document.getElementById('assignProjectId').value = projectId;
+            }).catch(error => {
+                console.error('Error loading designers:', error);
+                alert('Failed to load designers: ' + error.message);
+            });
         };
         
         window.viewBDMFiles = function(projectId, proposalId) {
-            console.log('📁 viewBDMFiles wrapper called with ID:', projectId);
-            // Call the actual implementation
-            if (typeof window._viewBDMFilesImpl === 'function') {
-                return window._viewBDMFilesImpl(projectId, proposalId);
-            } else {
-                console.error('❌ viewBDMFiles implementation not yet loaded');
-                setTimeout(() => window.viewBDMFiles(projectId, proposalId), 100);
+            console.log('📁 viewBDMFiles called with:', projectId, proposalId);
+            
+            if (_viewBDMFilesFunc) {
+                return _viewBDMFilesFunc(projectId, proposalId);
             }
+            
+            // Inline implementation
+            if (!proposalId) {
+                // Try to get proposalId from project
+                apiCall(`projects?id=${projectId}`).then(projResp => {
+                    if (projResp.success && projResp.data && projResp.data.proposalId) {
+                        window.viewBDMFiles(projectId, projResp.data.proposalId);
+                    } else {
+                        alert('Could not find proposal for this project');
+                    }
+                });
+                return;
+            }
+            
+            apiCall(`files?proposalId=${proposalId}`).then(response => {
+                const files = response.success ? response.data : [];
+                const bdmFiles = files.filter(f => f.fileType === 'project' || !f.fileType);
+                
+                const modal = document.getElementById('bdmFilesModal');
+                if (!modal) {
+                    alert('Files modal not found');
+                    return;
+                }
+                
+                const filesList = document.getElementById('bdmFilesList');
+                if (filesList) {
+                    filesList.innerHTML = '';
+                    if (bdmFiles.length > 0) {
+                        bdmFiles.forEach(file => {
+                            const div = document.createElement('div');
+                            div.style.cssText = 'padding: 10px; border: 1px solid #ddd; margin: 5px 0;';
+                            div.innerHTML = `
+                                <strong>${file.fileName || file.originalName}</strong><br>
+                                <small>Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</small><br>
+                                <a href="${file.url || file.fileUrl}" target="_blank" class="btn btn-primary btn-sm">Download</a>
+                            `;
+                            filesList.appendChild(div);
+                        });
+                    } else {
+                        filesList.innerHTML = '<p>No files uploaded by BDM</p>';
+                    }
+                }
+                
+                modal.style.display = 'flex';
+            }).catch(error => {
+                console.error('Error loading files:', error);
+                alert('Failed to load files: ' + error.message);
+            });
         };
         
-        console.log('✅ Global wrapper functions registered');
+        window.viewProject = function(projectId) {
+            console.log('🔍 viewProject called with ID:', projectId);
+            
+            if (_viewProjectDetailsFunc) {
+                return _viewProjectDetailsFunc(projectId);
+            }
+            
+            // Inline implementation
+            apiCall(`projects?id=${projectId}`).then(response => {
+                if (!response.success || !response.data) {
+                    alert('Failed to load project details');
+                    return;
+                }
+                
+                const project = response.data;
+                
+                // Create simple modal
+                const existingModal = document.getElementById('projectDetailsModal');
+                if (existingModal) existingModal.remove();
+                
+                const modal = document.createElement('div');
+                modal.id = 'projectDetailsModal';
+                modal.className = 'modal';
+                modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 10000;';
+                modal.innerHTML = `
+                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+                        <h2>📋 Project Details</h2>
+                        <p><strong>Project Name:</strong> ${project.projectName || 'N/A'}</p>
+                        <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
+                        <p><strong>Project Code:</strong> ${project.projectCode || project.projectNumber || 'N/A'}</p>
+                        <p><strong>Status:</strong> ${project.status || 'N/A'}</p>
+                        <p><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</p>
+                        <p><strong>Target Date:</strong> ${project.targetCompletionDate || 'Not set'}</p>
+                        <p><strong>Description:</strong> ${project.description || 'No description provided'}</p>
+                        <p><strong>Special Instructions:</strong> ${project.specialInstructions || 'None'}</p>
+                        <button onclick="document.getElementById('projectDetailsModal').remove()" class="btn btn-primary" style="margin-top: 20px;">Close</button>
+                    </div>
+                `;
+                modal.onclick = (e) => {
+                    if (e.target === modal) modal.remove();
+                };
+                document.body.appendChild(modal);
+            }).catch(error => {
+                console.error('Error loading project:', error);
+                alert('Failed to load project details: ' + error.message);
+            });
+        };
+        
+        console.log('✅ Direct function definitions loaded');
 
         // ============================================
         // UTILITY FUNCTIONS - SUCCESS/ERROR MODALS
