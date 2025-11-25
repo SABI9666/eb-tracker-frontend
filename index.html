@@ -12150,12 +12150,34 @@ async function submitProposalAllocation() {
     </div>
 </div>
 
-<!-- TIMESHEET SECTION FOR DESIGNERS -->
 <div id="timesheetSection" style="display: none;">
     <div class="page-header">
         <h2>⏱️ My Timesheet</h2>
-        <p class="subtitle">Track your hours on assigned projects</p>
+        <p class="subtitle">Log your daily work hours against your assigned projects and view your history.</p>
     </div>
+
+    <div class="dashboard-stats" id="timesheetSummary">
+        </div>
+
+    <div style="margin-bottom: 2rem;">
+        <button class="btn btn-success btn-large" onclick="showTimesheetModal()">
+            ➕ Log Hours for Today
+        </button>
+    </div>
+
+    <div class="action-section">
+        <h3>Timesheet History</h3>
+        <div class="form-group" style="max-width: 300px;">
+            <label for="historyFilter">Filter By Month:</label>
+            <input type="month" id="historyFilter" class="form-control" 
+                   onchange="loadTimesheetHistory(this.value)">
+        </div>
+    </div>
+    
+    <div class="card" id="timesheetHistoryContainer">
+        <p class="text-center text-light mt-3" id="historyMessage">Select a month to view history.</p>
+    </div>
+</div>
 
     <div class="card">
         <div class="card-header">
