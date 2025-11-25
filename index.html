@@ -9131,7 +9131,7 @@ async function loadDesignersForAllocation() {
             const modal = document.getElementById('allocationModal');
             const projectIdField = document.getElementById('projectIdField');
             projectIdField.value = projectId;
-            await loadDesignLeads();
+            await loadDesignersForAllocation();
             modal.style.display = 'flex';
         }
 
