@@ -9810,6 +9810,26 @@ async function showAllocateProjectModal(projectId) {
             }
         }
 
+        // Explicitly ensure functions are in global scope
+        window.assignDesigners = assignDesigners;
+        window.toggleDesignerHoursInput = toggleDesignerHoursInput;
+        window.updateTotalAllocated = updateTotalAllocated;
+        window.submitDesignerAssignment = submitDesignerAssignment;
+        window.viewBDMFiles = viewBDMFiles;
+        
+        // Create alias for viewProject (it's actually called viewProjectDetails in some places)
+        window.viewProject = function(projectId) {
+            // Check which function exists and call it
+            if (typeof viewProjectDetails === 'function') {
+                viewProjectDetails(projectId);
+            } else if (typeof showProjectDetails === 'function') {
+                showProjectDetails(projectId);
+            } else {
+                console.error('No project view function found');
+                alert('Unable to view project details. Please refresh the page.');
+            }
+        };
+
         // Function to display BDM files
         function displayBDMFiles(files) {
             const modal = document.getElementById('bdmFilesModal');
@@ -10463,6 +10483,58 @@ async function submitProposalAllocation() {
             }
         }
 
+
+        // ============================================
+        // GLOBAL FUNCTION ASSIGNMENTS FOR ONCLICK HANDLERS
+        // ============================================
+        // Ensure all functions called via onclick are in global scope
+        
+        // Modal functions
+        window.closeModal = closeModal;
+        if (typeof closeProjectDetailsModal !== 'undefined') window.closeProjectDetailsModal = closeProjectDetailsModal;
+        if (typeof closeDesignerAssignmentModal !== 'undefined') window.closeDesignerAssignmentModal = closeDesignerAssignmentModal;
+        if (typeof closeBDMFilesModal !== 'undefined') window.closeBDMFilesModal = closeBDMFilesModal;
+        if (typeof closeCooMultiDesignerModal !== 'undefined') window.closeCooMultiDesignerModal = closeCooMultiDesignerModal;
+        
+        // Proposal functions
+        if (typeof viewProposal !== 'undefined') window.viewProposal = viewProposal;
+        if (typeof showEstimationModal !== 'undefined') window.showEstimationModal = showEstimationModal;
+        if (typeof submitEstimation !== 'undefined') window.submitEstimation = submitEstimation;
+        if (typeof showCOOPricingForm !== 'undefined') window.showCOOPricingForm = showCOOPricingForm;
+        if (typeof submitCOOPricing !== 'undefined') window.submitCOOPricing = submitCOOPricing;
+        if (typeof markProposalWon !== 'undefined') window.markProposalWon = markProposalWon;
+        if (typeof markProposalLost !== 'undefined') window.markProposalLost = markProposalLost;
+        if (typeof filterProposals !== 'undefined') window.filterProposals = filterProposals;
+        
+        // Project functions  
+        if (typeof showProjectAllocationModal !== 'undefined') window.showProjectAllocationModal = showProjectAllocationModal;
+        if (typeof showProposals !== 'undefined') window.showProposals = showProposals;
+        if (typeof showProjects !== 'undefined') window.showProjects = showProjects;
+        if (typeof filterProjects !== 'undefined') window.filterProjects = filterProjects;
+        
+        // File functions
+        if (typeof downloadFile !== 'undefined') window.downloadFile = downloadFile;
+        if (typeof deleteFile !== 'undefined') window.deleteFile = deleteFile;
+        
+        // Tab/Navigation functions
+        if (typeof showTab !== 'undefined') window.showTab = showTab;
+        if (typeof setActiveNav !== 'undefined') window.setActiveNav = setActiveNav;
+        if (typeof switchTab !== 'undefined') window.switchTab = switchTab;
+        if (typeof switchDesignerTab !== 'undefined') window.switchDesignerTab = switchDesignerTab;
+        
+        // Dashboard functions
+        if (typeof showExecutiveDashboard !== 'undefined') window.showExecutiveDashboard = showExecutiveDashboard;
+        if (typeof showExecutiveSection !== 'undefined') window.showExecutiveSection = showExecutiveSection;
+        if (typeof switchExecutiveTab !== 'undefined') window.switchExecutiveTab = switchExecutiveTab;
+        
+        // Time request functions
+        if (typeof reviewTimeRequest !== 'undefined') window.reviewTimeRequest = reviewTimeRequest;
+        if (typeof closeRequestTimeModal !== 'undefined') window.closeRequestTimeModal = closeRequestTimeModal;
+        
+        // Payment functions
+        if (typeof viewPayment !== 'undefined') window.viewPayment = viewPayment;
+        
+        console.log('✅ All onclick functions registered globally');
     </script>
 
     <div id="cooProjectNumberSection" style="display: none;">
@@ -13233,6 +13305,10 @@ function viewProjectDetails(projectId) {
         document.body.appendChild(modal);
     });
 }
+
+// Ensure project view functions are globally accessible
+window.viewProjectDetails = viewProjectDetails;
+window.closeProjectDetailsModal = closeProjectDetailsModal;
 
 function closeProjectDetailsModal() {
     const modal = document.getElementById('projectDetailsModal');
