@@ -7116,6 +7116,7 @@ async function submitEditedPricing() {
                     throw new Error('Failed to load proposal');
                 }
                 const proposal = proposalResponse.data;
+                console.log('📋 Proposal loaded:', proposal);
                         
                 // Check if proposal is WON
                 if (proposal.status !== 'won') {
@@ -7124,7 +7125,16 @@ async function submitEditedPricing() {
                     return;
                 }
                 
-                // First, create the project if not already created
+                // Check if project already exists in proposal
+                if (proposal.projectId) {
+                    console.log('✅ Project already exists:', proposal.projectId);
+                    hideLoading();
+                    await showCooMultiDesignerAllocationModal(proposal.projectId);
+                    return;
+                }
+                
+                // Create the project if not already created
+                console.log('🔨 Creating project from proposal:', proposalId);
                 const createProjectResponse = await apiCall('projects', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -7134,35 +7144,56 @@ async function submitEditedPricing() {
                     })
                 });
                 
+                console.log('📦 Create project response:', createProjectResponse);
+                
                 let projectId;
-                if (createProjectResponse.success && createProjectResponse.data) {
-                    projectId = createProjectResponse.data.id;
-                } else {
-                    // Project might already exist, get it from proposal
-                    if (proposal.projectId) {
-                        projectId = proposal.projectId;
-                    } else {
-                        // Try to fetch the project again
-                        const proposalRefresh = await apiCall(`proposals?id=${proposalId}`);
-                        if (proposalRefresh.success && proposalRefresh.data.projectId) {
-                            projectId = proposalRefresh.data.projectId;
-                        } else {
-                            throw new Error('Failed to create or find project: ' + (createProjectResponse.error || 'Unknown error'));
-                        }
+                
+                // Backend returns projectId directly in response (not nested in data)
+                if (createProjectResponse.success && createProjectResponse.projectId) {
+                    projectId = createProjectResponse.projectId;
+                    console.log('✅ Got project ID from response.projectId:', projectId);
+                }
+                // Fallback: Check if it's in data object
+                else if (createProjectResponse.success && createProjectResponse.data) {
+                    if (createProjectResponse.data.id) {
+                        projectId = createProjectResponse.data.id;
+                        console.log('✅ Got project ID from response.data.id:', projectId);
+                    }
+                    else if (typeof createProjectResponse.data === 'string') {
+                        projectId = createProjectResponse.data;
+                        console.log('✅ Got project ID from response.data (string):', projectId);
+                    }
+                    else if (createProjectResponse.data.projectId) {
+                        projectId = createProjectResponse.data.projectId;
+                        console.log('✅ Got project ID from response.data.projectId:', projectId);
                     }
                 }
                 
+                // If still no project ID, try to fetch updated proposal
                 if (!projectId) {
-                    throw new Error('Project ID not found after creation');
+                    console.log('⚠️ Project ID not in response, fetching updated proposal...');
+                    const proposalRefresh = await apiCall(`proposals?id=${proposalId}`);
+                    if (proposalRefresh.success && proposalRefresh.data && proposalRefresh.data.projectId) {
+                        projectId = proposalRefresh.data.projectId;
+                        console.log('✅ Got project ID from refreshed proposal:', projectId);
+                    }
                 }
                 
+                // Final check
+                if (!projectId) {
+                    console.error('❌ Could not find project ID anywhere');
+                    console.error('Create response:', createProjectResponse);
+                    throw new Error('Project created but ID not found in response. Please refresh the page and try again.');
+                }
+                
+                console.log('🎯 Opening allocation modal for project:', projectId);
                 hideLoading();
                 
                 // Now open the multi-designer allocation modal
                 await showCooMultiDesignerAllocationModal(projectId);
                 
             } catch (error) {
-                console.error('Error opening allocation modal:', error);
+                console.error('❌ Error opening allocation modal:', error);
                 alert('Error: ' + error.message);
                 hideLoading();
             }
