@@ -8763,11 +8763,59 @@ function formatFileSize(bytes) {
     return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
 }
         // ============================================
-        // TASKS (Designer)
-        // ============================================
+// DESIGNER TASKS/PROJECTS VIEW
+// ============================================
+async function showTasks() {
+    setActiveNav('nav-tasks');
+    const main = document.getElementById('mainContent');
+    main.style.display = 'block'; 
+    showLoading();
+    try {
+        // Fetch projects assigned to this designer
+        const response = await apiCall('projects?assignedToMe=true');
+        if (!response.success) {
+            throw new Error('Failed to load projects');
+        }
+        const projects = response.data || [];
 
-        async function showTasks() { /* ... (Unchanged) ... */ }
-        function renderTasksList(tasks) { /* ... (Unchanged) ... */ }
+        const projectsHtml = `
+            <div class="page-header">
+                <h2>📋 My Assigned Tasks</h2>
+                <p class="subtitle">Projects allocated to you for design work. Click 'View Task' to access details and files.</p>
+            </div>
+            <div class="project-grid">
+                ${projects.length > 0 ? projects.map(project => `
+                    <div class="project-card">
+                        <div class="project-header">
+                            <h3>${project.projectName || 'Untitled Project'}</h3>
+                            <span class="project-status ${project.status.replace(/_/g, '-')}">${project.status.replace(/_/g, ' ')}</span>
+                        </div>
+                        <div class="project-details">
+                            <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
+                            <p><strong>Project Code:</strong> ${project.projectCode || 'N/A'}</p>
+                            <p><strong>Target Date:</strong> ${project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set'}</p>
+                            <p><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</p>
+                        </div>
+                        <div class="project-actions">
+                            <button class="btn btn-primary" onclick="viewDesignerProject('${project.id}')">
+                                👁️ View Task
+                            </button>
+                            <button class="btn btn-outline" onclick="showTimesheetModal('${project.id}')">
+                                ⏱️ Log Hours
+                            </button>
+                        </div>
+                    </div>
+                `).join('') : '<p class="info-message">You currently have no tasks assigned to you. Contact your Design Lead.</p>'}
+            </div>
+        `;
+        main.innerHTML = projectsHtml;
+    } catch (error) {
+        console.error('❌ Error loading designer tasks:', error);
+        main.innerHTML = `<div class="error-message"><h3>Error Loading Tasks</h3><p>${error.message}. Please try refreshing.</p></div>`;
+    } finally {
+        hideLoading();
+    }
+}
 
         // ============================================
         // DELIVERABLES (Designer)
