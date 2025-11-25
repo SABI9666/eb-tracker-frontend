@@ -9141,58 +9141,104 @@ async function loadDesignersForAllocation() {
     modal.style.display = 'flex';
 }
 
-        // Function to submit allocation
         async function submitAllocation() {
-            const projectId = document.getElementById('projectIdField').value;
-            const designLeadSelect = document.getElementById('designLeadSelect');
-            const targetDate = document.getElementById('targetCompletionDate').value;
-            const allocationNotes = document.getElementById('allocationNotes').value;
+    const projectId = document.getElementById('projectIdField').value;
+    const designLeadSelect = document.getElementById('designLeadSelect');
+    const targetDate = document.getElementById('targetCompletionDate').value;
+    const allocationNotes = document.getElementById('allocationNotes').value;
+    const estimatedHoursInput = document.getElementById('estimatedProjectHours');
 
-            if (!designLeadSelect.value) {
-                alert('Please select a Design Manager');
-                return;
+    if (!designLeadSelect.value) {
+        alert('Please select a Designer or Design Manager');
+        return;
+    }
+    
+    const selectedOption = designLeadSelect.options[designLeadSelect.selectedIndex];
+    const selectedRole = selectedOption.dataset.role || 'designer';
+    const selectedUid = selectedOption.value;
+    const selectedName = selectedOption.textContent;
+    const selectedEmail = selectedOption.dataset.email;
+    
+    // Get estimated hours if provided
+    const estimatedHours = estimatedHoursInput ? parseFloat(estimatedHoursInput.value) || 0 : 0;
+    
+    // Determine the action based on role
+    let allocationData;
+    
+    if (selectedRole === 'designer') {
+        // Direct allocation to designer
+        allocationData = {
+            action: 'allocate_directly_to_designer',
+            data: {
+                designerUid: selectedUid,
+                designerName: selectedName,
+                designerEmail: selectedEmail,
+                targetCompletionDate: targetDate || null,
+                allocationNotes: allocationNotes || '',
+                projectStartDate: new Date().toISOString(),
+                estimatedHours: estimatedHours,
+                // Set the designer as assigned
+                assignedDesignerUids: [selectedUid],
+                assignedDesignerNames: [selectedName],
+                designerHours: { [selectedUid]: estimatedHours }
             }
-            const selectedOption = designLeadSelect.options[designLeadSelect.selectedIndex];
-            const allocationData = {
-                action: 'allocate_to_design_lead',
-                data: {
-                    designLeadUid: selectedOption.value,
-                    designLeadName: selectedOption.textContent,
-                    designLeadEmail: selectedOption.dataset.email,
-                    targetCompletionDate: targetDate || null,
-                    allocationNotes: allocationNotes || '',
-                    projectStartDate: new Date().toISOString() // Assuming start date is now
-                }
-            };
-            try {
-                showLoading();
-                const result = await apiCall(`projects?id=${projectId}`, {
-                    method: 'PUT',
-                    body: JSON.stringify(allocationData)
-                });
-                if (result.success) {
-                    showSuccessModal('Project allocated successfully!');
-                    closeAllocationModal();
-                    showProjects(); // Reload the projects list
-                } else {
-                    throw new Error(result.error || 'Allocation failed');
-                }
-            } catch (error) {
-                console.error('Error allocating project:', error);
-                alert('Failed to allocate project: ' + error.message);
-            } finally {
-                hideLoading();
+        };
+    } else {
+        // Traditional allocation to design manager
+        allocationData = {
+            action: 'allocate_to_design_lead',
+            data: {
+                designLeadUid: selectedUid,
+                designLeadName: selectedName,
+                designLeadEmail: selectedEmail,
+                targetCompletionDate: targetDate || null,
+                allocationNotes: allocationNotes || '',
+                projectStartDate: new Date().toISOString(),
+                estimatedHours: estimatedHours
             }
+        };
+    }
+    
+    try {
+        showLoading();
+        const result = await apiCall(`projects?id=${projectId}`, {
+            method: 'PUT',
+            body: JSON.stringify(allocationData)
+        });
+        
+        if (result.success) {
+            const roleText = selectedRole === 'designer' ? 'Designer' : 'Design Manager';
+            showSuccessModal(
+                'Project Allocated Successfully!',
+                `Project has been allocated to ${roleText}: ${selectedName}`
+            );
+            closeAllocationModal();
+            
+            // Send notification email
+            await triggerEmailNotification('project.allocated', {
+                projectId: projectId,
+                recipientUid: selectedUid,
+                recipientEmail: selectedEmail,
+                recipientName: selectedName,
+                role: selectedRole
+            });
+            
+            // Refresh the view
+            if (typeof showProjects === 'function') {
+                showProjects();
+            } else if (typeof showAllProjects === 'function') {
+                showAllProjects();
+            }
+        } else {
+            throw new Error(result.error || 'Allocation failed');
         }
-
-        // Function to close allocation modal
-        function closeAllocationModal() {
-            const modal = document.getElementById('allocationModal');
-            modal.style.display = 'none';
-            document.getElementById('designLeadSelect').selectedIndex = 0;
-            document.getElementById('targetCompletionDate').value = '';
-            document.getElementById('allocationNotes').value = '';
-        }
+    } catch (error) {
+        console.error('Error allocating project:', error);
+        alert('Failed to allocate project: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
 
         // ============================================
         // DESIGN LEAD VIEW UPDATES (REPLACED)
