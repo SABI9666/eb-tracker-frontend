@@ -14036,6 +14036,43 @@ function handleTonnageInput() {
                 document.getElementById('designer-specs-content').style.display = 'block';
             }
         }
+      // 1. Function for "View Details" (viewProject)
+    function viewProject(projectId) {
+        console.log("Viewing project details for ID: " + projectId);
+        // TODO: Implement the logic to open the project details modal or page
+    }
+
+    // 2. Function for "Assign Designers" (assignDesigners)
+    function assignDesigners(projectId) {
+        console.log("Opening designer assignment for ID: " + projectId);
+        // TODO: Implement the logic to open the 'Assign Designers' modal
+        // Note: The HTML snippet contains a modal for this, you may need to call a function like openCooMultiDesignerModal(projectId)
+    }
+
+    // 3. Function for "View BDM Files" (viewBDMFiles)
+    function viewBDMFiles(projectId) {
+        console.log("Viewing BDM files for project ID: " + projectId);
+        // TODO: Implement the logic to open the BDM files viewer
+    }
+
+    // *******************************************************************
+    // The following functions are already present in your HTML snippet, 
+    // but may be needed here if they are not in a separate JS file.
+    // They are included as a reference/best practice for completeness:
+
+    function closeCooMultiDesignerModal() {
+        console.log("Closing Multi-Designer Modal");
+        // Logic to hide the modal (e.g., set display: none or remove a 'show' class)
+        document.getElementById('cooMultiDesignerModal').style.display = 'none';
+    }
+
+    function submitCooMultiDesignerAllocation() {
+        console.log("Submitting Designer Allocation");
+        // Logic to gather form data and submit the allocation
+        // ...
+        closeCooMultiDesignerModal(); // Close after submission
+    }
+    // *******************************************************************                          
 
     </script>
 <div id="cooMultiDesignerAllocationModal" class="modal" style="display: none;">
