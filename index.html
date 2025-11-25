@@ -2887,7 +2887,7 @@ body.modal-open {
             setDisplay('designerAllocationsNavItem', isDesigner); // SHOW New Menu
 
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck));
-            setDisplay('executiveMonitoringNavItem', false); // Executive Dashboard hidden
+            setDisplay('executiveMonitoringNavItem', isManagement); // Executive Dashboard ENABLED for COO & Director
             setDisplay('timeRequestsNavItem', isManagement);
 
             
@@ -3509,10 +3509,25 @@ function renderProposals(proposals) {
                     let allocationInfo = '';
                     let allocationButton = '';
                     
-                    if (p.projectCreated && p.projectId) {
-                        allocationInfo = '<span class="proposal-status status-allocated" style="background: #a7f3d0; color: #064e3b;">✅ Allocated</span>';
+                    // Calculate allocation status
+                    const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+                    const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+                    const remainingToAllocate = maxHours - totalAllocated;
+                    const isFullyAllocated = maxHours > 0 && totalAllocated >= maxHours;
+                    
+                    if (p.projectCreated && p.projectId && isFullyAllocated) {
+                        allocationInfo = '<span class="proposal-status status-allocated" style="background: #a7f3d0; color: #064e3b;">✅ Fully Allocated</span>';
                         if (currentUserRole === 'coo' || currentUserRole === 'director') {
                             allocationButton = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">View Allocated Project</button>`;
+                        }
+                    } else if (p.projectCreated && p.projectId && totalAllocated > 0) {
+                        // Partially allocated
+                        allocationInfo = `<span class="proposal-status status-pending" style="background: #fef3c7; color: #92400e;">⏳ Partial (${totalAllocated.toFixed(1)}/${maxHours}h allocated - ${remainingToAllocate.toFixed(1)}h remaining)</span>`;
+                        if (currentUserRole === 'coo' || currentUserRole === 'director') {
+                            allocationButton = `
+                                <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-warning btn-sm">🎯 Continue Allocation</button>
+                                <button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">View Project</button>
+                            `;
                         }
                     } else if (p.pricing && p.pricing.projectNumber) {
                         allocationInfo = '<span class="proposal-status status-pending" style="background: #fed7aa; color: #9a3412;">⏳ Pending Allocation</span>';
@@ -3531,6 +3546,7 @@ function renderProposals(proposals) {
                                 Client: ${p.clientCompany} |
                                 Won: ${formatDate(p.wonDate)} |
                                 ${p.pricing && p.pricing.projectNumber ? `Project #: ${p.pricing.projectNumber}` : 'No Project Number'}
+                                ${maxHours > 0 ? ` | Budget: ${maxHours}h` : ''}
                             </div>
                         </div>
                         ${allocationInfo}
@@ -3730,13 +3746,23 @@ function filterProposals(filterType) {
                 (p.status === 'estimated' || p.estimation) && 
                 (!p.pricing || !p.pricing.projectNumber)
             ).length,
-            // Pending Allocation = won proposals with pricing but not yet allocated
-            pending: proposals.filter(p => 
-                p.status === 'won' && 
-                p.pricing && 
-                p.pricing.projectNumber && 
-                !p.projectCreated
-            ).length
+            // Pending Allocation = won proposals with pricing but not yet FULLY allocated
+            // Projects are considered "pending allocation" if:
+            // 1. They are won with pricing but no project created yet, OR
+            // 2. They have a project but allocated hours < max allocated hours
+            pending: proposals.filter(p => {
+                if (p.status !== 'won' || !p.pricing || !p.pricing.projectNumber) return false;
+                
+                // If no project created yet, it's definitely pending
+                if (!p.projectCreated) return true;
+                
+                // If project exists, check if fully allocated
+                const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+                const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+                
+                // If max hours not set or allocated less than max, still pending
+                return maxHours > 0 && totalAllocated < maxHours;
+            }).length
         };
         
         // Filter proposals based on current filter
@@ -3754,13 +3780,20 @@ function filterProposals(filterType) {
                 (!p.pricing || !p.pricing.projectNumber)
             );
         } else if (currentFilter === 'pending') {
-            // Show won proposals waiting for allocation
-            filteredProposals = proposals.filter(p => 
-                p.status === 'won' && 
-                p.pricing && 
-                p.pricing.projectNumber && 
-                !p.projectCreated
-            );
+            // Show won proposals waiting for allocation or partially allocated
+            filteredProposals = proposals.filter(p => {
+                if (p.status !== 'won' || !p.pricing || !p.pricing.projectNumber) return false;
+                
+                // If no project created yet, it's definitely pending
+                if (!p.projectCreated) return true;
+                
+                // If project exists, check if fully allocated
+                const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+                const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+                
+                // If max hours not set or allocated less than max, still pending
+                return maxHours > 0 && totalAllocated < maxHours;
+            });
         }
         
         const content = document.getElementById('content');
@@ -7942,10 +7975,20 @@ function createProjectCard(project) {
                         p.status !== 'on_hold' && 
                         p.status !== 'cancelled'
                     ).length,
-                    pending: allProjects.filter(p => 
-                        p.status === 'pending' || 
-                        !p.designLeadUid
-                    ).length,
+                    // Pending Allocation = projects without design lead OR partially allocated
+                    pending: allProjects.filter(p => {
+                        // No design lead assigned
+                        if (!p.designLeadUid && p.status === 'pending') return true;
+                        
+                        // Check for partial allocation (totalAllocatedHours < maxAllocatedHours)
+                        const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+                        const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+                        
+                        // Partially allocated: has max hours set but not fully allocated
+                        if (maxHours > 0 && totalAllocated < maxHours) return true;
+                        
+                        return false;
+                    }).length,
                     completed: allProjects.filter(p => 
                         p.status === 'completed'
                     ).length
@@ -7990,10 +8033,20 @@ function createProjectCard(project) {
                         p.status !== 'cancelled'
                     );
                 } else if (currentProjectFilter === 'pending') {
-                    filteredProjects = allProjects.filter(p => 
-                        p.status === 'pending' || 
-                        !p.designLeadUid
-                    );
+                    // Pending Allocation = projects without design lead OR partially allocated
+                    filteredProjects = allProjects.filter(p => {
+                        // No design lead assigned
+                        if (!p.designLeadUid && p.status === 'pending') return true;
+                        
+                        // Check for partial allocation (totalAllocatedHours < maxAllocatedHours)
+                        const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+                        const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+                        
+                        // Partially allocated: has max hours set but not fully allocated
+                        if (maxHours > 0 && totalAllocated < maxHours) return true;
+                        
+                        return false;
+                    });
                 } else if (currentProjectFilter === 'completed') {
                     filteredProjects = allProjects.filter(p => 
                         p.status === 'completed'
@@ -8206,22 +8259,36 @@ async function showDesignerAllocations() {
             // Handle numeric conversions safely
             const maxHours = parseFloat(p.maxAllocatedHours) || 0;
             const addHours = parseFloat(p.additionalHours) || 0;
-            const totalBudget = maxHours + addHours;
+            const totalProjectBudget = maxHours + addHours;
+
+            // Get designer-specific allocated hours from designerHours object
+            let myAllocatedHours = 0;
+            if (p.designerHours && p.designerHours[currentUser.uid]) {
+                myAllocatedHours = parseFloat(p.designerHours[currentUser.uid]) || 0;
+            } else if (totalProjectBudget > 0) {
+                // Fallback: if no specific allocation, show total budget
+                myAllocatedHours = totalProjectBudget;
+            }
 
             const usedHours = parseFloat(p.hoursLogged) || 0;
-            const remaining = totalBudget - usedHours;
+            
+            // Calculate remaining based on designer's personal allocation
+            const myRemaining = myAllocatedHours - usedHours;
+            
+            // Also track project-level budget for context
+            const projectRemaining = totalProjectBudget - usedHours;
 
-            // Calculate percentage for progress bar
-            const percentUsed = totalBudget > 0 ? (usedHours / totalBudget) * 100 : 0;
+            // Calculate percentage for progress bar (based on designer's allocation)
+            const percentUsed = myAllocatedHours > 0 ? (usedHours / myAllocatedHours) * 100 : 0;
 
             // Status Logic
             let statusColor = 'var(--success)'; // Green
             let statusText = 'On Track';
 
-            if (remaining < 0) {
+            if (myRemaining < 0) {
                 statusColor = 'var(--danger)'; // Red
                 statusText = 'Over Budget';
-            } else if (totalBudget > 0 && remaining < (totalBudget * 0.2)) {
+            } else if (myAllocatedHours > 0 && myRemaining < (myAllocatedHours * 0.2)) {
                 statusColor = 'var(--warning)'; // Orange
                 statusText = 'Low Budget';
             }
@@ -8239,18 +8306,22 @@ async function showDesignerAllocations() {
                     <td>${targetDate}</td>
 
                     <td style="text-align: center;">
-                        <span style="font-weight: bold; font-size: 1.1em;">${totalBudget.toFixed(1)}h</span>
-                        ${addHours > 0 ? `<br><small class="text-muted" style="font-size:0.8em;">(+${addHours}h added)</small>` : ''}
+                        <span style="font-weight: bold; font-size: 1.1em; color: var(--primary-blue);">${myAllocatedHours.toFixed(1)}h</span>
+                        <br><small class="text-muted" style="font-size:0.75em;">Your Allocation</small>
+                        ${totalProjectBudget !== myAllocatedHours ? `<br><small style="font-size:0.7em; color: #888;">(Project: ${totalProjectBudget.toFixed(1)}h)</small>` : ''}
+                        ${addHours > 0 ? `<br><small class="text-muted" style="font-size:0.7em;">(+${addHours}h buffer)</small>` : ''}
                     </td>
                     <td style="text-align: center;">
                          <div>${usedHours.toFixed(1)}h</div>
                          <div style="width: 100%; background: #eee; height: 6px; border-radius: 3px; margin-top: 5px;">
                             <div style="width: ${Math.min(percentUsed, 100)}%; background: ${statusColor}; height: 100%; border-radius: 3px;"></div>
                          </div>
+                         <small style="font-size: 0.7em; color: #888;">${percentUsed.toFixed(0)}% used</small>
                     </td>
                     <td style="text-align: center;">
-                        <span style="font-weight: bold; color: ${statusColor};">${remaining.toFixed(1)}h</span>
+                        <span style="font-weight: bold; color: ${statusColor}; font-size: 1.1em;">${myRemaining.toFixed(1)}h</span>
                         <br><small style="font-size: 0.75rem; color: ${statusColor}">${statusText}</small>
+                        ${myRemaining <= 0 ? `<br><small style="color: var(--danger); font-size: 0.7em;">Request more time</small>` : ''}
                     </td>
 
                     <td class="action-column"> 
@@ -8258,9 +8329,18 @@ async function showDesignerAllocations() {
                                 onclick="showProjectFilesModal('${p.id}', '${p.projectName.replace(/'/g, "\\'")}')">
                             📂 View Files
                         </button>
-                        <button class="btn btn-primary btn-sm" onclick="showTimesheetModal('${p.id}')">
+                        <button class="btn btn-primary btn-sm" 
+                                onclick="showTimesheetModal('${p.id}')"
+                                data-allocated="${myAllocatedHours}"
+                                data-remaining="${myRemaining}">
                             ⏱️ Log Time
                         </button>
+                        ${myRemaining <= 5 ? `
+                            <button class="btn btn-warning btn-sm" 
+                                    onclick="showRequestTimeModalDirect('${p.id}', '${p.projectName.replace(/'/g, "\\'")}', ${myAllocatedHours}, ${usedHours})">
+                                ⏰ Request Time
+                            </button>
+                        ` : ''}
                     </td>
                 </tr>
             `;
@@ -8269,7 +8349,7 @@ async function showDesignerAllocations() {
         main.innerHTML = `
             <div class="page-header">
                 <h2>⏳ Project Allocations</h2>
-                <p class="subtitle">Monitor time budgets for your assigned projects.</p>
+                <p class="subtitle">Monitor time budgets for your assigned projects. Hours shown are your personal allocation.</p>
             </div>
 
             <div class="card">
@@ -8279,8 +8359,8 @@ async function showDesignerAllocations() {
                             <th>Project</th>
                             <th>Client</th>
                             <th>Target Date</th>
-                            <th style="text-align: center;">Total Budget</th>
-                            <th style="text-align: center;">Used (Total)</th>
+                            <th style="text-align: center;">My Allocated Hours</th>
+                            <th style="text-align: center;">Hours Used</th>
                             <th style="text-align: center;">Remaining</th>
                             <th>Actions</th>
                         </tr>
@@ -12507,6 +12587,181 @@ async function submitAdditionalTimeRequest() {
 /**
  * Show Pending Time Requests (for designers)
  */
+async function showPendingTimeRequests() {
+
+/**
+ * Direct Request Additional Time Modal (without exceeding timesheet context)
+ * Called from Designer Allocations view when remaining hours are low
+ */
+function showRequestTimeModalDirect(projectId, projectName, allocatedHours, usedHours) {
+    closeAllModals();
+    
+    const remaining = allocatedHours - usedHours;
+    const suggestedHours = Math.max(10, Math.ceil((allocatedHours * 0.25))); // Suggest 25% more or at least 10h
+    
+    const modalHtml = `
+        <div class="modal-overlay" id="requestTimeDirectModalOverlay" onclick="handleModalOverlayClick(event, 'requestTimeDirectModalOverlay')">
+            <div class="modal-content" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h2>⏰ Request Additional Time</h2>
+                    <span class="close-modal" onclick="closeRequestTimeDirectModal()">&times;</span>
+                </div>
+                
+                <div class="modal-body">
+                    <div style="padding: 1rem; background: #e3f2fd; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #2196f3;">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1565c0;">📊 Project: ${projectName}</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2;">${allocatedHours.toFixed(1)}h</div>
+                                <small style="color: #666;">Allocated</small>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #ff9800;">${usedHours.toFixed(1)}h</div>
+                                <small style="color: #666;">Used</small>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: ${remaining < 0 ? '#f44336' : remaining < 5 ? '#ff9800' : '#4caf50'};">${remaining.toFixed(1)}h</div>
+                                <small style="color: #666;">Remaining</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    ${remaining <= 0 ? `
+                        <div style="padding: 1rem; background: #ffebee; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #f44336;">
+                            <p style="margin: 0; color: #c62828;">
+                                ⚠️ <strong>Budget Exceeded!</strong> You've used all your allocated hours. 
+                                Submit a request for additional time to continue working on this project.
+                            </p>
+                        </div>
+                    ` : remaining < 5 ? `
+                        <div style="padding: 1rem; background: #fff3e0; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #ff9800;">
+                            <p style="margin: 0; color: #e65100;">
+                                ⚠️ <strong>Low Budget Warning!</strong> You have only ${remaining.toFixed(1)} hours remaining.
+                                Consider requesting additional time before running out.
+                            </p>
+                        </div>
+                    ` : ''}
+                    
+                    <form id="requestTimeDirectForm" onsubmit="event.preventDefault(); submitDirectTimeRequest();">
+                        <input type="hidden" id="directReqProjectId" value="${projectId}">
+                        <input type="hidden" id="directReqProjectName" value="${projectName}">
+                        <input type="hidden" id="directReqAllocatedHours" value="${allocatedHours}">
+                        <input type="hidden" id="directReqUsedHours" value="${usedHours}">
+                        
+                        <div class="form-group">
+                            <label>Additional Hours Needed <span class="required">*</span></label>
+                            <input type="number" id="directRequestedHours" class="form-control" 
+                                   min="1" step="0.5" 
+                                   value="${suggestedHours}" required>
+                            <small>Suggested: ${suggestedHours}h (25% additional buffer)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Reason for Additional Time <span class="required">*</span></label>
+                            <textarea id="directRequestReason" class="form-control" rows="5" 
+                                      placeholder="Please explain why additional time is needed...&#10;&#10;Examples:&#10;- Design complexity increased&#10;- Client requested revisions&#10;- Scope changes not in original estimate&#10;- Unforeseen technical challenges" required></textarea>
+                            <small>Be specific: scope changes, unforeseen complexity, design revisions, etc. (min 20 characters)</small>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" onclick="closeRequestTimeDirectModal()" class="btn btn-outline">Cancel</button>
+                    <button type="button" onclick="submitDirectTimeRequest()" class="btn btn-primary">
+                        📤 Submit Request to COO
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+/**
+ * Close Direct Request Time Modal
+ */
+function closeRequestTimeDirectModal() {
+    const modal = document.getElementById('requestTimeDirectModalOverlay');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+/**
+ * Submit Direct Time Request
+ */
+async function submitDirectTimeRequest() {
+    const projectId = document.getElementById('directReqProjectId').value;
+    const projectName = document.getElementById('directReqProjectName').value;
+    const allocatedHours = parseFloat(document.getElementById('directReqAllocatedHours').value);
+    const usedHours = parseFloat(document.getElementById('directReqUsedHours').value);
+    const requestedHours = parseFloat(document.getElementById('directRequestedHours').value);
+    const reason = document.getElementById('directRequestReason').value.trim();
+    
+    if (!requestedHours || requestedHours <= 0) {
+        alert('Please enter valid hours');
+        return;
+    }
+    
+    if (!reason || reason.length < 20) {
+        alert('Please provide a detailed reason (at least 20 characters)');
+        document.getElementById('directRequestReason').focus();
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        // Submit time request
+        const response = await apiCall('time-requests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                projectId,
+                requestedHours,
+                reason,
+                currentAllocatedHours: allocatedHours,
+                currentHoursLogged: usedHours,
+                requestType: 'proactive' // Flag that this is a proactive request, not from timesheet overflow
+            })
+        });
+        
+        if (response.success) {
+            closeRequestTimeDirectModal();
+            showSuccessModal(
+                '✅ Request Submitted!',
+                `Your request for ${requestedHours} additional hours on "${projectName}" has been submitted to the COO for review.`
+            );
+
+            // Trigger email notification
+            triggerEmailNotification('time_request.created', {
+                projectId: projectId,
+                hours: requestedHours,
+                reason: reason,
+                designerName: currentUser.displayName
+            });
+            
+            // Refresh the allocations view
+            if (typeof showDesignerAllocations === 'function') {
+                setTimeout(() => {
+                    closeSuccessModal();
+                    showDesignerAllocations();
+                }, 2000);
+            }
+        } else {
+            throw new Error(response.error || 'Failed to submit request');
+        }
+        
+    } catch (error) {
+        console.error('Error submitting time request:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+// Original showPendingTimeRequests continues below
 async function showPendingTimeRequests() {
     try {
         showLoading();
