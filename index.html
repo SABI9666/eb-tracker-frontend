@@ -7993,10 +7993,9 @@ async function showDesignerAllocations() {
         hideLoading();
     }
 }
-     // ============================================
-// PROJECT FILES MODAL FUNCTIONALITY
-// ============================================
-async function showProjectFilesModal(projectId, projectName) {
+     async function showProjectFilesModal(projectId, projectName) {
+    console.log('📂 Opening files for project:', projectId, projectName);
+    
     // 1. Get DOM elements
     const modal = document.getElementById('projectFilesModal');
     const title = document.getElementById('projectFilesModalTitle');
@@ -8008,132 +8007,184 @@ async function showProjectFilesModal(projectId, projectName) {
     subtitle.textContent = `Loading files for project ID: ${projectId}`;
     content.innerHTML = '<div class="loading-spinner"></div>';
 
-    // 3. Open the modal (Assumes openModal is a global function)
+    // 3. Open the modal
     openModal('projectFilesModal'); 
 
     try {
-        // 4. Fetch files (API call)
-        // Ensure your backend has an endpoint at /files?projectId={id}
-        const response = await apiCall(`files?projectId=${projectId}`);
-
-        if (!response.success) {
-            throw new Error(response.error || 'Failed to fetch project files.');
+        // 4. First, get the project details to find the proposalId
+        const projectResponse = await apiCall(`projects?id=${projectId}`);
+        
+        if (!projectResponse.success) {
+            throw new Error(projectResponse.error || 'Failed to fetch project details.');
         }
-
-        const files = response.data || [];
+        
+        const project = projectResponse.data;
+        console.log('📦 Project details:', project);
+        
+        // 5. Fetch files using BOTH projectId AND proposalId
+        // Try multiple approaches to ensure we get the files
+        let files = [];
+        
+        // Approach 1: Try fetching by projectId
+        try {
+            const response1 = await apiCall(`files?projectId=${projectId}`);
+            if (response1.success && response1.data && response1.data.length > 0) {
+                files = response1.data;
+                console.log('✅ Files found using projectId:', files.length);
+            }
+        } catch (err) {
+            console.log('⚠️ Could not fetch files by projectId:', err.message);
+        }
+        
+        // Approach 2: If no files found and we have a proposalId, try that
+        if (files.length === 0 && project.proposalId) {
+            try {
+                const response2 = await apiCall(`files/list?proposalId=${project.proposalId}`);
+                if (response2.success && response2.data && response2.data.length > 0) {
+                    files = response2.data;
+                    console.log('✅ Files found using proposalId:', files.length);
+                }
+            } catch (err) {
+                console.log('⚠️ Could not fetch files by proposalId:', err.message);
+            }
+        }
+        
+        // Approach 3: Try the legacy endpoint as a fallback
+        if (files.length === 0 && project.proposalId) {
+            try {
+                const response3 = await apiCall(`files?proposalId=${project.proposalId}`);
+                if (response3.success && response3.data && response3.data.length > 0) {
+                    files = response3.data;
+                    console.log('✅ Files found using legacy endpoint:', files.length);
+                }
+            } catch (err) {
+                console.log('⚠️ Could not fetch files using legacy endpoint:', err.message);
+            }
+        }
+        
+        console.log('📊 Total files retrieved:', files.length);
         
         if (files.length === 0) {
-            content.innerHTML = '<div class="empty-state">No files have been uploaded for this project yet.</div>';
+            content.innerHTML = `
+                <div class="empty-state" style="text-align: center; padding: 3rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
+                    <h3>No Files Available</h3>
+                    <p style="color: var(--text-light); margin-top: 0.5rem;">
+                        No files have been uploaded for this project yet.
+                    </p>
+                    ${project.proposalId ? `<small style="color: var(--text-light);">Project Code: ${project.projectCode || 'N/A'} | Proposal ID: ${project.proposalId}</small>` : ''}
+                </div>
+            `;
             return;
         }
 
-        // 5. Build the file list HTML
-        const fileListHtml = files.map(file => {
-            const fileTypeLabel = file.fileType || 'General';
-            const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
-            const uploadedBy = file.uploadedByName || 'Unknown User';
+        // 6. Group files by type for better organization
+        const filesByType = {
+            drawing: [],
+            specification: [],
+            estimate: [],
+            project: [],
+            other: []
+        };
+        
+        files.forEach(file => {
+            const type = file.fileType || 'other';
+            if (filesByType[type]) {
+                filesByType[type].push(file);
+            } else {
+                filesByType.other.push(file);
+            }
+        });
 
-            return `
-                <div class="file-item">
-                    <span class="file-name">
-                        <i class="fas fa-file-alt"></i> 
-                        <a href="${file.fileUrl}" target="_blank" title="Download ${file.fileName}">${file.fileName}</a>
-                    </span>
-                    <span class="file-meta">
-                        <span class="badge file-type-badge">${fileTypeLabel}</span>
-                        Uploaded by: ${uploadedBy} on ${uploadDate}
-                    </span>
-                    <a href="${file.fileUrl}" target="_blank" class="btn btn-sm btn-primary download-button">
-                        <i class="fas fa-download"></i> Download
-                    </a>
+        // 7. Build the file list HTML with grouping
+        let fileListHtml = '';
+        
+        const typeLabels = {
+            drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6' },
+            specification: { icon: '📋', label: 'Specifications', color: '#10b981' },
+            estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b' },
+            project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6' },
+            other: { icon: '📄', label: 'Other Files', color: '#6b7280' }
+        };
+        
+        Object.keys(filesByType).forEach(type => {
+            const typeFiles = filesByType[type];
+            if (typeFiles.length === 0) return;
+            
+            const typeInfo = typeLabels[type];
+            
+            fileListHtml += `
+                <div class="file-type-section" style="margin-bottom: 2rem;">
+                    <h3 style="color: ${typeInfo.color}; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.5rem;">${typeInfo.icon}</span>
+                        ${typeInfo.label} (${typeFiles.length})
+                    </h3>
+                    <div class="files-grid">
+                        ${typeFiles.map(file => {
+                            const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
+                            const uploadedBy = file.uploadedByName || 'Unknown User';
+                            const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
+                            
+                            return `
+                                <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; transition: all 0.3s ease;">
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-dark); margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            📄 ${file.fileName}
+                                        </div>
+                                        <div style="font-size: 0.85rem; color: var(--text-light);">
+                                            Uploaded by <strong>${uploadedBy}</strong> on ${uploadDate}
+                                            ${fileSize ? ` • ${fileSize}` : ''}
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; gap: 0.5rem; flex-shrink: 0; margin-left: 1rem;">
+                                        <a href="${file.fileUrl}" target="_blank" class="btn btn-outline btn-sm" 
+                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                           title="View ${file.fileName}">
+                                            👁️ View
+                                        </a>
+                                        <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-primary btn-sm"
+                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                           title="Download ${file.fileName}">
+                                            ⬇️ Download
+                                        </a>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
             `;
-        }).join('');
+        });
 
-        // 6. Inject the list with styling
+        // 8. Inject the list with enhanced styling
         content.innerHTML = `
             <style>
-                .file-item {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding: 10px 0;
-                    border-bottom: 1px solid var(--border);
-                }
-                .file-item:last-child { border-bottom: none; }
-                .file-name {
-                    font-weight: bold;
-                    flex-grow: 1;
-                    margin-right: 15px;
-                }
-                .file-meta {
-                    color: var(--text-light);
-                    font-size: 0.9em;
-                    margin-right: 15px;
-                    text-align: right;
-                }
-                .file-type-badge {
-                    display: inline-block;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    background: var(--light-blue);
-                    color: var(--primary-blue);
-                    font-size: 0.8em;
-                    font-weight: 500;
-                    margin-bottom: 3px;
-                }
-                .download-button {
-                    white-space: nowrap;
+                .file-type-section { }
+                .files-grid { }
+                .file-item:hover {
+                    background: white !important;
+                    border-color: var(--primary-blue) !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+                    transform: translateY(-2px);
                 }
             </style>
             ${fileListHtml}
         `;
 
     } catch (error) {
-        console.error("Error loading project files:", error);
-        content.innerHTML = `<div class="error-message">Could not load files: ${error.message}</div>`;
+        console.error("❌ Error loading project files:", error);
+        content.innerHTML = `
+            <div class="error-message" style="text-align: center; padding: 2rem; color: var(--danger);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3>Error Loading Files</h3>
+                <p style="margin-top: 0.5rem;">${error.message}</p>
+                <button onclick="showProjectFilesModal('${projectId}', '${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
+                    🔄 Retry
+                </button>
+            </div>
+        `;
     }
 }
-        
-        // REPLACED IMPLEMENTATION
-        async function viewProject(projectId) {
-            // This function is complex. It needs to show project details,
-            // deliverables, tasks, etc. For now, let's just re-use the
-            // viewProposal logic but for projects.
-            // A full implementation would be much larger.
-            // Let's use the Designer's view as a template.
-            if (currentUserRole === 'designer') {
-                 await viewDesignerProject(projectId); // Use existing function
-                 return;
-            }
-            if (currentUserRole === 'design_lead') {
-                // Design lead view might be different
-                // Let's re-use the designer view for now
-                 await viewDesignerProject(projectId); // Use existing function
-                 return;
-            }
-
-            // Fallback for COO/Director
-             try {
-                showLoading();
-                const { success, data } = await apiCall(`projects?id=${projectId}`);
-                if (success && data) {
-                    const filesResponse = await apiCall(`files?proposalId=${data.proposalId}`);
-                    const files = filesResponse.success ? filesResponse.data : [];
-                    // Just show a simple modal with project data
-                    // This re-uses the proposal detail modal structure but isn't perfect
-                    renderProposalDetailModal(data, files); // This is a HACK, but it's what's available
-                    // A better way would be a dedicated viewProjectModal
-                    console.warn("Using renderProposalDetailModal as a fallback for viewProject");
-                } else {
-                    throw new Error('Failed to load project');
-                }
-            } catch (error) {
-                alert(`Error fetching project: ${error.message}`);
-            } finally {
-                hideLoading();
-            }
-        }
 
         // ============================================
         // TASKS (Designer)
