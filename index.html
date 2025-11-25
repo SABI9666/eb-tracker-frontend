@@ -9077,33 +9077,54 @@ async function markProjectComplete(projectId) {
         async function testBackendConnection() { /* ... (Unchanged) ... */ }
         async function runDiagnostics() { /* ... (Unchanged) ... */ }
 
-
-        // ============================================
-        // == NEW/ADAPTED FUNCTIONS FROM YOUR SCRIPT ==
-        // ============================================
-
-        // Function to load Design Leads for the dropdown
-        async function loadDesignLeads() {
-            try {
-                const response = await apiCall('users?role=design_lead');
-                if (!response.success) {
-                    throw new Error(response.error || 'Failed to fetch design leads');
-                }
-                const designLeads = response.data;
-                const selectElement = document.getElementById('designLeadSelect');
-                selectElement.innerHTML = '<option value="">Select Design Manager</option>';
-                designLeads.forEach(lead => {
-                    const option = document.createElement('option');
-                    option.value = lead.uid;
-                    option.textContent = lead.name;
-                    option.dataset.email = lead.email;
-                    selectElement.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error loading design leads:', error);
-                alert('Error loading Design Managers: ' + error.message);
-            }
+async function loadDesignersForAllocation() {
+    try {
+        // Fetch both designers AND design managers (in case you still want the option)
+        const [designersResponse, designLeadsResponse] = await Promise.all([
+            apiCall('users?role=designer'),
+            apiCall('users?role=design_lead')
+        ]);
+        
+        if (!designersResponse.success) {
+            throw new Error(designersResponse.error || 'Failed to fetch designers');
         }
+        
+        const designers = designersResponse.data || [];
+        const designLeads = designLeadsResponse.success ? designLeadsResponse.data || [] : [];
+        
+        // Combine both lists for flexibility
+        const allUsers = [...designers, ...designLeads];
+        
+        const selectElement = document.getElementById('designLeadSelect');
+        selectElement.innerHTML = '<option value="">Select Designer or Design Manager</option>';
+        
+        // Add optgroups for better organization
+        if (designers.length > 0) {
+            const designerGroup = document.createElement('optgroup');
+            designerGroup.label = '👨‍💼 Designers';
+            designers.forEach(designer => {
+                const option = document.createElement('option');
+                option.value = designer.uid;
+                option.textContent = designer.name;
+                option.dataset.email = designer.email;
+                option.dataset.role = 'designer';
+                designerGroup.appendChild(option);
+            });
+            selectElement.appendChild(designerGroup);
+        }
+        
+        if (designLeads.length > 0) {
+            const leadGroup = document.createElement('optgroup');
+            leadGroup.label = '👔 Design Managers';
+            designLeads.forEach(lead => {
+                const option = document.createElement('option');
+                option.value = lead.uid;
+                option.textContent = lead.name;
+                option.dataset.email = lead.email;
+                option.dataset.role = 'design_lead';
+                leadGroup.appendChild(option);
+            });
+            selectEle
 
         // Show COO Allocation Modal
         async function showAllocateProjectModal(projectId) {
