@@ -2301,20 +2301,162 @@ body.modal-open {
                 designersList.innerHTML = '';
                 designers.forEach(designer => {
                     const row = document.createElement('div');
-                    row.style.cssText = 'padding: 10px; border: 1px solid #ddd; margin: 5px 0;';
+                    row.className = 'designer-row';
+                    row.style.cssText = 'display: grid; grid-template-columns: auto 1fr auto; gap: 1rem; align-items: center; padding: 1rem; border: 2px solid #e0e0e0; border-radius: 8px; margin-bottom: 0.8rem; background: white;';
                     row.innerHTML = `
-                        <input type="checkbox" id="designer-${designer.uid}" value="${designer.uid}" 
-                               data-name="${designer.name}" data-email="${designer.email}">
-                        <label for="designer-${designer.uid}">${designer.name} (${designer.email})</label>
+                        <div style="display: flex; align-items: center;">
+                            <input type="checkbox" 
+                                   id="designer-${designer.uid}" 
+                                   value="${designer.uid}" 
+                                   data-name="${designer.name}" 
+                                   data-email="${designer.email}"
+                                   onchange="window.toggleDesignerHoursInput(this)"
+                                   style="width: 20px; height: 20px; cursor: pointer;">
+                        </div>
+                        <div>
+                            <label for="designer-${designer.uid}" style="font-weight: 600; margin: 0; cursor: pointer;">
+                                ${designer.name}
+                            </label>
+                            <div style="font-size: 0.85rem; color: #666;">
+                                ${designer.email}
+                            </div>
+                        </div>
+                        <div style="min-width: 150px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <input type="number" 
+                                       id="hours-${designer.uid}"
+                                       class="form-control hours-input" 
+                                       step="0.5" 
+                                       min="0.5"
+                                       value="0"
+                                       placeholder="Hours"
+                                       disabled
+                                       onchange="window.updateTotalAllocated()"
+                                       style="width: 80px; padding: 0.5rem; text-align: center;">
+                                <span style="font-size: 0.9rem; color: #666;">hrs</span>
+                            </div>
+                        </div>
                     `;
                     designersList.appendChild(row);
                 });
                 
                 document.getElementById('assignProjectId').value = projectId;
+                
+                // Initialize total
+                window.updateTotalAllocated();
             }).catch(error => {
                 console.error('Error loading designers:', error);
                 alert('Failed to load designers: ' + error.message);
             });
+        };
+        
+        // Helper function to toggle hours input
+        window.toggleDesignerHoursInput = function(checkbox) {
+            const designerId = checkbox.value;
+            const hoursInput = document.getElementById(`hours-${designerId}`);
+            
+            if (checkbox.checked) {
+                hoursInput.disabled = false;
+                if (!hoursInput.value || hoursInput.value === '0') {
+                    hoursInput.value = '1'; // Default to 1 hour
+                }
+            } else {
+                hoursInput.disabled = true;
+                hoursInput.value = '0';
+            }
+            
+            window.updateTotalAllocated();
+        };
+        
+        // Helper function to update total allocated hours
+        window.updateTotalAllocated = function() {
+            let total = 0;
+            const hoursInputs = document.querySelectorAll('.hours-input:not([disabled])');
+            hoursInputs.forEach(input => {
+                const value = parseFloat(input.value) || 0;
+                total += value;
+            });
+            
+            const totalDisplay = document.getElementById('totalAllocatedHours');
+            if (totalDisplay) {
+                totalDisplay.textContent = total.toFixed(1);
+            }
+        };
+        
+        // Function to submit designer assignment
+        window.submitDesignerAssignment = function() {
+            console.log('📝 Submitting designer assignment');
+            
+            const projectId = document.getElementById('assignProjectId').value;
+            const checkboxes = document.querySelectorAll('#designersList input[type="checkbox"]:checked');
+            
+            if (checkboxes.length === 0) {
+                alert('Please select at least one designer');
+                return;
+            }
+            
+            const designerUids = [];
+            const designerNames = [];
+            const designerEmails = [];
+            const designerHours = {};
+            
+            checkboxes.forEach(checkbox => {
+                const uid = checkbox.value;
+                const hoursInput = document.getElementById(`hours-${uid}`);
+                const hours = parseFloat(hoursInput.value) || 0;
+                
+                if (hours < 0.5) {
+                    alert(`Please allocate at least 0.5 hours for ${checkbox.dataset.name}`);
+                    return;
+                }
+                
+                designerUids.push(uid);
+                designerNames.push(checkbox.dataset.name);
+                designerEmails.push(checkbox.dataset.email);
+                designerHours[uid] = hours;
+            });
+            
+            // Submit to backend
+            const payload = {
+                projectId: projectId,
+                designerUids: designerUids,
+                designerNames: designerNames,
+                designerEmails: designerEmails,
+                designerHours: designerHours,
+                action: 'assign_designers'
+            };
+            
+            console.log('📤 Sending designer assignment:', payload);
+            
+            apiCall('projects', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            }).then(response => {
+                if (response.success) {
+                    alert('Designers assigned successfully!');
+                    window.closeDesignerAssignmentModal();
+                    // Reload the page to show updated data
+                    if (typeof showProjects === 'function') {
+                        showProjects();
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert('Failed to assign designers: ' + (response.message || 'Unknown error'));
+                }
+            }).catch(error => {
+                console.error('Error assigning designers:', error);
+                alert('Failed to assign designers: ' + error.message);
+            });
+        };
+        
+        // Function to close designer assignment modal
+        window.closeDesignerAssignmentModal = function() {
+            console.log('❌ Closing designer assignment modal');
+            const modal = document.getElementById('designerAssignmentModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         };
         
         window.viewBDMFiles = function(projectId, proposalId) {
@@ -2419,6 +2561,15 @@ body.modal-open {
                 console.error('Error loading project:', error);
                 alert('Failed to load project details: ' + error.message);
             });
+        };
+        
+        // Function to close BDM files modal
+        window.closeBDMFilesModal = function() {
+            console.log('❌ Closing BDM files modal');
+            const modal = document.getElementById('bdmFilesModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         };
         
         console.log('✅ Direct function definitions loaded');
