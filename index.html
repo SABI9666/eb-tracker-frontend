@@ -7120,7 +7120,7 @@ async function submitEditedPricing() {
                                                 
                             <div class="modal-footer">
                                 <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                                <button type="button" onclick="submitProjectAllocation('${proposalId}')" class="btn btn-success">
+                                <button type="button" onclick="submitProposalAllocationOld('${proposalId}')" class="btn btn-success">
                                     Allocate Project
                                 </button>
                             </div>
@@ -7138,8 +7138,8 @@ async function submitEditedPricing() {
             }
         }
 
-        // Submit Project Allocation
-        async function submitProjectAllocation(proposalId) {
+        // Submit Project Allocation (Old Version - For BDM)
+        async function submitProposalAllocationOld(proposalId) {
             const designManagerSelect = document.getElementById('designManagerSelect');
             const designManagerUid = designManagerSelect?.value;
             const targetCompletionDate = document.getElementById('targetCompletionDate')?.value;
@@ -9141,7 +9141,7 @@ async function loadDesignersForAllocation() {
     modal.style.display = 'flex';
 }
 
-        async function submitAllocation() {
+        async function submitProjectAllocation() {
     const projectId = document.getElementById('projectIdField').value;
     const designLeadSelect = document.getElementById('designLeadSelect');
     const targetDate = document.getElementById('targetCompletionDate').value;
@@ -10143,7 +10143,7 @@ async function showAllocationModal(proposalId) {
                     </div>
                     <div class="modal-footer">
                         <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                        <button type="button" onclick="submitAllocation()" class="btn btn-success btn-large">
+                        <button type="button" onclick="submitProjectAllocation()" class="btn btn-success btn-large">
                             <span class="btn-icon">✓</span> Allocate Project
                         </button>
                     </div>
@@ -10161,7 +10161,7 @@ async function showAllocationModal(proposalId) {
 }
 
 // Submit Allocation - FIXED VERSION
-async function submitAllocation() {
+async function submitProposalAllocation() {
     const proposalId = document.getElementById('allocationProposalId').value;
     const designManagerSelect = document.getElementById('designManagerSelect');
     const designManagerUid = designManagerSelect.value;
@@ -10497,7 +10497,7 @@ async function submitAllocation() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-cancel" onclick="closeAllocationModal()">Cancel</button>
-                <button type="button" class="btn btn-primary btn-large" onclick="submitAllocation()">
+                <button type="button" class="btn btn-primary btn-large" onclick="submitProposalAllocation()">
                     <span class="btn-icon">✓</span> Allocate Project
                 </button>
             </div>
