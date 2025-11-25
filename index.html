@@ -9373,53 +9373,6 @@ function createProjectCard(project) {
     `;
 }
 
-       // Function to create project card UI
-        function createProjectCard(project) {
-            const allocDate = project.allocationDate ? formatDate(project.allocationDate) : 'Not set';
-            const targetDate = project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set';
-
-            // Find this function (around line 5200)
-            // Add the "Add Variation" button inside the .project-actions div
-
-            return `
-                <div class="project-card">
-                    <div class="project-header">
-                        <h3>${project.projectName}</h3>
-                        <span class="project-status ${project.status.replace(/_/g, '-')}">${project.status.replace(/_/g, ' ')}</span>
-                    </div>
-                    <div class="project-details">
-                        <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
-                        <p><strong>Code:</strong> ${project.projectCode || 'N/A'}</p>
-                        <p><strong>Allocated:</strong> ${allocDate}</p>
-                        <p><strong>Target:</strong> ${targetDate}</p>
-                        <p><strong>Status:</strong> ${project.designStatus || 'N/A'}</p>
-                        <p><strong>Designers:</strong> ${project.assignedDesignerNames?.join(', ') || 'None assigned'}</p>
-                    </div>
-                    <div class="project-actions">
-                        <button onclick="viewProject('${project.id}')">View Details</button>
-                        ${(project.status === 'active' || project.status === 'ASSIGNED' || !project.assignedDesignerNames || project.assignedDesignerNames.length === 0) ?
-                            `<button onclick="assignDesigners('${project.id}')">
-                                ${project.assignedDesignerNames?.length > 0 ? '✏️ Manage Designers' : '➕ Assign Designers'}
-                            </button>` : ''}
-                        <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
-                        
-                            ${(currentUserRole === 'coo' || currentUserRole === 'director') ? `
-                            <button onclick="showAddVariationModal('${project.id}', '${project.projectCode}', '${project.projectName}')" 
-                                    style="background-color: var(--warning); color: white; border-color: var(--warning);">
-                                ➕ Add Variation
-                            </button>
-                        ` : ''}
-
-                        ${((currentUserRole === 'coo' || currentUserRole === 'director') && project.status !== 'completed') ? `
-                            <button onclick="markProjectComplete('${project.id}')" 
-                                    style="background-color: var(--success); color: white; border-color: var(--success);">
-                                ✅ Mark Complete
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `; // <-- FIX 1: Added missing closing backtick
-        } // <-- FIX 2: Added missing closing curly brace
 
         // Function for Design Lead to assign designers
         async function assignDesigners(projectId) {
