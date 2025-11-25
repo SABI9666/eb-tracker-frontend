@@ -3682,8 +3682,10 @@ function renderProposalsTable(proposals) {
         const maxHours = parseFloat(p.maxAllocatedHours) || 0;
         const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
         const remainingHours = maxHours - totalAllocated;
-        const isFullyAllocated = p.projectCreated && maxHours > 0 && totalAllocated >= maxHours;
-        const isPartiallyAllocated = p.projectCreated && maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
+        
+        // Logic: Project is fully allocated if it exists and Remaining is <= 0 (or very close to 0)
+        const isFullyAllocated = p.projectCreated && maxHours > 0 && remainingHours <= 0.1;
+        const isPartiallyAllocated = p.projectCreated && maxHours > 0 && remainingHours > 0.1;
         const isPendingAllocation = p.status === 'won' && p.pricing && p.pricing.projectNumber && !p.projectCreated;
         
         // Action buttons based on proposal status
@@ -3697,12 +3699,13 @@ function renderProposalsTable(proposals) {
         // COO can allocate won proposals with pricing
         if (p.status === 'won' && p.pricing && p.pricing.projectNumber) {
             if (isPendingAllocation) {
-                // Not allocated at all - show Allocate button
+                // Case 1: Not allocated at all - show Allocate button
                 actionButtons += `<button class="btn btn-primary btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Allocate Project</button> `;
             } else if (isPartiallyAllocated) {
-                // Partially allocated - show Continue Allocation with remaining hours
+                // Case 2: Partially allocated - show Continue Allocation with remaining hours
                 actionButtons += `<button class="btn btn-warning btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Allocate Remaining ${remainingHours.toFixed(1)}h</button> `;
             }
+            // Case 3: Fully Allocated - DO NOT show allocate button
         }
         
         // Allocation status indicator
@@ -3711,7 +3714,7 @@ function renderProposalsTable(proposals) {
             if (isFullyAllocated) {
                 allocationStatus = '<span class="badge badge-success" style="font-size: 0.7rem;">✅ Fully Allocated</span>';
             } else if (isPartiallyAllocated) {
-                allocationStatus = `<span class="badge badge-warning" style="font-size: 0.7rem; background: #f59e0b; color: white;">⏳ Partial: ${totalAllocated.toFixed(1)}/${maxHours}h (${remainingHours.toFixed(1)}h remaining)</span>`;
+                allocationStatus = `<span class="badge badge-warning" style="font-size: 0.7rem; background: #f59e0b; color: white;">⏳ Partial: ${totalAllocated.toFixed(1)}/${maxHours}h (${remainingHours.toFixed(1)}h left)</span>`;
             } else if (isPendingAllocation) {
                 allocationStatus = '<span class="badge badge-info" style="font-size: 0.7rem;">🎯 Needs Allocation</span>';
             }
