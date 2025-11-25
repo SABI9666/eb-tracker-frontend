@@ -3642,82 +3642,104 @@ function filterProposals(filterType) {
         let allProjectsData = [];
         let allVariationsData = []; // <-- NEW: Add this line
 
-        /**
-         * Renders the proposals table for COO dashboard
-         */
-        function renderProposalsTable(proposals) {
-            if (!proposals || proposals.length === 0) {
-                return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No proposals found for this filter.</div>';
-            }
+/**
+ * Renders the proposals table for COO dashboard (Global scope)
+ */
+function renderProposalsTable(proposals) {
+    if (!proposals || proposals.length === 0) {
+        return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No proposals found for this filter.</div>';
+    }
 
-            const proposalsHtml = proposals.map(p => {
-                const statusDisplay = (p.status || 'DRAFT').toUpperCase().replace(/_/g, ' ');
-                const statusClass = (p.status || 'draft').toLowerCase().replace(/_/g, '-');
-                
-                // Action buttons based on proposal status
-                let actionButtons = '';
-                
-                // COO can set pricing for estimated proposals
-                if (p.status === 'estimated' && (!p.pricing || !p.pricing.projectNumber)) {
-                    actionButtons += `<button class="btn btn-success btn-sm" onclick="showCOOPricingForm('${p.id}')">Set Pricing</button> `;
-                }
-                
-                // COO can allocate won proposals with pricing
-                if (p.status === 'won' && p.pricing && p.pricing.projectNumber && !p.projectCreated) {
-                    actionButtons += `<button class="btn btn-primary btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Allocate Project</button> `;
-                }
-                
-                return `
-                    <tr>
-                        <td>
-                            <strong>${p.projectName}</strong><br>
-                            <small style="color: var(--text-light);">${p.clientCompany}</small>
-                        </td>
-                        <td>
-                            <span class="proposal-status status-${statusClass}">${statusDisplay}</span>
-                        </td>
-                        <td>
-                            ${p.estimation ? `<strong>${p.estimation.totalHours || 0}h</strong>` : '-'}
-                        </td>
-                        <td>
-                            ${p.pricing && p.pricing.projectNumber ? 
-                                `<strong>${p.pricing.quoteValue || 0} ${p.pricing.currency || ''}</strong><br>
-                                 <small>Project #: ${p.pricing.projectNumber}</small>` : 
-                                '-'}
-                        </td>
-                        <td>${formatDate(p.createdAt)}</td>
-                        <td>
-                            <div class="action-buttons">
-                                ${actionButtons}
-                                <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            return `
-                <div class="card">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Project Name</th>
-                                <th>Status</th>
-                                <th>Estimated Hours</th>
-                                <th>Pricing</th>
-                                <th>Created</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${proposalsHtml}
-                        </tbody>
-                    </table>
-                </div>
-            `;
+    const proposalsHtml = proposals.map(p => {
+        const statusDisplay = (p.status || 'DRAFT').toUpperCase().replace(/_/g, ' ');
+        const statusClass = (p.status || 'draft').toLowerCase().replace(/_/g, '-');
+        
+        // Calculate allocation status for won proposals
+        const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+        const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+        const isPartiallyAllocated = p.projectCreated && maxHours > 0 && totalAllocated < maxHours;
+        
+        // Action buttons based on proposal status
+        let actionButtons = '';
+        
+        // COO can set pricing for estimated proposals
+        if (p.status === 'estimated' && (!p.pricing || !p.pricing.projectNumber)) {
+            actionButtons += `<button class="btn btn-success btn-sm" onclick="showCOOPricingForm('${p.id}')">Set Pricing</button> `;
         }
+        
+        // COO can allocate won proposals with pricing (including partially allocated)
+        if (p.status === 'won' && p.pricing && p.pricing.projectNumber) {
+            if (!p.projectCreated) {
+                actionButtons += `<button class="btn btn-primary btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Allocate Project</button> `;
+            } else if (isPartiallyAllocated) {
+                actionButtons += `<button class="btn btn-warning btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Continue Allocation (${totalAllocated}/${maxHours}h)</button> `;
+            }
+        }
+        
+        // Allocation status indicator
+        let allocationStatus = '';
+        if (p.status === 'won' && p.pricing && p.pricing.projectNumber) {
+            if (p.projectCreated && maxHours > 0 && totalAllocated >= maxHours) {
+                allocationStatus = '<span class="badge badge-success" style="font-size: 0.7rem;">✅ Fully Allocated</span>';
+            } else if (isPartiallyAllocated) {
+                allocationStatus = `<span class="badge badge-warning" style="font-size: 0.7rem;">⏳ Partial (${totalAllocated}/${maxHours}h)</span>`;
+            } else if (!p.projectCreated) {
+                allocationStatus = '<span class="badge badge-info" style="font-size: 0.7rem;">⏳ Pending</span>';
+            }
+        }
+        
+        return `
+            <tr>
+                <td>
+                    <strong>${p.projectName}</strong><br>
+                    <small style="color: var(--text-light);">${p.clientCompany}</small>
+                    ${allocationStatus ? `<br>${allocationStatus}` : ''}
+                </td>
+                <td>
+                    <span class="proposal-status status-${statusClass}">${statusDisplay}</span>
+                </td>
+                <td>
+                    ${p.estimation ? `<strong>${p.estimation.totalHours || 0}h</strong>` : '-'}
+                </td>
+                <td>
+                    ${p.pricing && p.pricing.projectNumber ? 
+                        `<strong>${p.pricing.quoteValue || 0} ${p.pricing.currency || ''}</strong><br>
+                         <small>Project #: ${p.pricing.projectNumber}</small>` : 
+                        '-'}
+                </td>
+                <td>${formatDate(p.createdAt)}</td>
+                <td>
+                    <div class="action-buttons">
+                        ${actionButtons}
+                        <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
 
-   async function showAllProjects() {
+    return `
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Project Name</th>
+                        <th>Status</th>
+                        <th>Estimated Hours</th>
+                        <th>Pricing</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${proposalsHtml}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function showAllProjects() {
     try {
         showLoading();
         
@@ -3796,9 +3818,9 @@ function filterProposals(filterType) {
             });
         }
         
-        const content = document.getElementById('content');
+        const main = document.getElementById('mainContent');
         
-        content.innerHTML = `
+        main.innerHTML = `
             <h1>COO Dashboard</h1>
             
             <!-- Filter Buttons -->
@@ -3851,7 +3873,7 @@ function filterProposals(filterType) {
         
     } catch (error) {
         console.error('COO Dashboard error:', error);
-        document.getElementById('content').innerHTML = `
+        document.getElementById('mainContent').innerHTML = `
             <div class="error-message">
                 <h2>⚠️ Error Loading Dashboard</h2>
                 <p>${error.message}</p>
@@ -3863,6 +3885,49 @@ function filterProposals(filterType) {
     }
 }
 
+/**
+ * Renders the table for pending variations (Global scope for COO Dashboard)
+ */
+function renderPendingVariationsTable(variations) {
+    if (!variations || variations.length === 0) {
+        return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No pending variations found.</div>';
+    }
+
+    const variationsHtml = variations.map(v => `
+        <tr>
+            <td><strong>${v.parentProjectName || 'Unknown'}</strong><br><small>${v.clientCompany || ''}</small></td>
+            <td><span class="project-number-badge" style="background: var(--warning); color: #856404;">${v.variationCode || 'N/A'}</span></td>
+            <td><strong>${v.estimatedHours || 0}h</strong></td>
+            <td>${v.createdByName || 'Unknown'} <br><small>(${(v.createdByRole || '').replace('_', ' ')})</small></td>
+            <td>${formatDate(v.createdAt)}</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="showVariationApprovalModal('${v.id}')">
+                    Review
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    return `
+        <div class="card">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Parent Project</th>
+                        <th>Variation Code</th>
+                        <th>Requested Hours</th>
+                        <th>Submitted By</th>
+                        <th>Date Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${variationsHtml}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
 
 
         
