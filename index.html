@@ -9814,30 +9814,48 @@ function removeDesignerAllocation(rowNumber) {
 }
 
 /**
- * Update remaining hours display
+ * Update remaining hours display with "Already Allocated" logic
  */
 function updateRemainingHours() {
-    const totalHours = parseFloat(document.getElementById('cooTotalProjectHours').value) || 0;
-    const hoursInputs = document.querySelectorAll('.hours-input');
+    const totalHoursInput = document.getElementById('cooTotalProjectHours');
+    const totalBudget = parseFloat(totalHoursInput.value) || 0;
     
-    let allocatedHours = 0;
+    // Get the hours that were allocated in PREVIOUS sessions (stored in dataset)
+    const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
+    
+    // Get hours being allocated in THIS session
+    const hoursInputs = document.querySelectorAll('.hours-input');
+    let currentSessionAllocation = 0;
     hoursInputs.forEach(input => {
-        allocatedHours += parseFloat(input.value) || 0;
+        currentSessionAllocation += parseFloat(input.value) || 0;
     });
     
-    const remaining = totalHours - allocatedHours;
+    // Calculate true remaining
+    const totalUsed = previouslyAllocated + currentSessionAllocation;
+    const remaining = totalBudget - totalUsed;
+    
     const remainingDisplay = document.getElementById('cooRemainingHours');
     
-    remainingDisplay.textContent = `${remaining.toFixed(1)} hrs`;
+    // Format display
+    let html = `<div style="font-size: 1.5rem; font-weight: 700;">${remaining.toFixed(1)} hrs</div>`;
+    
+    // Add details so user knows why
+    if (previouslyAllocated > 0) {
+        html += `<div style="font-size: 0.8rem; color: #666;">(Budget: ${totalBudget} - Prev: ${previouslyAllocated} - New: ${currentSessionAllocation})</div>`;
+    }
+    
+    remainingDisplay.innerHTML = html;
     
     if (remaining < 0) {
         remainingDisplay.style.color = 'var(--danger)';
-        remainingDisplay.textContent = `⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER`;
+        remainingDisplay.innerHTML = `
+            <div style="font-size: 1.5rem; font-weight: 700;">⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER</div>
+            <div style="font-size: 0.8rem;">Total Budget Exceeded</div>
+        `;
     } else if (remaining === 0) {
         remainingDisplay.style.color = 'var(--success)';
-        remainingDisplay.textContent = `✓ ${remaining.toFixed(1)} hrs`;
     } else {
-        remainingDisplay.style.color = 'var(--warning)';
+        remainingDisplay.style.color = 'var(--warning)'; // Orange while working
     }
 }
 
