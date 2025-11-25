@@ -9126,14 +9126,20 @@ async function loadDesignersForAllocation() {
             });
             selectEle
 
-        // Show COO Allocation Modal
-        async function showAllocateProjectModal(projectId) {
-            const modal = document.getElementById('allocationModal');
-            const projectIdField = document.getElementById('projectIdField');
-            projectIdField.value = projectId;
-            await loadDesignersForAllocation();
-            modal.style.display = 'flex';
-        }
+       async function showAllocateProjectModal(projectId) {
+    const modal = document.getElementById('allocationModal');
+    const projectIdField = document.getElementById('projectIdField');
+    const modalTitle = modal.querySelector('h2');
+    
+    // Update modal title
+    if (modalTitle) {
+        modalTitle.textContent = 'Allocate Project to Designer';
+    }
+    
+    projectIdField.value = projectId;
+    await loadDesignersForAllocation();
+    modal.style.display = 'flex';
+}
 
         // Function to submit allocation
         async function submitAllocation() {
