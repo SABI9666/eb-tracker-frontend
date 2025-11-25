@@ -2259,6 +2259,49 @@ body.modal-open {
         let authToken = '';
 
         // ============================================
+        // GLOBAL WRAPPER FUNCTIONS - IMMEDIATE AVAILABILITY
+        // ============================================
+        // These are defined FIRST so onclick handlers can always find them
+        // They will call the actual implementation functions defined later
+        
+        window.viewProject = function(projectId) {
+            console.log('🔍 viewProject wrapper called with ID:', projectId);
+            // Call the actual implementation
+            if (typeof viewProjectDetails === 'function') {
+                return viewProjectDetails(projectId);
+            } else if (typeof window._viewProjectImpl === 'function') {
+                return window._viewProjectImpl(projectId);
+            } else {
+                console.error('❌ viewProjectDetails not yet loaded');
+                setTimeout(() => window.viewProject(projectId), 100);
+            }
+        };
+        
+        window.assignDesigners = function(projectId) {
+            console.log('👥 assignDesigners wrapper called with ID:', projectId);
+            // Call the actual implementation
+            if (typeof window._assignDesignersImpl === 'function') {
+                return window._assignDesignersImpl(projectId);
+            } else {
+                console.error('❌ assignDesigners implementation not yet loaded');
+                setTimeout(() => window.assignDesigners(projectId), 100);
+            }
+        };
+        
+        window.viewBDMFiles = function(projectId, proposalId) {
+            console.log('📁 viewBDMFiles wrapper called with ID:', projectId);
+            // Call the actual implementation
+            if (typeof window._viewBDMFilesImpl === 'function') {
+                return window._viewBDMFilesImpl(projectId, proposalId);
+            } else {
+                console.error('❌ viewBDMFiles implementation not yet loaded');
+                setTimeout(() => window.viewBDMFiles(projectId, proposalId), 100);
+            }
+        };
+        
+        console.log('✅ Global wrapper functions registered');
+
+        // ============================================
         // UTILITY FUNCTIONS - SUCCESS/ERROR MODALS
         // ============================================
         
@@ -9658,6 +9701,10 @@ async function showAllocateProjectModal(projectId) {
             }
         }
         
+        // Register implementation with wrapper
+        window._assignDesignersImpl = assignDesigners;
+        console.log('✅ assignDesigners implementation registered');
+        
         // Toggle hours input when checkbox is changed
         function toggleDesignerHoursInput(checkbox) {
             const designerId = checkbox.value;
@@ -9815,6 +9862,10 @@ async function showAllocateProjectModal(projectId) {
                 hideLoading();
             }
         }
+        
+        // Register implementation with wrapper
+        window._viewBDMFilesImpl = viewBDMFiles;
+        console.log('✅ viewBDMFiles implementation registered');
 
         // Explicitly ensure functions are in global scope
         window.assignDesigners = assignDesigners;
@@ -13314,7 +13365,9 @@ function viewProjectDetails(projectId) {
 
 // Ensure project view functions are globally accessible
 window.viewProjectDetails = viewProjectDetails;
+window._viewProjectImpl = viewProjectDetails; // Register with wrapper
 window.closeProjectDetailsModal = closeProjectDetailsModal;
+console.log('✅ viewProjectDetails implementation registered');
 
 function closeProjectDetailsModal() {
     const modal = document.getElementById('projectDetailsModal');
