@@ -9125,7 +9125,14 @@ async function loadDesignersForAllocation() {
                 option.dataset.role = 'design_lead';
                 leadGroup.appendChild(option);
             });
-            selectEle
+            selectElement.appendChild(leadGroup);
+        }
+        
+    } catch (error) {
+        console.error('Error loading designers:', error);
+        alert('Failed to load designers: ' + error.message);
+    }
+}
 
        async function showAllocateProjectModal(projectId) {
     const modal = document.getElementById('allocationModal');
@@ -10299,9 +10306,7 @@ async function submitProposalAllocation() {
                 document.getElementById('designer-specs-content').style.display = 'block';
             }
         }
-    }
-    }
-    }
+
     </script>
 
     <div id="cooProjectNumberSection" style="display: none;">
