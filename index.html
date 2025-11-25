@@ -9181,175 +9181,402 @@ async function markProjectComplete(projectId) {
         async function testBackendConnection() { /* ... (Unchanged) ... */ }
         async function runDiagnostics() { /* ... (Unchanged) ... */ }
 
-async function loadDesignersForAllocation() {
+let designerAllocationCounter = 0;
+let availableDesigners = [];
+
+/**
+ * Load all available designers for allocation
+ */
+async function loadAvailableDesigners() {
     try {
-        // Fetch both designers AND design managers (in case you still want the option)
         const [designersResponse, designLeadsResponse] = await Promise.all([
             apiCall('users?role=designer'),
             apiCall('users?role=design_lead')
         ]);
         
-        if (!designersResponse.success) {
-            throw new Error(designersResponse.error || 'Failed to fetch designers');
+        availableDesigners = [];
+        
+        if (designersResponse.success && designersResponse.data) {
+            availableDesigners.push(...designersResponse.data.map(d => ({...d, roleType: 'designer'})));
         }
         
-        const designers = designersResponse.data || [];
-        const designLeads = designLeadsResponse.success ? designLeadsResponse.data || [] : [];
-        
-        // Combine both lists for flexibility
-        const allUsers = [...designers, ...designLeads];
-        
-        const selectElement = document.getElementById('designLeadSelect');
-        selectElement.innerHTML = '<option value="">Select Designer or Design Manager</option>';
-        
-        // Add optgroups for better organization
-        if (designers.length > 0) {
-            const designerGroup = document.createElement('optgroup');
-            designerGroup.label = '👨‍💼 Designers';
-            designers.forEach(designer => {
-                const option = document.createElement('option');
-                option.value = designer.uid;
-                option.textContent = designer.name;
-                option.dataset.email = designer.email;
-                option.dataset.role = 'designer';
-                designerGroup.appendChild(option);
-            });
-            selectElement.appendChild(designerGroup);
+        if (designLeadsResponse.success && designLeadsResponse.data) {
+            availableDesigners.push(...designLeadsResponse.data.map(d => ({...d, roleType: 'design_lead'})));
         }
         
-        if (designLeads.length > 0) {
-            const leadGroup = document.createElement('optgroup');
-            leadGroup.label = '👔 Design Managers';
-            designLeads.forEach(lead => {
-                const option = document.createElement('option');
-                option.value = lead.uid;
-                option.textContent = lead.name;
-                option.dataset.email = lead.email;
-                option.dataset.role = 'design_lead';
-                leadGroup.appendChild(option);
-            });
-            selectElement.appendChild(leadGroup);
-        }
+        console.log('Available designers loaded:', availableDesigners.length);
         
     } catch (error) {
         console.error('Error loading designers:', error);
-        alert('Failed to load designers: ' + error.message);
+        availableDesigners = [];
     }
 }
 
-       async function showAllocateProjectModal(projectId) {
-    const modal = document.getElementById('allocationModal');
-    const projectIdField = document.getElementById('projectIdField');
-    const modalTitle = modal.querySelector('h2');
-    
-    // Update modal title
-    if (modalTitle) {
-        modalTitle.textContent = 'Allocate Project to Designer';
-    }
-    
-    projectIdField.value = projectId;
-    await loadDesignersForAllocation();
-    modal.style.display = 'flex';
-}
-
-        async function submitProjectAllocation() {
-    const projectId = document.getElementById('projectIdField').value;
-    const designLeadSelect = document.getElementById('designLeadSelect');
-    const targetDate = document.getElementById('targetCompletionDate').value;
-    const allocationNotes = document.getElementById('allocationNotes').value;
-    const estimatedHoursInput = document.getElementById('estimatedProjectHours');
-
-    if (!designLeadSelect.value) {
-        alert('Please select a Designer or Design Manager');
-        return;
-    }
-    
-    const selectedOption = designLeadSelect.options[designLeadSelect.selectedIndex];
-    const selectedRole = selectedOption.dataset.role || 'designer';
-    const selectedUid = selectedOption.value;
-    const selectedName = selectedOption.textContent;
-    const selectedEmail = selectedOption.dataset.email;
-    
-    // Get estimated hours if provided
-    const estimatedHours = estimatedHoursInput ? parseFloat(estimatedHoursInput.value) || 0 : 0;
-    
-    // Determine the action based on role
-    let allocationData;
-    
-    if (selectedRole === 'designer') {
-        // Direct allocation to designer
-        allocationData = {
-            action: 'allocate_directly_to_designer',
-            data: {
-                designerUid: selectedUid,
-                designerName: selectedName,
-                designerEmail: selectedEmail,
-                targetCompletionDate: targetDate || null,
-                allocationNotes: allocationNotes || '',
-                projectStartDate: new Date().toISOString(),
-                estimatedHours: estimatedHours,
-                // Set the designer as assigned
-                assignedDesignerUids: [selectedUid],
-                assignedDesignerNames: [selectedName],
-                designerHours: { [selectedUid]: estimatedHours }
-            }
-        };
-    } else {
-        // Traditional allocation to design manager
-        allocationData = {
-            action: 'allocate_to_design_lead',
-            data: {
-                designLeadUid: selectedUid,
-                designLeadName: selectedName,
-                designLeadEmail: selectedEmail,
-                targetCompletionDate: targetDate || null,
-                allocationNotes: allocationNotes || '',
-                projectStartDate: new Date().toISOString(),
-                estimatedHours: estimatedHours
-            }
-        };
-    }
-    
+/**
+ * Show the multi-designer allocation modal for COO
+ */
+async function showCooMultiDesignerAllocationModal(projectId) {
     try {
         showLoading();
-        const result = await apiCall(`projects?id=${projectId}`, {
-            method: 'PUT',
-            body: JSON.stringify(allocationData)
-        });
         
-        if (result.success) {
-            const roleText = selectedRole === 'designer' ? 'Designer' : 'Design Manager';
-            showSuccessModal(
-                'Project Allocated Successfully!',
-                `Project has been allocated to ${roleText}: ${selectedName}`
-            );
-            closeAllocationModal();
-            
-            // Send notification email
-            await triggerEmailNotification('project.allocated', {
-                projectId: projectId,
-                recipientUid: selectedUid,
-                recipientEmail: selectedEmail,
-                recipientName: selectedName,
-                role: selectedRole
-            });
-            
-            // Refresh the view
-            if (typeof showProjects === 'function') {
-                showProjects();
-            } else if (typeof showAllProjects === 'function') {
-                showAllProjects();
-            }
-        } else {
-            throw new Error(result.error || 'Allocation failed');
+        // Load project details
+        const projectResponse = await apiCall(`projects?id=${projectId}`);
+        if (!projectResponse.success || !projectResponse.data) {
+            throw new Error('Failed to load project details');
         }
+        
+        const project = projectResponse.data;
+        
+        // Load available designers
+        await loadAvailableDesigners();
+        
+        if (availableDesigners.length === 0) {
+            alert('No designers found in the system. Please create designer accounts first.');
+            hideLoading();
+            return;
+        }
+        
+        // Populate project info
+        document.getElementById('cooAllocProjectId').value = projectId;
+        document.getElementById('cooAllocProjectNumber').textContent = project.projectNumber || 'N/A';
+        document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
+        document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
+        
+        // Set total hours if available from estimation
+        const totalHours = project.estimatedHours || project.estimation?.totalHours || 0;
+        if (totalHours > 0) {
+            document.getElementById('cooTotalProjectHours').value = totalHours;
+        }
+        
+        // Reset the form
+        designerAllocationCounter = 0;
+        document.getElementById('designerAllocationsContainer').innerHTML = '';
+        document.getElementById('cooAllocationNotes').value = '';
+        document.getElementById('cooTargetCompletionDate').value = '';
+        document.getElementById('cooProjectPriority').value = 'Normal';
+        
+        // Add first designer row
+        addDesignerAllocation();
+        
+        // Show modal
+        document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
+        
+        updateRemainingHours();
+        
     } catch (error) {
-        console.error('Error allocating project:', error);
-        alert('Failed to allocate project: ' + error.message);
+        console.error('Error showing allocation modal:', error);
+        alert('Error: ' + error.message);
     } finally {
         hideLoading();
     }
 }
+
+/**
+ * Add a new designer allocation row
+ */
+function addDesignerAllocation() {
+    designerAllocationCounter++;
+    const container = document.getElementById('designerAllocationsContainer');
+    
+    const rowHtml = `
+        <div class="designer-allocation-row" id="designerRow${designerAllocationCounter}">
+            <div class="designer-row-header">
+                <div class="designer-row-number">${designerAllocationCounter}</div>
+                ${designerAllocationCounter > 1 ? `
+                    <button type="button" class="remove-designer-btn" onclick="removeDesignerAllocation(${designerAllocationCounter})">
+                        ✕ Remove
+                    </button>
+                ` : ''}
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label>Select Designer <span class="required">*</span></label>
+                    <select class="form-control designer-select" id="designer${designerAllocationCounter}" 
+                            onchange="validateDesignerSelection()" required>
+                        <option value="">-- Select Designer --</option>
+                        ${availableDesigners.map(d => `
+                            <option value="${d.uid}" 
+                                    data-name="${d.name}" 
+                                    data-email="${d.email}"
+                                    data-role="${d.roleType}">
+                                ${d.roleType === 'design_lead' ? '👔' : '👨‍💼'} ${d.name}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group" style="flex: 1;">
+                    <label>Allocated Hours <span class="required">*</span></label>
+                    <input type="number" class="form-control hours-input" 
+                           id="hours${designerAllocationCounter}"
+                           placeholder="0" min="0.5" step="0.5"
+                           oninput="updateRemainingHours()" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Specific Instructions (Optional)</label>
+                <textarea class="form-control" id="notes${designerAllocationCounter}" 
+                          rows="2" placeholder="Any specific tasks or focus areas for this designer..."></textarea>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', rowHtml);
+    updateRemainingHours();
+}
+
+/**
+ * Remove a designer allocation row
+ */
+function removeDesignerAllocation(rowNumber) {
+    const row = document.getElementById(`designerRow${rowNumber}`);
+    if (row) {
+        row.remove();
+        updateRemainingHours();
+        validateDesignerSelection();
+    }
+}
+
+/**
+ * Update remaining hours display
+ */
+function updateRemainingHours() {
+    const totalHours = parseFloat(document.getElementById('cooTotalProjectHours').value) || 0;
+    const hoursInputs = document.querySelectorAll('.hours-input');
+    
+    let allocatedHours = 0;
+    hoursInputs.forEach(input => {
+        allocatedHours += parseFloat(input.value) || 0;
+    });
+    
+    const remaining = totalHours - allocatedHours;
+    const remainingDisplay = document.getElementById('cooRemainingHours');
+    
+    remainingDisplay.textContent = `${remaining.toFixed(1)} hrs`;
+    
+    if (remaining < 0) {
+        remainingDisplay.style.color = 'var(--danger)';
+        remainingDisplay.textContent = `⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER`;
+    } else if (remaining === 0) {
+        remainingDisplay.style.color = 'var(--success)';
+        remainingDisplay.textContent = `✓ ${remaining.toFixed(1)} hrs`;
+    } else {
+        remainingDisplay.style.color = 'var(--warning)';
+    }
+}
+
+/**
+ * Validate that no designer is selected twice
+ */
+function validateDesignerSelection() {
+    const selects = document.querySelectorAll('.designer-select');
+    const selectedUids = [];
+    let hasDuplicate = false;
+    
+    selects.forEach(select => {
+        const row = select.closest('.designer-allocation-row');
+        row.classList.remove('error');
+        
+        if (select.value && selectedUids.includes(select.value)) {
+            row.classList.add('error');
+            hasDuplicate = true;
+        } else if (select.value) {
+            selectedUids.push(select.value);
+        }
+    });
+    
+    return !hasDuplicate;
+}
+
+/**
+ * Submit the multi-designer allocation
+ */
+async function submitCooMultiDesignerAllocation() {
+    const projectId = document.getElementById('cooAllocProjectId').value;
+    const totalHours = parseFloat(document.getElementById('cooTotalProjectHours').value);
+    const targetDate = document.getElementById('cooTargetCompletionDate').value;
+    const priority = document.getElementById('cooProjectPriority').value;
+    const generalNotes = document.getElementById('cooAllocationNotes').value;
+    
+    // Validate total hours
+    if (!totalHours || totalHours <= 0) {
+        alert('Please enter total project hours');
+        document.getElementById('cooTotalProjectHours').focus();
+        return;
+    }
+    
+    // Collect designer allocations
+    const designerAllocations = [];
+    const selects = document.querySelectorAll('.designer-select');
+    
+    for (let i = 0; i < selects.length; i++) {
+        const select = selects[i];
+        const rowNum = select.id.replace('designer', '');
+        const hoursInput = document.getElementById(`hours${rowNum}`);
+        const notesTextarea = document.getElementById(`notes${rowNum}`);
+        
+        if (!select.value) {
+            alert(`Please select a designer for allocation #${i + 1}`);
+            select.focus();
+            return;
+        }
+        
+        const hours = parseFloat(hoursInput.value);
+        if (!hours || hours <= 0) {
+            alert(`Please enter hours for allocation #${i + 1}`);
+            hoursInput.focus();
+            return;
+        }
+        
+        const selectedOption = select.options[select.selectedIndex];
+        
+        designerAllocations.push({
+            designerUid: select.value,
+            designerName: selectedOption.dataset.name,
+            designerEmail: selectedOption.dataset.email,
+            designerRole: selectedOption.dataset.role,
+            allocatedHours: hours,
+            specificNotes: notesTextarea.value.trim()
+        });
+    }
+    
+    // Validate no duplicates
+    if (!validateDesignerSelection()) {
+        alert('⚠️ You cannot assign the same designer twice. Please select different designers.');
+        return;
+    }
+    
+    // Validate total hours match
+    const allocatedTotal = designerAllocations.reduce((sum, d) => sum + d.allocatedHours, 0);
+    if (Math.abs(allocatedTotal - totalHours) > 0.01) {
+        const diff = allocatedTotal - totalHours;
+        const confirmMsg = diff > 0 
+            ? `You've allocated ${allocatedTotal}hrs but total budget is ${totalHours}hrs (${diff.toFixed(1)}hrs over). Continue anyway?`
+            : `You've only allocated ${allocatedTotal}hrs out of ${totalHours}hrs (${Math.abs(diff).toFixed(1)}hrs remaining). Continue anyway?`;
+        
+        if (!confirm(confirmMsg)) {
+            return;
+        }
+    }
+    
+    // Confirm allocation
+    const confirmText = `
+📊 Allocation Summary:
+━━━━━━━━━━━━━━━━━━━━━━
+Total Hours: ${totalHours}hrs
+Designers: ${designerAllocations.length}
+${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours}hrs`).join('')}
+━━━━━━━━━━━━━━━━━━━━━━
+
+Proceed with allocation?
+    `.trim();
+    
+    if (!confirm(confirmText)) {
+        return;
+    }
+    
+    try {
+        showLoading();
+        
+        // Prepare allocation data
+        const allocationData = {
+            action: 'allocate_to_multiple_designers',
+            data: {
+                projectId: projectId,
+                totalAllocatedHours: totalHours,
+                targetCompletionDate: targetDate || null,
+                priority: priority,
+                allocationNotes: generalNotes,
+                projectStartDate: new Date().toISOString(),
+                designerAllocations: designerAllocations,
+                // For backward compatibility
+                assignedDesignerUids: designerAllocations.map(d => d.designerUid),
+                assignedDesignerNames: designerAllocations.map(d => d.designerName),
+                designerHours: designerAllocations.reduce((obj, d) => {
+                    obj[d.designerUid] = d.allocatedHours;
+                    return obj;
+                }, {})
+            }
+        };
+        
+        // Submit allocation
+        const response = await apiCall(`projects?id=${projectId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(allocationData)
+        });
+        
+        if (response.success) {
+            // Show success message
+            showSuccessModal(
+                '✅ Project Allocated Successfully!',
+                `Project allocated to ${designerAllocations.length} designer(s) with ${totalHours} total hours.`
+            );
+            
+            // Send email notifications to all designers
+            for (const designer of designerAllocations) {
+                try {
+                    await triggerEmailNotification('project.allocated_designer', {
+                        projectId: projectId,
+                        recipientUid: designer.designerUid,
+                        recipientEmail: designer.designerEmail,
+                        recipientName: designer.designerName,
+                        allocatedHours: designer.allocatedHours,
+                        specificNotes: designer.specificNotes
+                    });
+                } catch (emailError) {
+                    console.error('Email notification failed for:', designer.designerName, emailError);
+                }
+            }
+            
+            // Close modal and refresh
+            closeCooMultiDesignerModal();
+            
+            // Refresh the projects view
+            if (typeof showAllProjects === 'function') {
+                await showAllProjects();
+            } else if (typeof showProjects === 'function') {
+                await showProjects();
+            }
+            
+        } else {
+            throw new Error(response.error || 'Allocation failed');
+        }
+        
+    } catch (error) {
+        console.error('Error allocating project:', error);
+        alert('❌ Error allocating project: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Close the COO multi-designer allocation modal
+ */
+function closeCooMultiDesignerModal() {
+    document.getElementById('cooMultiDesignerAllocationModal').style.display = 'none';
+    document.getElementById('designerAllocationsContainer').innerHTML = '';
+    designerAllocationCounter = 0;
+}
+
+// ============================================================================
+// REPLACE THE EXISTING showAllocateProjectModal FUNCTION WITH THIS:
+// Find the function around line 9137 and replace it with this version
+// ============================================================================
+
+// Comment out or remove the old showAllocateProjectModal function 
+// and use this new one instead:
+
+/*
+async function showAllocateProjectModal(projectId) {
+    // Use the new multi-designer modal
+    await showCooMultiDesignerAllocationModal(projectId);
+}
+
+      
 
         // ============================================
         // DESIGN LEAD VIEW UPDATES (REPLACED)
