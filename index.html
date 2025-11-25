@@ -9690,11 +9690,36 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
         document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
         
-        // Set total hours if available from estimation
-        const totalHours = project.estimatedHours || project.estimation?.totalHours || 0;
-        if (totalHours > 0) {
-            document.getElementById('cooTotalProjectHours').value = totalHours;
+        // --- LOGIC CHANGE START ---
+        
+        // 1. Determine Max Budget
+        // Use maxAllocatedHours if previously set, otherwise use estimation
+        const totalBudget = project.maxAllocatedHours || project.estimatedHours || project.estimation?.totalHours || 0;
+        
+        // 2. Determine Already Allocated
+        const currentlyAllocated = parseFloat(project.totalAllocatedHours) || 0;
+        
+        // 3. Set UI Values
+        const totalInput = document.getElementById('cooTotalProjectHours');
+        totalInput.value = totalBudget;
+        
+        // Store existing allocation in a data attribute for calculation
+        totalInput.dataset.alreadyAllocated = currentlyAllocated;
+        
+        // If this is a partial allocation (project already created and has budget), 
+        // lock the Total Budget input so it can't be changed easily, or warn user.
+        if (project.maxAllocatedHours > 0) {
+            // Optional: Make read-only if you don't want budget changes here
+            // totalInput.readOnly = true; 
+        } else {
+            totalInput.readOnly = false;
         }
+
+        // Add a visual indicator of what is already used
+        const remainingDisplay = document.getElementById('cooRemainingHours');
+        // Clear previous content
+        
+        // --- LOGIC CHANGE END ---
         
         // Reset the form
         designerAllocationCounter = 0;
@@ -9709,6 +9734,7 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         // Show modal
         document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
         
+        // Trigger update to show correct math immediately
         updateRemainingHours();
         
     } catch (error) {
