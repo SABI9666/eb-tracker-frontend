@@ -3367,13 +3367,21 @@ function renderProposals(proposals) {
     // Filter Buttons for Director AND COO
     let directorFilterButtons = '';
     if (currentUserRole === 'director' || currentUserRole === 'coo') {
-        // Calculate pending allocation count for COO
+        // Calculate pending allocation count for COO - ONLY unallocated projects
         const pendingAllocationCount = proposals.filter(p => 
             p.status === 'won' && 
             p.pricing && 
             p.pricing.projectNumber && 
-            !p.projectCreated
+            !p.projectCreated  // Not allocated at all
         ).length;
+        
+        // Calculate partially allocated count - projects that exist but need more hours allocated
+        const partiallyAllocatedCount = proposals.filter(p => {
+            if (p.status !== 'won' || !p.projectCreated) return false;
+            const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+            const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+            return maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
+        }).length;
         
         directorFilterButtons = `
             <div class="filter-buttons-container">
@@ -3403,6 +3411,14 @@ function renderProposals(proposals) {
                     🎯 Pending Allocation
                     <span class="filter-count">${pendingAllocationCount}</span>
                 </button>
+                ${partiallyAllocatedCount > 0 ? `
+                <button class="filter-btn filter-btn-warning ${currentProposalFilter === 'partially_allocated' ? 'active' : ''}" 
+                        onclick="filterProposals('partially_allocated')"
+                        style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    ⏳ Partially Allocated
+                    <span class="filter-count">${partiallyAllocatedCount}</span>
+                </button>
+                ` : ''}
                 ` : ''}
             </div>
         `;
@@ -3436,13 +3452,21 @@ function renderProposals(proposals) {
                        statusLower !== 'lost';
             });
         } else if (currentProposalFilter === 'pending_allocation') {
-            // COO-specific filter for won proposals needing allocation
+            // COO-specific filter for won proposals needing INITIAL allocation (not created yet)
             filteredProposals = proposals.filter(p => 
                 p.status === 'won' && 
                 p.pricing && 
                 p.pricing.projectNumber && 
-                !p.projectCreated
+                !p.projectCreated  // Project not created = needs initial allocation
             );
+        } else if (currentProposalFilter === 'partially_allocated') {
+            // COO-specific filter for projects that are partially allocated
+            filteredProposals = proposals.filter(p => {
+                if (p.status !== 'won' || !p.projectCreated) return false;
+                const maxHours = parseFloat(p.maxAllocatedHours) || 0;
+                const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
+                return maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
+            });
         }
         
         console.log('📊 Filtered proposals:', filteredProposals.length);
@@ -3657,7 +3681,10 @@ function renderProposalsTable(proposals) {
         // Calculate allocation status for won proposals
         const maxHours = parseFloat(p.maxAllocatedHours) || 0;
         const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
-        const isPartiallyAllocated = p.projectCreated && maxHours > 0 && totalAllocated < maxHours;
+        const remainingHours = maxHours - totalAllocated;
+        const isFullyAllocated = p.projectCreated && maxHours > 0 && totalAllocated >= maxHours;
+        const isPartiallyAllocated = p.projectCreated && maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
+        const isPendingAllocation = p.status === 'won' && p.pricing && p.pricing.projectNumber && !p.projectCreated;
         
         // Action buttons based on proposal status
         let actionButtons = '';
@@ -3667,24 +3694,26 @@ function renderProposalsTable(proposals) {
             actionButtons += `<button class="btn btn-success btn-sm" onclick="showCOOPricingForm('${p.id}')">Set Pricing</button> `;
         }
         
-        // COO can allocate won proposals with pricing (including partially allocated)
+        // COO can allocate won proposals with pricing
         if (p.status === 'won' && p.pricing && p.pricing.projectNumber) {
-            if (!p.projectCreated) {
+            if (isPendingAllocation) {
+                // Not allocated at all - show Allocate button
                 actionButtons += `<button class="btn btn-primary btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Allocate Project</button> `;
             } else if (isPartiallyAllocated) {
-                actionButtons += `<button class="btn btn-warning btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Continue Allocation (${totalAllocated}/${maxHours}h)</button> `;
+                // Partially allocated - show Continue Allocation with remaining hours
+                actionButtons += `<button class="btn btn-warning btn-sm" onclick="showProjectAllocationModal('${p.id}')">🎯 Allocate Remaining ${remainingHours.toFixed(1)}h</button> `;
             }
         }
         
         // Allocation status indicator
         let allocationStatus = '';
         if (p.status === 'won' && p.pricing && p.pricing.projectNumber) {
-            if (p.projectCreated && maxHours > 0 && totalAllocated >= maxHours) {
+            if (isFullyAllocated) {
                 allocationStatus = '<span class="badge badge-success" style="font-size: 0.7rem;">✅ Fully Allocated</span>';
             } else if (isPartiallyAllocated) {
-                allocationStatus = `<span class="badge badge-warning" style="font-size: 0.7rem;">⏳ Partial (${totalAllocated}/${maxHours}h)</span>`;
-            } else if (!p.projectCreated) {
-                allocationStatus = '<span class="badge badge-info" style="font-size: 0.7rem;">⏳ Pending</span>';
+                allocationStatus = `<span class="badge badge-warning" style="font-size: 0.7rem; background: #f59e0b; color: white;">⏳ Partial: ${totalAllocated.toFixed(1)}/${maxHours}h (${remainingHours.toFixed(1)}h remaining)</span>`;
+            } else if (isPendingAllocation) {
+                allocationStatus = '<span class="badge badge-info" style="font-size: 0.7rem;">🎯 Needs Allocation</span>';
             }
         }
         
@@ -3704,7 +3733,8 @@ function renderProposalsTable(proposals) {
                 <td>
                     ${p.pricing && p.pricing.projectNumber ? 
                         `<strong>${p.pricing.quoteValue || 0} ${p.pricing.currency || ''}</strong><br>
-                         <small>Project #: ${p.pricing.projectNumber}</small>` : 
+                         <small>Project #: ${p.pricing.projectNumber}</small>
+                         ${maxHours > 0 ? `<br><small>Budget: ${maxHours}h</small>` : ''}` : 
                         '-'}
                 </td>
                 <td>${formatDate(p.createdAt)}</td>
@@ -3712,6 +3742,7 @@ function renderProposalsTable(proposals) {
                     <div class="action-buttons">
                         ${actionButtons}
                         <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View Details</button>
+                        ${p.projectCreated && p.projectId ? `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">View Project</button>` : ''}
                     </div>
                 </td>
             </tr>
@@ -3726,7 +3757,7 @@ function renderProposalsTable(proposals) {
                         <th>Project Name</th>
                         <th>Status</th>
                         <th>Estimated Hours</th>
-                        <th>Pricing</th>
+                        <th>Pricing / Budget</th>
                         <th>Created</th>
                         <th>Actions</th>
                     </tr>
@@ -3768,22 +3799,19 @@ async function showAllProjects() {
                 (p.status === 'estimated' || p.estimation) && 
                 (!p.pricing || !p.pricing.projectNumber)
             ).length,
-            // Pending Allocation = won proposals with pricing but not yet FULLY allocated
-            // Projects are considered "pending allocation" if:
-            // 1. They are won with pricing but no project created yet, OR
-            // 2. They have a project but allocated hours < max allocated hours
-            pending: proposals.filter(p => {
-                if (p.status !== 'won' || !p.pricing || !p.pricing.projectNumber) return false;
-                
-                // If no project created yet, it's definitely pending
-                if (!p.projectCreated) return true;
-                
-                // If project exists, check if fully allocated
+            // Pending Allocation = won proposals with pricing but NOT allocated at all
+            pending: proposals.filter(p => 
+                p.status === 'won' && 
+                p.pricing && 
+                p.pricing.projectNumber && 
+                !p.projectCreated  // Not created = not allocated
+            ).length,
+            // Partially Allocated = project created but totalAllocatedHours < maxAllocatedHours
+            partial: proposals.filter(p => {
+                if (p.status !== 'won' || !p.projectCreated) return false;
                 const maxHours = parseFloat(p.maxAllocatedHours) || 0;
                 const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
-                
-                // If max hours not set or allocated less than max, still pending
-                return maxHours > 0 && totalAllocated < maxHours;
+                return maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
             }).length
         };
         
@@ -3802,19 +3830,20 @@ async function showAllProjects() {
                 (!p.pricing || !p.pricing.projectNumber)
             );
         } else if (currentFilter === 'pending') {
-            // Show won proposals waiting for allocation or partially allocated
+            // Show won proposals waiting for INITIAL allocation only
+            filteredProposals = proposals.filter(p => 
+                p.status === 'won' && 
+                p.pricing && 
+                p.pricing.projectNumber && 
+                !p.projectCreated
+            );
+        } else if (currentFilter === 'partial') {
+            // Show partially allocated projects
             filteredProposals = proposals.filter(p => {
-                if (p.status !== 'won' || !p.pricing || !p.pricing.projectNumber) return false;
-                
-                // If no project created yet, it's definitely pending
-                if (!p.projectCreated) return true;
-                
-                // If project exists, check if fully allocated
+                if (p.status !== 'won' || !p.projectCreated) return false;
                 const maxHours = parseFloat(p.maxAllocatedHours) || 0;
                 const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
-                
-                // If max hours not set or allocated less than max, still pending
-                return maxHours > 0 && totalAllocated < maxHours;
+                return maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
             });
         }
         
@@ -3845,9 +3874,18 @@ async function showAllProjects() {
                 
                 <button class="filter-btn filter-btn-pending ${currentFilter === 'pending' ? 'active' : ''}" 
                         onclick="filterCOOProposals('pending')">
-                    📋 Pending Allocation
+                    🎯 Pending Allocation
                     <span class="filter-count">${statusCounts.pending}</span>
                 </button>
+                
+                ${statusCounts.partial > 0 ? `
+                <button class="filter-btn ${currentFilter === 'partial' ? 'active' : ''}" 
+                        onclick="filterCOOProposals('partial')"
+                        style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                    ⏳ Partially Allocated
+                    <span class="filter-count">${statusCounts.partial}</span>
+                </button>
+                ` : ''}
             </div>
             
             <!-- Tabs for Proposals and Variations -->
@@ -3927,6 +3965,14 @@ function renderPendingVariationsTable(variations) {
             </table>
         </div>
     `;
+}
+
+/**
+ * Filter COO Proposals by type
+ */
+function filterCOOProposals(filterType) {
+    currentFilter = filterType;
+    showAllProjects(); // Reload with new filter
 }
 
 
@@ -7932,6 +7978,27 @@ async function submitEditedPricing() {
 function createProjectCard(project) {
     const allocDate = project.allocationDate ? formatDate(project.allocationDate) : 'Not set';
     const targetDate = project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set';
+    
+    // Calculate allocation status
+    const maxHours = parseFloat(project.maxAllocatedHours) || 0;
+    const totalAllocated = parseFloat(project.totalAllocatedHours) || 0;
+    const hoursLogged = parseFloat(project.hoursLogged) || 0;
+    const remainingBudget = maxHours - hoursLogged;
+    const remainingToAllocate = maxHours - totalAllocated;
+    
+    const isFullyAllocated = maxHours > 0 && totalAllocated >= maxHours;
+    const isPartiallyAllocated = maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
+    const needsDesigners = !project.assignedDesignerUids || project.assignedDesignerUids.length === 0;
+    
+    // Allocation status badge
+    let allocationBadge = '';
+    if (isFullyAllocated) {
+        allocationBadge = `<span class="badge" style="background: #10b981; color: white; font-size: 0.75rem;">✅ Fully Allocated (${totalAllocated}h)</span>`;
+    } else if (isPartiallyAllocated) {
+        allocationBadge = `<span class="badge" style="background: #f59e0b; color: white; font-size: 0.75rem;">⏳ Partial: ${totalAllocated}/${maxHours}h (${remainingToAllocate.toFixed(1)}h remaining)</span>`;
+    } else if (maxHours > 0) {
+        allocationBadge = `<span class="badge" style="background: #3b82f6; color: white; font-size: 0.75rem;">🎯 Budget: ${maxHours}h - Not Allocated</span>`;
+    }
 
     return `
         <div class="project-card">
@@ -7946,13 +8013,18 @@ function createProjectCard(project) {
                 <p><strong>Target:</strong> ${targetDate}</p>
                 <p><strong>Status:</strong> ${project.designStatus || 'N/A'}</p>
                 <p><strong>Designers:</strong> ${project.assignedDesignerNames?.join(', ') || 'None assigned'}</p>
+                ${maxHours > 0 ? `
+                    <p><strong>Hours Budget:</strong> ${maxHours}h | <strong>Logged:</strong> ${hoursLogged.toFixed(1)}h | <strong>Remaining:</strong> ${remainingBudget.toFixed(1)}h</p>
+                ` : ''}
+                ${allocationBadge ? `<p>${allocationBadge}</p>` : ''}
             </div>
             <div class="project-actions">
                 <button onclick="viewProject('${project.id}')">View Details</button>
                 
-                ${(project.status === 'active' || project.status === 'ASSIGNED' || !project.assignedDesignerNames || project.assignedDesignerNames.length === 0) ?
-                    `<button onclick="assignDesigners('${project.id}')">
-                        ${project.assignedDesignerNames?.length > 0 ? '✏️ Manage Designers' : '➕ Assign Designers'}
+                ${needsDesigners || !isFullyAllocated ?
+                    `<button onclick="assignDesigners('${project.id}')" style="background-color: ${isPartiallyAllocated ? 'var(--warning)' : 'var(--primary-blue)'}; color: white;">
+                        ${isPartiallyAllocated ? `⏳ Allocate Remaining ${remainingToAllocate.toFixed(1)}h` : 
+                          needsDesigners ? '➕ Assign Designers' : '✏️ Manage Allocation'}
                     </button>` : ''}
                 
                 <button onclick="viewBDMFiles('${project.id}', '${project.proposalId}')">View BDM Files</button>
@@ -8030,6 +8102,7 @@ function createProjectCard(project) {
                   (p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid))
               );
             }
+            
             // Count projects by status for filter buttons (for COO/Director)
             let filterButtons = '';
             if (currentUserRole === 'coo' || currentUserRole === 'director') {
@@ -8040,19 +8113,19 @@ function createProjectCard(project) {
                         p.status !== 'on_hold' && 
                         p.status !== 'cancelled'
                     ).length,
-                    // Pending Allocation = projects without design lead OR partially allocated
+                    // Pending Allocation = projects that need designers assigned
                     pending: allProjects.filter(p => {
-                        // No design lead assigned
-                        if (!p.designLeadUid && p.status === 'pending') return true;
-                        
-                        // Check for partial allocation (totalAllocatedHours < maxAllocatedHours)
+                        // No designers assigned yet
+                        if (!p.assignedDesignerUids || p.assignedDesignerUids.length === 0) {
+                            return p.status !== 'completed';
+                        }
+                        return false;
+                    }).length,
+                    // Partially Allocated = has some allocation but not fully allocated
+                    partial: allProjects.filter(p => {
                         const maxHours = parseFloat(p.maxAllocatedHours) || 0;
                         const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
-                        
-                        // Partially allocated: has max hours set but not fully allocated
-                        if (maxHours > 0 && totalAllocated < maxHours) return true;
-                        
-                        return false;
+                        return maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
                     }).length,
                     completed: allProjects.filter(p => 
                         p.status === 'completed'
@@ -8073,13 +8146,22 @@ function createProjectCard(project) {
                             <span class="filter-count">${statusCounts.active}</span>
                         </button>
                         
-                        <button class="filter-btn filter-btn-pricing ${currentProjectFilter === 'pending' ? 'active' : ''}" 
+                        <button class="filter-btn filter-btn-pending ${currentProjectFilter === 'pending' ? 'active' : ''}" 
                                 onclick="filterProjects('pending')">
-                            ⏰ Pending Allocation
+                            🎯 Needs Designers
                             <span class="filter-count">${statusCounts.pending}</span>
                         </button>
                         
-                        <button class="filter-btn filter-btn-pending ${currentProjectFilter === 'completed' ? 'active' : ''}" 
+                        ${statusCounts.partial > 0 ? `
+                        <button class="filter-btn ${currentProjectFilter === 'partial' ? 'active' : ''}" 
+                                onclick="filterProjects('partial')"
+                                style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                            ⏳ Partially Allocated
+                            <span class="filter-count">${statusCounts.partial}</span>
+                        </button>
+                        ` : ''}
+                        
+                        <button class="filter-btn filter-btn-pricing ${currentProjectFilter === 'completed' ? 'active' : ''}" 
                                 onclick="filterProjects('completed')">
                             🎉 Completed
                             <span class="filter-count">${statusCounts.completed}</span>
@@ -8098,19 +8180,19 @@ function createProjectCard(project) {
                         p.status !== 'cancelled'
                     );
                 } else if (currentProjectFilter === 'pending') {
-                    // Pending Allocation = projects without design lead OR partially allocated
+                    // Projects that need designers assigned
                     filteredProjects = allProjects.filter(p => {
-                        // No design lead assigned
-                        if (!p.designLeadUid && p.status === 'pending') return true;
-                        
-                        // Check for partial allocation (totalAllocatedHours < maxAllocatedHours)
+                        if (!p.assignedDesignerUids || p.assignedDesignerUids.length === 0) {
+                            return p.status !== 'completed';
+                        }
+                        return false;
+                    });
+                } else if (currentProjectFilter === 'partial') {
+                    // Partially allocated projects
+                    filteredProjects = allProjects.filter(p => {
                         const maxHours = parseFloat(p.maxAllocatedHours) || 0;
                         const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
-                        
-                        // Partially allocated: has max hours set but not fully allocated
-                        if (maxHours > 0 && totalAllocated < maxHours) return true;
-                        
-                        return false;
+                        return maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
                     });
                 } else if (currentProjectFilter === 'completed') {
                     filteredProjects = allProjects.filter(p => 
@@ -9908,6 +9990,309 @@ function closeCooMultiDesignerModal() {
     document.getElementById('cooMultiDesignerAllocationModal').style.display = 'none';
     document.getElementById('designerAllocationsContainer').innerHTML = '';
     designerAllocationCounter = 0;
+}
+
+/**
+ * Show Continue Allocation Modal for partially allocated projects
+ * Allows COO to allocate remaining hours to additional designers
+ */
+async function showContinueAllocationModal(projectId, proposalId) {
+    try {
+        showLoading();
+        
+        // Fetch project details
+        const projectResponse = await apiCall(`projects?id=${projectId}`);
+        if (!projectResponse.success) {
+            throw new Error('Failed to load project details');
+        }
+        
+        const project = projectResponse.data;
+        
+        // Calculate allocation status
+        const maxHours = parseFloat(project.maxAllocatedHours) || 0;
+        const totalAllocated = parseFloat(project.totalAllocatedHours) || 0;
+        const remainingToAllocate = maxHours - totalAllocated;
+        const existingAllocations = project.designerAllocations || [];
+        
+        // Fetch available designers
+        const usersResponse = await apiCall('users?role=designer,design_lead');
+        if (!usersResponse.success) {
+            throw new Error('Failed to load designers');
+        }
+        
+        const designers = usersResponse.data || [];
+        
+        // Get already assigned designer UIDs
+        const assignedUids = (project.assignedDesignerUids || []);
+        
+        // Create designer options (exclude already fully assigned designers)
+        const designerOptions = designers.map(d => `
+            <option value="${d.uid}" 
+                    data-name="${d.name}" 
+                    data-email="${d.email}"
+                    data-role="${d.role}"
+                    ${assignedUids.includes(d.uid) ? 'data-assigned="true"' : ''}>
+                ${d.name} (${d.role.replace('_', ' ')}) ${assignedUids.includes(d.uid) ? '- Already Assigned' : ''}
+            </option>
+        `).join('');
+        
+        // Create existing allocations display
+        const existingAllocationsHtml = existingAllocations.length > 0 ? `
+            <div style="margin-bottom: 1.5rem; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #2e7d32;">✅ Existing Allocations</h4>
+                <table style="width: 100%; font-size: 0.9rem;">
+                    <tr style="border-bottom: 1px solid #c8e6c9;">
+                        <th style="text-align: left; padding: 0.5rem;">Designer</th>
+                        <th style="text-align: center; padding: 0.5rem;">Hours</th>
+                    </tr>
+                    ${existingAllocations.map(a => `
+                        <tr>
+                            <td style="padding: 0.5rem;">${a.designerName}</td>
+                            <td style="text-align: center; padding: 0.5rem;"><strong>${a.allocatedHours}h</strong></td>
+                        </tr>
+                    `).join('')}
+                    <tr style="background: #c8e6c9; font-weight: bold;">
+                        <td style="padding: 0.5rem;">Total Allocated</td>
+                        <td style="text-align: center; padding: 0.5rem;">${totalAllocated}h</td>
+                    </tr>
+                </table>
+            </div>
+        ` : '';
+        
+        const modalHtml = `
+            <div class="modal-overlay" id="continueAllocationModal" onclick="if(event.target === this) closeContinueAllocationModal()">
+                <div class="modal-content" style="max-width: 700px; max-height: 90vh; overflow-y: auto;">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #ff9800, #f57c00); color: white;">
+                        <h2>🎯 Continue Allocation - ${project.projectName}</h2>
+                        <span class="close-modal" onclick="closeContinueAllocationModal()">&times;</span>
+                    </div>
+                    
+                    <div class="modal-body" style="padding: 1.5rem;">
+                        <!-- Project Info -->
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                            <div style="text-align: center; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2;">${maxHours}h</div>
+                                <small>Total Budget</small>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #e8f5e9; border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #388e3c;">${totalAllocated}h</div>
+                                <small>Already Allocated</small>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #fff3e0; border-radius: 8px;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #f57c00;">${remainingToAllocate.toFixed(1)}h</div>
+                                <small>Remaining to Allocate</small>
+                            </div>
+                        </div>
+                        
+                        ${existingAllocationsHtml}
+                        
+                        <!-- New Allocation Form -->
+                        <div style="padding: 1rem; background: #fff8e1; border-radius: 8px; border-left: 4px solid #ff9800;">
+                            <h4 style="margin: 0 0 1rem 0;">➕ Add New Allocation</h4>
+                            
+                            <input type="hidden" id="continueAllocProjectId" value="${projectId}">
+                            <input type="hidden" id="continueAllocMaxHours" value="${maxHours}">
+                            <input type="hidden" id="continueAllocCurrentTotal" value="${totalAllocated}">
+                            
+                            <div id="newAllocationsContainer">
+                                <!-- Dynamic allocation rows will be added here -->
+                            </div>
+                            
+                            <button type="button" onclick="addContinueAllocationRow('${designerOptions.replace(/'/g, "\\'").replace(/\n/g, '')}')" 
+                                    class="btn btn-outline" style="margin-top: 1rem;">
+                                ➕ Add Designer
+                            </button>
+                        </div>
+                        
+                        <!-- Allocation Summary -->
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span><strong>New Allocation Total:</strong></span>
+                                <span id="newAllocationTotal" style="font-size: 1.2rem; font-weight: bold; color: var(--primary-blue);">0h</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                <span><strong>Remaining After:</strong></span>
+                                <span id="remainingAfterAllocation" style="font-size: 1.2rem; font-weight: bold; color: var(--warning);">${remainingToAllocate.toFixed(1)}h</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="button" onclick="closeContinueAllocationModal()" class="btn btn-outline">Cancel</button>
+                        <button type="button" onclick="submitContinueAllocation()" class="btn btn-warning">
+                            🎯 Allocate Remaining Hours
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Add first allocation row automatically
+        addContinueAllocationRow(designerOptions.replace(/'/g, "\\'").replace(/\n/g, ''));
+        
+    } catch (error) {
+        console.error('Error showing continue allocation modal:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+let continueAllocationCounter = 0;
+
+function addContinueAllocationRow(designerOptionsStr) {
+    const container = document.getElementById('newAllocationsContainer');
+    const rowNum = ++continueAllocationCounter;
+    
+    const rowHtml = `
+        <div class="designer-allocation-row" id="continueAllocRow${rowNum}" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 1rem; margin-bottom: 1rem; padding: 1rem; background: white; border-radius: 8px; border: 1px solid #ddd;">
+            <div>
+                <label style="font-weight: 600; margin-bottom: 0.25rem; display: block;">Designer</label>
+                <select id="continueDesigner${rowNum}" class="form-control continue-designer-select" onchange="updateContinueAllocationTotals()">
+                    <option value="">Select Designer...</option>
+                    ${designerOptionsStr}
+                </select>
+            </div>
+            <div>
+                <label style="font-weight: 600; margin-bottom: 0.25rem; display: block;">Hours</label>
+                <input type="number" id="continueHours${rowNum}" class="form-control continue-hours-input" 
+                       min="0.5" step="0.5" placeholder="Hours" onchange="updateContinueAllocationTotals()" oninput="updateContinueAllocationTotals()">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button type="button" onclick="removeContinueAllocationRow(${rowNum})" class="btn btn-danger btn-sm" style="padding: 0.5rem;">✕</button>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', rowHtml);
+}
+
+function removeContinueAllocationRow(rowNum) {
+    const row = document.getElementById(`continueAllocRow${rowNum}`);
+    if (row) {
+        row.remove();
+        updateContinueAllocationTotals();
+    }
+}
+
+function updateContinueAllocationTotals() {
+    const hoursInputs = document.querySelectorAll('.continue-hours-input');
+    let newTotal = 0;
+    
+    hoursInputs.forEach(input => {
+        newTotal += parseFloat(input.value) || 0;
+    });
+    
+    const currentTotal = parseFloat(document.getElementById('continueAllocCurrentTotal').value) || 0;
+    const maxHours = parseFloat(document.getElementById('continueAllocMaxHours').value) || 0;
+    const remainingAfter = maxHours - currentTotal - newTotal;
+    
+    document.getElementById('newAllocationTotal').textContent = `${newTotal.toFixed(1)}h`;
+    
+    const remainingEl = document.getElementById('remainingAfterAllocation');
+    remainingEl.textContent = `${remainingAfter.toFixed(1)}h`;
+    
+    if (remainingAfter < 0) {
+        remainingEl.style.color = 'var(--danger)';
+    } else if (remainingAfter === 0) {
+        remainingEl.style.color = 'var(--success)';
+    } else {
+        remainingEl.style.color = 'var(--warning)';
+    }
+}
+
+async function submitContinueAllocation() {
+    const projectId = document.getElementById('continueAllocProjectId').value;
+    const maxHours = parseFloat(document.getElementById('continueAllocMaxHours').value);
+    const currentTotal = parseFloat(document.getElementById('continueAllocCurrentTotal').value);
+    
+    // Collect new allocations
+    const newAllocations = [];
+    const selects = document.querySelectorAll('.continue-designer-select');
+    
+    for (const select of selects) {
+        if (!select.value) continue;
+        
+        const rowNum = select.id.replace('continueDesigner', '');
+        const hoursInput = document.getElementById(`continueHours${rowNum}`);
+        const hours = parseFloat(hoursInput.value);
+        
+        if (!hours || hours <= 0) {
+            alert('Please enter valid hours for all selected designers');
+            return;
+        }
+        
+        const selectedOption = select.options[select.selectedIndex];
+        
+        newAllocations.push({
+            designerUid: select.value,
+            designerName: selectedOption.dataset.name,
+            designerEmail: selectedOption.dataset.email,
+            designerRole: selectedOption.dataset.role,
+            allocatedHours: hours
+        });
+    }
+    
+    if (newAllocations.length === 0) {
+        alert('Please add at least one designer allocation');
+        return;
+    }
+    
+    // Calculate new total
+    const newAllocationTotal = newAllocations.reduce((sum, a) => sum + a.allocatedHours, 0);
+    const grandTotal = currentTotal + newAllocationTotal;
+    
+    if (grandTotal > maxHours) {
+        if (!confirm(`Total allocation (${grandTotal}h) exceeds budget (${maxHours}h). Continue anyway?`)) {
+            return;
+        }
+    }
+    
+    try {
+        showLoading();
+        
+        const response = await apiCall(`projects?id=${projectId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'continue_allocation',
+                data: {
+                    newAllocations: newAllocations,
+                    additionalHours: newAllocationTotal
+                }
+            })
+        });
+        
+        if (response.success) {
+            closeContinueAllocationModal();
+            alert(`✅ Successfully allocated ${newAllocationTotal}h to ${newAllocations.length} designer(s)!`);
+            
+            // Refresh views
+            if (typeof showAllProjects === 'function') {
+                await showAllProjects();
+            } else if (typeof showProjects === 'function') {
+                await showProjects();
+            }
+        } else {
+            throw new Error(response.error || 'Allocation failed');
+        }
+        
+    } catch (error) {
+        console.error('Error continuing allocation:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+function closeContinueAllocationModal() {
+    const modal = document.getElementById('continueAllocationModal');
+    if (modal) {
+        modal.remove();
+    }
+    continueAllocationCounter = 0;
 }
 
 // ============================================================================
