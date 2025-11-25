@@ -9667,7 +9667,7 @@ async function showCooMultiDesignerAllocationModal(projectId) {
     try {
         showLoading();
         
-        // Load project details
+        // 1. Load project details to get current status
         const projectResponse = await apiCall(`projects?id=${projectId}`);
         if (!projectResponse.success || !projectResponse.data) {
             throw new Error('Failed to load project details');
@@ -9675,7 +9675,7 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         
         const project = projectResponse.data;
         
-        // Load available designers
+        // 2. Load available designers
         await loadAvailableDesigners();
         
         if (availableDesigners.length === 0) {
@@ -9684,43 +9684,26 @@ async function showCooMultiDesignerAllocationModal(projectId) {
             return;
         }
         
-        // Populate project info
+        // 3. Populate project info
         document.getElementById('cooAllocProjectId').value = projectId;
         document.getElementById('cooAllocProjectNumber').textContent = project.projectNumber || 'N/A';
         document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
         document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
         
-        // --- LOGIC CHANGE START ---
+        // --- CRITICAL LOGIC CHANGE: Calculate Remaining Budget ---
         
-        // 1. Determine Max Budget
-        // Use maxAllocatedHours if previously set, otherwise use estimation
-        const totalBudget = project.maxAllocatedHours || project.estimatedHours || project.estimation?.totalHours || 0;
-        
-        // 2. Determine Already Allocated
-        const currentlyAllocated = parseFloat(project.totalAllocatedHours) || 0;
-        
-        // 3. Set UI Values
+        const totalBudget = parseFloat(project.estimatedHours || project.estimation?.totalHours || project.maxAllocatedHours || 0);
+        const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
+        const remainingBudget = Math.max(0, totalBudget - previouslyAllocated);
+
+        // Set the Total Project Hours input (Read Only if value exists)
         const totalInput = document.getElementById('cooTotalProjectHours');
         totalInput.value = totalBudget;
+        totalInput.readOnly = totalBudget > 0; // Prevent changing the budget here
         
-        // Store existing allocation in a data attribute for calculation
-        totalInput.dataset.alreadyAllocated = currentlyAllocated;
-        
-        // If this is a partial allocation (project already created and has budget), 
-        // lock the Total Budget input so it can't be changed easily, or warn user.
-        if (project.maxAllocatedHours > 0) {
-            // Optional: Make read-only if you don't want budget changes here
-            // totalInput.readOnly = true; 
-        } else {
-            totalInput.readOnly = false;
-        }
+        // Store the "Already Used" amount in the DOM for calculations
+        totalInput.dataset.alreadyAllocated = previouslyAllocated;
 
-        // Add a visual indicator of what is already used
-        const remainingDisplay = document.getElementById('cooRemainingHours');
-        // Clear previous content
-        
-        // --- LOGIC CHANGE END ---
-        
         // Reset the form
         designerAllocationCounter = 0;
         document.getElementById('designerAllocationsContainer').innerHTML = '';
@@ -9728,13 +9711,37 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         document.getElementById('cooTargetCompletionDate').value = '';
         document.getElementById('cooProjectPriority').value = 'Normal';
         
-        // Add first designer row
-        addDesignerAllocation();
+        // 4. Check Block Condition
+        const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline');
+        const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+
+        if (remainingBudget <= 0.1 && totalBudget > 0) {
+            // CASE: FULLY ALLOCATED
+            document.getElementById('designerAllocationsContainer').innerHTML = `
+                <div class="alert alert-success" style="padding: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #10b981; border-radius: 8px; text-align: center;">
+                    <strong>✅ Allocation Complete</strong><br>
+                    This project is fully allocated (${previouslyAllocated}/${totalBudget} hrs).<br>
+                    No further hours can be added.
+                </div>
+            `;
+            // Hide/Disable buttons
+            if(addDesignerBtn) addDesignerBtn.style.display = 'none';
+            if(submitBtn) submitBtn.disabled = true;
+            if(submitBtn) submitBtn.innerText = "Fully Allocated";
+        } else {
+            // CASE: PARTIAL or NEW
+            if(addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
+            if(submitBtn) submitBtn.disabled = false;
+            if(submitBtn) submitBtn.innerText = "Allocate Project";
+            
+            // Add the first row for entry
+            addDesignerAllocation();
+        }
         
         // Show modal
         document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
         
-        // Trigger update to show correct math immediately
+        // Update the visual display
         updateRemainingHours();
         
     } catch (error) {
