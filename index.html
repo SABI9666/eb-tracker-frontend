@@ -3537,26 +3537,41 @@ function renderProposals(proposals) {
                     const maxHours = parseFloat(p.maxAllocatedHours) || 0;
                     const totalAllocated = parseFloat(p.totalAllocatedHours) || 0;
                     const remainingToAllocate = maxHours - totalAllocated;
-                    const isFullyAllocated = maxHours > 0 && totalAllocated >= maxHours;
                     
-                    if (p.projectCreated && p.projectId && isFullyAllocated) {
+                    // Determine status
+                    // 1. Fully Allocated
+                    const isFullyAllocated = p.projectCreated && maxHours > 0 && totalAllocated >= maxHours;
+                    // 2. Partially Allocated
+                    const isPartiallyAllocated = p.projectCreated && maxHours > 0 && totalAllocated > 0 && totalAllocated < maxHours;
+                    // 3. Pending (New Won)
+                    const isPendingAllocation = !p.projectCreated || (maxHours === 0 && totalAllocated === 0);
+
+                    if (isFullyAllocated) {
+                        // GREEN: Fully Allocated
                         allocationInfo = '<span class="proposal-status status-allocated" style="background: #a7f3d0; color: #064e3b;">✅ Fully Allocated</span>';
                         if (currentUserRole === 'coo' || currentUserRole === 'director') {
-                            allocationButton = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">View Allocated Project</button>`;
+                            // Show "View Project" in outline/green, no allocate button
+                            allocationButton = `<button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm" style="border-color: #059669; color: #059669;">📂 View Project</button>`;
                         }
-                    } else if (p.projectCreated && p.projectId && totalAllocated > 0) {
-                        // Partially allocated
-                        allocationInfo = `<span class="proposal-status status-pending" style="background: #fef3c7; color: #92400e;">⏳ Partial (${totalAllocated.toFixed(1)}/${maxHours}h allocated - ${remainingToAllocate.toFixed(1)}h remaining)</span>`;
+                    } 
+                    else if (isPartiallyAllocated) {
+                        // YELLOW/ORANGE: Partially Allocated
+                        allocationInfo = `<span class="proposal-status" style="background: #fef3c7; color: #b45309; border: 1px solid #f59e0b;">⏳ Partial (${totalAllocated}/${maxHours}h)</span>`;
                         if (currentUserRole === 'coo' || currentUserRole === 'director') {
+                            // Show "Continue Allocation" in Orange/Yellow
                             allocationButton = `
-                                <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-warning btn-sm">🎯 Continue Allocation</button>
-                                <button onclick="viewProject('${p.projectId}')" class="btn btn-outline btn-sm">View Project</button>
+                                <button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-warning btn-sm" style="color: white; font-weight:600;">
+                                    ⚠️ Continue Alloc. (${remainingToAllocate}h left)
+                                </button>
                             `;
                         }
-                    } else if (p.pricing && p.pricing.projectNumber) {
-                        allocationInfo = '<span class="proposal-status status-pending" style="background: #fed7aa; color: #9a3412;">⏳ Pending Allocation</span>';
+                    } 
+                    else if (p.pricing && p.pricing.projectNumber) {
+                        // BLUE: Pending Allocation
+                        allocationInfo = '<span class="proposal-status status-pending" style="background: #dbeafe; color: #1e40af;">🎯 Pending Allocation</span>';
                         if (currentUserRole === 'coo') {
-                            allocationButton = `<button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-success btn-sm">🎯 Allocate</button>`;
+                            // Show "Allocate" in Primary Blue
+                            allocationButton = `<button onclick="showProjectAllocationModal('${p.id}')" class="btn btn-primary btn-sm">🎯 Allocate Project</button>`;
                         }
                     } else {
                         allocationInfo = '<span class="proposal-status status-pending" style="background: #fecaca; color: #991b1b;">⏳ Pending Pricing</span>';
@@ -3573,8 +3588,10 @@ function renderProposals(proposals) {
                                 ${maxHours > 0 ? ` | Budget: ${maxHours}h` : ''}
                             </div>
                         </div>
-                        ${allocationInfo}
-                        <div class="action-buttons">
+                        <div style="text-align:right;">
+                            ${allocationInfo}
+                        </div>
+                        <div class="action-buttons" style="margin-left: 1rem;">
                             ${allocationButton}
                             <button onclick="viewProposal('${p.id}')" class="btn btn-outline btn-sm">View</button>
                         </div>
