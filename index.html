@@ -1810,6 +1810,109 @@ body.modal-open {
     font-size: 0.85rem;
     font-weight: bold;
 }
+        /* ============================================================================ */
+/* COO MULTI-DESIGNER ALLOCATION STYLES */
+/* ============================================================================ */
+
+.designer-allocation-row {
+    background: white;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.designer-allocation-row:hover {
+    border-color: var(--primary-blue);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.designer-allocation-row.error {
+    border-color: var(--danger);
+    background: #fff5f5;
+}
+
+.designer-row-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.designer-row-number {
+    background: var(--primary-blue);
+    color: white;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.remove-designer-btn {
+    background: var(--danger);
+    color: white;
+    border: none;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.remove-designer-btn:hover {
+    background: #c53030;
+    transform: scale(1.05);
+}
+
+.hours-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--success), #059669);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.allocation-summary {
+    background: linear-gradient(135deg, #f0f4f8, #e6eef5);
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-top: 1rem;
+    border-left: 4px solid var(--primary-blue);
+}
+
+.allocation-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.allocation-summary-item {
+    text-align: center;
+}
+
+.allocation-summary-item label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 0.3rem;
+}
+
+.allocation-summary-item .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
 
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js">
