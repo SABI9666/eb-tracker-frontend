@@ -9912,9 +9912,14 @@ async function submitCooMultiDesignerAllocation() {
     const totalBudget = parseFloat(totalHoursInput.value);
     const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
     
+    // Project Details inputs
+    const targetDate = document.getElementById('cooTargetCompletionDate').value;
+    const priority = document.getElementById('cooProjectPriority').value;
+    const generalNotes = document.getElementById('cooAllocationNotes').value;
+
     // Validation: Inputs exist
     const selects = document.querySelectorAll('.designer-select');
-    if (selects.length === 0) return; // Should not happen if button disabled
+    if (selects.length === 0) return; 
 
     // Collect designer allocations
     const designerAllocations = [];
@@ -9953,7 +9958,7 @@ async function submitCooMultiDesignerAllocation() {
     // --- STRICT BLOCKING LOGIC ---
     const newTotalAllocated = previouslyAllocated + currentSessionTotal;
     
-    // Allow a tiny float margin of error (0.1), but generally strictly enforce budget
+    // Allow a tiny float margin of error (0.1)
     if (newTotalAllocated > totalBudget + 0.1) {
         const overage = (newTotalAllocated - totalBudget).toFixed(1);
         alert(`⛔ BLOCKING ENTRY: You are exceeding the total project budget by ${overage} hours.\n\nTotal Budget: ${totalBudget}\nAlready Used: ${previouslyAllocated}\nTrying to Add: ${currentSessionTotal}\n\nPlease reduce the hours to proceed.`);
@@ -9966,8 +9971,18 @@ async function submitCooMultiDesignerAllocation() {
         return;
     }
     
-    // Confirmation
-    if (!confirm(`Proceed to allocate ${currentSessionTotal} hours to ${designerAllocations.length} designer(s)?`)) {
+    // --- THIS WAS THE BROKEN PART IN YOUR FILE ---
+    const confirmText = `
+📊 Allocation Summary:
+━━━━━━━━━━━━━━━━━━━━━━
+Total Hours: ${totalBudget}hrs
+Designers: ${designerAllocations.length}
+${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours}hrs`).join('')}
+━━━━━━━━━━━━━━━━━━━━━━
+
+Proceed with allocation?`.trim();
+    
+    if (!confirm(confirmText)) {
         return;
     }
     
@@ -9980,8 +9995,9 @@ async function submitCooMultiDesignerAllocation() {
                 projectId: projectId,
                 totalAllocatedHours: newTotalAllocated, // Update total in DB
                 designerAllocations: designerAllocations,
-                // Append to existing structure logic handled by backend usually, 
-                // or simply pass the new allocations array to be merged
+                targetCompletionDate: targetDate || null, // Pass target date
+                priority: priority, // Pass priority
+                allocationNotes: generalNotes, // Pass notes
                 isIncremental: true 
             }
         };
@@ -9999,95 +10015,6 @@ async function submitCooMultiDesignerAllocation() {
             if (typeof showAllProjects === 'function') {
                 await showAllProjects();
             }
-        } else {
-            throw new Error(response.error || 'Allocation failed');
-        }
-        
-    } catch (error) {
-        console.error('Error allocating project:', error);
-        alert('❌ Error allocating project: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-📊 Allocation Summary:
-━━━━━━━━━━━━━━━━━━━━━━
-Total Hours: ${totalHours}hrs
-Designers: ${designerAllocations.length}
-${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours}hrs`).join('')}
-━━━━━━━━━━━━━━━━━━━━━━
-
-Proceed with allocation?
-    `.trim();
-    
-    if (!confirm(confirmText)) {
-        return;
-    }
-    
-    try {
-        showLoading();
-        
-        // Prepare allocation data
-        const allocationData = {
-            action: 'allocate_to_multiple_designers',
-            data: {
-                projectId: projectId,
-                totalAllocatedHours: totalHours,
-                targetCompletionDate: targetDate || null,
-                priority: priority,
-                allocationNotes: generalNotes,
-                projectStartDate: new Date().toISOString(),
-                designerAllocations: designerAllocations,
-                // For backward compatibility
-                assignedDesignerUids: designerAllocations.map(d => d.designerUid),
-                assignedDesignerNames: designerAllocations.map(d => d.designerName),
-                designerHours: designerAllocations.reduce((obj, d) => {
-                    obj[d.designerUid] = d.allocatedHours;
-                    return obj;
-                }, {})
-            }
-        };
-        
-        // Submit allocation
-        const response = await apiCall(`projects?id=${projectId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(allocationData)
-        });
-        
-        if (response.success) {
-            // Show success message
-            showSuccessModal(
-                '✅ Project Allocated Successfully!',
-                `Project allocated to ${designerAllocations.length} designer(s) with ${totalHours} total hours.`
-            );
-            
-            // Send email notifications to all designers
-            for (const designer of designerAllocations) {
-                try {
-                    await triggerEmailNotification('project.allocated_designer', {
-                        projectId: projectId,
-                        recipientUid: designer.designerUid,
-                        recipientEmail: designer.designerEmail,
-                        recipientName: designer.designerName,
-                        allocatedHours: designer.allocatedHours,
-                        specificNotes: designer.specificNotes
-                    });
-                } catch (emailError) {
-                    console.error('Email notification failed for:', designer.designerName, emailError);
-                }
-            }
-            
-            // Close modal and refresh
-            closeCooMultiDesignerModal();
-            
-            // Refresh the projects view
-            if (typeof showAllProjects === 'function') {
-                await showAllProjects();
-            } else if (typeof showProjects === 'function') {
-                await showProjects();
-            }
-            
         } else {
             throw new Error(response.error || 'Allocation failed');
         }
