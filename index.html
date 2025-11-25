@@ -9971,7 +9971,6 @@ async function submitCooMultiDesignerAllocation() {
         return;
     }
     
-    // --- THIS WAS THE BROKEN PART IN YOUR FILE ---
     const confirmText = `
 📊 Allocation Summary:
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -9989,16 +9988,25 @@ Proceed with allocation?`.trim();
     try {
         showLoading();
         
+        // --- FIX: Construct Payload with Legacy Fields ---
         const allocationData = {
             action: 'allocate_to_multiple_designers',
             data: {
                 projectId: projectId,
                 totalAllocatedHours: newTotalAllocated, // Update total in DB
                 designerAllocations: designerAllocations,
-                targetCompletionDate: targetDate || null, // Pass target date
-                priority: priority, // Pass priority
-                allocationNotes: generalNotes, // Pass notes
-                isIncremental: true 
+                targetCompletionDate: targetDate || null,
+                priority: priority,
+                allocationNotes: generalNotes,
+                isIncremental: true,
+
+                // IMPORTANT: Backend likely validates these fields existence
+                assignedDesignerUids: designerAllocations.map(d => d.designerUid),
+                assignedDesignerNames: designerAllocations.map(d => d.designerName),
+                designerHours: designerAllocations.reduce((acc, d) => {
+                    acc[d.designerUid] = d.allocatedHours;
+                    return acc;
+                }, {})
             }
         };
         
