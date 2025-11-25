@@ -8185,7 +8185,15 @@ async function showDesignerAllocations() {
         `;
     }
 }
-
+                                
+// Helper function to format file size
+function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '';
+    
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+}
         // ============================================
         // TASKS (Designer)
         // ============================================
