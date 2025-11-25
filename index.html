@@ -2253,6 +2253,24 @@ body.modal-open {
         let authToken = '';
 
         // ============================================
+        // UTILITY FUNCTIONS - SUCCESS/ERROR MODALS
+        // ============================================
+        
+        function closeSuccessModal() {
+            const modal = document.getElementById('successModal');
+            if (modal) modal.style.display = 'none';
+        }
+        
+        function showSuccessModal(message, details) {
+            const modal = document.getElementById('successModal');
+            if (modal) {
+                document.getElementById('successMessage').textContent = message;
+                document.getElementById('successDetails').textContent = details || '';
+                modal.style.display = 'flex';
+            }
+        }
+
+        // ============================================
         // CORE API & AUTH FUNCTIONS
         // ============================================
 
@@ -7101,186 +7119,11 @@ async function submitEditedPricing() {
                         
                 // Check if proposal is WON
                 if (proposal.status !== 'won') {
-                    alert('Only WON proposals can be allocated to Design Managers');
+                    alert('Only WON proposals can be allocated to designers');
                     hideLoading();
                     return;
                 }
-                        
-                // Load design managers (users with role='design_lead')
-                const usersResponse = await apiCall('users?role=design_lead');
-                        
-                let designManagers = [];
-                if (usersResponse.success && usersResponse.data) {
-                    designManagers = usersResponse.data;
-                }
-                        
-                if (designManagers.length === 0) {
-                    alert('No Design Managers found in the system. Please create Design Manager users first.');
-                    hideLoading();
-                    return;
-                }
-                        
-                const modalHtml = `
-                    <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
-                        <div class="modal-content" style="max-width: 700px;">
-                            <div class="modal-header">
-                                <div>
-                                    <h2>Allocate Project to Designer</h2>
-                                    <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
-                                </div>
-                                <span class="close-modal" onclick="closeModal()">&times;</span>
-                            </div>
-                                                
-                            <div class="modal-body">
-                                <div class="allocation-details-section">
-                                    <h3>📋 Project Information</h3>
-                                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-                                        <div style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
-                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">🔢 Project Number:</label>
-                                            <span class="project-number-badge" style="font-size: 1.3rem; padding: 0.7rem 1.2rem;">
-                                                ${proposal.pricing?.projectNumber || 'Not Set'}
-                                            </span>
-                                        </div>
-                                        <div>
-                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Quote Value:</label>
-                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">${proposal.pricing?.currency || ''} ${proposal.pricing?.quoteValue?.toLocaleString() || 'N/A'}</span>
-                                        </div>
-                                        <div>
-                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Status:</label>
-                                            <span class="proposal-status status-won">WON</span>
-                                        </div>
-                                        <div>
-                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">BDM:</label>
-                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">${proposal.createdByName || 'N/A'}</span>
-                                        </div>
-                                        <div>
-                                            <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Client:</label>
-                                            <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">${proposal.clientCompany || 'N/A'}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                    <div style="margin-top: 2rem;">
-                                    <h3 style="color: var(--text-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">👤 Allocation Details</h3>
-                                    <form id="allocationForm">
-                                    <div class="form-group">
-                                    <label>Select Designer or Design Manager <span class="required">*</span></label>
-                                        <select id="designManagerSelect" class="form-control" required>
-                                            <option value="">Choose a Design Manager...</option>
-                                            ${designManagers.map(dm => `
-                                                <option value="${dm.uid}" data-name="${dm.name}" data-email="${dm.email}">
-                                                    ${dm.name} (${dm.email})
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                        <small class="form-text">Select the Designer or Design Manager who will work on this project</small>
-                                    </div>
-                                                                
-                                  <div class="form-group">
-    <label for="maxAllocatedHours">Max Allocated Hours <span class="required">*</span></label>
-    <input type="number" id="maxAllocatedHours" class="form-control" 
-           step="0.5" min="1" placeholder="Enter maximum hours allocated for this project" required>
-    <small class="form-text">Total hours budget allocated by COO/Director for this project</small>
-</div>
-
-<div class="form-group">
-    <label for="additionalHours">Additional Hours Provision</label>
-    <input type="number" id="additionalHours" class="form-control" 
-           step="0.5" min="0" value="0" placeholder="Enter buffer hours (optional)">
-    <small class="form-text">Extra hours that can be allocated if needed (buffer)</small>
-</div>
-
-<div class="form-group">
-    <label for="targetCompletionDate">Target Completion Date</label>
-    <input type="date" id="targetCompletionDate" class="form-control"
-         min="${new Date().toISOString().split('T')[0]}">
-    <small class="form-text">Expected project completion date</small>
-</div>
-                                                                
-                                    <div class="form-group">
-                                        <label>Project Priority</label>
-                                        <select id="projectPriority" class="form-control">
-                                            <option value="Normal">Normal</option>
-                                            <option value="High">High</option>
-                                            <option value="Urgent">Urgent</option>
-                                            <option value="Low">Low</option>
-                                        </select>
-                                    </div>
-                                                                
-                                    <div class="form-group">
-                                        <label>Allocation Comments <span class="required">*</span></label>
-                                        <textarea id="allocationComments" class="form-control" rows="4"
-                                             placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
-                                        <small class="form-text">Provide clear guidance and expectations for this project</small>
-                                    </div>
-                                                                
-                                    <div class="form-group">
-                                        <label>Special Instructions</label>
-                                        <textarea id="specialInstructions" class="form-control" rows="3"
-                                             placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
-                                    </div>
-                                </form>
-                            </div>
-                                                
-                            <div class="modal-footer">
-                                <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                                <button type="button" onclick="submitProposalAllocationOld('${proposalId}')" class="btn btn-success">
-                                    Allocate Project
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                        
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-                hideLoading();
-            
-            } catch (error) {
-                console.error('Error showing allocation modal:', error);
-                alert('Error loading allocation form: ' + error.message);
-                hideLoading();
-            }
-        }
-
-        // Submit Project Allocation (Old Version - For BDM)
-        async function submitProposalAllocationOld(proposalId) {
-            const designManagerSelect = document.getElementById('designManagerSelect');
-            const designManagerUid = designManagerSelect?.value;
-            const targetCompletionDate = document.getElementById('targetCompletionDate')?.value;
-            const projectPriority = document.getElementById('projectPriority')?.value || 'Normal';
-            
-            // FIXED: Enhanced retrieval with proper null checking
-            const allocationCommentsElement = document.getElementById('allocationComments');
-            const allocationComments = allocationCommentsElement ? allocationCommentsElement.value.trim() : '';
-            
-            const specialInstructionsElement = document.getElementById('specialInstructions');
-            const specialInstructions = specialInstructionsElement ? specialInstructionsElement.value.trim() : '';
                 
-            // ENHANCED VALIDATION with debugging
-            console.log('Form validation - Design Manager UID:', designManagerUid);
-            console.log('Form validation - Allocation Comments:', allocationComments);
-            console.log('Form validation - Comments Length:', allocationComments.length);
-            
-            if (!designManagerUid) {
-                alert('Please select a Design Manager');
-                designManagerSelect?.focus();
-                return;
-            }
-                
-            // FIXED: Enhanced validation check
-            if (!allocationComments || allocationComments.length === 0) {
-                alert('Please add allocation comments');
-                allocationCommentsElement?.focus();
-                return;
-            }
-                
-            try {
-                showLoading();
-                        
-                // Get design manager details
-                const selectedOption = designManagerSelect.options[designManagerSelect.selectedIndex];
-                const designManagerName = selectedOption.getAttribute('data-name');
-                const designManagerEmail = selectedOption.getAttribute('data-email');
-                        
                 // First, create the project if not already created
                 const createProjectResponse = await apiCall('projects', {
                     method: 'POST',
@@ -7290,74 +7133,37 @@ async function submitEditedPricing() {
                         proposalId: proposalId
                     })
                 });
-                        
-                if (!createProjectResponse.success) {
-                    // Project might already exist, try to get it
-                    const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
-                    if (!proposalResponse.data.projectId) {
-                        throw new Error('Failed to create project: ' + (createProjectResponse.error || 'Unknown error'));
+                
+                let projectId;
+                if (createProjectResponse.success && createProjectResponse.data) {
+                    projectId = createProjectResponse.data.id;
+                } else {
+                    // Project might already exist, get it from proposal
+                    if (proposal.projectId) {
+                        projectId = proposal.projectId;
+                    } else {
+                        // Try to fetch the project again
+                        const proposalRefresh = await apiCall(`proposals?id=${proposalId}`);
+                        if (proposalRefresh.success && proposalRefresh.data.projectId) {
+                            projectId = proposalRefresh.data.projectId;
+                        } else {
+                            throw new Error('Failed to create or find project: ' + (createProjectResponse.error || 'Unknown error'));
+                        }
                     }
                 }
-                        
-                // Get the project ID
-                const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
-                const projectId = proposalResponse.data.projectId;
-                        
+                
                 if (!projectId) {
-                    throw new Error('Project ID not found');
+                    throw new Error('Project ID not found after creation');
                 }
-              // Get max hours values
-const maxAllocatedHours = document.getElementById('maxAllocatedHours').value;
-const additionalHours = document.getElementById('additionalHours').value || 0;
-
-// Validate max hours
-if (!maxAllocatedHours || parseFloat(maxAllocatedHours) < 1) {
-    alert('⚠️ Please enter max allocated hours (minimum 1 hour)');
-    document.getElementById('maxAllocatedHours').focus();
-    return;
-}
-
-// Allocate to design lead
-const allocationData = {
-    designLeadUid: designManagerUid,
-    targetCompletionDate: targetCompletionDate || null,
-    priority: projectPriority,
-    allocationNotes: allocationComments,
-    specialInstructions: specialInstructions,
-    maxAllocatedHours: parseFloat(maxAllocatedHours),
-    additionalHours: parseFloat(additionalHours)
-};
-                console.log('Sending allocation data:', allocationData);
-                        
-                const response = await apiCall(`projects?id=${projectId}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: 'allocate_design_lead',
-                        data: allocationData
-                    })
-                });
-                        
-                if (response.success) {
-                    closeModal();
-                    showSuccessModal(
-                        'Project Allocated Successfully!',
-                        `Project has been allocated to ${designManagerName}. They will be notified immediately.`
-                    );
-                                
-                    // Refresh proposals list
-                    setTimeout(() => {
-                        closeSuccessModal();
-                        showProposals();
-                    }, 2000);
-                } else {
-                    throw new Error(response.error || 'Failed to allocate project');
-                }
-                    
+                
+                hideLoading();
+                
+                // Now open the multi-designer allocation modal
+                await showCooMultiDesignerAllocationModal(projectId);
+                
             } catch (error) {
-                console.error('Error allocating project:', error);
-                alert('Error allocating project: ' + error.message);
-            } finally {
+                console.error('Error opening allocation modal:', error);
+                alert('Error: ' + error.message);
                 hideLoading();
             }
         }
@@ -10013,16 +9819,6 @@ async function showAllocateProjectModal(projectId) {
         function closeBDMFilesModal() {
             const modal = document.getElementById('bdmFilesModal');
             modal.style.display = 'none';
-        }
-        function closeSuccessModal() {
-            const modal = document.getElementById('successModal');
-            modal.style.display = 'none';
-        }
-        function showSuccessModal(message, details) {
-            const modal = document.getElementById('successModal');
-            document.getElementById('successMessage').textContent = message;
-            document.getElementById('successDetails').textContent = details || '';
-            modal.style.display = 'flex';
         }
         // ============================================
         // NEW: NOTIFICATION FUNCTIONS
