@@ -9964,58 +9964,83 @@ function removeDesignerAllocation(rowNumber) {
 }
 
 /**
- * Update remaining hours display strictly accounting for previous allocations
+ * ✅ FIXED: Update Remaining Hours Display - Shows allocation budget
  */
 function updateRemainingHours() {
     const totalHoursInput = document.getElementById('cooTotalProjectHours');
     const totalBudget = parseFloat(totalHoursInput.value) || 0;
     
-    // 1. Get hours saved in DB (stored in dataset by showModal function)
+    // Get previously allocated hours (from database)
     const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
     
-    // 2. Get hours currently being typed in the modal
+    // Get current session allocation (being typed in modal)
     const hoursInputs = document.querySelectorAll('.hours-input');
     let currentSessionAllocation = 0;
     hoursInputs.forEach(input => {
         currentSessionAllocation += parseFloat(input.value) || 0;
     });
     
-    // 3. Calculate Total Used and Remaining
-    const totalUsed = previouslyAllocated + currentSessionAllocation;
-    const remaining = totalBudget - totalUsed;
+    // Calculate totals
+    const totalAllocated = previouslyAllocated + currentSessionAllocation;
+    const remaining = totalBudget - totalAllocated;
     
     const remainingDisplay = document.getElementById('cooRemainingHours');
     
-    // 4. Update Display
-    let statusHtml = `<div style="font-size: 1.8rem; font-weight: 700;">${remaining.toFixed(1)} hrs</div>`;
+    // Build display HTML
+    let displayHtml = '';
     
-    if (previouslyAllocated > 0) {
-        statusHtml += `<div style="font-size: 0.8rem; opacity: 0.8;">(Budget: ${totalBudget} - Prev: ${previouslyAllocated} - Current: ${currentSessionAllocation})</div>`;
+    if (totalBudget === 0) {
+        displayHtml = `
+            <div style="font-size: 1.2rem; font-weight: 600; color: #f59e0b;">
+                ⚠️ Enter Total Hours First
+            </div>
+        `;
+    } else {
+        displayHtml = `
+            <div style="font-size: 1.8rem; font-weight: 700; color: ${remaining < 0 ? 'var(--danger)' : remaining === 0 ? 'var(--success)' : 'var(--warning)'}">
+                ${remaining >= 0 ? remaining.toFixed(1) : '(' + Math.abs(remaining).toFixed(1) + ')'} hrs
+            </div>
+        `;
+        
+        if (previouslyAllocated > 0 || currentSessionAllocation > 0) {
+            displayHtml += `
+                <div style="font-size: 0.75rem; margin-top: 0.5rem; opacity: 0.8; line-height: 1.3;">
+                    <div><strong>Total Budget:</strong> ${totalBudget.toFixed(1)} hrs</div>
+                    ${previouslyAllocated > 0 ? `<div><strong>Previously Allocated:</strong> ${previouslyAllocated.toFixed(1)} hrs</div>` : ''}
+                    ${currentSessionAllocation > 0 ? `<div><strong>Current Session:</strong> ${currentSessionAllocation.toFixed(1)} hrs</div>` : ''}
+                    <div style="border-top: 1px solid rgba(0,0,0,0.1); margin-top: 0.3rem; padding-top: 0.3rem;">
+                        <strong>Total Allocated:</strong> ${totalAllocated.toFixed(1)} hrs
+                    </div>
+                </div>
+            `;
+        }
     }
     
-    remainingDisplay.innerHTML = statusHtml;
+    remainingDisplay.innerHTML = displayHtml;
     
-    // 5. Handle Over-Budget State (Visuals & Button Locking)
+    // ============================================
+    // Submit Button Logic
+    // ============================================
+    
     const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
     
-    if (remaining < 0) {
-        // Over Budget
-        remainingDisplay.style.color = 'var(--danger)';
-        remainingDisplay.innerHTML = `
-            <div style="font-size: 1.5rem; font-weight: 700;">⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER</div>
-            <div style="font-size: 0.8rem;">Budget Exceeded</div>
-        `;
-        // Disable submit button
+    if (remaining < -0.1) {
+        // Over budget - BLOCK submission
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.style.opacity = "0.5";
-            submitBtn.innerText = "⚠️ Reduce Hours";
+            submitBtn.innerHTML = `⚠️ Reduce Hours (${Math.abs(remaining).toFixed(1)} over)`;
+        }
+    } else if (totalBudget === 0) {
+        // No budget set - BLOCK submission
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.5";
+            submitBtn.innerText = "Enter Hours First";
         }
     } else {
-        // Valid State
-        remainingDisplay.style.color = remaining === 0 ? 'var(--success)' : 'var(--warning)';
-        // Enable submit button
-        if (submitBtn && submitBtn.innerText !== "Fully Allocated") {
+        // Valid state - ENABLE submission
+        if (submitBtn && submitBtn.innerText !== "✅ Fully Allocated") {
             submitBtn.disabled = false;
             submitBtn.style.opacity = "1";
             submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
