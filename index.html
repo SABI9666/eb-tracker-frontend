@@ -12921,14 +12921,22 @@ function resetExecutiveDateFilter() {
                 closeAllModals();
                 
                 // Build project options with rich data
-                const projectOptionsHtml = assignedProjects.map(project => {
-                    const allocated = (project.maxAllocatedHours || 0) + (project.additionalHours || 0);
-                    const logged = project.hoursLogged || 0;
-                    const remaining = allocated - logged;
-                    const percentage = allocated > 0 ? Math.round((logged / allocated) * 100) : 0;
-                    
-                    return `
-                        <option value="${project.id}" 
+     const projectOptionsHtml = assignedProjects.map(project => {
+    // FIX: Calculate allocation specific to the logged-in designer
+    const totalBudget = (project.maxAllocatedHours || 0) + (project.additionalHours || 0);
+    let allocated = totalBudget; // Default to total if no specific assignment
+
+    // Check if there are specific designer hours allocated
+    if (project.designerHours && currentUser && project.designerHours[currentUser.uid]) {
+        allocated = parseFloat(project.designerHours[currentUser.uid]) || 0;
+    }
+
+    const logged = project.hoursLogged || 0;
+    const remaining = allocated - logged;
+    const percentage = allocated > 0 ? Math.round((logged / allocated) * 100) : 0;
+    
+    return `
+        <option value="${project.id}" 
                                 data-name="${project.projectName}"
                                 data-client="${project.clientCompany || 'N/A'}"
                                 data-code="${project.projectCode || 'N/A'}"
