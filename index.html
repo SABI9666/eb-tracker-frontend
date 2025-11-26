@@ -8611,45 +8611,59 @@ async function showDesignerAllocations() {
    async function showProjectFilesModal(projectId, projectName) {
     console.log('📂 Opening files for project:', projectId, projectName);
     
-    // Close any existing modals first
-    closeAllModals();
+    // Close any existing file modals
+    const existingModal = document.getElementById('projectFilesModalOverlay');
+    if (existingModal) existingModal.remove();
     
     // Create professional modal
     const modalHtml = `
-        <div class="modal-overlay" id="projectFilesModalOverlay" onclick="handleModalOverlayClick(event, 'projectFilesModalOverlay')">
-            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0;">
+        <div class="modal-overlay" id="projectFilesModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
+            <div class="modal-content" style="max-width: 900px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: flex-start;">
                     <div>
                         <h2 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
                             <span style="font-size: 1.5rem;">📂</span> Project Files
                         </h2>
-                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem;" id="filesModalProjectName">${projectName}</p>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem;" id="filesModalProjectName">${projectName || 'Loading...'}</p>
                     </div>
-                    <span class="close-modal" onclick="closeProjectFilesModal()" style="color: white; font-size: 2rem; cursor: pointer;">&times;</span>
+                    <span onclick="closeProjectFilesModal()" style="color: white; font-size: 2rem; cursor: pointer; line-height: 1;">&times;</span>
                 </div>
                 
-                <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
-                    <div style="display: flex; justify-content: center; align-items: center; padding: 3rem;">
-                        <div class="loading-spinner"></div>
-                        <span style="margin-left: 1rem; color: #6b7280;">Loading files...</span>
+                <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem; min-height: 200px;">
+                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 3rem;">
+                        <div class="loading-spinner" style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                        <span style="margin-top: 1rem; color: #6b7280;">Loading files...</span>
                     </div>
                 </div>
                 
-                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb;">
-                    <button type="button" onclick="closeProjectFilesModal()" class="btn btn-outline">Close</button>
+                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb; display: flex; justify-content: flex-end;">
+                    <button type="button" onclick="closeProjectFilesModal()" class="btn btn-outline" style="padding: 0.5rem 1.5rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer;">Close</button>
                 </div>
             </div>
         </div>
+        <style>
+            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        </style>
     `;
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     const content = document.getElementById('projectFilesContent');
+    
+    // Safety check
+    if (!content) {
+        console.error('❌ Could not find projectFilesContent element');
+        alert('Error: Could not open files modal');
+        return;
+    }
 
     try {
+        console.log('🔍 Fetching project details for ID:', projectId);
+        
         // Get the project details to find the proposalId
         const projectResponse = await apiCall(`projects?id=${projectId}`);
+        console.log('📦 Project API Response:', projectResponse);
         
-        if (!projectResponse.success) {
+        if (!projectResponse.success || !projectResponse.data) {
             throw new Error(projectResponse.error || 'Failed to fetch project details.');
         }
         
@@ -8660,7 +8674,7 @@ async function showDesignerAllocations() {
         const projectInfoDisplay = document.getElementById('filesModalProjectName');
         if (projectInfoDisplay) {
             projectInfoDisplay.innerHTML = `
-                <span>${projectName}</span>
+                <span>${projectName || project.projectName || 'Unknown'}</span>
                 <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectNumber || project.projectCode || 'No Code'} | ${project.clientCompany || ''}</span>
             `;
         }
@@ -8671,7 +8685,7 @@ async function showDesignerAllocations() {
         
         // Approach 1: Try fetching by projectId
         try {
-            console.log('🔍 Fetching files by projectId:', projectId);
+            console.log('🔍 Attempt 1: Fetching files by projectId:', projectId);
             const response1 = await apiCall(`files?projectId=${projectId}`);
             console.log('📁 Response 1:', response1);
             if (response1.success && response1.data && Array.isArray(response1.data) && response1.data.length > 0) {
@@ -8679,224 +8693,202 @@ async function showDesignerAllocations() {
                 console.log('✅ Files found using projectId:', files.length);
             }
         } catch (err) {
-            console.log('⚠️ Could not fetch files by projectId:', err.message);
+            console.warn('⚠️ Attempt 1 failed:', err.message);
             fetchErrors.push('projectId: ' + err.message);
         }
         
         // Approach 2: If no files found and we have a proposalId, try that
         if (files.length === 0 && project.proposalId) {
             try {
-                console.log('🔍 Fetching files by proposalId:', project.proposalId);
-                const response2 = await apiCall(`files/list?proposalId=${project.proposalId}`);
+                console.log('🔍 Attempt 2: Fetching files by proposalId:', project.proposalId);
+                const response2 = await apiCall(`files?proposalId=${project.proposalId}`);
                 console.log('📁 Response 2:', response2);
                 if (response2.success && response2.data && Array.isArray(response2.data) && response2.data.length > 0) {
                     files = response2.data;
-                    console.log('✅ Files found using proposalId (list endpoint):', files.length);
+                    console.log('✅ Files found using proposalId:', files.length);
                 }
             } catch (err) {
-                console.log('⚠️ Could not fetch files by proposalId (list):', err.message);
-                fetchErrors.push('proposalId list: ' + err.message);
+                console.warn('⚠️ Attempt 2 failed:', err.message);
+                fetchErrors.push('proposalId: ' + err.message);
             }
         }
         
-        // Approach 3: Try the legacy endpoint as a fallback
-        if (files.length === 0 && project.proposalId) {
-            try {
-                console.log('🔍 Fetching files by proposalId (legacy):', project.proposalId);
-                const response3 = await apiCall(`files?proposalId=${project.proposalId}`);
-                console.log('📁 Response 3:', response3);
-                if (response3.success && response3.data && Array.isArray(response3.data) && response3.data.length > 0) {
-                    files = response3.data;
-                    console.log('✅ Files found using legacy endpoint:', files.length);
-                }
-            } catch (err) {
-                console.log('⚠️ Could not fetch files using legacy endpoint:', err.message);
-                fetchErrors.push('proposalId legacy: ' + err.message);
-            }
-        }
-        
-        // Approach 4: Check if files are embedded in project document
+        // Approach 3: Check if files are embedded in project document
         if (files.length === 0 && project.files && Array.isArray(project.files) && project.files.length > 0) {
             files = project.files;
             console.log('✅ Files found embedded in project document:', files.length);
         }
         
-        // Approach 5: Check proposal directly for files
+        // Approach 4: Check proposal directly for files
         if (files.length === 0 && project.proposalId) {
             try {
-                console.log('🔍 Fetching proposal to check for embedded files:', project.proposalId);
+                console.log('🔍 Attempt 4: Fetching proposal for embedded files:', project.proposalId);
                 const proposalResponse = await apiCall(`proposals?id=${project.proposalId}`);
+                console.log('📁 Proposal Response:', proposalResponse);
                 if (proposalResponse.success && proposalResponse.data) {
                     const proposal = proposalResponse.data;
                     if (proposal.files && Array.isArray(proposal.files) && proposal.files.length > 0) {
                         files = proposal.files;
-                        console.log('✅ Files found embedded in proposal document:', files.length);
+                        console.log('✅ Files found in proposal:', files.length);
                     }
                 }
             } catch (err) {
-                console.log('⚠️ Could not fetch proposal for files:', err.message);
-                fetchErrors.push('proposal embedded: ' + err.message);
+                console.warn('⚠️ Attempt 4 failed:', err.message);
+                fetchErrors.push('proposal: ' + err.message);
             }
         }
         
         console.log('📊 Total files retrieved:', files.length);
         
+        // No files found
         if (files.length === 0) {
             content.innerHTML = `
-                <div style="text-align: center; padding: 4rem 2rem;">
-                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
-                        <span style="font-size: 3rem;">📭</span>
+                <div style="text-align: center; padding: 3rem 2rem;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <span style="font-size: 2.5rem;">📭</span>
                     </div>
                     <h3 style="color: #374151; margin-bottom: 0.5rem;">No Files Available</h3>
                     <p style="color: #6b7280; max-width: 400px; margin: 0 auto;">
-                        No files have been uploaded for this project yet. Files will appear here once the team uploads drawings, specifications, or other documents.
+                        No files have been uploaded for this project yet.
                     </p>
-                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; display: inline-block;">
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto;">
                         <small style="color: #6b7280;">
-                            <strong>Project:</strong> ${project.projectNumber || project.projectCode || 'N/A'} &nbsp;|&nbsp; 
-                            <strong>Client:</strong> ${project.clientCompany || 'N/A'}
-                            ${project.proposalId ? `<br><strong>Proposal ID:</strong> ${project.proposalId}` : '<br><span style="color: #f59e0b;">⚠️ No proposal linked</span>'}
+                            <strong>Project:</strong> ${project.projectNumber || project.projectCode || 'N/A'}<br>
+                            <strong>Client:</strong> ${project.clientCompany || 'N/A'}<br>
+                            <strong>Proposal ID:</strong> ${project.proposalId || 'Not linked'}
                         </small>
                     </div>
-                    ${fetchErrors.length > 0 ? `
-                        <div style="margin-top: 1rem; padding: 0.5rem; background: #fef3c7; border-radius: 4px; font-size: 0.75rem; color: #92400e;">
-                            Debug: ${fetchErrors.join(', ')}
-                        </div>
-                    ` : ''}
                 </div>
             `;
             return;
         }
 
-        // Group files by type
-        const filesByType = {
-            drawing: [],
-            specification: [],
-            estimate: [],
-            project: [],
-            other: []
-        };
-        
-        files.forEach(file => {
-            const type = file.fileType || file.type || 'other';
-            if (filesByType[type]) {
-                filesByType[type].push(file);
-            } else {
-                filesByType.other.push(file);
-            }
-        });
-
-        // Build professional file list
-        const typeConfig = {
-            drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6', bg: '#eff6ff' },
-            specification: { icon: '📋', label: 'Specifications', color: '#10b981', bg: '#ecfdf5' },
-            estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b', bg: '#fffbeb' },
-            project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6', bg: '#f5f3ff' },
-            other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
-        };
-        
-        let fileListHtml = `
-            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
-                    📊 Total Files: ${files.length}
-                </div>
-            </div>
-        `;
-        
-        Object.keys(filesByType).forEach(type => {
-            const typeFiles = filesByType[type];
-            if (typeFiles.length === 0) return;
-            
-            const config = typeConfig[type];
-            
-            fileListHtml += `
-                <div style="margin-bottom: 2rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ${config.color}20;">
-                        <span style="width: 40px; height: 40px; background: ${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                            ${config.icon}
-                        </span>
-                        <div>
-                            <h3 style="margin: 0; color: ${config.color}; font-size: 1.1rem;">${config.label}</h3>
-                            <small style="color: #6b7280;">${typeFiles.length} file${typeFiles.length > 1 ? 's' : ''}</small>
-                        </div>
-                    </div>
-                    <div style="display: grid; gap: 0.75rem;">
-                        ${typeFiles.map((file, index) => {
-                            const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
-                            const uploadedBy = file.uploadedByName || file.uploadedBy || 'Unknown';
-                            const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
-                            const fileName = file.fileName || file.name || 'Unknown File';
-                            const fileExt = fileName.split('.').pop().toUpperCase();
-                            const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
-                            
-                            // Escape special characters for onclick handlers
-                            const safeUrl = fileUrl.replace(/'/g, "\\'").replace(/"/g, '\\"');
-                            const safeFileName = fileName.replace(/'/g, "\\'").replace(/"/g, '\\"');
-                            
-                            return `
-                                <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
-                                     onmouseover="this.style.borderColor='${config.color}'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
-                                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)';">
-                                    
-                                    <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
-                                        <span style="font-size: 0.75rem; font-weight: 700; color: ${config.color};">${fileExt}</span>
-                                    </div>
-                                    
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${fileName}">
-                                            ${fileName}
-                                        </div>
-                                        <div style="font-size: 0.8rem; color: #6b7280;">
-                                            <span>📤 ${uploadedBy}</span>
-                                            <span style="margin: 0 0.5rem;">•</span>
-                                            <span>📅 ${uploadDate}</span>
-                                            ${fileSize ? `<span style="margin: 0 0.5rem;">•</span><span>💾 ${fileSize}</span>` : ''}
-                                        </div>
-                                    </div>
-                                    
-                                    <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
-                                        ${fileUrl ? `
-                                            <button onclick="window.open('${safeUrl}', '_blank')" 
-                                                    class="btn btn-outline btn-sm"
-                                                    style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
-                                                    title="View in new tab">
-                                                👁️ View
-                                            </button>
-                                            <button onclick="downloadFile('${safeUrl}', '${safeFileName}')" 
-                                                    class="btn btn-primary btn-sm"
-                                                    style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
-                                                    title="Download file">
-                                                ⬇️ Download
-                                            </button>
-                                        ` : `
-                                            <span style="color: #ef4444; font-size: 0.8rem;">⚠️ No URL available</span>
-                                        `}
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        });
-
-        content.innerHTML = fileListHtml;
+        // Files found - display them
+        renderProjectFiles(files, content);
 
     } catch (error) {
-        console.error("❌ Error loading project files:", error);
+        console.error("❌ Error in showProjectFilesModal:", error);
         content.innerHTML = `
             <div style="text-align: center; padding: 3rem;">
                 <div style="width: 80px; height: 80px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
                     <span style="font-size: 2.5rem;">⚠️</span>
                 </div>
                 <h3 style="color: #dc2626; margin-bottom: 0.5rem;">Error Loading Files</h3>
-                <p style="color: #6b7280;">${error.message}</p>
-                <button onclick="showProjectFilesModal('${projectId}', '${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
+                <p style="color: #6b7280; margin-bottom: 1rem;">${error.message}</p>
+                <button onclick="showProjectFilesModal('${projectId}', '${(projectName || '').replace(/'/g, "\\'")}')" 
+                        style="padding: 0.5rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
                     🔄 Retry
                 </button>
             </div>
         `;
     }
+}
+
+// Separate function to render files
+function renderProjectFiles(files, container) {
+    // Group files by type
+    const filesByType = {
+        drawing: [],
+        specification: [],
+        estimate: [],
+        project: [],
+        other: []
+    };
+    
+    files.forEach(file => {
+        const type = file.fileType || file.type || 'other';
+        if (filesByType[type]) {
+            filesByType[type].push(file);
+        } else {
+            filesByType.other.push(file);
+        }
+    });
+
+    // Build professional file list
+    const typeConfig = {
+        drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6', bg: '#eff6ff' },
+        specification: { icon: '📋', label: 'Specifications', color: '#10b981', bg: '#ecfdf5' },
+        estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b', bg: '#fffbeb' },
+        project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6', bg: '#f5f3ff' },
+        other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
+    };
+    
+    let fileListHtml = `
+        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+            <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
+                📊 Total Files: ${files.length}
+            </div>
+        </div>
+    `;
+    
+    Object.keys(filesByType).forEach(type => {
+        const typeFiles = filesByType[type];
+        if (typeFiles.length === 0) return;
+        
+        const config = typeConfig[type];
+        
+        fileListHtml += `
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ${config.color}20;">
+                    <span style="width: 40px; height: 40px; background: ${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                        ${config.icon}
+                    </span>
+                    <div>
+                        <h3 style="margin: 0; color: ${config.color}; font-size: 1.1rem;">${config.label}</h3>
+                        <small style="color: #6b7280;">${typeFiles.length} file${typeFiles.length > 1 ? 's' : ''}</small>
+                    </div>
+                </div>
+                <div style="display: grid; gap: 0.75rem;">
+                    ${typeFiles.map((file, index) => {
+                        const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
+                        const uploadedBy = file.uploadedByName || file.uploadedBy || 'Unknown';
+                        const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
+                        const fileName = file.fileName || file.name || 'Unknown File';
+                        const fileExt = fileName.split('.').pop().toUpperCase();
+                        const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
+                        
+                        return `
+                            <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                
+                                <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
+                                    <span style="font-size: 0.75rem; font-weight: 700; color: ${config.color};">${fileExt}</span>
+                                </div>
+                                
+                                <div style="flex: 1; min-width: 0;">
+                                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${fileName}">
+                                        ${fileName}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: #6b7280;">
+                                        <span>📤 ${uploadedBy}</span>
+                                        <span style="margin: 0 0.5rem;">•</span>
+                                        <span>📅 ${uploadDate}</span>
+                                        ${fileSize ? `<span style="margin: 0 0.5rem;">•</span><span>💾 ${fileSize}</span>` : ''}
+                                    </div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
+                                    ${fileUrl ? `
+                                        <a href="${fileUrl}" target="_blank" 
+                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: white; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; text-decoration: none; font-size: 0.875rem;">
+                                            👁️ View
+                                        </a>
+                                        <a href="${fileUrl}" download="${fileName}"
+                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: #3b82f6; border: none; border-radius: 6px; color: white; text-decoration: none; font-size: 0.875rem;">
+                                            ⬇️ Download
+                                        </a>
+                                    ` : `
+                                        <span style="color: #ef4444; font-size: 0.8rem;">⚠️ No URL</span>
+                                    `}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = fileListHtml;
 }
 
 // Download file function with proper handling
