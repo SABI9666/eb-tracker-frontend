@@ -8608,7 +8608,7 @@ async function showDesignerAllocations() {
         hideLoading();
     }
 }
-     async function showProjectFilesModal(projectId, projectName) {
+    async function showProjectFilesModal(projectId, projectName) {
     console.log('📂 Opening files for project:', projectId, projectName);
     
     // Close any existing modals first
@@ -8646,7 +8646,7 @@ async function showDesignerAllocations() {
 
     try {
         // Get the project details to find the proposalId
-        const projectResponse = await apiCall(\`projects?id=\${projectId}\`);
+        const projectResponse = await apiCall(`projects?id=${projectId}`);
         
         if (!projectResponse.success) {
             throw new Error(projectResponse.error || 'Failed to fetch project details.');
@@ -8656,17 +8656,17 @@ async function showDesignerAllocations() {
         console.log('📦 Project details:', project);
         
         // Update project name with more details
-        document.getElementById('filesModalProjectName').innerHTML = \`
-            <span>\${projectName}</span>
-            <span style="opacity: 0.7; margin-left: 1rem;">| \${project.projectCode || 'No Code'} | \${project.clientCompany || ''}</span>
-        \`;
+        document.getElementById('filesModalProjectName').innerHTML = `
+            <span>${projectName}</span>
+            <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectCode || 'No Code'} | ${project.clientCompany || ''}</span>
+        `;
         
         // Fetch files using multiple approaches
         let files = [];
         
         // Approach 1: Try fetching by projectId
         try {
-            const response1 = await apiCall(\`files?projectId=\${projectId}\`);
+            const response1 = await apiCall(`files?projectId=${projectId}`);
             if (response1.success && response1.data && response1.data.length > 0) {
                 files = response1.data;
                 console.log('✅ Files found using projectId:', files.length);
@@ -8678,7 +8678,7 @@ async function showDesignerAllocations() {
         // Approach 2: If no files found and we have a proposalId, try that
         if (files.length === 0 && project.proposalId) {
             try {
-                const response2 = await apiCall(\`files/list?proposalId=\${project.proposalId}\`);
+                const response2 = await apiCall(`files/list?proposalId=${project.proposalId}`);
                 if (response2.success && response2.data && response2.data.length > 0) {
                     files = response2.data;
                     console.log('✅ Files found using proposalId:', files.length);
@@ -8691,7 +8691,7 @@ async function showDesignerAllocations() {
         // Approach 3: Try the legacy endpoint as a fallback
         if (files.length === 0 && project.proposalId) {
             try {
-                const response3 = await apiCall(\`files?proposalId=\${project.proposalId}\`);
+                const response3 = await apiCall(`files?proposalId=${project.proposalId}`);
                 if (response3.success && response3.data && response3.data.length > 0) {
                     files = response3.data;
                     console.log('✅ Files found using legacy endpoint:', files.length);
@@ -8704,7 +8704,7 @@ async function showDesignerAllocations() {
         console.log('📊 Total files retrieved:', files.length);
         
         if (files.length === 0) {
-            content.innerHTML = \`
+            content.innerHTML = `
                 <div style="text-align: center; padding: 4rem 2rem;">
                     <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
                         <span style="font-size: 3rem;">📭</span>
@@ -8715,12 +8715,12 @@ async function showDesignerAllocations() {
                     </p>
                     <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; display: inline-block;">
                         <small style="color: #6b7280;">
-                            <strong>Project:</strong> \${project.projectCode || 'N/A'} &nbsp;|&nbsp; 
-                            <strong>Client:</strong> \${project.clientCompany || 'N/A'}
+                            <strong>Project:</strong> ${project.projectCode || 'N/A'} &nbsp;|&nbsp; 
+                            <strong>Client:</strong> ${project.clientCompany || 'N/A'}
                         </small>
                     </div>
                 </div>
-            \`;
+            `;
             return;
         }
 
@@ -8751,13 +8751,13 @@ async function showDesignerAllocations() {
             other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
         };
         
-        let fileListHtml = \`
+        let fileListHtml = `
             <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
                 <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
-                    📊 Total Files: \${files.length}
+                    📊 Total Files: ${files.length}
                 </div>
             </div>
-        \`;
+        `;
         
         Object.keys(filesByType).forEach(type => {
             const typeFiles = filesByType[type];
@@ -8765,53 +8765,53 @@ async function showDesignerAllocations() {
             
             const config = typeConfig[type];
             
-            fileListHtml += \`
+            fileListHtml += `
                 <div style="margin-bottom: 2rem;">
-                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid \${config.color}20;">
-                        <span style="width: 40px; height: 40px; background: \${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                            \${config.icon}
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ${config.color}20;">
+                        <span style="width: 40px; height: 40px; background: ${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            ${config.icon}
                         </span>
                         <div>
-                            <h3 style="margin: 0; color: \${config.color}; font-size: 1.1rem;">\${config.label}</h3>
-                            <small style="color: #6b7280;">\${typeFiles.length} file\${typeFiles.length > 1 ? 's' : ''}</small>
+                            <h3 style="margin: 0; color: ${config.color}; font-size: 1.1rem;">${config.label}</h3>
+                            <small style="color: #6b7280;">${typeFiles.length} file${typeFiles.length > 1 ? 's' : ''}</small>
                         </div>
                     </div>
                     <div style="display: grid; gap: 0.75rem;">
-                        \${typeFiles.map((file, index) => {
+                        ${typeFiles.map((file, index) => {
                             const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
                             const uploadedBy = file.uploadedByName || 'Unknown';
                             const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
                             const fileExt = file.fileName.split('.').pop().toUpperCase();
                             
-                            return \`
+                            return `
                                 <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
-                                     onmouseover="this.style.borderColor='\${config.color}'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                     onmouseover="this.style.borderColor='${config.color}'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
                                      onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)';">
                                     
-                                    <div style="width: 50px; height: 50px; background: \${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
-                                        <span style="font-size: 0.75rem; font-weight: 700; color: \${config.color};">\${fileExt}</span>
+                                    <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
+                                        <span style="font-size: 0.75rem; font-weight: 700; color: ${config.color};">${fileExt}</span>
                                     </div>
                                     
                                     <div style="flex: 1; min-width: 0;">
-                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="\${file.fileName}">
-                                            \${file.fileName}
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.fileName}">
+                                            ${file.fileName}
                                         </div>
                                         <div style="font-size: 0.8rem; color: #6b7280;">
-                                            <span>📤 \${uploadedBy}</span>
+                                            <span>📤 ${uploadedBy}</span>
                                             <span style="margin: 0 0.5rem;">•</span>
-                                            <span>📅 \${uploadDate}</span>
-                                            \${fileSize ? \`<span style="margin: 0 0.5rem;">•</span><span>💾 \${fileSize}</span>\` : ''}
+                                            <span>📅 ${uploadDate}</span>
+                                            ${fileSize ? `<span style="margin: 0 0.5rem;">•</span><span>💾 ${fileSize}</span>` : ''}
                                         </div>
                                     </div>
                                     
                                     <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
-                                        <button onclick="window.open('\${file.fileUrl}', '_blank')" 
+                                        <button onclick="window.open('${file.fileUrl}', '_blank')" 
                                                 class="btn btn-outline btn-sm"
                                                 style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
                                                 title="View in new tab">
                                             👁️ View
                                         </button>
-                                        <button onclick="downloadFile('\${file.fileUrl}', '\${file.fileName}')" 
+                                        <button onclick="downloadFile('${file.fileUrl}', '${file.fileName}')" 
                                                 class="btn btn-primary btn-sm"
                                                 style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
                                                 title="Download file">
@@ -8819,29 +8819,29 @@ async function showDesignerAllocations() {
                                         </button>
                                     </div>
                                 </div>
-                            \`;
+                            `;
                         }).join('')}
                     </div>
                 </div>
-            \`;
+            `;
         });
 
         content.innerHTML = fileListHtml;
 
     } catch (error) {
         console.error("❌ Error loading project files:", error);
-        content.innerHTML = \`
+        content.innerHTML = `
             <div style="text-align: center; padding: 3rem;">
                 <div style="width: 80px; height: 80px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
                     <span style="font-size: 2.5rem;">⚠️</span>
                 </div>
                 <h3 style="color: #dc2626; margin-bottom: 0.5rem;">Error Loading Files</h3>
-                <p style="color: #6b7280;">\${error.message}</p>
-                <button onclick="showProjectFilesModal('\${projectId}', '\${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
+                <p style="color: #6b7280;">${error.message}</p>
+                <button onclick="showProjectFilesModal('${projectId}', '${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
                     🔄 Retry
                 </button>
             </div>
-        \`;
+        `;
     }
 }
 
