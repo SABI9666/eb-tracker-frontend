@@ -11759,6 +11759,45 @@ async function submitProposalAllocation() {
         // Payment functions
         if (typeof viewPayment !== 'undefined') window.viewPayment = viewPayment;
         
+        // ✅ FIX: Forward declarations for designer functions defined in second script block
+        // These functions are fully implemented later in the file but need to be accessible from HTML
+        window.showTasks = function() {
+            // Will be properly defined in second script block
+            console.log('showTasks called - waiting for definition');
+            setTimeout(() => {
+                if (typeof window.showTasksImpl === 'function') {
+                    window.showTasksImpl();
+                }
+            }, 100);
+        };
+        
+        window.showTimesheet = function() {
+            console.log('showTimesheet called - waiting for definition');
+            setTimeout(() => {
+                if (typeof window.showTimesheetImpl === 'function') {
+                    window.showTimesheetImpl();
+                }
+            }, 100);
+        };
+        
+        window.showTimesheetModal = function(projectId) {
+            console.log('showTimesheetModal called - waiting for definition');
+            setTimeout(() => {
+                if (typeof window.showTimesheetModalImpl === 'function') {
+                    window.showTimesheetModalImpl(projectId);
+                }
+            }, 100);
+        };
+        
+        window.showRequestTimeModalDirect = function(projectId, projectName, allocatedHours, usedHours) {
+            console.log('showRequestTimeModalDirect called - waiting for definition');
+            setTimeout(() => {
+                if (typeof window.showRequestTimeModalDirectImpl === 'function') {
+                    window.showRequestTimeModalDirectImpl(projectId, projectName, allocatedHours, usedHours);
+                }
+            }, 100);
+        };
+        
         console.log('✅ All onclick functions registered globally');
     </script>
 
@@ -12999,7 +13038,7 @@ function resetExecutiveDateFilter() {
 /**
          * Show Timesheet Modal - Designer can log hours for assigned projects
          */
-        async function showTimesheetModal(projectId = null) {
+window.showTimesheetModalImpl = async function(projectId = null) {
             try {
                 showLoading();
                 
@@ -13408,7 +13447,7 @@ async function showPendingTimeRequests() {
  * Direct Request Additional Time Modal (without exceeding timesheet context)
  * Called from Designer Allocations view when remaining hours are low
  */
-function showRequestTimeModalDirect(projectId, projectName, allocatedHours, usedHours) {
+window.showRequestTimeModalDirectImpl = function(projectId, projectName, allocatedHours, usedHours) {
     closeAllModals();
     
     const remaining = allocatedHours - usedHours;
@@ -14578,7 +14617,7 @@ function removePricingRow(btn) {
 // ***** CORRECTED FUNCTION *****
 // This function now correctly injects the HTML into 'mainContent'
 // instead of hiding 'mainContent'.
-async function showTasks() {
+window.showTasksImpl = async function() {
     setActiveNav('nav-tasks');
     const main = document.getElementById('mainContent');
     main.style.display = 'block'; // <-- FIX: Ensure main content is visible
@@ -14724,7 +14763,7 @@ function closeProjectDetailsModal() {
 // ***** CORRECTED FUNCTION *****
 // This function now correctly injects the HTML into 'mainContent'
 // instead of hiding 'mainContent'.
-async function showTimesheet() {
+window.showTimesheetImpl = async function() {
     setActiveNav('nav-timesheet');
     const main = document.getElementById('mainContent');
     main.style.display = 'block'; // <-- FIX
