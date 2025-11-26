@@ -15142,10 +15142,9 @@ async function submitDesignerUpload(event, projectId) {
         }
  
 
-// ============================================
-// GLOBAL HELPER FUNCTIONS FOR ESTIMATION MODAL
-// ============================================
-
+/**
+ * ✅ FIXED: Calculate Total Hours - Always Unlocked for Estimator
+ */
 function calculateTotalHours() {
     const designInput = document.getElementById('designHours');
     if (!designInput) return; // Stop if modal is not open
@@ -15154,21 +15153,21 @@ function calculateTotalHours() {
     const detailing = parseFloat(document.getElementById('detailingHours').value) || 0;
     const checking = parseFloat(document.getElementById('checkingHours').value) || 0;
     const revision = parseFloat(document.getElementById('revisionHours').value) || 0;
-    
-    // ====================== THIS IS THE FIXED LINE ======================
-    // The ID in the HTML is "pmHours", not "projectManagement"
     const projectManagement = parseFloat(document.getElementById('pmHours').value) || 0;
-    // ====================================================================
 
     const total = design + detailing + checking + revision + projectManagement;
     
-    // Ensure totalHours is written back to the correct input
     const totalHoursInput = document.getElementById('totalHours');
     if (totalHoursInput) {
         totalHoursInput.value = total.toFixed(2);
+        // ✅ CRITICAL FIX: Never lock this field for estimator
+        totalHoursInput.removeAttribute('readonly');
     }
 }
 
+/**
+ * ✅ FIXED: Toggle Design Hours based on Tonnage
+ */
 function toggleDesignHours() {
     const useTonnage = document.getElementById('useTonnageForDesign');
     if (!useTonnage) return;
@@ -15178,23 +15177,26 @@ function toggleDesignHours() {
 
     if (useTonnage.checked) {
         designHoursInput.setAttribute('readonly', true);
-        designHoursInput.style.backgroundColor = '#e9ecef'; // Visual cue that it's readonly
-        // Example calculation: 10 hours per ton. Adjust multiplier as needed.
-        designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
+        designHoursInput.style.backgroundColor = '#e9ecef';
+        const tonnage = parseFloat(tonnageInput.value) || 0;
+        designHoursInput.value = (tonnage * 10).toFixed(2);
     } else {
         designHoursInput.removeAttribute('readonly');
-        designHoursInput.style.backgroundColor = ''; // Reset background
+        designHoursInput.style.backgroundColor = '#fff';
     }
     calculateTotalHours();
 }
 
+/**
+ * ✅ FIXED: Handle Tonnage Input
+ */
 function handleTonnageInput() {
     const useTonnage = document.getElementById('useTonnageForDesign');
     if (useTonnage && useTonnage.checked) {
         const tonnageInput = document.getElementById('tonnageInput');
         const designHoursInput = document.getElementById('designHours');
-        // Update design hours dynamically if checkbox is checked
-        designHoursInput.value = ((parseFloat(tonnageInput.value) || 0) * 10).toFixed(2);
+        const tonnage = parseFloat(tonnageInput.value) || 0;
+        designHoursInput.value = (tonnage * 10).toFixed(2);
         calculateTotalHours();
     }
 }
