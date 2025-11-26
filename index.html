@@ -9871,104 +9871,106 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         // 2. Load available designers
         await loadAvailableDesigners();
         
-        if (availableDesigners.length === 0) {
-            alert('No designers found in the system. Please create designer accounts first.');
-            hideLoading();
-            return;
-        }
-        
         // 3. Populate project info
         document.getElementById('cooAllocProjectId').value = projectId;
         document.getElementById('cooAllocProjectNumber').textContent = project.projectNumber || 'N/A';
         document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
         document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
         
-        // --- LOGIC CORRECTION START ---
+        // --- ALLOCATION LOGIC START (Budget Determination & Locking) ---
         
-        // A. Determine Total Budget (The Limit)
-        // Priority: 1. Already saved Max Hours (Manual or Est) | 2. Estimation | 3. 0 (New Manual Entry)
-        let totalBudget = parseFloat(project.maxAllocatedHours || 0);
-        let source = "Manual";
-        let isLocked = false;
-
-        if (totalBudget > 0) {
-            // If maxAllocatedHours exists in DB, it is locked (was either est or previously entered)
-            isLocked = true;
-        } else if (project.estimation && (project.estimation.totalHours || project.estimation.manhours)) {
-            // If not saved in project root but exists in estimation, pull it and lock
-            totalBudget = parseFloat(project.estimation.totalHours || project.estimation.manhours);
-            source = "Estimation";
-            isLocked = true;
-        }
-
-        // B. Determine Already Assigned Hours (The Usage)
-        // This is the sum of hours already given to designers
-        const previouslyAssigned = parseFloat(project.totalAllocatedHours || 0);
-        
-        // C. Calculate Remaining
-        const remainingBudget = Math.max(0, totalBudget - previouslyAssigned);
-
-        // D. Configure Total Hours Input
-        const totalInput = document.getElementById('cooTotalProjectHours');
-        
-        if (isLocked) {
-            totalInput.value = totalBudget;
-            totalInput.readOnly = true;
-            totalInput.style.backgroundColor = '#e9ecef';
-            totalInput.title = `Locked: Source - ${source}`;
-            // Store budget in dataset for validation
-            totalInput.dataset.budget = totalBudget; 
-        } else {
-            totalInput.value = '';
-            totalInput.readOnly = false;
-            totalInput.style.backgroundColor = '#fff';
-            totalInput.placeholder = "Enter Total Project Budget";
-            totalInput.dataset.budget = 0;
-        }
-        
-        // Store currently used hours for calculation
-        totalInput.dataset.alreadyUsed = previouslyAssigned;
-
-        // --- LOGIC CORRECTION END ---
-
-        // Reset form fields
-        designerAllocationCounter = 0;
-        document.getElementById('designerAllocationsContainer').innerHTML = '';
-        document.getElementById('cooAllocationNotes').value = '';
-        document.getElementById('cooTargetCompletionDate').value = '';
-        document.getElementById('cooProjectPriority').value = 'Normal';
-        
+        const totalHoursInput = document.getElementById('cooTotalProjectHours');
         const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline');
         const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
 
-        // E. Status Check: Fully Allocated?
-        // Allow small float margin (0.1)
-        if (isLocked && remainingBudget <= 0.1) {
+        let totalBudget = 0;
+        let source = "Manual Entry";
+        let isBudgetLocked = false;
+        
+        // Priority 1: Already saved Max Hours (means it was set manually or from estimation)
+        if (project.maxAllocatedHours && project.maxAllocatedHours > 0) {
+            totalBudget = parseFloat(project.maxAllocatedHours);
+            source = project.maxHoursSource || "Previously Set";
+            isBudgetLocked = true;
+        } 
+        // Priority 2: Estimation exists and Max Hours is not set
+        else if (project.estimation && (project.estimation.totalHours || project.estimation.manhours)) {
+            totalBudget = parseFloat(project.estimation.totalHours || project.estimation.manhours);
+            source = "Estimation";
+            isBudgetLocked = true;
+        }
+        
+        // B. Determine Already Allocated Hours (The Usage)
+        const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
+        const remainingBudget = Math.max(0, totalBudget - previouslyAllocated);
+
+        // C. Configure Total Hours Input (The Lock)
+        if (isBudgetLocked) {
+            totalHoursInput.value = totalBudget.toFixed(1);
+            totalHoursInput.readOnly = true;
+            totalHoursInput.style.backgroundColor = '#e9ecef';
+            totalHoursInput.title = `Budget is locked. Source: ${source}`;
+        } else {
+            totalHoursInput.value = '';
+            totalHoursInput.readOnly = false;
+            totalHoursInput.style.backgroundColor = '#fff';
+            totalHoursInput.placeholder = "Enter Total Project Budget (Must be > 0)";
+            totalHoursInput.title = "Enter a budget to lock it.";
+        }
+        
+        // Store crucial values in dataset for submission/calculation functions
+        totalHoursInput.dataset.alreadyAllocated = previouslyAllocated;
+        
+        // D. Status Check: Fully Allocated?
+        const isFullyAllocated = isBudgetLocked && remainingBudget <= 0.1; // Allow float margin
+
+        // E. Reset Form Fields and Set Initial Status
+        designerAllocationCounter = 0;
+        document.getElementById('designerAllocationsContainer').innerHTML = '';
+        document.getElementById('cooAllocationNotes').value = project.allocationNotes || '';
+        document.getElementById('cooTargetCompletionDate').value = project.targetCompletionDate || '';
+        document.getElementById('cooProjectPriority').value = project.priority || 'Normal';
+        
+        if (isFullyAllocated) {
             document.getElementById('designerAllocationsContainer').innerHTML = `
                 <div class="alert alert-success" style="padding: 1.5rem; background: #d1fae5; color: #065f46; border: 1px solid #10b981; border-radius: 8px; text-align: center;">
                     <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
-                    <strong>Allocation Complete</strong><br>
-                    This project is fully allocated.<br>
-                    Budget: ${totalBudget}h | Assigned: ${previouslyAssigned}h
+                    <strong>Allocation Completed</strong><br>
+                    Budget: ${totalBudget.toFixed(1)}h | Fully Assigned: ${previouslyAllocated.toFixed(1)}h
                 </div>
             `;
             if(addDesignerBtn) addDesignerBtn.style.display = 'none';
             if(submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = "Allocation Complete";
+                submitBtn.innerHTML = "Allocation Completed";
                 submitBtn.style.opacity = "0.6";
             }
         } else {
-            // Partial or New
+            // Partial or New Allocation
+            if (previouslyAllocated > 0) {
+                 // Display Partial Alloted message
+                 document.getElementById('designerAllocationsContainer').innerHTML = `
+                    <div class="alert alert-warning" style="padding: 1rem; margin-bottom: 1rem; background: #fffbe5; color: #92400e; border: 1px solid #fcd34d; border-radius: 8px;">
+                        <strong>Partial Alloted:</strong> ${previouslyAllocated.toFixed(1)}hrs already assigned. ${remainingBudget.toFixed(1)}hrs remaining.
+                    </div>
+                `;
+            }
+            
             if(addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
             if(submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
                 submitBtn.style.opacity = "1";
             }
-            // Add first row
-            addDesignerAllocation();
+            // Add first row if designers are available
+            if (availableDesigners.length > 0) {
+                addDesignerAllocation(); 
+            } else {
+                document.getElementById('designerAllocationsContainer').innerHTML += `<div class="alert alert-danger">No designers available.</div>`;
+            }
         }
+        
+        // --- ALLOCATION LOGIC END ---
         
         document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
         updateRemainingHours(); // Initial calculation
