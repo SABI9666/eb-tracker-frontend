@@ -2425,18 +2425,22 @@ body.modal-open {
             
             // Submit to backend
             const payload = {
-                projectId: projectId,
-                designerUids: designerUids,
-                designerNames: designerNames,
-                designerEmails: designerEmails,
-                designerHours: designerHours,
-                action: 'assign_designers'
+                action: 'assign_designers',
+                data: {
+                    projectId: projectId,
+                    designerUids: designerUids,
+                    designerNames: designerNames,
+                    designerEmails: designerEmails,
+                    designerHours: designerHours,
+                    totalAllocatedHours: Object.values(designerHours).reduce((sum, h) => sum + h, 0)
+                }
             };
             
             console.log('📤 Sending designer assignment:', payload);
             
-            apiCall('projects', {
-                method: 'POST',
+            apiCall(`projects?id=${projectId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             }).then(response => {
                 if (response.success) {
@@ -7714,7 +7718,7 @@ async function submitEditedPricing() {
                     // Only show allocate button if pricing is complete (has project number)
                     return `
                         <button onclick="showProjectAllocationModal('${proposal.id}')" class="btn btn-success">
-                            🎯 Allocate to Design Manager
+                            🎯 Allocate to Designers
                         </button>
                     `;
                 }
@@ -8812,7 +8816,7 @@ async function showTasks() {
                             </button>
                         </div>
                     </div>
-                `).join('') : '<p class="info-message">You currently have no tasks assigned to you. Contact your Design Lead.</p>'}
+                `).join('') : '<p class="info-message">You currently have no tasks assigned to you. Contact the COO.</p>'}
             </div>
         `;
         main.innerHTML = projectsHtml;
@@ -10093,21 +10097,19 @@ Proceed with allocation?`.trim();
     try {
         showLoading();
         
-        // --- FIX: Construct Payload with CORRECT Action ---
+        // Prepare the update payload with correct action format for backend
         const allocationData = {
-            // 🚨 CRITICAL FIX: This action string must match the backend
-            action: 'allocate_to_multiple_designers', 
+            action: 'allocate_to_multiple_designers',
             data: {
                 projectId: projectId,
-                // Sends the total (previous + new)
-                totalAllocatedHours: newTotalAllocated, 
+                totalAllocatedHours: newTotalAllocated,
                 designerAllocations: designerAllocations,
                 targetCompletionDate: targetDate || null,
                 priority: priority,
                 allocationNotes: generalNotes,
                 isIncremental: true,
-
-                // Important: Legacy fields for backend processing
+                
+                // Required fields for backend validation
                 assignedDesignerUids: designerAllocations.map(d => d.designerUid),
                 assignedDesignerNames: designerAllocations.map(d => d.designerName),
                 designerHours: designerAllocations.reduce((acc, d) => {
@@ -10116,6 +10118,8 @@ Proceed with allocation?`.trim();
                 }, {})
             }
         };
+        
+        console.log('📤 Sending allocation update:', allocationData);
         
         const response = await apiCall(`projects?id=${projectId}`, {
             method: 'PUT',
@@ -11289,161 +11293,8 @@ async function submitDirectorApproval() {
 }
 
 async function showAllocationModal(proposalId) {
-    try {
-        showLoading();
-        const proposalResponse = await apiCall(`proposals?id=${proposalId}`);
-        if (!proposalResponse.success || !proposalResponse.data) {
-            throw new Error('Failed to load proposal');
-        }
-        const proposal = proposalResponse.data;
-        
-        if (proposal.status !== 'won') {
-            alert('Only WON proposals can be allocated to Design Managers');
-            hideLoading();
-            return;
-        }
-        
-        if (!proposal.pricing?.projectNumber) {
-            alert('This proposal does not have a project number yet. Please assign a project number first.');
-            hideLoading();
-            return;
-        }
-        
-        const usersResponse = await apiCall('users?role=design_lead');
-        let designManagers = [];
-        if (usersResponse.success && usersResponse.data) {
-            designManagers = usersResponse.data;
-        }
-        
-        if (designManagers.length === 0) {
-            alert('No Design Managers found in the system. Please create Design Manager users first.');
-            hideLoading();
-            return;
-        }
-        
-        const modalHtml = `
-           <div class="modal-overlay" onclick="if(event.target === this) closeModal()">
-                <div class="modal-content allocation-modal-large" style="max-width: 800px;">
-                    <div class="modal-header">
-                        <div>
-                            <h2>🎯 Allocate Project to Design Manager</h2>
-                            <div class="subtitle">${proposal.projectName} - ${proposal.clientCompany}</div>
-                        </div>
-                        <span class="close-modal" onclick="closeModal()">&times;</span>
-                    </div>
-                    <div class="modal-body">
-                        <div class="allocation-details-section">
-                            <h3>📋 Project Information</h3>
-                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
-                                <div style="grid-column: 1 / -1; background: white; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
-                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; margin-bottom: 0.3rem; display: block;">
-                                        🔢 Project Number:
-                                    </label>
-                                    <span class="project-number-badge" style="font-size: 1.3rem; padding: 0.7rem 1.2rem;">
-                                        ${proposal.pricing.projectNumber}
-                                    </span>
-                                </div>
-                                <div>
-                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Quote Value:</label>
-                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
-                                        ${proposal.pricing.currency} ${proposal.pricing.quoteValue?.toLocaleString()}
-                                    </span>
-                                </div>
-                                <div>
-                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Status:</label>
-                                    <span class="proposal-status status-won">WON</span>
-                                </div>
-                                <div>
-                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">BDM:</label>
-                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
-                                        ${proposal.createdByName || 'N/A'}
-                                    </span>
-                                </div>
-                                <div>
-                                    <label style="font-weight: 600; color: var(--text-light); font-size: 0.85rem; display: block;">Client:</label>
-                                    <span style="font-weight: 600; color: var(--text-dark); font-size: 1.1rem;">
-                                        ${proposal.clientCompany}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <div style="margin-top: 2rem;">
-                            <h3 style="color: var(--text-dark); margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border);">
-                                👤 Allocation Details
-                            </h3>
-                            <form id="allocationForm">
-                                <input type="hidden" id="allocationProposalId" value="${proposalId}">
-                                <input type="hidden" id="allocationProjectName" value="${projectName}">
-                                <div class="form-group">
-                                    <label for="designManagerSelect">Select Design Manager <span class="required">*</span></label>
-                                    <select id="designManagerSelect" class="form-control" required>
-                                        <option value="">Choose a Design Manager...</option>
-                                        ${designManagers.map(dm => `
-                                            <option value="${dm.uid}" data-name="${dm.name}" data-email="${dm.email}">
-                                                ${dm.name} (${dm.email})
-                                            </option>
-                                        `).join('')}
-                                    </select>
-                                    <small class="form-text">Select the Design Manager who will oversee this project</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="maxAllocatedHours">Max Allocated Hours <span class="required">*</span></label>
-                                    <input type="number" id="maxAllocatedHours" class="form-control" 
-                                           step="0.5" min="1" placeholder="Enter maximum hours allocated for this project" required>
-                                    <small class="form-text">Total hours budget allocated by COO/Director for this project</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="additionalHours">Additional Hours Provision</label>
-                                    <input type="number" id="additionalHours" class="form-control" 
-                                           step="0.5" min="0" value="0" placeholder="Enter buffer hours (optional)">
-                                    <small class="form-text">Extra hours that can be allocated if needed (buffer)</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="targetCompletionDate">Target Completion Date</label>
-                                    <input type="date" id="targetCompletionDate" class="form-control"
-                                         min="${new Date().toISOString().split('T')[0]}">
-                                    <small class="form-text">Expected project completion date</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="projectPriority">Project Priority</label>
-                                    <select id="projectPriority" class="form-control">
-                                        <option value="Normal">Normal</option>
-                                        <option value="High">High</option>
-                                        <option value="Urgent">Urgent</option>
-                                        <option value="Low">Low</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="allocationComments2">Allocation Comments <span class="required">*</span></label>
-                                    <textarea id="allocationComments2" class="form-control" rows="4"
-                                         placeholder="Add instructions, notes, or special requirements for the Design Manager..." required></textarea>
-                                    <small class="form-text">Provide clear guidance and expectations for this project</small>
-                                </div>
-                                <div class="form-group">
-                                    <label for="specialInstructions2">Special Instructions</label>
-                                    <textarea id="specialInstructions2" class="form-control" rows="3"
-                                         placeholder="Add any special client requirements, constraints, or important notes..."></textarea>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
-                        <button type="button" onclick="submitProjectAllocation()" class="btn btn-success btn-large">
-                            <span class="btn-icon">✓</span> Allocate Project
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-        hideLoading();
-    } catch (error) {
-        console.error('Error showing allocation modal:', error);
-        alert('Error loading allocation form: ' + error.message);
-        hideLoading();
-    }
+    // Redirect to the multi-designer allocation modal
+    await showProjectAllocationModal(proposalId);
 }
 
 // Submit Allocation - FIXED VERSION
