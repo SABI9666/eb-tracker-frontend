@@ -10110,34 +10110,6 @@ function updateRemainingHours() {
     
     remainingDisplay.innerHTML = html;
 }
-    
-    // 5. Handle Over-Budget State (Visuals & Button Locking)
-    const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
-    
-    if (remaining < 0) {
-        // Over Budget
-        remainingDisplay.style.color = 'var(--danger)';
-        remainingDisplay.innerHTML = `
-            <div style="font-size: 1.5rem; font-weight: 700;">⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER</div>
-            <div style="font-size: 0.8rem;">Budget Exceeded</div>
-        `;
-        // Disable submit button
-        if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.style.opacity = "0.5";
-            submitBtn.innerText = "⚠️ Reduce Hours";
-        }
-    } else {
-        // Valid State
-        remainingDisplay.style.color = remaining === 0 ? 'var(--success)' : 'var(--warning)';
-        // Enable submit button
-        if (submitBtn && submitBtn.innerText !== "Fully Allocated") {
-            submitBtn.disabled = false;
-            submitBtn.style.opacity = "1";
-            submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
-        }
-    }
-}
 
 /**
  * Validate that no designer is selected twice
