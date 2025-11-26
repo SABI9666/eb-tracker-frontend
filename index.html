@@ -8611,23 +8611,42 @@ async function showDesignerAllocations() {
      async function showProjectFilesModal(projectId, projectName) {
     console.log('📂 Opening files for project:', projectId, projectName);
     
-    // 1. Get DOM elements
-    const modal = document.getElementById('projectFilesModal');
-    const title = document.getElementById('projectFilesModalTitle');
-    const subtitle = document.getElementById('projectFilesModalSubtitle');
+    // Close any existing modals first
+    closeAllModals();
+    
+    // Create professional modal
+    const modalHtml = `
+        <div class="modal-overlay" id="projectFilesModalOverlay" onclick="handleModalOverlayClick(event, 'projectFilesModalOverlay')">
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0;">
+                    <div>
+                        <h2 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 1.5rem;">📂</span> Project Files
+                        </h2>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem;" id="filesModalProjectName">${projectName}</p>
+                    </div>
+                    <span class="close-modal" onclick="closeProjectFilesModal()" style="color: white; font-size: 2rem; cursor: pointer;">&times;</span>
+                </div>
+                
+                <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: center; align-items: center; padding: 3rem;">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb;">
+                    <button type="button" onclick="closeProjectFilesModal()" class="btn btn-outline">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
     const content = document.getElementById('projectFilesContent');
 
-    // 2. Set initial state (Title and Loading spinner)
-    title.textContent = `Project Files: ${projectName}`;
-    subtitle.textContent = `Loading files for project ID: ${projectId}`;
-    content.innerHTML = '<div class="loading-spinner"></div>';
-
-    // 3. Open the modal
-    openModal('projectFilesModal'); 
-
     try {
-        // 4. First, get the project details to find the proposalId
-        const projectResponse = await apiCall(`projects?id=${projectId}`);
+        // Get the project details to find the proposalId
+        const projectResponse = await apiCall(\`projects?id=\${projectId}\`);
         
         if (!projectResponse.success) {
             throw new Error(projectResponse.error || 'Failed to fetch project details.');
@@ -8636,13 +8655,18 @@ async function showDesignerAllocations() {
         const project = projectResponse.data;
         console.log('📦 Project details:', project);
         
-        // 5. Fetch files using BOTH projectId AND proposalId
-        // Try multiple approaches to ensure we get the files
+        // Update project name with more details
+        document.getElementById('filesModalProjectName').innerHTML = \`
+            <span>\${projectName}</span>
+            <span style="opacity: 0.7; margin-left: 1rem;">| \${project.projectCode || 'No Code'} | \${project.clientCompany || ''}</span>
+        \`;
+        
+        // Fetch files using multiple approaches
         let files = [];
         
         // Approach 1: Try fetching by projectId
         try {
-            const response1 = await apiCall(`files?projectId=${projectId}`);
+            const response1 = await apiCall(\`files?projectId=\${projectId}\`);
             if (response1.success && response1.data && response1.data.length > 0) {
                 files = response1.data;
                 console.log('✅ Files found using projectId:', files.length);
@@ -8654,7 +8678,7 @@ async function showDesignerAllocations() {
         // Approach 2: If no files found and we have a proposalId, try that
         if (files.length === 0 && project.proposalId) {
             try {
-                const response2 = await apiCall(`files/list?proposalId=${project.proposalId}`);
+                const response2 = await apiCall(\`files/list?proposalId=\${project.proposalId}\`);
                 if (response2.success && response2.data && response2.data.length > 0) {
                     files = response2.data;
                     console.log('✅ Files found using proposalId:', files.length);
@@ -8667,7 +8691,7 @@ async function showDesignerAllocations() {
         // Approach 3: Try the legacy endpoint as a fallback
         if (files.length === 0 && project.proposalId) {
             try {
-                const response3 = await apiCall(`files?proposalId=${project.proposalId}`);
+                const response3 = await apiCall(\`files?proposalId=\${project.proposalId}\`);
                 if (response3.success && response3.data && response3.data.length > 0) {
                     files = response3.data;
                     console.log('✅ Files found using legacy endpoint:', files.length);
@@ -8680,20 +8704,27 @@ async function showDesignerAllocations() {
         console.log('📊 Total files retrieved:', files.length);
         
         if (files.length === 0) {
-            content.innerHTML = `
-                <div class="empty-state" style="text-align: center; padding: 3rem;">
-                    <div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
-                    <h3>No Files Available</h3>
-                    <p style="color: var(--text-light); margin-top: 0.5rem;">
-                        No files have been uploaded for this project yet.
+            content.innerHTML = \`
+                <div style="text-align: center; padding: 4rem 2rem;">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <span style="font-size: 3rem;">📭</span>
+                    </div>
+                    <h3 style="color: #374151; margin-bottom: 0.5rem;">No Files Available</h3>
+                    <p style="color: #6b7280; max-width: 400px; margin: 0 auto;">
+                        No files have been uploaded for this project yet. Files will appear here once the team uploads drawings, specifications, or other documents.
                     </p>
-                    ${project.proposalId ? `<small style="color: var(--text-light);">Project Code: ${project.projectCode || 'N/A'} | Proposal ID: ${project.proposalId}</small>` : ''}
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; display: inline-block;">
+                        <small style="color: #6b7280;">
+                            <strong>Project:</strong> \${project.projectCode || 'N/A'} &nbsp;|&nbsp; 
+                            <strong>Client:</strong> \${project.clientCompany || 'N/A'}
+                        </small>
+                    </div>
                 </div>
-            `;
+            \`;
             return;
         }
 
-        // 6. Group files by type for better organization
+        // Group files by type
         const filesByType = {
             drawing: [],
             specification: [],
@@ -8711,94 +8742,144 @@ async function showDesignerAllocations() {
             }
         });
 
-        // 7. Build the file list HTML with grouping
-        let fileListHtml = '';
-        
-        const typeLabels = {
-            drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6' },
-            specification: { icon: '📋', label: 'Specifications', color: '#10b981' },
-            estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b' },
-            project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6' },
-            other: { icon: '📄', label: 'Other Files', color: '#6b7280' }
+        // Build professional file list
+        const typeConfig = {
+            drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6', bg: '#eff6ff' },
+            specification: { icon: '📋', label: 'Specifications', color: '#10b981', bg: '#ecfdf5' },
+            estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b', bg: '#fffbeb' },
+            project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6', bg: '#f5f3ff' },
+            other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
         };
+        
+        let fileListHtml = \`
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
+                    📊 Total Files: \${files.length}
+                </div>
+            </div>
+        \`;
         
         Object.keys(filesByType).forEach(type => {
             const typeFiles = filesByType[type];
             if (typeFiles.length === 0) return;
             
-            const typeInfo = typeLabels[type];
+            const config = typeConfig[type];
             
-            fileListHtml += `
-                <div class="file-type-section" style="margin-bottom: 2rem;">
-                    <h3 style="color: ${typeInfo.color}; font-size: 1.1rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.5rem;">${typeInfo.icon}</span>
-                        ${typeInfo.label} (${typeFiles.length})
-                    </h3>
-                    <div class="files-grid">
-                        ${typeFiles.map(file => {
+            fileListHtml += \`
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid \${config.color}20;">
+                        <span style="width: 40px; height: 40px; background: \${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            \${config.icon}
+                        </span>
+                        <div>
+                            <h3 style="margin: 0; color: \${config.color}; font-size: 1.1rem;">\${config.label}</h3>
+                            <small style="color: #6b7280;">\${typeFiles.length} file\${typeFiles.length > 1 ? 's' : ''}</small>
+                        </div>
+                    </div>
+                    <div style="display: grid; gap: 0.75rem;">
+                        \${typeFiles.map((file, index) => {
                             const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
-                            const uploadedBy = file.uploadedByName || 'Unknown User';
+                            const uploadedBy = file.uploadedByName || 'Unknown';
                             const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
+                            const fileExt = file.fileName.split('.').pop().toUpperCase();
                             
-                            return `
-                                <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; transition: all 0.3s ease;">
+                            return \`
+                                <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
+                                     onmouseover="this.style.borderColor='\${config.color}'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)';">
+                                    
+                                    <div style="width: 50px; height: 50px; background: \${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
+                                        <span style="font-size: 0.75rem; font-weight: 700; color: \${config.color};">\${fileExt}</span>
+                                    </div>
+                                    
                                     <div style="flex: 1; min-width: 0;">
-                                        <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-dark); margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                            📄 ${file.fileName}
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="\${file.fileName}">
+                                            \${file.fileName}
                                         </div>
-                                        <div style="font-size: 0.85rem; color: var(--text-light);">
-                                            Uploaded by <strong>${uploadedBy}</strong> on ${uploadDate}
-                                            ${fileSize ? ` • ${fileSize}` : ''}
+                                        <div style="font-size: 0.8rem; color: #6b7280;">
+                                            <span>📤 \${uploadedBy}</span>
+                                            <span style="margin: 0 0.5rem;">•</span>
+                                            <span>📅 \${uploadDate}</span>
+                                            \${fileSize ? \`<span style="margin: 0 0.5rem;">•</span><span>💾 \${fileSize}</span>\` : ''}
                                         </div>
                                     </div>
-                                    <div style="display: flex; gap: 0.5rem; flex-shrink: 0; margin-left: 1rem;">
-                                        <a href="${file.fileUrl}" target="_blank" class="btn btn-outline btn-sm" 
-                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
-                                           title="View ${file.fileName}">
+                                    
+                                    <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
+                                        <button onclick="window.open('\${file.fileUrl}', '_blank')" 
+                                                class="btn btn-outline btn-sm"
+                                                style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
+                                                title="View in new tab">
                                             👁️ View
-                                        </a>
-                                        <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-primary btn-sm"
-                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
-                                           title="Download ${file.fileName}">
+                                        </button>
+                                        <button onclick="downloadFile('\${file.fileUrl}', '\${file.fileName}')" 
+                                                class="btn btn-primary btn-sm"
+                                                style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
+                                                title="Download file">
                                             ⬇️ Download
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
-                            `;
+                            \`;
                         }).join('')}
                     </div>
                 </div>
-            `;
+            \`;
         });
 
-        // 8. Inject the list with enhanced styling
-        content.innerHTML = `
-            <style>
-                .file-type-section { }
-                .files-grid { }
-                .file-item:hover {
-                    background: white !important;
-                    border-color: var(--primary-blue) !important;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-                    transform: translateY(-2px);
-                }
-            </style>
-            ${fileListHtml}
-        `;
+        content.innerHTML = fileListHtml;
 
     } catch (error) {
         console.error("❌ Error loading project files:", error);
-        content.innerHTML = `
-            <div class="error-message" style="text-align: center; padding: 2rem; color: var(--danger);">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-                <h3>Error Loading Files</h3>
-                <p style="margin-top: 0.5rem;">${error.message}</p>
-                <button onclick="showProjectFilesModal('${projectId}', '${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
+        content.innerHTML = \`
+            <div style="text-align: center; padding: 3rem;">
+                <div style="width: 80px; height: 80px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <span style="font-size: 2.5rem;">⚠️</span>
+                </div>
+                <h3 style="color: #dc2626; margin-bottom: 0.5rem;">Error Loading Files</h3>
+                <p style="color: #6b7280;">\${error.message}</p>
+                <button onclick="showProjectFilesModal('\${projectId}', '\${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
                     🔄 Retry
                 </button>
             </div>
-        `;
+        \`;
     }
+}
+
+// Download file function with proper handling
+async function downloadFile(url, filename) {
+    try {
+        showLoading();
+        
+        // Fetch the file as blob
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch file');
+        
+        const blob = await response.blob();
+        
+        // Create download link
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(downloadUrl);
+        
+        hideLoading();
+    } catch (error) {
+        hideLoading();
+        console.error('Download error:', error);
+        // Fallback: open in new tab
+        alert('Direct download failed. Opening file in new tab instead.');
+        window.open(url, '_blank');
+    }
+}
+
+// Close project files modal
+function closeProjectFilesModal() {
+    const modal = document.getElementById('projectFilesModalOverlay');
+    if (modal) modal.remove();
 }
                                 
 // Helper function to format file size
@@ -12787,6 +12868,7 @@ function resetExecutiveDateFilter() {
 
 /**
          * Show Timesheet Modal - Designer can log hours for assigned projects
+         * Professional design with allocation tracking
          */
         async function showTimesheetModal(projectId = null) {
             try {
@@ -12800,93 +12882,199 @@ function resetExecutiveDateFilter() {
                 
                 const projects = response.data || [];
                 // Filter for projects assigned to the current designer
-                // FIX: robust check for designer UID in either property
                 const assignedProjects = projects.filter(p => {
                     const inDesigners = p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid);
                     const inUids = p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid);
                     return inDesigners || inUids;
                 });
+                
                 if (assignedProjects.length === 0) {
-                    alert('You are not assigned to any projects yet.');
                     hideLoading();
+                    closeAllModals();
+                    
+                    // Show professional empty state modal
+                    const emptyModalHtml = `
+                        <div class="modal-overlay" id="timesheetModalOverlay" onclick="handleModalOverlayClick(event, 'timesheetModalOverlay')">
+                            <div class="modal-content" style="max-width: 500px; text-align: center;">
+                                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0;">
+                                    <h2 style="margin: 0;">⏱️ Log Hours</h2>
+                                    <span class="close-modal" onclick="closeTimesheetModal()" style="color: white;">&times;</span>
+                                </div>
+                                <div class="modal-body" style="padding: 3rem;">
+                                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                                        <span style="font-size: 3rem;">📋</span>
+                                    </div>
+                                    <h3 style="color: #374151; margin-bottom: 0.5rem;">No Projects Assigned</h3>
+                                    <p style="color: #6b7280;">You are not currently assigned to any projects. Please contact your COO to get project assignments.</p>
+                                </div>
+                                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem;">
+                                    <button type="button" onclick="closeTimesheetModal()" class="btn btn-primary">Got it</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', emptyModalHtml);
                     return;
                 }
                 
                 // Close any existing modals first
                 closeAllModals();
                 
+                // Build project options with rich data
+                const projectOptionsHtml = assignedProjects.map(project => {
+                    const allocated = (project.maxAllocatedHours || 0) + (project.additionalHours || 0);
+                    const logged = project.hoursLogged || 0;
+                    const remaining = allocated - logged;
+                    const percentage = allocated > 0 ? Math.round((logged / allocated) * 100) : 0;
+                    
+                    return `
+                        <option value="${project.id}" 
+                                data-name="${project.projectName}"
+                                data-client="${project.clientCompany || 'N/A'}"
+                                data-code="${project.projectCode || 'N/A'}"
+                                data-allocated="${allocated}" 
+                                data-logged="${logged}"
+                                data-remaining="${remaining}"
+                                data-percentage="${percentage}">
+                            ${project.projectName} - ${project.clientCompany || 'Client'}
+                        </option>
+                    `;
+                }).join('');
+                
                 const modalHtml = `
                     <div class="modal-overlay" id="timesheetModalOverlay" onclick="handleModalOverlayClick(event, 'timesheetModalOverlay')">
-                        <div class="modal-content" style="max-width: 600px;">
-                            <div class="modal-header">
-                                <h2>📋 Log Hours</h2>
-                                <span class="close-modal" onclick="closeTimesheetModal()">&times;</span>
+                        <div class="modal-content" style="max-width: 650px; overflow: hidden;">
+                            <!-- Header -->
+                            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0;">
+                                <div>
+                                    <h2 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                                        <span style="font-size: 1.5rem;">⏱️</span> Log Work Hours
+                                    </h2>
+                                    <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.9rem;">Record your daily work progress</p>
+                                </div>
+                                <span class="close-modal" onclick="closeTimesheetModal()" style="color: white; font-size: 2rem; cursor: pointer;">&times;</span>
                             </div>
                             
-                            <div class="modal-body">
-                                <form id="timesheetForm" onsubmit="event.preventDefault(); submitTimesheet();">
-                                    <div class="form-group">
-                                        <label>Project <span class="required">*</span></label>
-                                        <select id="timesheetProjectId" class="form-control" required>
-                                            <option value="">Select a project...</option>
-                                            ${assignedProjects.map(project => `
-                                                <option value="${project.id}" 
-                                                        data-allocated="${(project.maxAllocatedHours || 0) + (project.additionalHours || 0)}" 
-                                                        data-logged="${project.hoursLogged || 0}">
-                                                    ${project.projectName} - ${project.clientCompany}
-                                                </option>
-                                            `).join('')}
-                                        </select>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Date <span class="required">*</span></label>
-                                        <input type="date" id="timesheetDate" class="form-control" 
-                                               max="${new Date().toISOString().split('T')[0]}" required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Hours <span class="required">*</span></label>
-                                        <input type="number" id="timesheetHours" class="form-control" 
-                                               min="0.25" max="24" step="0.25" required 
-                                               placeholder="e.g., 8 or 2.5">
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label>Description <span class="required">*</span></label>
-                                        <textarea id="timesheetDescription" class="form-control" rows="4" 
-                                                  placeholder="Describe what you worked on..." required></textarea>
-                                    </div>
-
-                                    <div id="timesheetAllocationInfo" 
-                                         style="display: none; padding: 1rem; background: #e3f2fd; 
-                                                border-radius: 8px; margin-top: 1rem; border-left: 4px solid #2196F3;">
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                            <span>Hours Logged:</span>
-                                            <strong id="timesheetCurrentHours">0h</strong>
+                            <!-- Body -->
+                            <div class="modal-body" style="padding: 1.5rem; max-height: 65vh; overflow-y: auto;">
+                                <!-- Project Info Card (hidden initially) -->
+                                <div id="selectedProjectInfo" style="display: none; margin-bottom: 1.5rem; padding: 1rem; background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; border: 1px solid #bae6fd;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                        <div>
+                                            <h4 style="margin: 0; color: #0369a1;" id="infoProjectName">Project Name</h4>
+                                            <small style="color: #0284c7;" id="infoProjectCode">Code: XXX</small>
                                         </div>
-                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                            <span>Hours Allocated:</span>
-                                            <strong id="timesheetAllocatedHours">0h</strong>
-                                        </div>
-                                        <div style="display: flex; justify-content: space-between;">
-                                            <span>Hours Remaining:</span>
-                                            <strong id="timesheetRemainingHours" style="color: #4CAF50;">0h</strong>
+                                        <div id="infoBudgetBadge" style="padding: 0.5rem 1rem; background: #10b981; color: white; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                            On Track
                                         </div>
                                     </div>
                                     
-                                    <div id="timesheetWarning" style="display: none; padding: 1rem; background: #fff3cd; 
-                                         border-radius: 8px; margin-top: 1rem; border-left: 4px solid #ff9800; color: #856404;">
-                                        <strong>⚠️ Warning:</strong> <span id="timesheetWarningText"></span>
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                        <div style="text-align: center; padding: 0.75rem; background: white; border-radius: 8px;">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: #0369a1;" id="infoAllocated">0h</div>
+                                            <small style="color: #64748b;">Allocated</small>
+                                        </div>
+                                        <div style="text-align: center; padding: 0.75rem; background: white; border-radius: 8px;">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: #f59e0b;" id="infoLogged">0h</div>
+                                            <small style="color: #64748b;">Logged</small>
+                                        </div>
+                                        <div style="text-align: center; padding: 0.75rem; background: white; border-radius: 8px;">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;" id="infoRemaining">0h</div>
+                                            <small style="color: #64748b;">Remaining</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Progress Bar -->
+                                    <div style="margin-top: 1rem;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                            <small style="color: #64748b;">Budget Usage</small>
+                                            <small style="color: #64748b;" id="infoPercentage">0%</small>
+                                        </div>
+                                        <div style="height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                                            <div id="infoProgressBar" style="height: 100%; background: linear-gradient(90deg, #10b981 0%, #34d399 100%); border-radius: 4px; transition: width 0.3s ease; width: 0%;"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <form id="timesheetForm" onsubmit="event.preventDefault(); submitTimesheet();">
+                                    <!-- Project Selection -->
+                                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+                                            <span style="width: 24px; height: 24px; background: #eff6ff; border-radius: 6px; display: flex; align-items: center; justify-content: center;">📁</span>
+                                            Select Project <span style="color: #ef4444;">*</span>
+                                        </label>
+                                        <select id="timesheetProjectId" class="form-control" required style="padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; transition: border-color 0.2s;">
+                                            <option value="">Choose a project...</option>
+                                            ${projectOptionsHtml}
+                                        </select>
+                                    </div>
+
+                                    <!-- Date & Hours Row -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+                                                <span style="width: 24px; height: 24px; background: #fef3c7; border-radius: 6px; display: flex; align-items: center; justify-content: center;">📅</span>
+                                                Date <span style="color: #ef4444;">*</span>
+                                            </label>
+                                            <input type="date" id="timesheetDate" class="form-control" 
+                                                   max="${new Date().toISOString().split('T')[0]}" required
+                                                   style="padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem;">
+                                        </div>
+                                        
+                                        <div class="form-group" style="margin-bottom: 0;">
+                                            <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+                                                <span style="width: 24px; height: 24px; background: #dcfce7; border-radius: 6px; display: flex; align-items: center; justify-content: center;">⏰</span>
+                                                Hours <span style="color: #ef4444;">*</span>
+                                            </label>
+                                            <input type="number" id="timesheetHours" class="form-control" 
+                                                   min="0.25" max="24" step="0.25" required 
+                                                   placeholder="e.g., 8"
+                                                   style="padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem;">
+                                        </div>
+                                    </div>
+
+                                    <!-- Description -->
+                                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                                        <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">
+                                            <span style="width: 24px; height: 24px; background: #f3e8ff; border-radius: 6px; display: flex; align-items: center; justify-content: center;">📝</span>
+                                            Work Description <span style="color: #ef4444;">*</span>
+                                        </label>
+                                        <textarea id="timesheetDescription" class="form-control" rows="4" 
+                                                  placeholder="Describe the work you completed...&#10;&#10;Examples:&#10;• Drafted floor plan layout for Level 1&#10;• Revised structural details per client feedback&#10;• Coordinated with MEP team on service routes"
+                                                  required
+                                                  style="padding: 0.875rem; border: 2px solid #e5e7eb; border-radius: 10px; font-size: 1rem; resize: vertical;"></textarea>
+                                        <small style="color: #6b7280; margin-top: 0.25rem; display: block;">Be specific about tasks completed for better tracking</small>
+                                    </div>
+                                    
+                                    <!-- Warning Message (hidden) -->
+                                    <div id="timesheetWarning" style="display: none; padding: 1rem; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 10px; border: 1px solid #f59e0b; margin-bottom: 1rem;">
+                                        <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                            <span style="font-size: 1.25rem;">⚠️</span>
+                                            <div>
+                                                <strong style="color: #92400e;">Budget Warning</strong>
+                                                <p style="margin: 0.25rem 0 0 0; color: #a16207; font-size: 0.9rem;" id="timesheetWarningText"></p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
                             
-                            <div class="modal-footer">
-                                <button type="button" onclick="closeTimesheetModal()" class="btn btn-outline">Cancel</button>
-                                <button type="button" onclick="submitTimesheet()" class="btn btn-success">
-                                    Log Hours
-                                </button>
+                            <!-- Footer -->
+                            <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb; display: flex; justify-content: space-between; align-items: center;">
+                                <small style="color: #6b7280;">
+                                    <span style="display: inline-flex; align-items: center; gap: 0.25rem;">
+                                        <span style="width: 8px; height: 8px; background: #10b981; border-radius: 50%;"></span>
+                                        Auto-saves on submit
+                                    </span>
+                                </small>
+                                <div style="display: flex; gap: 0.75rem;">
+                                    <button type="button" onclick="closeTimesheetModal()" class="btn btn-outline" style="padding: 0.75rem 1.5rem;">
+                                        Cancel
+                                    </button>
+                                    <button type="button" onclick="submitTimesheet()" class="btn btn-success" style="padding: 0.75rem 1.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                        <span>✓</span> Log Hours
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -12897,6 +13085,7 @@ function resetExecutiveDateFilter() {
                 
                 // Add change listener for project selection
                 document.getElementById('timesheetProjectId').addEventListener('change', updateTimesheetAllocationInfo);
+                document.getElementById('timesheetHours').addEventListener('input', updateTimesheetAllocationInfo);
                 document.getElementById('timesheetHours').addEventListener('input', updateTimesheetAllocationInfo);
                 
                 if (projectId) {
@@ -12915,42 +13104,100 @@ function resetExecutiveDateFilter() {
 
 /**
  * Update allocation information when project or hours change
+ * Works with the new professional timesheet modal
  */
 function updateTimesheetAllocationInfo() {
     const projectSelect = document.getElementById('timesheetProjectId');
     const hoursInput = document.getElementById('timesheetHours');
-    const infoDiv = document.getElementById('timesheetAllocationInfo');
+    const projectInfoDiv = document.getElementById('selectedProjectInfo');
     const warningDiv = document.getElementById('timesheetWarning');
     const warningText = document.getElementById('timesheetWarningText');
     
     if (!projectSelect || !projectSelect.value) {
-        infoDiv.style.display = 'none';
-        warningDiv.style.display = 'none';
+        if (projectInfoDiv) projectInfoDiv.style.display = 'none';
+        if (warningDiv) warningDiv.style.display = 'none';
         return;
     }
     
     const selectedOption = projectSelect.options[projectSelect.selectedIndex];
+    const projectName = selectedOption.dataset.name || selectedOption.text.split(' - ')[0];
+    const projectCode = selectedOption.dataset.code || 'N/A';
     const allocated = parseFloat(selectedOption.dataset.allocated) || 0;
     const logged = parseFloat(selectedOption.dataset.logged) || 0;
     const remaining = allocated - logged;
-    const hoursToAdd = parseFloat(hoursInput.value) || 0;
+    const percentage = allocated > 0 ? Math.round((logged / allocated) * 100) : 0;
+    const hoursToAdd = parseFloat(hoursInput?.value) || 0;
     const newTotal = logged + hoursToAdd;
+    const newPercentage = allocated > 0 ? Math.round((newTotal / allocated) * 100) : 0;
     
-    document.getElementById('timesheetCurrentHours').textContent = logged.toFixed(2) + 'h';
-    document.getElementById('timesheetAllocatedHours').textContent = allocated.toFixed(2) + 'h';
-    document.getElementById('timesheetRemainingHours').textContent = remaining.toFixed(2) + 'h';
-    document.getElementById('timesheetRemainingHours').style.color = 
-        remaining < 5 ? '#f44336' : '#4CAF50';
-    
-    infoDiv.style.display = 'block';
+    // Update project info card
+    if (projectInfoDiv) {
+        projectInfoDiv.style.display = 'block';
+        
+        // Project name and code
+        const nameEl = document.getElementById('infoProjectName');
+        const codeEl = document.getElementById('infoProjectCode');
+        if (nameEl) nameEl.textContent = projectName;
+        if (codeEl) codeEl.textContent = `Code: ${projectCode}`;
+        
+        // Stats
+        const allocatedEl = document.getElementById('infoAllocated');
+        const loggedEl = document.getElementById('infoLogged');
+        const remainingEl = document.getElementById('infoRemaining');
+        const percentageEl = document.getElementById('infoPercentage');
+        const progressBar = document.getElementById('infoProgressBar');
+        const budgetBadge = document.getElementById('infoBudgetBadge');
+        
+        if (allocatedEl) allocatedEl.textContent = allocated.toFixed(1) + 'h';
+        if (loggedEl) loggedEl.textContent = logged.toFixed(1) + 'h';
+        if (remainingEl) {
+            remainingEl.textContent = remaining.toFixed(1) + 'h';
+            remainingEl.style.color = remaining < 0 ? '#ef4444' : remaining < 5 ? '#f59e0b' : '#10b981';
+        }
+        if (percentageEl) percentageEl.textContent = (hoursToAdd > 0 ? newPercentage : percentage) + '%';
+        
+        // Progress bar
+        if (progressBar) {
+            const displayPercentage = hoursToAdd > 0 ? newPercentage : percentage;
+            progressBar.style.width = Math.min(displayPercentage, 100) + '%';
+            
+            // Color based on usage
+            if (displayPercentage > 100) {
+                progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #f87171 100%)';
+            } else if (displayPercentage > 80) {
+                progressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)';
+            } else {
+                progressBar.style.background = 'linear-gradient(90deg, #10b981 0%, #34d399 100%)';
+            }
+        }
+        
+        // Budget badge
+        if (budgetBadge) {
+            if (remaining < 0 || (hoursToAdd > 0 && newTotal > allocated && allocated > 0)) {
+                budgetBadge.textContent = '⚠️ Over Budget';
+                budgetBadge.style.background = '#ef4444';
+            } else if (remaining < 5) {
+                budgetBadge.textContent = '⚡ Low Budget';
+                budgetBadge.style.background = '#f59e0b';
+            } else {
+                budgetBadge.textContent = '✓ On Track';
+                budgetBadge.style.background = '#10b981';
+            }
+        }
+    }
     
     // Show warning if exceeding allocation
-    if (hoursToAdd > 0 && newTotal > allocated && allocated > 0) {
-        const exceeded = newTotal - allocated;
-        warningText.textContent = `Adding ${hoursToAdd}h will exceed allocation by ${exceeded.toFixed(2)}h. You'll need to request additional time from COO.`;
-        warningDiv.style.display = 'block';
-    } else {
-        warningDiv.style.display = 'none';
+    if (warningDiv && warningText) {
+        if (hoursToAdd > 0 && newTotal > allocated && allocated > 0) {
+            const exceeded = newTotal - allocated;
+            warningText.textContent = `Adding ${hoursToAdd}h will exceed your budget by ${exceeded.toFixed(1)}h. You'll need to request additional time from the COO.`;
+            warningDiv.style.display = 'block';
+        } else if (remaining < hoursToAdd && remaining > 0 && hoursToAdd > 0) {
+            warningText.textContent = `You only have ${remaining.toFixed(1)}h remaining. Consider requesting additional time soon.`;
+            warningDiv.style.display = 'block';
+        } else {
+            warningDiv.style.display = 'none';
+        }
     }
 }
 
