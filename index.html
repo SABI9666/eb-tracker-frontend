@@ -6216,6 +6216,10 @@ function showCreateProposalModal() {
     // Get both values
     const totalHours = parseFloat(document.getElementById('totalHours').value) || 0;
     const tonnage = parseFloat(document.getElementById('tonnageInput').value) || 0;
+    
+    // ✅ CRITICAL: Check if tonnage checkbox is checked
+    const useTonnageCheckbox = document.getElementById('useTonnageForDesign');
+    const usedTonnageForDesign = useTonnageCheckbox ? useTonnageCheckbox.checked : false;
 
     // MODIFIED VALIDATION: Allow if EITHER Total Hours OR Tonnage is greater than 0
     if (totalHours === 0 && tonnage === 0) {
@@ -6225,6 +6229,11 @@ function showCreateProposalModal() {
 
     const estimationData = {
         tonnage: tonnage,
+        
+        // ✅ CRITICAL NEW FIELDS FOR ALLOCATION LOGIC
+        usedTonnageForDesign: usedTonnageForDesign,
+        tonnageValue: usedTonnageForDesign ? tonnage : null,
+        
         designHours: document.getElementById('designHours').value || 0,
         detailingHours: document.getElementById('detailingHours').value || 0,
         checkingHours: document.getElementById('checkingHours').value || 0,
@@ -15348,13 +15357,25 @@ function calculateTotalHours() {
  * ✅ FIXED: Handle Tonnage Input
  */
 function handleTonnageInput() {
-    const useTonnage = document.getElementById('useTonnageForDesign');
-    if (useTonnage && useTonnage.checked) {
-        const tonnageInput = document.getElementById('tonnageInput');
-        const designHoursInput = document.getElementById('designHours');
-        const tonnage = parseFloat(tonnageInput.value) || 0;
-        designHoursInput.value = (tonnage * 10).toFixed(2);
-        calculateTotalHours();
+    // ✅ FIXED: Tonnage is now just a reference value, NO auto-calculation
+    // Just store the tonnage value, don't calculate design hours
+    // Design hours must be entered manually by estimator
+}
+
+/**
+ * ✅ NEW: Toggle tonnage checkbox (no auto-calculation)
+ */
+function toggleDesignHours() {
+    const useTonnageCheckbox = document.getElementById('useTonnageForDesign');
+    
+    // This is just a UI checkbox, doesn't affect calculations
+    // Tonnage is stored as reference data only
+    // All hours must be entered manually by estimator
+    
+    if (useTonnageCheckbox && useTonnageCheckbox.checked) {
+        console.log('✅ Tonnage checkbox enabled - storing tonnage as reference data');
+    } else {
+        console.log('✅ Tonnage checkbox disabled');
     }
 }
   
