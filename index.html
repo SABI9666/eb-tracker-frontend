@@ -9800,6 +9800,12 @@ async function showCooMultiDesignerAllocationModal(projectId) {
     try {
         showLoading();
         
+        // 0. Verify modal exists in DOM
+        const modal = document.getElementById('cooMultiDesignerAllocationModal');
+        if (!modal) {
+            throw new Error('Allocation modal not found in page. Please refresh and try again.');
+        }
+        
         // 1. Load project details
         const projectResponse = await apiCall(`projects?id=${projectId}`);
         if (!projectResponse.success || !projectResponse.data) {
@@ -9812,20 +9818,34 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         // 2. Load available designers
         await loadAvailableDesigners();
         
-        // 3. Populate project info
-        document.getElementById('cooAllocProjectId').value = projectId;
-        document.getElementById('cooAllocProjectNumber').textContent = project.projectNumber || 'N/A';
-        document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
-        document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
-        
-        // --- ALLOCATION LOGIC START (Budget Determination & Locking) ---
-        
+        // 3. Get all required DOM elements with null checks
+        const cooAllocProjectId = document.getElementById('cooAllocProjectId');
+        const cooAllocProjectNumber = document.getElementById('cooAllocProjectNumber');
+        const cooAllocProjectName = document.getElementById('cooAllocProjectName');
+        const cooAllocClientName = document.getElementById('cooAllocClientName');
         const totalHoursInput = document.getElementById('cooTotalProjectHours');
         const addDesignerBtn = document.getElementById('cooAddDesignerBtn');
         const submitBtn = document.getElementById('cooSubmitAllocationBtn');
         const hoursBreakdown = document.getElementById('cooHoursBreakdown');
         const budgetStatusDiv = document.getElementById('cooBudgetStatus');
         const sourceText = document.getElementById('cooTotalHoursSource');
+        const designerContainer = document.getElementById('designerAllocationsContainer');
+        const notesField = document.getElementById('cooAllocationNotes');
+        const dateField = document.getElementById('cooTargetCompletionDate');
+        const priorityField = document.getElementById('cooProjectPriority');
+        
+        // Verify critical elements exist
+        if (!cooAllocProjectId || !totalHoursInput || !designerContainer) {
+            throw new Error('Critical modal elements not found. Please refresh the page.');
+        }
+        
+        // 4. Populate project info
+        cooAllocProjectId.value = projectId;
+        if (cooAllocProjectNumber) cooAllocProjectNumber.textContent = project.projectNumber || 'N/A';
+        if (cooAllocProjectName) cooAllocProjectName.textContent = project.projectName || 'N/A';
+        if (cooAllocClientName) cooAllocClientName.textContent = project.clientCompany || 'N/A';
+        
+        // --- ALLOCATION LOGIC START (Budget Determination & Locking) ---
 
         // A. Determine the already allocated hours first
         const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
@@ -9868,9 +9888,9 @@ async function showCooMultiDesignerAllocationModal(projectId) {
             totalHoursInput.style.backgroundColor = '#e9ecef';
             totalHoursInput.style.cursor = 'not-allowed';
             totalHoursInput.title = `Budget is locked. Source: ${source}`;
-            sourceText.innerHTML = `<span style="color: #059669;">🔒 Locked from ${source}</span>`;
-            budgetStatusDiv.innerHTML = `<span style="color: #059669;">🔒 Budget Locked (${source})</span>`;
-            hoursBreakdown.style.display = 'block';
+            if (sourceText) sourceText.innerHTML = `<span style="color: #059669;">🔒 Locked from ${source}</span>`;
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">🔒 Budget Locked (${source})</span>`;
+            if (hoursBreakdown) hoursBreakdown.style.display = 'block';
         } else if (previouslyAllocated > 0) {
             // Has previous allocations but no budget - pre-fill with minimum
             totalHoursInput.value = previouslyAllocated.toFixed(1);
@@ -9880,9 +9900,9 @@ async function showCooMultiDesignerAllocationModal(projectId) {
             totalHoursInput.min = previouslyAllocated; // Can't go below what's already allocated
             totalHoursInput.placeholder = `Minimum: ${previouslyAllocated.toFixed(1)}`;
             totalHoursInput.title = `Set total budget (minimum ${previouslyAllocated.toFixed(1)}h already allocated)`;
-            sourceText.innerHTML = `<span style="color: #f59e0b;">⚠️ Set budget (min: ${previouslyAllocated.toFixed(1)}h already allocated)</span>`;
-            budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Budget Required - Set total hours</span>`;
-            hoursBreakdown.style.display = 'block';
+            if (sourceText) sourceText.innerHTML = `<span style="color: #f59e0b;">⚠️ Set budget (min: ${previouslyAllocated.toFixed(1)}h already allocated)</span>`;
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Budget Required - Set total hours</span>`;
+            if (hoursBreakdown) hoursBreakdown.style.display = 'block';
         } else {
             // Fresh project - no budget, no allocations
             totalHoursInput.value = '';
@@ -9892,9 +9912,9 @@ async function showCooMultiDesignerAllocationModal(projectId) {
             totalHoursInput.min = 1;
             totalHoursInput.placeholder = "Enter Total Project Budget";
             totalHoursInput.title = "Enter a budget - it will be locked after first allocation.";
-            sourceText.innerHTML = `<span style="color: #f59e0b;">⚠️ Enter total hours - will be locked after allocation</span>`;
-            budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Pending - Enter budget to start</span>`;
-            hoursBreakdown.style.display = 'none';
+            if (sourceText) sourceText.innerHTML = `<span style="color: #f59e0b;">⚠️ Enter total hours - will be locked after allocation</span>`;
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Pending - Enter budget to start</span>`;
+            if (hoursBreakdown) hoursBreakdown.style.display = 'none';
         }
         
         // E. Store crucial values in dataset for submission/calculation functions
@@ -9908,14 +9928,14 @@ async function showCooMultiDesignerAllocationModal(projectId) {
 
         // G. Reset Form Fields and Set Initial Status
         designerAllocationCounter = 0;
-        document.getElementById('designerAllocationsContainer').innerHTML = '';
-        document.getElementById('cooAllocationNotes').value = project.allocationNotes || '';
-        document.getElementById('cooTargetCompletionDate').value = project.targetCompletionDate || '';
-        document.getElementById('cooProjectPriority').value = project.priority || 'Normal';
+        designerContainer.innerHTML = '';
+        if (notesField) notesField.value = project.allocationNotes || '';
+        if (dateField) dateField.value = project.targetCompletionDate || '';
+        if (priorityField) priorityField.value = project.priority || 'Normal';
         
         if (isFullyAllocated) {
             // Project is fully allocated - show completion message
-            document.getElementById('designerAllocationsContainer').innerHTML = `
+            designerContainer.innerHTML = `
                 <div class="alert alert-success" style="padding: 1.5rem; background: #d1fae5; color: #065f46; border: 1px solid #10b981; border-radius: 8px; text-align: center;">
                     <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
                     <strong>Allocation Completed</strong><br>
@@ -9928,19 +9948,19 @@ async function showCooMultiDesignerAllocationModal(projectId) {
                 submitBtn.innerHTML = "Allocation Complete";
                 submitBtn.style.opacity = "0.6";
             }
-            budgetStatusDiv.innerHTML = `<span style="color: #059669;">✅ Fully Allocated</span>`;
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">✅ Fully Allocated</span>`;
         } else {
             // Partial or New Allocation
             if (previouslyAllocated > 0 && isBudgetLocked) {
                 // Has previous allocations with a proper budget
-                document.getElementById('designerAllocationsContainer').innerHTML = `
+                designerContainer.innerHTML = `
                     <div class="alert alert-info" style="padding: 1rem; margin-bottom: 1rem; background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; border-radius: 8px;">
                         <strong>ℹ️ Continue Allocation:</strong> ${previouslyAllocated.toFixed(1)}hrs already assigned. ${remainingBudget.toFixed(1)}hrs remaining to allocate.
                     </div>
                 `;
             } else if (previouslyAllocated > 0 && !isBudgetLocked) {
                 // Has previous allocations but NO proper budget - this is an issue
-                document.getElementById('designerAllocationsContainer').innerHTML = `
+                designerContainer.innerHTML = `
                     <div class="alert alert-warning" style="padding: 1rem; margin-bottom: 1rem; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; border-radius: 8px;">
                         <strong>⚠️ Budget Required:</strong> ${previouslyAllocated.toFixed(1)}hrs were previously allocated but no total budget was set. 
                         Please set the Total Allocated Hours above (minimum ${previouslyAllocated.toFixed(1)}hrs) before continuing.
@@ -9969,7 +9989,7 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         
         // --- ALLOCATION LOGIC END ---
         
-        document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
+        modal.style.display = 'flex';
         updateRemainingHours(); // Initial calculation
         
     } catch (error) {
@@ -10054,6 +10074,12 @@ function updateRemainingHours() {
     const budgetStatusDiv = document.getElementById('cooBudgetStatus');
     const submitBtn = document.getElementById('cooSubmitAllocationBtn');
     
+    // Early exit if critical elements don't exist
+    if (!totalInput) {
+        console.warn('updateRemainingHours: totalInput not found');
+        return;
+    }
+    
     // 1. Get Budget (from input value)
     const totalBudget = parseFloat(totalInput.value) || 0;
     
@@ -10081,64 +10107,72 @@ function updateRemainingHours() {
     
     // 6. Update Dashboard Display
     if (totalBudget > 0) {
-        hoursBreakdown.style.display = 'block';
+        if (hoursBreakdown) hoursBreakdown.style.display = 'block';
         
-        // Update all display values
-        document.getElementById('cooDisplayTotalBudget').textContent = totalBudget.toFixed(1) + 'h';
-        document.getElementById('cooDisplayBudgetSource').textContent = isLocked ? `🔒 ${source}` : 'Manual Entry';
-        document.getElementById('cooDisplayPreviouslyAllocated').textContent = previouslyAssigned.toFixed(1) + 'h';
-        document.getElementById('cooDisplayCurrentSession').textContent = currentSessionAllocation.toFixed(1) + 'h';
-        document.getElementById('cooDisplayRemaining').textContent = remaining.toFixed(1) + 'h';
-        document.getElementById('cooAllocationPercent').textContent = percentUsed.toFixed(0) + '%';
-        document.getElementById('cooAllocationProgressBar').style.width = Math.min(percentUsed, 100) + '%';
-        
-        // Update remaining box color based on status
+        // Update all display values with null checks
+        const displayTotalBudget = document.getElementById('cooDisplayTotalBudget');
+        const displayBudgetSource = document.getElementById('cooDisplayBudgetSource');
+        const displayPreviouslyAllocated = document.getElementById('cooDisplayPreviouslyAllocated');
+        const displayCurrentSession = document.getElementById('cooDisplayCurrentSession');
+        const displayRemaining = document.getElementById('cooDisplayRemaining');
+        const allocationPercent = document.getElementById('cooAllocationPercent');
+        const allocationProgressBar = document.getElementById('cooAllocationProgressBar');
         const remainingBox = document.getElementById('cooRemainingBox');
         
+        if (displayTotalBudget) displayTotalBudget.textContent = totalBudget.toFixed(1) + 'h';
+        if (displayBudgetSource) displayBudgetSource.textContent = isLocked ? `🔒 ${source}` : 'Manual Entry';
+        if (displayPreviouslyAllocated) displayPreviouslyAllocated.textContent = previouslyAssigned.toFixed(1) + 'h';
+        if (displayCurrentSession) displayCurrentSession.textContent = currentSessionAllocation.toFixed(1) + 'h';
+        if (displayRemaining) displayRemaining.textContent = remaining.toFixed(1) + 'h';
+        if (allocationPercent) allocationPercent.textContent = percentUsed.toFixed(0) + '%';
+        if (allocationProgressBar) allocationProgressBar.style.width = Math.min(percentUsed, 100) + '%';
+        
+        // Update remaining box color based on status
         if (isBudgetBelowMinimum) {
             // Budget is below the minimum required
-            remainingBox.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            document.getElementById('cooDisplayRemaining').textContent = 'Invalid';
-            budgetStatusDiv.innerHTML = `<span style="color: #ef4444;">❌ Budget must be at least ${minBudget.toFixed(1)}h (already allocated)</span>`;
+            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            if (displayRemaining) displayRemaining.textContent = 'Invalid';
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #ef4444;">❌ Budget must be at least ${minBudget.toFixed(1)}h (already allocated)</span>`;
             if(submitBtn) submitBtn.disabled = true;
         } else if (remaining < 0) {
             // Over budget
-            remainingBox.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            document.getElementById('cooDisplayRemaining').textContent = remaining.toFixed(1) + 'h ⚠️';
-            budgetStatusDiv.innerHTML = `<span style="color: #ef4444;">❌ Over Budget by ${Math.abs(remaining).toFixed(1)}h!</span>`;
+            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            if (displayRemaining) displayRemaining.textContent = remaining.toFixed(1) + 'h ⚠️';
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #ef4444;">❌ Over Budget by ${Math.abs(remaining).toFixed(1)}h!</span>`;
             if(submitBtn) submitBtn.disabled = true;
         } else if (remaining < 0.1) {
             // Fully allocated (or will be)
-            remainingBox.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            budgetStatusDiv.innerHTML = `<span style="color: #059669;">✅ ${currentSessionAllocation > 0 ? 'Will Be Fully Allocated' : 'Fully Allocated'}</span>`;
+            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">✅ ${currentSessionAllocation > 0 ? 'Will Be Fully Allocated' : 'Fully Allocated'}</span>`;
             if(submitBtn && currentSessionAllocation > 0) submitBtn.disabled = false;
             else if(submitBtn && currentSessionAllocation === 0) submitBtn.disabled = true;
         } else if (remaining < (totalBudget * 0.2)) {
             // Low remaining
-            remainingBox.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-            budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Low Remaining: ${remaining.toFixed(1)}h</span>`;
+            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Low Remaining: ${remaining.toFixed(1)}h</span>`;
             if(submitBtn) submitBtn.disabled = false;
         } else {
             // Good amount remaining
-            remainingBox.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            budgetStatusDiv.innerHTML = `<span style="color: #059669;">✓ ${remaining.toFixed(1)}h Available</span>`;
+            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">✓ ${remaining.toFixed(1)}h Available</span>`;
             if(submitBtn) submitBtn.disabled = false;
         }
         
         // Update progress bar color
-        const progressBar = document.getElementById('cooAllocationProgressBar');
-        if (remaining < 0 || isBudgetBelowMinimum) {
-            progressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
-        } else if (percentUsed >= 80) {
-            progressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #10b981 100%)';
-        } else {
-            progressBar.style.background = 'linear-gradient(90deg, #8b5cf6 0%, #10b981 100%)';
+        if (allocationProgressBar) {
+            if (remaining < 0 || isBudgetBelowMinimum) {
+                allocationProgressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
+            } else if (percentUsed >= 80) {
+                allocationProgressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #10b981 100%)';
+            } else {
+                allocationProgressBar.style.background = 'linear-gradient(90deg, #8b5cf6 0%, #10b981 100%)';
+            }
         }
         
     } else {
         // No budget entered yet
-        hoursBreakdown.style.display = 'none';
-        budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Enter Total Hours Budget First</span>`;
+        if (hoursBreakdown) hoursBreakdown.style.display = 'none';
+        if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Enter Total Hours Budget First</span>`;
         if(submitBtn) submitBtn.disabled = true;
     }
 }
