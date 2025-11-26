@@ -8609,179 +8609,239 @@ async function showDesignerAllocations() {
     }
 }
    async function showProjectFilesModal(projectId, projectName) {
-    console.log('📂 === showProjectFilesModal START ===');
-    console.log('📂 ProjectId:', projectId);
-    console.log('📂 ProjectName:', projectName);
+    console.log('📂 Opening files for project:', projectId, projectName);
     
-    // Remove any existing modal
-    const existingModal = document.getElementById('projectFilesModalOverlay');
-    if (existingModal) {
-        console.log('📂 Removing existing modal');
-        existingModal.remove();
-    }
+    // Close any existing modals first
+    closeAllModals();
     
-    // Create modal HTML
+    // Create professional modal
     const modalHtml = `
-        <div class="modal-overlay" id="projectFilesModalOverlay" style="display:flex; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
-            <div style="max-width:900px; width:90%; max-height:90vh; overflow:hidden; display:flex; flex-direction:column; background:white; border-radius:12px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);">
-                <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:1.5rem; border-radius:12px 12px 0 0; display:flex; justify-content:space-between; align-items:flex-start;">
+        <div class="modal-overlay" id="projectFilesModalOverlay" onclick="handleModalOverlayClick(event, 'projectFilesModalOverlay')">
+            <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0;">
                     <div>
-                        <h2 style="margin:0; font-size:1.25rem;">📂 Project Files</h2>
-                        <p style="margin:0.5rem 0 0 0; opacity:0.9; font-size:0.9rem;" id="filesModalSubtitle">${projectName || 'Loading...'}</p>
+                        <h2 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-size: 1.5rem;">📂</span> Project Files
+                        </h2>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem;" id="filesModalProjectName">${projectName}</p>
                     </div>
-                    <span onclick="document.getElementById('projectFilesModalOverlay').remove()" style="color:white; font-size:1.5rem; cursor:pointer; padding:0 0.5rem;">&times;</span>
+                    <span class="close-modal" onclick="closeProjectFilesModal()" style="color: white; font-size: 2rem; cursor: pointer;">&times;</span>
                 </div>
-                <div id="projectFilesContent" style="flex:1; overflow-y:auto; padding:1.5rem; min-height:150px; max-height:60vh;">
-                    <div style="text-align:center; padding:2rem;">
-                        <div style="display:inline-block; width:30px; height:30px; border:3px solid #e5e7eb; border-top-color:#667eea; border-radius:50%; animation:filespin 1s linear infinite;"></div>
-                        <p style="margin-top:1rem; color:#6b7280;">Loading files...</p>
+                
+                <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: center; align-items: center; padding: 3rem;">
+                        <div class="loading-spinner"></div>
                     </div>
                 </div>
-                <div style="border-top:1px solid #e5e7eb; padding:1rem 1.5rem; background:#f9fafb; text-align:right;">
-                    <button onclick="document.getElementById('projectFilesModalOverlay').remove()" style="padding:0.5rem 1.5rem; border:1px solid #d1d5db; border-radius:6px; background:white; cursor:pointer;">Close</button>
+                
+                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb;">
+                    <button type="button" onclick="closeProjectFilesModal()" class="btn btn-outline">Close</button>
                 </div>
             </div>
         </div>
-        <style>@keyframes filespin{to{transform:rotate(360deg)}}</style>
     `;
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
-    console.log('📂 Modal inserted into DOM');
-    
     const content = document.getElementById('projectFilesContent');
-    if (!content) {
-        console.error('📂 ERROR: projectFilesContent not found!');
-        alert('Error: Modal content element not found');
-        return;
-    }
-    console.log('📂 Content element found');
-
-    // Helper to update content
-    const setContent = (html) => {
-        console.log('📂 Setting content...');
-        if (content) content.innerHTML = html;
-    };
 
     try {
-        // Step 1: Fetch project
-        console.log('📂 Step 1: Calling projects API...');
-        let project;
-        try {
-            const projectResponse = await apiCall(`projects?id=${projectId}`);
-            console.log('📂 Project response:', projectResponse);
-            
-            if (!projectResponse || !projectResponse.success || !projectResponse.data) {
-                throw new Error(projectResponse?.error || 'No project data returned');
-            }
-            project = projectResponse.data;
-        } catch (projErr) {
-            console.error('📂 Project fetch error:', projErr);
-            setContent(`
-                <div style="text-align:center; padding:2rem;">
-                    <p style="color:#dc2626; font-weight:600;">❌ Failed to load project</p>
-                    <p style="color:#6b7280; font-size:0.9rem;">${projErr.message}</p>
-                </div>
-            `);
-            return;
+        // Get the project details to find the proposalId
+        const projectResponse = await apiCall(`projects?id=${projectId}`);
+        
+        if (!projectResponse.success) {
+            throw new Error(projectResponse.error || 'Failed to fetch project details.');
         }
-
-        console.log('📂 Project loaded:', project.projectName);
-        console.log('📂 Proposal ID:', project.proposalId);
-
-        // Update subtitle
-        const subtitle = document.getElementById('filesModalSubtitle');
-        if (subtitle) {
-            subtitle.textContent = `${project.projectName || projectName} | ${project.projectCode || project.projectNumber || 'N/A'}`;
-        }
-
-        // Check for proposalId
-        if (!project.proposalId) {
-            console.log('📂 No proposalId found');
-            setContent(`
-                <div style="text-align:center; padding:2rem;">
-                    <p style="font-size:2rem;">⚠️</p>
-                    <p style="color:#92400e; font-weight:600;">No Linked Proposal</p>
-                    <p style="color:#6b7280; font-size:0.9rem;">Files are stored with proposals. This project has no linked proposal.</p>
-                </div>
-            `);
-            return;
-        }
-
-        // Step 2: Fetch files
-        console.log('📂 Step 2: Fetching files for proposalId:', project.proposalId);
+        
+        const project = projectResponse.data;
+        console.log('📦 Project details:', project);
+        
+        // Update project name with more details
+        document.getElementById('filesModalProjectName').innerHTML = `
+            <span>${projectName}</span>
+            <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectCode || 'No Code'} | ${project.clientCompany || ''}</span>
+        `;
+        
+        // Fetch files using multiple approaches
         let files = [];
         
+        // Approach 1: Try fetching by projectId
         try {
-            const filesResponse = await apiCall(`files?proposalId=${project.proposalId}`);
-            console.log('📂 Files response:', filesResponse);
-            
-            if (filesResponse && filesResponse.success && filesResponse.data) {
-                files = Array.isArray(filesResponse.data) ? filesResponse.data : [];
+            const response1 = await apiCall(`files?projectId=${projectId}`);
+            if (response1.success && response1.data && response1.data.length > 0) {
+                files = response1.data;
+                console.log('✅ Files found using projectId:', files.length);
             }
-        } catch (filesErr) {
-            console.error('📂 Files fetch error:', filesErr);
-            // Continue with empty files array - don't throw
+        } catch (err) {
+            console.log('⚠️ Could not fetch files by projectId:', err.message);
         }
-
-        console.log('📂 Files count:', files.length);
-
-        // No files
+        
+        // Approach 2: If no files found and we have a proposalId, try that
+        if (files.length === 0 && project.proposalId) {
+            try {
+                const response2 = await apiCall(`files/list?proposalId=${project.proposalId}`);
+                if (response2.success && response2.data && response2.data.length > 0) {
+                    files = response2.data;
+                    console.log('✅ Files found using proposalId:', files.length);
+                }
+            } catch (err) {
+                console.log('⚠️ Could not fetch files by proposalId:', err.message);
+            }
+        }
+        
+        // Approach 3: Try the legacy endpoint as a fallback
+        if (files.length === 0 && project.proposalId) {
+            try {
+                const response3 = await apiCall(`files?proposalId=${project.proposalId}`);
+                if (response3.success && response3.data && response3.data.length > 0) {
+                    files = response3.data;
+                    console.log('✅ Files found using legacy endpoint:', files.length);
+                }
+            } catch (err) {
+                console.log('⚠️ Could not fetch files using legacy endpoint:', err.message);
+            }
+        }
+        
+        console.log('📊 Total files retrieved:', files.length);
+        
         if (files.length === 0) {
-            setContent(`
-                <div style="text-align:center; padding:2rem;">
-                    <p style="font-size:2rem;">📭</p>
-                    <p style="color:#374151; font-weight:600;">No Files Yet</p>
-                    <p style="color:#6b7280; font-size:0.9rem;">No files have been uploaded for this project.</p>
-                    <p style="color:#9ca3af; font-size:0.8rem; margin-top:1rem;">Proposal ID: ${project.proposalId}</p>
+            content.innerHTML = `
+                <div style="text-align: center; padding: 4rem 2rem;">
+                    <div style="width: 100px; height: 100px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                        <span style="font-size: 3rem;">📭</span>
+                    </div>
+                    <h3 style="color: #374151; margin-bottom: 0.5rem;">No Files Available</h3>
+                    <p style="color: #6b7280; max-width: 400px; margin: 0 auto;">
+                        No files have been uploaded for this project yet. Files will appear here once the team uploads drawings, specifications, or other documents.
+                    </p>
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; display: inline-block;">
+                        <small style="color: #6b7280;">
+                            <strong>Project:</strong> ${project.projectCode || 'N/A'} &nbsp;|&nbsp; 
+                            <strong>Client:</strong> ${project.clientCompany || 'N/A'}
+                        </small>
+                    </div>
                 </div>
-            `);
+            `;
             return;
         }
 
-        // Build file list
-        console.log('📂 Building file list HTML...');
-        let html = `<div style="margin-bottom:1rem; padding:0.75rem; background:#f3f4f6; border-radius:8px;"><strong>📊 ${files.length} file(s) found</strong></div>`;
+        // Group files by type
+        const filesByType = {
+            drawing: [],
+            specification: [],
+            estimate: [],
+            project: [],
+            other: []
+        };
         
-        files.forEach((file, idx) => {
-            const name = file.originalName || file.fileName || 'Unknown';
-            const url = file.url || file.fileUrl || '';
-            const uploader = file.uploadedByName || 'Unknown';
-            const type = file.fileType || 'file';
-            const isLink = type === 'link';
+        files.forEach(file => {
+            const type = file.fileType || 'other';
+            if (filesByType[type]) {
+                filesByType[type].push(file);
+            } else {
+                filesByType.other.push(file);
+            }
+        });
+
+        // Build professional file list
+        const typeConfig = {
+            drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6', bg: '#eff6ff' },
+            specification: { icon: '📋', label: 'Specifications', color: '#10b981', bg: '#ecfdf5' },
+            estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b', bg: '#fffbeb' },
+            project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6', bg: '#f5f3ff' },
+            other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
+        };
+        
+        let fileListHtml = `
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
+                    📊 Total Files: ${files.length}
+                </div>
+            </div>
+        `;
+        
+        Object.keys(filesByType).forEach(type => {
+            const typeFiles = filesByType[type];
+            if (typeFiles.length === 0) return;
             
-            console.log(`📂 File ${idx + 1}:`, name, url ? '(has URL)' : '(no URL)');
+            const config = typeConfig[type];
             
-            html += `
-                <div style="display:flex; align-items:center; padding:1rem; margin-bottom:0.5rem; background:white; border:1px solid #e5e7eb; border-radius:8px;">
-                    <div style="flex:1; min-width:0;">
-                        <div style="font-weight:600; color:#1f2937; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${name}">${name}</div>
-                        <div style="font-size:0.8rem; color:#6b7280;">📤 ${uploader} | 📁 ${type}</div>
+            fileListHtml += `
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ${config.color}20;">
+                        <span style="width: 40px; height: 40px; background: ${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            ${config.icon}
+                        </span>
+                        <div>
+                            <h3 style="margin: 0; color: ${config.color}; font-size: 1.1rem;">${config.label}</h3>
+                            <small style="color: #6b7280;">${typeFiles.length} file${typeFiles.length > 1 ? 's' : ''}</small>
+                        </div>
                     </div>
-                    <div style="margin-left:1rem; flex-shrink:0;">
-                        ${url ? `
-                            <a href="${url}" target="_blank" style="display:inline-block; padding:0.4rem 1rem; background:#3b82f6; color:white; border-radius:6px; text-decoration:none; font-size:0.85rem;">
-                                ${isLink ? '🔗 Open' : '👁️ View'}
-                            </a>
-                        ` : `<span style="color:#ef4444; font-size:0.8rem;">No URL</span>`}
+                    <div style="display: grid; gap: 0.75rem;">
+                        ${typeFiles.map((file, index) => {
+                            const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
+                            const uploadedBy = file.uploadedByName || 'Unknown';
+                            const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
+                            const fileExt = file.fileName.split('.').pop().toUpperCase();
+                            
+                            return `
+                                <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
+                                     onmouseover="this.style.borderColor='${config.color}'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)';"
+                                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)';">
+                                    
+                                    <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
+                                        <span style="font-size: 0.75rem; font-weight: 700; color: ${config.color};">${fileExt}</span>
+                                    </div>
+                                    
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.fileName}">
+                                            ${file.fileName}
+                                        </div>
+                                        <div style="font-size: 0.8rem; color: #6b7280;">
+                                            <span>📤 ${uploadedBy}</span>
+                                            <span style="margin: 0 0.5rem;">•</span>
+                                            <span>📅 ${uploadDate}</span>
+                                            ${fileSize ? `<span style="margin: 0 0.5rem;">•</span><span>💾 ${fileSize}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
+                                        <button onclick="window.open('${file.fileUrl}', '_blank')" 
+                                                class="btn btn-outline btn-sm"
+                                                style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
+                                                title="View in new tab">
+                                            👁️ View
+                                        </button>
+                                        <button onclick="downloadFile('${file.fileUrl}', '${file.fileName}')" 
+                                                class="btn btn-primary btn-sm"
+                                                style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
+                                                title="Download file">
+                                            ⬇️ Download
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
                     </div>
                 </div>
             `;
         });
 
-        console.log('📂 Setting final content...');
-        setContent(html);
-        console.log('📂 === showProjectFilesModal END ===');
+        content.innerHTML = fileListHtml;
 
     } catch (error) {
-        console.error('📂 FATAL ERROR:', error);
-        setContent(`
-            <div style="text-align:center; padding:2rem;">
-                <p style="font-size:2rem;">❌</p>
-                <p style="color:#dc2626; font-weight:600;">Error Loading Files</p>
-                <p style="color:#6b7280; font-size:0.9rem;">${error.message}</p>
-                <button onclick="showProjectFilesModal('${projectId}', '${(projectName||'').replace(/'/g,"\\'")}');" style="margin-top:1rem; padding:0.5rem 1rem; background:#3b82f6; color:white; border:none; border-radius:6px; cursor:pointer;">🔄 Retry</button>
+        console.error("❌ Error loading project files:", error);
+        content.innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+                <div style="width: 80px; height: 80px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                    <span style="font-size: 2.5rem;">⚠️</span>
+                </div>
+                <h3 style="color: #dc2626; margin-bottom: 0.5rem;">Error Loading Files</h3>
+                <p style="color: #6b7280;">${error.message}</p>
+                <button onclick="showProjectFilesModal('${projectId}', '${projectName}')" class="btn btn-primary" style="margin-top: 1rem;">
+                    🔄 Retry
+                </button>
             </div>
-        `);
+        `;
     }
 }
 
@@ -9796,201 +9856,120 @@ async function loadAvailableDesigners() {
     }
 }
 
+/**
+ * Show the multi-designer allocation modal for COO
+ * UPDATED: Logic for Budget Hours (Estimation > Manual > Locked)
+ */
 async function showCooMultiDesignerAllocationModal(projectId) {
     try {
         showLoading();
         
-        // 0. Verify modal exists in DOM
-        const modal = document.getElementById('cooMultiDesignerAllocationModal');
-        if (!modal) {
-            throw new Error('Allocation modal not found in page. Please refresh and try again.');
-        }
-        
-        // 1. Load project details
+        // 1. Load project details to get current status
         const projectResponse = await apiCall(`projects?id=${projectId}`);
         if (!projectResponse.success || !projectResponse.data) {
             throw new Error('Failed to load project details');
         }
         
         const project = projectResponse.data;
-        console.log('📦 Project data for allocation:', project);
         
         // 2. Load available designers
         await loadAvailableDesigners();
         
-        // 3. Get all required DOM elements with null checks
-        const cooAllocProjectId = document.getElementById('cooAllocProjectId');
-        const cooAllocProjectNumber = document.getElementById('cooAllocProjectNumber');
-        const cooAllocProjectName = document.getElementById('cooAllocProjectName');
-        const cooAllocClientName = document.getElementById('cooAllocClientName');
-        const totalHoursInput = document.getElementById('cooTotalProjectHours');
-        const addDesignerBtn = document.getElementById('cooAddDesignerBtn');
-        const submitBtn = document.getElementById('cooSubmitAllocationBtn');
-        const hoursBreakdown = document.getElementById('cooHoursBreakdown');
-        const budgetStatusDiv = document.getElementById('cooBudgetStatus');
-        const sourceText = document.getElementById('cooTotalHoursSource');
-        const designerContainer = document.getElementById('designerAllocationsContainer');
-        const notesField = document.getElementById('cooAllocationNotes');
-        const dateField = document.getElementById('cooTargetCompletionDate');
-        const priorityField = document.getElementById('cooProjectPriority');
-        
-        // Verify critical elements exist
-        if (!cooAllocProjectId || !totalHoursInput || !designerContainer) {
-            throw new Error('Critical modal elements not found. Please refresh the page.');
+        if (availableDesigners.length === 0) {
+            alert('No designers found in the system. Please create designer accounts first.');
+            hideLoading();
+            return;
         }
         
-        // 4. Populate project info
-        cooAllocProjectId.value = projectId;
-        if (cooAllocProjectNumber) cooAllocProjectNumber.textContent = project.projectNumber || 'N/A';
-        if (cooAllocProjectName) cooAllocProjectName.textContent = project.projectName || 'N/A';
-        if (cooAllocClientName) cooAllocClientName.textContent = project.clientCompany || 'N/A';
+        // 3. Populate project info
+        document.getElementById('cooAllocProjectId').value = projectId;
+        document.getElementById('cooAllocProjectNumber').textContent = project.projectNumber || 'N/A';
+        document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
+        document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
         
-        // --- ALLOCATION LOGIC START (Budget Determination & Locking) ---
-
-        // A. Determine the already allocated hours first
-        const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
+        // --- UPDATED BUDGET LOGIC START ---
         
-        // B. Determine the Total Budget (maxAllocatedHours)
+        // 1. Check for Estimation Hours first
+        const estimationHours = parseFloat(project.estimation?.totalHours || project.estimation?.manhours || 0);
+        // 2. Check for previously saved Max Allocated Hours
+        const savedMaxHours = parseFloat(project.maxAllocatedHours || 0);
+        
         let totalBudget = 0;
-        let source = "Manual Entry";
-        let isBudgetLocked = false;
-        
-        // Priority 1: Already saved Max Hours (means budget was set previously)
-        if (project.maxAllocatedHours && project.maxAllocatedHours > 0) {
-            totalBudget = parseFloat(project.maxAllocatedHours);
-            source = project.maxHoursSource || "Previously Set";
-            isBudgetLocked = true;
-        } 
-        // Priority 2: Estimation exists and Max Hours is not set yet
-        else if (project.estimation && (project.estimation.totalHours || project.estimation.manhours)) {
-            totalBudget = parseFloat(project.estimation.totalHours || project.estimation.manhours);
-            source = "Estimation";
-            isBudgetLocked = true;
+        let isLocked = false;
+
+        // Logic: If estimation exists, use it and lock. 
+        // If no estimation but saved budget exists (manual entry from before), use it and lock.
+        // Otherwise, leave open for manual entry.
+        if (estimationHours > 0) {
+            totalBudget = estimationHours;
+            isLocked = true; 
+        } else if (savedMaxHours > 0) {
+            totalBudget = savedMaxHours;
+            isLocked = true;
         }
-        // Priority 3: No budget set but allocations exist - this is a data issue
-        // Allow COO to set the budget (must be >= previously allocated)
-        else if (previouslyAllocated > 0) {
-            // Budget was never properly set but hours were allocated
-            // Pre-fill with the allocated amount as minimum
-            totalBudget = previouslyAllocated;
-            source = "Previously Allocated (Minimum)";
-            isBudgetLocked = false; // Allow COO to increase if needed
-        }
-        
-        // C. Calculate remaining budget
+
+        const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
         const remainingBudget = Math.max(0, totalBudget - previouslyAllocated);
 
-        // D. Configure Total Hours Input based on lock status
-        if (isBudgetLocked) {
-            // Budget is locked - show as read-only
-            totalHoursInput.value = totalBudget.toFixed(1);
-            totalHoursInput.readOnly = true;
-            totalHoursInput.style.backgroundColor = '#e9ecef';
-            totalHoursInput.style.cursor = 'not-allowed';
-            totalHoursInput.title = `Budget is locked. Source: ${source}`;
-            if (sourceText) sourceText.innerHTML = `<span style="color: #059669;">🔒 Locked from ${source}</span>`;
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">🔒 Budget Locked (${source})</span>`;
-            if (hoursBreakdown) hoursBreakdown.style.display = 'block';
-        } else if (previouslyAllocated > 0) {
-            // Has previous allocations but no budget - pre-fill with minimum
-            totalHoursInput.value = previouslyAllocated.toFixed(1);
-            totalHoursInput.readOnly = false;
-            totalHoursInput.style.backgroundColor = '#fff3cd';
-            totalHoursInput.style.cursor = 'text';
-            totalHoursInput.min = previouslyAllocated; // Can't go below what's already allocated
-            totalHoursInput.placeholder = `Minimum: ${previouslyAllocated.toFixed(1)}`;
-            totalHoursInput.title = `Set total budget (minimum ${previouslyAllocated.toFixed(1)}h already allocated)`;
-            if (sourceText) sourceText.innerHTML = `<span style="color: #f59e0b;">⚠️ Set budget (min: ${previouslyAllocated.toFixed(1)}h already allocated)</span>`;
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Budget Required - Set total hours</span>`;
-            if (hoursBreakdown) hoursBreakdown.style.display = 'block';
+        // Set the Total Project Hours input
+        const totalInput = document.getElementById('cooTotalProjectHours');
+        totalInput.value = totalBudget > 0 ? totalBudget : ''; // Leave blank if 0 for manual entry
+        totalInput.readOnly = isLocked; 
+        
+        // Add visual cue if locked
+        if (isLocked) {
+            totalInput.style.backgroundColor = '#e9ecef';
+            totalInput.title = estimationHours > 0 ? "Locked: Derived from Estimation" : "Locked: Previously entered";
         } else {
-            // Fresh project - no budget, no allocations
-            totalHoursInput.value = '';
-            totalHoursInput.readOnly = false;
-            totalHoursInput.style.backgroundColor = '#fff';
-            totalHoursInput.style.cursor = 'text';
-            totalHoursInput.min = 1;
-            totalHoursInput.placeholder = "Enter Total Project Budget";
-            totalHoursInput.title = "Enter a budget - it will be locked after first allocation.";
-            if (sourceText) sourceText.innerHTML = `<span style="color: #f59e0b;">⚠️ Enter total hours - will be locked after allocation</span>`;
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Pending - Enter budget to start</span>`;
-            if (hoursBreakdown) hoursBreakdown.style.display = 'none';
+            totalInput.style.backgroundColor = '#fff';
+            totalInput.placeholder = "Enter Total Budget (Sets once)";
         }
         
-        // E. Store crucial values in dataset for submission/calculation functions
-        totalHoursInput.dataset.alreadyAllocated = previouslyAllocated;
-        totalHoursInput.dataset.source = source;
-        totalHoursInput.dataset.isLocked = isBudgetLocked;
-        totalHoursInput.dataset.minBudget = previouslyAllocated; // Store minimum allowed budget
-        
-        // F. Status Check: Fully Allocated?
-        const isFullyAllocated = isBudgetLocked && totalBudget > 0 && remainingBudget <= 0.1;
+        // Store the "Already Used" amount in the DOM for calculations
+        totalInput.dataset.alreadyAllocated = previouslyAllocated;
 
-        // G. Reset Form Fields and Set Initial Status
+        // --- UPDATED BUDGET LOGIC END ---
+
+        // Reset the form
         designerAllocationCounter = 0;
-        designerContainer.innerHTML = '';
-        if (notesField) notesField.value = project.allocationNotes || '';
-        if (dateField) dateField.value = project.targetCompletionDate || '';
-        if (priorityField) priorityField.value = project.priority || 'Normal';
+        document.getElementById('designerAllocationsContainer').innerHTML = '';
+        document.getElementById('cooAllocationNotes').value = '';
+        document.getElementById('cooTargetCompletionDate').value = '';
+        document.getElementById('cooProjectPriority').value = 'Normal';
         
-        if (isFullyAllocated) {
-            // Project is fully allocated - show completion message
-            designerContainer.innerHTML = `
-                <div class="alert alert-success" style="padding: 1.5rem; background: #d1fae5; color: #065f46; border: 1px solid #10b981; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✅</div>
-                    <strong>Allocation Completed</strong><br>
-                    Budget: ${totalBudget.toFixed(1)}h | Fully Assigned: ${previouslyAllocated.toFixed(1)}h
+        // 4. Check Block Condition
+        const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline');
+        const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+
+        // Only block if budget is set AND fully allocated
+        if (totalBudget > 0 && remainingBudget <= 0.1) {
+            // CASE: FULLY ALLOCATED
+            document.getElementById('designerAllocationsContainer').innerHTML = `
+                <div class="alert alert-success" style="padding: 1rem; background: #d1fae5; color: #065f46; border: 1px solid #10b981; border-radius: 8px; text-align: center;">
+                    <strong>✅ Allocation Complete</strong><br>
+                    This project is fully allocated (${previouslyAllocated}/${totalBudget} hrs).<br>
+                    No further hours can be added.
                 </div>
             `;
+            // Hide/Disable buttons
             if(addDesignerBtn) addDesignerBtn.style.display = 'none';
-            if(submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = "Allocation Complete";
-                submitBtn.style.opacity = "0.6";
-            }
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">✅ Fully Allocated</span>`;
+            if(submitBtn) submitBtn.disabled = true;
+            if(submitBtn) submitBtn.innerText = "Fully Allocated";
         } else {
-            // Partial or New Allocation
-            if (previouslyAllocated > 0 && isBudgetLocked) {
-                // Has previous allocations with a proper budget
-                designerContainer.innerHTML = `
-                    <div class="alert alert-info" style="padding: 1rem; margin-bottom: 1rem; background: #dbeafe; color: #1e40af; border: 1px solid #3b82f6; border-radius: 8px;">
-                        <strong>ℹ️ Continue Allocation:</strong> ${previouslyAllocated.toFixed(1)}hrs already assigned. ${remainingBudget.toFixed(1)}hrs remaining to allocate.
-                    </div>
-                `;
-            } else if (previouslyAllocated > 0 && !isBudgetLocked) {
-                // Has previous allocations but NO proper budget - this is an issue
-                designerContainer.innerHTML = `
-                    <div class="alert alert-warning" style="padding: 1rem; margin-bottom: 1rem; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; border-radius: 8px;">
-                        <strong>⚠️ Budget Required:</strong> ${previouslyAllocated.toFixed(1)}hrs were previously allocated but no total budget was set. 
-                        Please set the Total Allocated Hours above (minimum ${previouslyAllocated.toFixed(1)}hrs) before continuing.
-                    </div>
-                `;
-            }
+            // CASE: PARTIAL or NEW
+            if(addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
+            if(submitBtn) submitBtn.disabled = false;
+            if(submitBtn) submitBtn.innerText = "Allocate Project";
             
-            if(addDesignerBtn) addDesignerBtn.style.display = 'inline-flex';
-            if(submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
-                submitBtn.style.opacity = "1";
-            }
-            
-            // Add first designer row if designers are available
-            if (availableDesigners.length > 0) {
-                addDesignerAllocation(); 
-            } else {
-                document.getElementById('designerAllocationsContainer').innerHTML += `
-                    <div class="alert alert-danger" style="padding: 1rem; background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; border-radius: 8px;">
-                        <strong>❌ No Designers Available:</strong> Please add designers to the system first.
-                    </div>
-                `;
-            }
+            // Add the first row for entry
+            addDesignerAllocation();
         }
         
-        // --- ALLOCATION LOGIC END ---
+        // Show modal
+        document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
         
-        modal.style.display = 'flex';
-        updateRemainingHours(); // Initial calculation
+        // Update the visual display
+        updateRemainingHours();
         
     } catch (error) {
         console.error('Error showing allocation modal:', error);
@@ -10068,112 +10047,63 @@ function removeDesignerAllocation(rowNumber) {
     }
 }
 
+/**
+ * Update remaining hours display strictly accounting for previous allocations
+ */
 function updateRemainingHours() {
-    const totalInput = document.getElementById('cooTotalProjectHours');
-    const hoursBreakdown = document.getElementById('cooHoursBreakdown');
-    const budgetStatusDiv = document.getElementById('cooBudgetStatus');
-    const submitBtn = document.getElementById('cooSubmitAllocationBtn');
+    const totalHoursInput = document.getElementById('cooTotalProjectHours');
+    const totalBudget = parseFloat(totalHoursInput.value) || 0;
     
-    // Early exit if critical elements don't exist
-    if (!totalInput) {
-        console.warn('updateRemainingHours: totalInput not found');
-        return;
-    }
+    // 1. Get hours saved in DB (stored in dataset by showModal function)
+    const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
     
-    // 1. Get Budget (from input value)
-    const totalBudget = parseFloat(totalInput.value) || 0;
-    
-    // 2. Get Previously Assigned (from DB, stored in dataset)
-    const previouslyAssigned = parseFloat(totalInput.dataset.alreadyAllocated) || 0;
-    const source = totalInput.dataset.source || 'Manual';
-    const isLocked = totalInput.dataset.isLocked === 'true';
-    const minBudget = parseFloat(totalInput.dataset.minBudget) || 0;
-    
-    // 3. Get Currently Typing (from rows) - FIXED: Only select from within the COO modal
-    const modal = document.getElementById('cooMultiDesignerAllocationModal');
-    const hoursInputs = modal ? modal.querySelectorAll('#designerAllocationsContainer .hours-input') : [];
+    // 2. Get hours currently being typed in the modal
+    const hoursInputs = document.querySelectorAll('.hours-input');
     let currentSessionAllocation = 0;
     hoursInputs.forEach(input => {
         currentSessionAllocation += parseFloat(input.value) || 0;
     });
     
-    // 4. Calculate
-    const totalUsage = previouslyAssigned + currentSessionAllocation;
-    const remaining = totalBudget - totalUsage;
-    const percentUsed = totalBudget > 0 ? Math.min(100, (totalUsage / totalBudget) * 100) : 0;
+    // 3. Calculate Total Used and Remaining
+    const totalUsed = previouslyAllocated + currentSessionAllocation;
+    const remaining = totalBudget - totalUsed;
     
-    // 5. Validate minimum budget
-    const isBudgetBelowMinimum = totalBudget > 0 && totalBudget < minBudget;
+    const remainingDisplay = document.getElementById('cooRemainingHours');
     
-    // 6. Update Dashboard Display
-    if (totalBudget > 0) {
-        if (hoursBreakdown) hoursBreakdown.style.display = 'block';
-        
-        // Update all display values with null checks
-        const displayTotalBudget = document.getElementById('cooDisplayTotalBudget');
-        const displayBudgetSource = document.getElementById('cooDisplayBudgetSource');
-        const displayPreviouslyAllocated = document.getElementById('cooDisplayPreviouslyAllocated');
-        const displayCurrentSession = document.getElementById('cooDisplayCurrentSession');
-        const displayRemaining = document.getElementById('cooDisplayRemaining');
-        const allocationPercent = document.getElementById('cooAllocationPercent');
-        const allocationProgressBar = document.getElementById('cooAllocationProgressBar');
-        const remainingBox = document.getElementById('cooRemainingBox');
-        
-        if (displayTotalBudget) displayTotalBudget.textContent = totalBudget.toFixed(1) + 'h';
-        if (displayBudgetSource) displayBudgetSource.textContent = isLocked ? `🔒 ${source}` : 'Manual Entry';
-        if (displayPreviouslyAllocated) displayPreviouslyAllocated.textContent = previouslyAssigned.toFixed(1) + 'h';
-        if (displayCurrentSession) displayCurrentSession.textContent = currentSessionAllocation.toFixed(1) + 'h';
-        if (displayRemaining) displayRemaining.textContent = remaining.toFixed(1) + 'h';
-        if (allocationPercent) allocationPercent.textContent = percentUsed.toFixed(0) + '%';
-        if (allocationProgressBar) allocationProgressBar.style.width = Math.min(percentUsed, 100) + '%';
-        
-        // Update remaining box color based on status
-        if (isBudgetBelowMinimum) {
-            // Budget is below the minimum required
-            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            if (displayRemaining) displayRemaining.textContent = 'Invalid';
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #ef4444;">❌ Budget must be at least ${minBudget.toFixed(1)}h (already allocated)</span>`;
-            if(submitBtn) submitBtn.disabled = true;
-        } else if (remaining < 0) {
-            // Over budget
-            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
-            if (displayRemaining) displayRemaining.textContent = remaining.toFixed(1) + 'h ⚠️';
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #ef4444;">❌ Over Budget by ${Math.abs(remaining).toFixed(1)}h!</span>`;
-            if(submitBtn) submitBtn.disabled = true;
-        } else if (remaining < 0.1) {
-            // Fully allocated (or will be)
-            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">✅ ${currentSessionAllocation > 0 ? 'Will Be Fully Allocated' : 'Fully Allocated'}</span>`;
-            if(submitBtn && currentSessionAllocation > 0) submitBtn.disabled = false;
-            else if(submitBtn && currentSessionAllocation === 0) submitBtn.disabled = true;
-        } else if (remaining < (totalBudget * 0.2)) {
-            // Low remaining
-            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Low Remaining: ${remaining.toFixed(1)}h</span>`;
-            if(submitBtn) submitBtn.disabled = false;
-        } else {
-            // Good amount remaining
-            if (remainingBox) remainingBox.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #059669;">✓ ${remaining.toFixed(1)}h Available</span>`;
-            if(submitBtn) submitBtn.disabled = false;
+    // 4. Update Display
+    let statusHtml = `<div style="font-size: 1.8rem; font-weight: 700;">${remaining.toFixed(1)} hrs</div>`;
+    
+    if (previouslyAllocated > 0) {
+        statusHtml += `<div style="font-size: 0.8rem; opacity: 0.8;">(Budget: ${totalBudget} - Prev: ${previouslyAllocated} - Current: ${currentSessionAllocation})</div>`;
+    }
+    
+    remainingDisplay.innerHTML = statusHtml;
+    
+    // 5. Handle Over-Budget State (Visuals & Button Locking)
+    const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+    
+    if (remaining < 0) {
+        // Over Budget
+        remainingDisplay.style.color = 'var(--danger)';
+        remainingDisplay.innerHTML = `
+            <div style="font-size: 1.5rem; font-weight: 700;">⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER</div>
+            <div style="font-size: 0.8rem;">Budget Exceeded</div>
+        `;
+        // Disable submit button
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = "0.5";
+            submitBtn.innerText = "⚠️ Reduce Hours";
         }
-        
-        // Update progress bar color
-        if (allocationProgressBar) {
-            if (remaining < 0 || isBudgetBelowMinimum) {
-                allocationProgressBar.style.background = 'linear-gradient(90deg, #ef4444 0%, #dc2626 100%)';
-            } else if (percentUsed >= 80) {
-                allocationProgressBar.style.background = 'linear-gradient(90deg, #f59e0b 0%, #10b981 100%)';
-            } else {
-                allocationProgressBar.style.background = 'linear-gradient(90deg, #8b5cf6 0%, #10b981 100%)';
-            }
-        }
-        
     } else {
-        // No budget entered yet
-        if (hoursBreakdown) hoursBreakdown.style.display = 'none';
-        if (budgetStatusDiv) budgetStatusDiv.innerHTML = `<span style="color: #f59e0b;">⚠️ Enter Total Hours Budget First</span>`;
-        if(submitBtn) submitBtn.disabled = true;
+        // Valid State
+        remainingDisplay.style.color = remaining === 0 ? 'var(--success)' : 'var(--warning)';
+        // Enable submit button
+        if (submitBtn && submitBtn.innerText !== "Fully Allocated") {
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = "1";
+            submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
+        }
     }
 }
 
@@ -10181,18 +10111,16 @@ function updateRemainingHours() {
  * Validate that no designer is selected twice
  */
 function validateDesignerSelection() {
-    // FIXED: Only select from within COO modal
-    const modal = document.getElementById('cooMultiDesignerAllocationModal');
-    const selects = modal ? modal.querySelectorAll('#designerAllocationsContainer .designer-select') : [];
+    const selects = document.querySelectorAll('.designer-select');
     const selectedUids = [];
     let hasDuplicate = false;
     
     selects.forEach(select => {
         const row = select.closest('.designer-allocation-row');
-        if (row) row.classList.remove('error');
+        row.classList.remove('error');
         
         if (select.value && selectedUids.includes(select.value)) {
-            if (row) row.classList.add('error');
+            row.classList.add('error');
             hasDuplicate = true;
         } else if (select.value) {
             selectedUids.push(select.value);
@@ -10209,42 +10137,17 @@ async function submitCooMultiDesignerAllocation() {
     const projectId = document.getElementById('cooAllocProjectId').value;
     const totalHoursInput = document.getElementById('cooTotalProjectHours');
     const totalBudget = parseFloat(totalHoursInput.value);
-    // Fetch already allocated hours from the HTML element's data attribute
+    // ✅ CORRECT: Fetches already allocated hours from the HTML element's data attribute
     const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
-    const isCurrentlyLocked = totalHoursInput.dataset.isLocked === 'true';
-    const currentSource = totalHoursInput.dataset.source || 'Manual';
-    const minBudget = parseFloat(totalHoursInput.dataset.minBudget) || 0;
     
     // Project Details inputs
     const targetDate = document.getElementById('cooTargetCompletionDate').value;
     const priority = document.getElementById('cooProjectPriority').value;
     const generalNotes = document.getElementById('cooAllocationNotes').value;
 
-    // 1. Budget Validation Check
-    if (!totalBudget || totalBudget <= 0) {
-        alert("⚠️ Please enter a valid Total Project Hours budget before allocating.");
-        document.getElementById('cooTotalProjectHours').focus();
-        return;
-    }
-    
-    // 1b. Check minimum budget
-    if (totalBudget < minBudget) {
-        alert(`⚠️ Budget cannot be less than ${minBudget.toFixed(1)}h (already allocated to designers).`);
-        document.getElementById('cooTotalProjectHours').focus();
-        return;
-    }
-
-    // 2. Determine Max Hours Source
-    // If it's already locked, keep the existing source. Otherwise it's a new Manual entry
-    let maxHoursSource = isCurrentlyLocked ? currentSource : 'Manual';
-    
-    // Validation: Inputs exist - FIXED: Only select from within COO modal
-    const modal = document.getElementById('cooMultiDesignerAllocationModal');
-    const selects = modal.querySelectorAll('#designerAllocationsContainer .designer-select');
-    if (selects.length === 0) {
-        alert("⚠️ Please add at least one designer allocation.");
-        return;
-    }
+    // Validation: Inputs exist
+    const selects = document.querySelectorAll('.designer-select');
+    if (selects.length === 0) return; 
 
     // Collect designer allocations
     const designerAllocations = [];
@@ -10257,15 +10160,13 @@ async function submitCooMultiDesignerAllocation() {
         const notesTextarea = document.getElementById(`notes${rowNum}`);
         
         if (!select.value) {
-            alert(`⚠️ Please select a designer for allocation #${i + 1}`);
-            select.focus();
+            alert(`Please select a designer for allocation #${i + 1}`);
             return;
         }
         
         const hours = parseFloat(hoursInput.value);
         if (!hours || hours <= 0) {
-            alert(`⚠️ Please enter valid hours (greater than 0) for allocation #${i + 1}`);
-            hoursInput.focus();
+            alert(`Please enter valid hours for allocation #${i + 1}`);
             return;
         }
         
@@ -10273,58 +10174,39 @@ async function submitCooMultiDesignerAllocation() {
         
         const selectedOption = select.options[select.selectedIndex];
         designerAllocations.push({
-            designerUid: select.value || '',
-            designerName: selectedOption.dataset.name || 'Unknown',
-            designerEmail: selectedOption.dataset.email || '',
-            designerRole: selectedOption.dataset.role || 'designer',
+            designerUid: select.value,
+            designerName: selectedOption.dataset.name,
+            designerEmail: selectedOption.dataset.email,
+            designerRole: selectedOption.dataset.role,
             allocatedHours: hours,
-            specificNotes: notesTextarea ? notesTextarea.value.trim() : ''  // FIXED: handle null notesTextarea
+            specificNotes: notesTextarea.value.trim()
         });
     }
     
     // --- STRICT BLOCKING LOGIC ---
-    // Calculate the NEW total hours that will be saved to the database
+    // ✅ CORRECT: This calculates the NEW total hours that will be saved to the database.
     const newTotalAllocated = previouslyAllocated + currentSessionTotal;
     
     // Allow a tiny float margin of error (0.1)
     if (newTotalAllocated > totalBudget + 0.1) {
         const overage = (newTotalAllocated - totalBudget).toFixed(1);
-        alert(`⛔ CANNOT PROCEED: You are exceeding the total project budget by ${overage} hours.\n\n` +
-              `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-              `Total Budget: ${totalBudget.toFixed(1)}h\n` +
-              `Already Allocated: ${previouslyAllocated.toFixed(1)}h\n` +
-              `Trying to Add: ${currentSessionTotal.toFixed(1)}h\n` +
-              `━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-              `Please reduce the hours to proceed.`);
-        return;
+        alert(`⛔ BLOCKING ENTRY: You are exceeding the total project budget by ${overage} hours.\n\nTotal Budget: ${totalBudget}\nAlready Used: ${previouslyAllocated}\nTrying to Add: ${currentSessionTotal}\n\nPlease reduce the hours to proceed.`);
+        return; // Stop execution
     }
 
-    // Validate no duplicates
+    // Validate no duplicates (assuming validateDesignerSelection exists globally)
     if (typeof validateDesignerSelection === 'function' && !validateDesignerSelection()) {
-        alert('⚠️ You cannot assign the same designer twice in this session. Please select different designers.');
+        alert('⚠️ You cannot assign the same designer twice. Please select different designers.');
         return;
     }
-    
-    // Calculate remaining after this allocation
-    const remainingAfterAllocation = totalBudget - newTotalAllocated;
     
     const confirmText = `
-📊 ALLOCATION SUMMARY
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Total Budget: ${totalBudget.toFixed(1)} hrs ${isCurrentlyLocked ? `(🔒 ${maxHoursSource})` : '(Will be locked)'}
-
-BEFORE THIS ALLOCATION:
-├─ Allocated to Designers: ${previouslyAllocated.toFixed(1)} hrs
-└─ Available: ${(totalBudget - previouslyAllocated).toFixed(1)} hrs
-
-THIS SESSION:
-${designerAllocations.map((d, i) => `├─ ${d.designerName}: ${d.allocatedHours.toFixed(1)} hrs`).join('\n')}
-└─ Session Total: ${currentSessionTotal.toFixed(1)} hrs
-
-AFTER THIS ALLOCATION:
-├─ Total Allocated: ${newTotalAllocated.toFixed(1)} hrs
-└─ Remaining: ${remainingAfterAllocation.toFixed(1)} hrs
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 Allocation Summary:
+━━━━━━━━━━━━━━━━━━━━━━
+Total Hours: ${totalBudget}hrs
+Designers: ${designerAllocations.length}
+${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours}hrs`).join('')}
+━━━━━━━━━━━━━━━━━━━━━━
 
 Proceed with allocation?`.trim();
     
@@ -10336,23 +10218,18 @@ Proceed with allocation?`.trim();
         showLoading();
         
         // Prepare the update payload with correct action format for backend
-        // IMPORTANT: Ensure NO undefined values are sent to Firestore
         const allocationData = {
             action: 'allocate_to_multiple_designers',
             data: {
-                projectId: projectId || '',
-                // *** CRITICAL FIELDS FOR BUDGET LOCKING ***
-                maxAllocatedHours: totalBudget,     // The Definitive Budget (locks on first save)
-                maxHoursSource: maxHoursSource || 'Manual',     // The source (Manual/Estimation)
-                // *******************************************
-                totalAllocatedHours: newTotalAllocated, // The new total assigned (prev + current)
+                projectId: projectId,
+                totalAllocatedHours: newTotalAllocated,
                 designerAllocations: designerAllocations,
-                targetCompletionDate: targetDate || '',  // FIXED: empty string instead of null
-                priority: priority || 'Normal',
-                allocationNotes: generalNotes || '',     // FIXED: empty string instead of undefined
+                targetCompletionDate: targetDate || null,
+                priority: priority,
+                allocationNotes: generalNotes,
                 isIncremental: true,
                 
-                // Required fields for backend to merge hours
+                // Required fields for backend validation
                 assignedDesignerUids: designerAllocations.map(d => d.designerUid),
                 assignedDesignerNames: designerAllocations.map(d => d.designerName),
                 designerHours: designerAllocations.reduce((acc, d) => {
@@ -10371,10 +10248,7 @@ Proceed with allocation?`.trim();
         });
         
         if (response.success) {
-            showSuccessModal(
-                '✅ Project Allocated Successfully!', 
-                `${designerAllocations.length} designer(s) assigned. Total: ${newTotalAllocated.toFixed(1)}h / ${totalBudget.toFixed(1)}h`
-            );
+            showSuccessModal('✅ Project Allocated Successfully!', 'Designers have been notified.');
             closeCooMultiDesignerModal();
             
             if (typeof showAllProjects === 'function') {
@@ -10391,7 +10265,6 @@ Proceed with allocation?`.trim();
         hideLoading();
     }
 }
-
 /**
  * Close the COO multi-designer allocation modal
  */
@@ -10399,31 +10272,6 @@ function closeCooMultiDesignerModal() {
     document.getElementById('cooMultiDesignerAllocationModal').style.display = 'none';
     document.getElementById('designerAllocationsContainer').innerHTML = '';
     designerAllocationCounter = 0;
-    
-    // Reset the total hours input
-    const totalHoursInput = document.getElementById('cooTotalProjectHours');
-    totalHoursInput.value = '';
-    totalHoursInput.readOnly = false;
-    totalHoursInput.style.backgroundColor = '#fff';
-    totalHoursInput.style.cursor = 'text';
-    totalHoursInput.dataset.alreadyAllocated = '0';
-    totalHoursInput.dataset.source = '';
-    totalHoursInput.dataset.isLocked = 'false';
-    
-    // Reset dashboard display
-    document.getElementById('cooHoursBreakdown').style.display = 'none';
-    document.getElementById('cooBudgetStatus').innerHTML = '<span style="color: var(--text-light);">Enter budget to begin</span>';
-    document.getElementById('cooTotalHoursSource').innerHTML = 'Enter total hours budget for this project';
-    
-    // Reset buttons
-    const addDesignerBtn = document.getElementById('cooAddDesignerBtn');
-    const submitBtn = document.getElementById('cooSubmitAllocationBtn');
-    if (addDesignerBtn) addDesignerBtn.style.display = 'inline-flex';
-    if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
-        submitBtn.style.opacity = '1';
-    }
 }
 
 /**
@@ -15700,7 +15548,7 @@ function handleTonnageInput() {
         }
     </script>
 <div id="cooMultiDesignerAllocationModal" class="modal" style="display: none;">
-    <div class="modal-content new-modal allocation-modal-large" style="max-width: 950px;">
+    <div class="modal-content new-modal allocation-modal-large" style="max-width: 900px;">
         <div class="modal-header">
             <div>
                 <h2>👥 Allocate Project to Multiple Designers</h2>
@@ -15731,60 +15579,21 @@ function handleTonnageInput() {
                 </div>
             </div>
             
-            <!-- Total Hours Section - IMPROVED -->
+            <!-- Total Hours Input -->
             <div class="form-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
-                <h3 style="color: var(--text-dark); margin-bottom: 1rem;">⏱️ Hours Budget & Allocation</h3>
-                
-                <!-- Total Allocated Hours Input Row -->
-                <div class="form-row" style="margin-bottom: 1.5rem;">
+                <h3 style="color: var(--text-dark); margin-bottom: 1rem;">⏱️ Total Project Hours</h3>
+                <div class="form-row">
                     <div class="form-group" style="flex: 1;">
                         <label for="cooTotalProjectHours">Total Allocated Hours <span class="required">*</span></label>
                         <input type="number" id="cooTotalProjectHours" class="form-control" 
                                placeholder="e.g., 120" min="1" step="0.5" 
                                oninput="updateRemainingHours()" required>
-                        <small class="form-text" id="cooTotalHoursSource">Enter total hours budget for this project</small>
+                        <small class="form-text">Total hours budget for this project</small>
                     </div>
                     <div class="form-group" style="flex: 1;">
-                        <label>Budget Status</label>
-                        <div id="cooBudgetStatus" style="font-size: 1rem; font-weight: 600; padding: 0.75rem; background: white; border-radius: 8px; border: 1px solid #e5e7eb;">
-                            <span style="color: var(--text-light);">Enter budget to begin</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Hours Breakdown Dashboard -->
-                <div id="cooHoursBreakdown" style="display: none; background: white; padding: 1rem; border-radius: 10px; border: 2px solid #e5e7eb;">
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center;">
-                        <div style="padding: 1rem; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 8px; color: white;">
-                            <div style="font-size: 0.75rem; opacity: 0.9; text-transform: uppercase;">Total Budget</div>
-                            <div id="cooDisplayTotalBudget" style="font-size: 1.5rem; font-weight: 700;">0h</div>
-                            <div id="cooDisplayBudgetSource" style="font-size: 0.7rem; opacity: 0.8;">-</div>
-                        </div>
-                        <div style="padding: 1rem; background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-radius: 8px; color: white;">
-                            <div style="font-size: 0.75rem; opacity: 0.9; text-transform: uppercase;">Previously Allocated</div>
-                            <div id="cooDisplayPreviouslyAllocated" style="font-size: 1.5rem; font-weight: 700;">0h</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8;">To Designers</div>
-                        </div>
-                        <div style="padding: 1rem; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 8px; color: white;">
-                            <div style="font-size: 0.75rem; opacity: 0.9; text-transform: uppercase;">This Session</div>
-                            <div id="cooDisplayCurrentSession" style="font-size: 1.5rem; font-weight: 700;">0h</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8;">New Allocations</div>
-                        </div>
-                        <div id="cooRemainingBox" style="padding: 1rem; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px; color: white;">
-                            <div style="font-size: 0.75rem; opacity: 0.9; text-transform: uppercase;">Remaining</div>
-                            <div id="cooDisplayRemaining" style="font-size: 1.5rem; font-weight: 700;">0h</div>
-                            <div style="font-size: 0.7rem; opacity: 0.8;">Available</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Progress Bar -->
-                    <div style="margin-top: 1rem;">
-                        <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.25rem;">
-                            <span>Allocation Progress</span>
-                            <span id="cooAllocationPercent">0%</span>
-                        </div>
-                        <div style="height: 10px; background: #e5e7eb; border-radius: 5px; overflow: hidden;">
-                            <div id="cooAllocationProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #8b5cf6 0%, #10b981 100%); transition: width 0.3s ease;"></div>
+                        <label>Remaining Hours to Allocate</label>
+                        <div id="cooRemainingHours" style="font-size: 2rem; font-weight: 700; color: var(--success); padding: 0.5rem;">
+                            0 hrs
                         </div>
                     </div>
                 </div>
@@ -15794,7 +15603,7 @@ function handleTonnageInput() {
             <div class="form-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h3 style="color: var(--text-dark); margin: 0;">👨‍💼 Designer Allocations</h3>
-                    <button type="button" class="btn btn-outline" id="cooAddDesignerBtn" onclick="addDesignerAllocation()">
+                    <button type="button" class="btn btn-outline" onclick="addDesignerAllocation()">
                         <span style="font-size: 1.2rem;">+</span> Add Designer
                     </button>
                 </div>
@@ -15833,7 +15642,7 @@ function handleTonnageInput() {
         
         <div class="modal-footer">
             <button type="button" class="btn btn-cancel" onclick="closeCooMultiDesignerModal()">Cancel</button>
-            <button type="button" class="btn btn-success btn-large" id="cooSubmitAllocationBtn" onclick="submitCooMultiDesignerAllocation()">
+            <button type="button" class="btn btn-success btn-large" onclick="submitCooMultiDesignerAllocation()">
                 <span class="btn-icon">✓</span> Allocate Project
             </button>
         </div>
