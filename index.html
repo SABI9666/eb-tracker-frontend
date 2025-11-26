@@ -10177,6 +10177,17 @@ async function submitCooMultiDesignerAllocation() {
     const priority = document.getElementById('cooProjectPriority').value;
     const generalNotes = document.getElementById('cooAllocationNotes').value;
 
+    // 1. Budget Validation Check
+    if (!totalBudget || totalBudget <= 0) {
+        alert("Please enter a valid Total Project Hours budget.");
+        return;
+    }
+
+    // 2. Determine Max Hours Source
+    const isReadOnly = totalHoursInput.readOnly;
+    // If it's read-only, pull the source from the title, otherwise it's a new Manual entry
+    let maxHoursSource = isReadOnly ? (totalHoursInput.title.includes('Estimation') ? 'Estimation' : 'Manual') : 'Manual';
+    
     // Validation: Inputs exist
     const selects = document.querySelectorAll('.designer-select');
     if (selects.length === 0) return; 
@@ -10222,22 +10233,25 @@ async function submitCooMultiDesignerAllocation() {
     // Allow a tiny float margin of error (0.1)
     if (newTotalAllocated > totalBudget + 0.1) {
         const overage = (newTotalAllocated - totalBudget).toFixed(1);
-        alert(`⛔ BLOCKING ENTRY: You are exceeding the total project budget by ${overage} hours.\n\nTotal Budget: ${totalBudget}\nAlready Used: ${previouslyAllocated}\nTrying to Add: ${currentSessionTotal}\n\nPlease reduce the hours to proceed.`);
+        alert(`⛔ BLOCKING ENTRY: You are exceeding the total project budget by ${overage} hours.\n\nTotal Budget: ${totalBudget.toFixed(1)}\nAlready Used: ${previouslyAllocated.toFixed(1)}\nTrying to Add: ${currentSessionTotal.toFixed(1)}\n\nPlease reduce the hours to proceed.`);
         return; // Stop execution
     }
 
     // Validate no duplicates (assuming validateDesignerSelection exists globally)
     if (typeof validateDesignerSelection === 'function' && !validateDesignerSelection()) {
-        alert('⚠️ You cannot assign the same designer twice. Please select different designers.');
+        alert('⚠️ You cannot assign the same designer twice in this session. Please select different designers.');
         return;
     }
     
     const confirmText = `
 📊 Allocation Summary:
 ━━━━━━━━━━━━━━━━━━━━━━
-Total Hours: ${totalBudget}hrs
-Designers: ${designerAllocations.length}
-${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours}hrs`).join('')}
+Total Budget: ${totalBudget.toFixed(1)}hrs
+Previous Assignments: ${previouslyAllocated.toFixed(1)}hrs
+New Assignments: ${currentSessionTotal.toFixed(1)}hrs
+Final Total Assigned: ${newTotalAllocated.toFixed(1)}hrs
+
+${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours.toFixed(1)}hrs`).join('')}
 ━━━━━━━━━━━━━━━━━━━━━━
 
 Proceed with allocation?`.trim();
@@ -10254,14 +10268,18 @@ Proceed with allocation?`.trim();
             action: 'allocate_to_multiple_designers',
             data: {
                 projectId: projectId,
-                totalAllocatedHours: newTotalAllocated,
+                // *** CRITICAL FIELDS FOR BUDGET LOCKING ***
+                maxAllocatedHours: totalBudget,     // The Definitive Budget
+                maxHoursSource: maxHoursSource,     // The source (Manual/Estimation)
+                // *******************************************
+                totalAllocatedHours: newTotalAllocated, // The new total assigned (prev + current)
                 designerAllocations: designerAllocations,
                 targetCompletionDate: targetDate || null,
                 priority: priority,
                 allocationNotes: generalNotes,
                 isIncremental: true,
                 
-                // Required fields for backend validation
+                // Required fields for backend to merge hours
                 assignedDesignerUids: designerAllocations.map(d => d.designerUid),
                 assignedDesignerNames: designerAllocations.map(d => d.designerName),
                 designerHours: designerAllocations.reduce((acc, d) => {
