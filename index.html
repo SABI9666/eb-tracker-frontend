@@ -8577,9 +8577,38 @@ async function showDesignerAllocations() {
 }
      async function showProjectFilesModal(projectId, projectName) {
     console.log('📂 Opening files for project:', projectId, projectName);
-    
-    // 1. Get DOM elements
-    const modal = document.getElementById('projectFilesModal');
+
+    // -----------------------------------------------------------------------------------
+    // --- FIX: Dynamically create the modal structure if it doesn't exist.
+    // --- This prevents the "TypeError: Cannot set properties of null" error
+    // --- because the elements like 'projectFilesModalTitle' are guaranteed to be in the DOM.
+    // -----------------------------------------------------------------------------------
+    let modal = document.getElementById('projectFilesModal');
+    if (!modal) {
+        // Define the full HTML structure for the project files modal
+        const modalHtml = `
+            <div class="modal-overlay" id="projectFilesModal" onclick="handleModalOverlayClick(event, 'projectFilesModal')">
+                <div class="modal-content" style="max-width: 900px;">
+                    <div class="modal-header">
+                        <h2 id="projectFilesModalTitle"></h2>
+                        <span class="close-modal" onclick="closeModal('projectFilesModal')">&times;</span>
+                    </div>
+                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                        <p id="projectFilesModalSubtitle" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
+                        <div id="projectFilesContent">
+                            </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="closeModal('projectFilesModal')">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    // -----------------------------------------------------------------------------------
+
+    // 1. Get DOM elements (These are now guaranteed to exist)
     const title = document.getElementById('projectFilesModalTitle');
     const subtitle = document.getElementById('projectFilesModalSubtitle');
     const content = document.getElementById('projectFilesContent');
@@ -8604,7 +8633,6 @@ async function showDesignerAllocations() {
         console.log('📦 Project details:', project);
         
         // 5. Fetch files using BOTH projectId AND proposalId
-        // Try multiple approaches to ensure we get the files
         let files = [];
         
         // Approach 1: Try fetching by projectId
