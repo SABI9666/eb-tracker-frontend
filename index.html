@@ -8780,14 +8780,18 @@ function formatFileSize(bytes) {
         // TASKS (Designer)
         // ============================================
 
-        async function showTasks() { /* ... (Unchanged) ... */ }
+        // showTasks is defined later in the file (line ~14580)
+        // showDesignerDashboard calls showDesignerAllocations
         function renderTasksList(tasks) { /* ... (Unchanged) ... */ }
 
         // ============================================
         // DELIVERABLES (Designer)
         // ============================================
 
-        async function showDesignerDashboard() { /* ... (Unchanged) ... */ }
+        async function showDesignerDashboard() {
+            // Designer dashboard shows the Project Allocations view
+            await showDesignerAllocations();
+        }
                 async function viewDesignerProject(projectId) {
             console.log('👀 Opening project:', projectId);
             setActiveNav('');
