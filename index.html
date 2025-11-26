@@ -10021,8 +10021,9 @@ function updateRemainingHours() {
     const source = totalInput.dataset.source || 'Manual';
     const isLocked = totalInput.dataset.isLocked === 'true';
     
-    // 3. Get Currently Typing (from rows)
-    const hoursInputs = document.querySelectorAll('.hours-input');
+    // 3. Get Currently Typing (from rows) - FIXED: Only select from within the COO modal
+    const modal = document.getElementById('cooMultiDesignerAllocationModal');
+    const hoursInputs = modal ? modal.querySelectorAll('#designerAllocationsContainer .hours-input') : [];
     let currentSessionAllocation = 0;
     hoursInputs.forEach(input => {
         currentSessionAllocation += parseFloat(input.value) || 0;
@@ -10089,16 +10090,18 @@ function updateRemainingHours() {
  * Validate that no designer is selected twice
  */
 function validateDesignerSelection() {
-    const selects = document.querySelectorAll('.designer-select');
+    // FIXED: Only select from within COO modal
+    const modal = document.getElementById('cooMultiDesignerAllocationModal');
+    const selects = modal ? modal.querySelectorAll('#designerAllocationsContainer .designer-select') : [];
     const selectedUids = [];
     let hasDuplicate = false;
     
     selects.forEach(select => {
         const row = select.closest('.designer-allocation-row');
-        row.classList.remove('error');
+        if (row) row.classList.remove('error');
         
         if (select.value && selectedUids.includes(select.value)) {
-            row.classList.add('error');
+            if (row) row.classList.add('error');
             hasDuplicate = true;
         } else if (select.value) {
             selectedUids.push(select.value);
@@ -10136,8 +10139,9 @@ async function submitCooMultiDesignerAllocation() {
     // If it's already locked, keep the existing source. Otherwise it's a new Manual entry
     let maxHoursSource = isCurrentlyLocked ? currentSource : 'Manual';
     
-    // Validation: Inputs exist
-    const selects = document.querySelectorAll('.designer-select');
+    // Validation: Inputs exist - FIXED: Only select from within COO modal
+    const modal = document.getElementById('cooMultiDesignerAllocationModal');
+    const selects = modal.querySelectorAll('#designerAllocationsContainer .designer-select');
     if (selects.length === 0) {
         alert("⚠️ Please add at least one designer allocation.");
         return;
@@ -10175,7 +10179,7 @@ async function submitCooMultiDesignerAllocation() {
             designerEmail: selectedOption.dataset.email,
             designerRole: selectedOption.dataset.role,
             allocatedHours: hours,
-            specificNotes: notesTextarea.value.trim()
+            specificNotes: notesTextarea ? notesTextarea.value.trim() : ''
         });
     }
     
@@ -10233,19 +10237,20 @@ Proceed with allocation?`.trim();
         showLoading();
         
         // Prepare the update payload with correct action format for backend
+        // IMPORTANT: Ensure no undefined values are sent to Firestore
         const allocationData = {
             action: 'allocate_to_multiple_designers',
             data: {
                 projectId: projectId,
                 // *** CRITICAL FIELDS FOR BUDGET LOCKING ***
                 maxAllocatedHours: totalBudget,     // The Definitive Budget (locks on first save)
-                maxHoursSource: maxHoursSource,     // The source (Manual/Estimation)
+                maxHoursSource: maxHoursSource || 'Manual',     // The source (Manual/Estimation)
                 // *******************************************
                 totalAllocatedHours: newTotalAllocated, // The new total assigned (prev + current)
                 designerAllocations: designerAllocations,
-                targetCompletionDate: targetDate || null,
-                priority: priority,
-                allocationNotes: generalNotes,
+                targetCompletionDate: targetDate || '',
+                priority: priority || 'Normal',
+                allocationNotes: generalNotes || '',  // FIXED: Ensure empty string instead of undefined
                 isIncremental: true,
                 
                 // Required fields for backend to merge hours
