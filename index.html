@@ -6103,7 +6103,7 @@ function showCreateProposalModal() {
                             <div class="form-group"><label>Checking Hours</label><input type="number" id="checkingHours" class="form-control" value="0" min="0" step="0.5" oninput="calculateTotalHours()" required></div>
                             <div class="form-group"><label>Revision Hours</label><input type="number" id="revisionHours" class="form-control" value="0" min="0" step="0.5" oninput="calculateTotalHours()"></div>
                             <div class="form-group"><label>Project Management</label><input type="number" id="pmHours" class="form-control" value="0" min="0" step="0.5" oninput="calculateTotalHours()"></div>
-                            <div class="form-group"><label>Total Hours</label><input type="number" id="totalHours" class="form-control" readonly style="background: var(--light-blue); font-weight: bold;" value="0"></div>
+                            <div class="form-group"><label>Total Hours</label><input type="number" id="totalHours" class="form-control" style="background: #ffffff; font-weight: bold;" value="0" oninput="calculateTotalHours()"></div>
                         </div>
                     </div>
 
@@ -6208,6 +6208,11 @@ function showCreateProposalModal() {
             this.classList.toggle('checked', this.querySelector('input[type="checkbox"]').checked);
         });
     });
+    
+    // ✅ FIX: Initialize calculation and unlock all fields
+    setTimeout(() => {
+        calculateTotalHours();
+    }, 100);
 }
 
       async function saveEstimation(proposalId) {
