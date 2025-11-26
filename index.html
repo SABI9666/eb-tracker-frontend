@@ -8611,151 +8611,109 @@ async function showDesignerAllocations() {
    async function showProjectFilesModal(projectId, projectName) {
     console.log('📂 Opening files for project:', projectId, projectName);
     
-    // Close any existing file modals
+    // Close any existing file modals first
     const existingModal = document.getElementById('projectFilesModalOverlay');
     if (existingModal) existingModal.remove();
     
     // Create professional modal
     const modalHtml = `
-        <div class="modal-overlay" id="projectFilesModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center;">
-            <div class="modal-content" style="max-width: 900px; width: 90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
-                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div class="modal-overlay" id="projectFilesModalOverlay" style="display:flex; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+            <div class="modal-content" style="max-width: 900px; width:90%; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; background:white; border-radius:12px;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 12px 12px 0 0; display:flex; justify-content:space-between; align-items:flex-start;">
                     <div>
                         <h2 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
                             <span style="font-size: 1.5rem;">📂</span> Project Files
                         </h2>
                         <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 0.95rem;" id="filesModalProjectName">${projectName || 'Loading...'}</p>
                     </div>
-                    <span onclick="closeProjectFilesModal()" style="color: white; font-size: 2rem; cursor: pointer; line-height: 1;">&times;</span>
+                    <span onclick="closeProjectFilesModal()" style="color: white; font-size: 2rem; cursor: pointer; line-height:1;">&times;</span>
                 </div>
                 
-                <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem; min-height: 200px;">
-                    <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 3rem;">
-                        <div class="loading-spinner" style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-                        <span style="margin-top: 1rem; color: #6b7280;">Loading files...</span>
+                <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem; min-height:200px;">
+                    <div style="display: flex; flex-direction:column; justify-content: center; align-items: center; padding: 3rem;">
+                        <div class="loading-spinner"></div>
+                        <span style="margin-top:1rem; color:#6b7280;">Loading files...</span>
                     </div>
                 </div>
                 
-                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb; display: flex; justify-content: flex-end;">
-                    <button type="button" onclick="closeProjectFilesModal()" class="btn btn-outline" style="padding: 0.5rem 1.5rem; border: 1px solid #d1d5db; border-radius: 6px; background: white; cursor: pointer;">Close</button>
+                <div class="modal-footer" style="border-top: 1px solid #e5e7eb; padding: 1rem 1.5rem; background: #f9fafb; display:flex; justify-content:flex-end;">
+                    <button type="button" onclick="closeProjectFilesModal()" class="btn btn-outline">Close</button>
                 </div>
             </div>
         </div>
-        <style>
-            @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        </style>
     `;
     
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     const content = document.getElementById('projectFilesContent');
-    
-    // Safety check
-    if (!content) {
-        console.error('❌ Could not find projectFilesContent element');
-        alert('Error: Could not open files modal');
-        return;
-    }
 
     try {
-        console.log('🔍 Fetching project details for ID:', projectId);
-        
-        // Get the project details to find the proposalId
+        // Step 1: Get the project details to find the proposalId
+        console.log('🔍 Step 1: Fetching project details...');
         const projectResponse = await apiCall(`projects?id=${projectId}`);
-        console.log('📦 Project API Response:', projectResponse);
         
         if (!projectResponse.success || !projectResponse.data) {
             throw new Error(projectResponse.error || 'Failed to fetch project details.');
         }
         
         const project = projectResponse.data;
-        console.log('📦 Project details:', project);
+        console.log('📦 Project:', project.projectName, '| ProposalId:', project.proposalId);
         
-        // Update project name with more details
-        const projectInfoDisplay = document.getElementById('filesModalProjectName');
-        if (projectInfoDisplay) {
-            projectInfoDisplay.innerHTML = `
-                <span>${projectName || project.projectName || 'Unknown'}</span>
-                <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectNumber || project.projectCode || 'No Code'} | ${project.clientCompany || ''}</span>
+        // Update project name in header
+        const headerEl = document.getElementById('filesModalProjectName');
+        if (headerEl) {
+            headerEl.innerHTML = `
+                <span>${projectName || project.projectName}</span>
+                <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectNumber || project.projectCode || 'N/A'} | ${project.clientCompany || ''}</span>
             `;
         }
         
-        // Fetch files using multiple approaches
+        // Check if we have a proposalId
+        if (!project.proposalId) {
+            content.innerHTML = `
+                <div style="text-align: center; padding: 3rem;">
+                    <div style="width: 80px; height: 80px; background: #fef3c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                        <span style="font-size: 2.5rem;">⚠️</span>
+                    </div>
+                    <h3 style="color: #92400e; margin-bottom: 0.5rem;">No Linked Proposal</h3>
+                    <p style="color: #6b7280;">This project doesn't have a linked proposal. Files are associated with proposals.</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Step 2: Fetch files using proposalId (the only valid query param in backend)
+        console.log('🔍 Step 2: Fetching files for proposalId:', project.proposalId);
         let files = [];
-        let fetchErrors = [];
         
-        // Approach 1: Try fetching by projectId
         try {
-            console.log('🔍 Attempt 1: Fetching files by projectId:', projectId);
-            const response1 = await apiCall(`files?projectId=${projectId}`);
-            console.log('📁 Response 1:', response1);
-            if (response1.success && response1.data && Array.isArray(response1.data) && response1.data.length > 0) {
-                files = response1.data;
-                console.log('✅ Files found using projectId:', files.length);
+            const filesResponse = await apiCall(`files?proposalId=${project.proposalId}`);
+            console.log('📁 Files response:', filesResponse);
+            
+            if (filesResponse.success && filesResponse.data) {
+                files = Array.isArray(filesResponse.data) ? filesResponse.data : [];
             }
-        } catch (err) {
-            console.warn('⚠️ Attempt 1 failed:', err.message);
-            fetchErrors.push('projectId: ' + err.message);
+        } catch (filesErr) {
+            console.error('❌ Files fetch error:', filesErr.message);
+            // Don't throw - just show no files
         }
         
-        // Approach 2: If no files found and we have a proposalId, try that
-        if (files.length === 0 && project.proposalId) {
-            try {
-                console.log('🔍 Attempt 2: Fetching files by proposalId:', project.proposalId);
-                const response2 = await apiCall(`files?proposalId=${project.proposalId}`);
-                console.log('📁 Response 2:', response2);
-                if (response2.success && response2.data && Array.isArray(response2.data) && response2.data.length > 0) {
-                    files = response2.data;
-                    console.log('✅ Files found using proposalId:', files.length);
-                }
-            } catch (err) {
-                console.warn('⚠️ Attempt 2 failed:', err.message);
-                fetchErrors.push('proposalId: ' + err.message);
-            }
-        }
-        
-        // Approach 3: Check if files are embedded in project document
-        if (files.length === 0 && project.files && Array.isArray(project.files) && project.files.length > 0) {
-            files = project.files;
-            console.log('✅ Files found embedded in project document:', files.length);
-        }
-        
-        // Approach 4: Check proposal directly for files
-        if (files.length === 0 && project.proposalId) {
-            try {
-                console.log('🔍 Attempt 4: Fetching proposal for embedded files:', project.proposalId);
-                const proposalResponse = await apiCall(`proposals?id=${project.proposalId}`);
-                console.log('📁 Proposal Response:', proposalResponse);
-                if (proposalResponse.success && proposalResponse.data) {
-                    const proposal = proposalResponse.data;
-                    if (proposal.files && Array.isArray(proposal.files) && proposal.files.length > 0) {
-                        files = proposal.files;
-                        console.log('✅ Files found in proposal:', files.length);
-                    }
-                }
-            } catch (err) {
-                console.warn('⚠️ Attempt 4 failed:', err.message);
-                fetchErrors.push('proposal: ' + err.message);
-            }
-        }
-        
-        console.log('📊 Total files retrieved:', files.length);
+        console.log('📊 Total files found:', files.length);
         
         // No files found
         if (files.length === 0) {
             content.innerHTML = `
                 <div style="text-align: center; padding: 3rem 2rem;">
-                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <div style="width: 80px; height: 80px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
                         <span style="font-size: 2.5rem;">📭</span>
                     </div>
                     <h3 style="color: #374151; margin-bottom: 0.5rem;">No Files Available</h3>
                     <p style="color: #6b7280; max-width: 400px; margin: 0 auto;">
                         No files have been uploaded for this project yet.
                     </p>
-                    <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; text-align: left; max-width: 400px; margin-left: auto; margin-right: auto;">
+                    <div style="margin-top: 1rem; padding: 0.75rem; background: #f3f4f6; border-radius: 8px; display: inline-block;">
                         <small style="color: #6b7280;">
-                            <strong>Project:</strong> ${project.projectNumber || project.projectCode || 'N/A'}<br>
-                            <strong>Client:</strong> ${project.clientCompany || 'N/A'}<br>
-                            <strong>Proposal ID:</strong> ${project.proposalId || 'Not linked'}
+                            <strong>Project:</strong> ${project.projectNumber || project.projectCode || 'N/A'} | 
+                            <strong>Client:</strong> ${project.clientCompany || 'N/A'}
                         </small>
                     </div>
                 </div>
@@ -8763,132 +8721,131 @@ async function showDesignerAllocations() {
             return;
         }
 
-        // Files found - display them
-        renderProjectFiles(files, content);
+        // Group files by type
+        const filesByType = {
+            drawing: [],
+            specification: [],
+            estimation: [],
+            project: [],
+            link: [],
+            other: []
+        };
+        
+        files.forEach(file => {
+            const type = file.fileType || 'other';
+            if (filesByType[type]) {
+                filesByType[type].push(file);
+            } else {
+                filesByType.other.push(file);
+            }
+        });
+
+        // Build file list HTML
+        const typeConfig = {
+            drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6', bg: '#eff6ff' },
+            specification: { icon: '📋', label: 'Specifications', color: '#10b981', bg: '#ecfdf5' },
+            estimation: { icon: '💰', label: 'Estimates', color: '#f59e0b', bg: '#fffbeb' },
+            project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6', bg: '#f5f3ff' },
+            link: { icon: '🔗', label: 'Links', color: '#ec4899', bg: '#fdf2f8' },
+            other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
+        };
+        
+        let fileListHtml = `
+            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
+                    📊 Total Files: ${files.length}
+                </div>
+            </div>
+        `;
+        
+        Object.keys(filesByType).forEach(type => {
+            const typeFiles = filesByType[type];
+            if (typeFiles.length === 0) return;
+            
+            const config = typeConfig[type] || typeConfig.other;
+            
+            fileListHtml += `
+                <div style="margin-bottom: 2rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ${config.color}20;">
+                        <span style="width: 40px; height: 40px; background: ${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                            ${config.icon}
+                        </span>
+                        <div>
+                            <h3 style="margin: 0; color: ${config.color}; font-size: 1.1rem;">${config.label}</h3>
+                            <small style="color: #6b7280;">${typeFiles.length} file${typeFiles.length > 1 ? 's' : ''}</small>
+                        </div>
+                    </div>
+                    <div style="display: grid; gap: 0.75rem;">
+                        ${typeFiles.map(file => {
+                            // Handle different field names from backend
+                            const displayName = file.originalName || file.fileName || 'Unknown File';
+                            const fileUrl = file.url || file.fileUrl || '';
+                            const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
+                            const uploadedBy = file.uploadedByName || 'Unknown';
+                            const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
+                            const fileExt = displayName.split('.').pop().toUpperCase();
+                            const isLink = file.fileType === 'link' || file.mimeType === 'text/url';
+                            
+                            return `
+                                <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                    
+                                    <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
+                                        <span style="font-size: 0.75rem; font-weight: 700; color: ${config.color};">${isLink ? '🔗' : fileExt}</span>
+                                    </div>
+                                    
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${displayName}">
+                                            ${displayName}
+                                        </div>
+                                        <div style="font-size: 0.8rem; color: #6b7280;">
+                                            <span>📤 ${uploadedBy}</span>
+                                            <span style="margin: 0 0.5rem;">•</span>
+                                            <span>📅 ${uploadDate}</span>
+                                            ${fileSize ? `<span style="margin: 0 0.5rem;">•</span><span>💾 ${fileSize}</span>` : ''}
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
+                                        ${fileUrl ? `
+                                            <a href="${fileUrl}" target="_blank" 
+                                               style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: white; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; text-decoration: none; font-size: 0.875rem;">
+                                                👁️ ${isLink ? 'Open' : 'View'}
+                                            </a>
+                                            ${!isLink ? `
+                                                <a href="${fileUrl}" download="${displayName}"
+                                                   style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: #3b82f6; border: none; border-radius: 6px; color: white; text-decoration: none; font-size: 0.875rem;">
+                                                    ⬇️ Download
+                                                </a>
+                                            ` : ''}
+                                        ` : `
+                                            <span style="color: #ef4444; font-size: 0.8rem;">⚠️ No URL</span>
+                                        `}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        });
+
+        content.innerHTML = fileListHtml;
 
     } catch (error) {
-        console.error("❌ Error in showProjectFilesModal:", error);
+        console.error("❌ Error loading project files:", error);
         content.innerHTML = `
             <div style="text-align: center; padding: 3rem;">
                 <div style="width: 80px; height: 80px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
                     <span style="font-size: 2.5rem;">⚠️</span>
                 </div>
                 <h3 style="color: #dc2626; margin-bottom: 0.5rem;">Error Loading Files</h3>
-                <p style="color: #6b7280; margin-bottom: 1rem;">${error.message}</p>
-                <button onclick="showProjectFilesModal('${projectId}', '${(projectName || '').replace(/'/g, "\\'")}')" 
-                        style="padding: 0.5rem 1.5rem; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                <p style="color: #6b7280;">${error.message}</p>
+                <button onclick="showProjectFilesModal('${projectId}', '${(projectName || '').replace(/'/g, "\\'")}')" class="btn btn-primary" style="margin-top: 1rem;">
                     🔄 Retry
                 </button>
             </div>
         `;
     }
-}
-
-// Separate function to render files
-function renderProjectFiles(files, container) {
-    // Group files by type
-    const filesByType = {
-        drawing: [],
-        specification: [],
-        estimate: [],
-        project: [],
-        other: []
-    };
-    
-    files.forEach(file => {
-        const type = file.fileType || file.type || 'other';
-        if (filesByType[type]) {
-            filesByType[type].push(file);
-        } else {
-            filesByType.other.push(file);
-        }
-    });
-
-    // Build professional file list
-    const typeConfig = {
-        drawing: { icon: '📐', label: 'Drawings & Plans', color: '#3b82f6', bg: '#eff6ff' },
-        specification: { icon: '📋', label: 'Specifications', color: '#10b981', bg: '#ecfdf5' },
-        estimate: { icon: '💰', label: 'Estimates', color: '#f59e0b', bg: '#fffbeb' },
-        project: { icon: '📁', label: 'Project Documents', color: '#8b5cf6', bg: '#f5f3ff' },
-        other: { icon: '📄', label: 'Other Files', color: '#6b7280', bg: '#f9fafb' }
-    };
-    
-    let fileListHtml = `
-        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-            <div style="padding: 0.75rem 1.25rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; font-weight: 600;">
-                📊 Total Files: ${files.length}
-            </div>
-        </div>
-    `;
-    
-    Object.keys(filesByType).forEach(type => {
-        const typeFiles = filesByType[type];
-        if (typeFiles.length === 0) return;
-        
-        const config = typeConfig[type];
-        
-        fileListHtml += `
-            <div style="margin-bottom: 2rem;">
-                <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; padding-bottom: 0.75rem; border-bottom: 2px solid ${config.color}20;">
-                    <span style="width: 40px; height: 40px; background: ${config.bg}; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
-                        ${config.icon}
-                    </span>
-                    <div>
-                        <h3 style="margin: 0; color: ${config.color}; font-size: 1.1rem;">${config.label}</h3>
-                        <small style="color: #6b7280;">${typeFiles.length} file${typeFiles.length > 1 ? 's' : ''}</small>
-                    </div>
-                </div>
-                <div style="display: grid; gap: 0.75rem;">
-                    ${typeFiles.map((file, index) => {
-                        const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
-                        const uploadedBy = file.uploadedByName || file.uploadedBy || 'Unknown';
-                        const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
-                        const fileName = file.fileName || file.name || 'Unknown File';
-                        const fileExt = fileName.split('.').pop().toUpperCase();
-                        const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
-                        
-                        return `
-                            <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                                
-                                <div style="width: 50px; height: 50px; background: ${config.bg}; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 1rem; flex-shrink: 0;">
-                                    <span style="font-size: 0.75rem; font-weight: 700; color: ${config.color};">${fileExt}</span>
-                                </div>
-                                
-                                <div style="flex: 1; min-width: 0;">
-                                    <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${fileName}">
-                                        ${fileName}
-                                    </div>
-                                    <div style="font-size: 0.8rem; color: #6b7280;">
-                                        <span>📤 ${uploadedBy}</span>
-                                        <span style="margin: 0 0.5rem;">•</span>
-                                        <span>📅 ${uploadDate}</span>
-                                        ${fileSize ? `<span style="margin: 0 0.5rem;">•</span><span>💾 ${fileSize}</span>` : ''}
-                                    </div>
-                                </div>
-                                
-                                <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
-                                    ${fileUrl ? `
-                                        <a href="${fileUrl}" target="_blank" 
-                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: white; border: 1px solid #d1d5db; border-radius: 6px; color: #374151; text-decoration: none; font-size: 0.875rem;">
-                                            👁️ View
-                                        </a>
-                                        <a href="${fileUrl}" download="${fileName}"
-                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; background: #3b82f6; border: none; border-radius: 6px; color: white; text-decoration: none; font-size: 0.875rem;">
-                                            ⬇️ Download
-                                        </a>
-                                    ` : `
-                                        <span style="color: #ef4444; font-size: 0.8rem;">⚠️ No URL</span>
-                                    `}
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-        `;
-    });
-
-    container.innerHTML = fileListHtml;
 }
 
 // Download file function with proper handling
@@ -9928,23 +9885,22 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         const totalHoursInput = document.getElementById('cooTotalProjectHours');
         const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline');
         const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
-        const budgetSourceText = document.getElementById('budgetSourceText');
 
         let totalBudget = 0;
         let source = "Manual Entry";
         let isBudgetLocked = false;
         
-        // Priority 1: Already saved Max Hours (means COO already set it manually before)
+        // Priority 1: Already saved Max Hours (means it was set manually or from estimation)
         if (project.maxAllocatedHours && project.maxAllocatedHours > 0) {
             totalBudget = parseFloat(project.maxAllocatedHours);
-            source = project.maxHoursSource || "Previously Set by COO";
-            isBudgetLocked = true; // LOCK - COO already entered this
+            source = project.maxHoursSource || "Previously Set";
+            isBudgetLocked = true;
         } 
         // Priority 2: Estimation exists and Max Hours is not set
         else if (project.estimation && (project.estimation.totalHours || project.estimation.manhours)) {
             totalBudget = parseFloat(project.estimation.totalHours || project.estimation.manhours);
-            source = "From Estimation";
-            isBudgetLocked = true; // LOCK - Using estimation hours
+            source = "Estimation";
+            isBudgetLocked = true;
         }
         
         // B. Determine Already Allocated Hours (The Usage)
@@ -9956,41 +9912,17 @@ async function showCooMultiDesignerAllocationModal(projectId) {
             totalHoursInput.value = totalBudget.toFixed(1);
             totalHoursInput.readOnly = true;
             totalHoursInput.style.backgroundColor = '#e9ecef';
-            totalHoursInput.style.cursor = 'not-allowed';
             totalHoursInput.title = `Budget is locked. Source: ${source}`;
-            if (budgetSourceText) {
-                budgetSourceText.innerHTML = `<strong style="color: #059669;">🔒 Budget Locked</strong> - Source: ${source}`;
-            }
         } else {
             totalHoursInput.value = '';
             totalHoursInput.readOnly = false;
             totalHoursInput.style.backgroundColor = '#fff';
-            totalHoursInput.style.cursor = 'text';
             totalHoursInput.placeholder = "Enter Total Project Budget (Must be > 0)";
-            totalHoursInput.title = "Enter budget hours - this will be locked after first allocation";
-            if (budgetSourceText) {
-                budgetSourceText.innerHTML = `<span style="color: #d97706;">⚠️ Enter total hours budget (will be locked after allocation)</span>`;
-            }
+            totalHoursInput.title = "Enter a budget to lock it.";
         }
         
         // Store crucial values in dataset for submission/calculation functions
         totalHoursInput.dataset.alreadyAllocated = previouslyAllocated;
-        totalHoursInput.dataset.isBudgetLocked = isBudgetLocked;
-        
-        // Update the display cards
-        const displayTotalBudget = document.getElementById('displayTotalBudget');
-        const displayAlreadyAssigned = document.getElementById('displayAlreadyAssigned');
-        const displayRemainingHours = document.getElementById('displayRemainingHours');
-        
-        if (displayTotalBudget) {
-            displayTotalBudget.textContent = isBudgetLocked ? `${totalBudget.toFixed(1)} hrs` : '-- hrs';
-        }
-        if (displayAlreadyAssigned) {
-            displayAlreadyAssigned.textContent = `${previouslyAllocated.toFixed(1)} hrs`;
-        }
-        if (displayRemainingHours) {
-            displayRemainingHours.textContent = isBudgetLocked ? `${remainingBudget.toFixed(1)} hrs` : '-- hrs';
-        }
         
         // D. Status Check: Fully Allocated?
         const isFullyAllocated = isBudgetLocked && remainingBudget <= 0.1; // Allow float margin
@@ -10019,20 +9951,10 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         } else {
             // Partial or New Allocation
             if (previouslyAllocated > 0) {
-                 // Display Partial Alloted message with existing designer breakdown
-                 let existingAllocationsHtml = '';
-                 if (project.designerAllocations && project.designerAllocations.length > 0) {
-                     existingAllocationsHtml = `
-                         <div style="margin-top: 0.5rem; font-size: 0.9rem;">
-                             <strong>Current Assignments:</strong>
-                             ${project.designerAllocations.map(a => `<span style="background: #fef3c7; padding: 2px 8px; border-radius: 4px; margin: 2px;">${a.designerName}: ${a.allocatedHours}h</span>`).join(' ')}
-                         </div>
-                     `;
-                 }
+                 // Display Partial Alloted message
                  document.getElementById('designerAllocationsContainer').innerHTML = `
                     <div class="alert alert-warning" style="padding: 1rem; margin-bottom: 1rem; background: #fffbe5; color: #92400e; border: 1px solid #fcd34d; border-radius: 8px;">
-                        <strong>⚠️ Partial Allocation:</strong> ${previouslyAllocated.toFixed(1)} hrs already assigned. <strong>${remainingBudget.toFixed(1)} hrs remaining</strong> to allocate.
-                        ${existingAllocationsHtml}
+                        <strong>Partial Alloted:</strong> ${previouslyAllocated.toFixed(1)}hrs already assigned. ${remainingBudget.toFixed(1)}hrs remaining.
                     </div>
                 `;
             }
@@ -10138,8 +10060,8 @@ function updateRemainingHours() {
     // 1. Get Budget (from input value)
     const totalBudget = parseFloat(totalInput.value) || 0;
     
-    // 2. Get Previously Assigned (from DB, stored in dataset) - FIX: use correct attribute name
-    const previouslyAssigned = parseFloat(totalInput.dataset.alreadyAllocated) || 0;
+    // 2. Get Previously Assigned (from DB, stored in dataset)
+    const previouslyAssigned = parseFloat(totalInput.dataset.alreadyUsed) || 0;
     
     // 3. Get Currently Typing (from rows)
     const hoursInputs = document.querySelectorAll('.hours-input');
@@ -10154,93 +10076,38 @@ function updateRemainingHours() {
     
     const remainingDisplay = document.getElementById('cooRemainingHours');
     const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
-    
-    // Update the summary display cards
-    const displayTotalBudget = document.getElementById('displayTotalBudget');
-    const displayAlreadyAssigned = document.getElementById('displayAlreadyAssigned');
-    const displayCurrentAllocation = document.getElementById('displayCurrentAllocation');
-    const displayRemainingHours = document.getElementById('displayRemainingHours');
-    
-    if (displayTotalBudget) {
-        displayTotalBudget.textContent = totalBudget > 0 ? `${totalBudget.toFixed(1)} hrs` : '-- hrs';
-    }
-    if (displayAlreadyAssigned) {
-        displayAlreadyAssigned.textContent = `${previouslyAssigned.toFixed(1)} hrs`;
-    }
-    if (displayCurrentAllocation) {
-        displayCurrentAllocation.textContent = `${currentSessionAllocation.toFixed(1)} hrs`;
-    }
-    if (displayRemainingHours) {
-        if (totalBudget > 0) {
-            displayRemainingHours.textContent = `${remaining.toFixed(1)} hrs`;
-            // Change color based on status
-            const card = displayRemainingHours.closest('div[style*="background"]');
-            if (card) {
-                if (remaining < 0) {
-                    card.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red for over budget
-                } else if (remaining === 0) {
-                    card.style.background = 'linear-gradient(135deg, #10b981, #059669)'; // Green for perfect
-                } else {
-                    card.style.background = 'linear-gradient(135deg, #8b5cf6, #7c3aed)'; // Purple for remaining
-                }
-            }
-        } else {
-            displayRemainingHours.textContent = '-- hrs';
-        }
-    }
 
-    // 5. Render the main remaining display
+    // 5. Render
     let html = '';
     
     if (totalBudget === 0) {
          html = `<div style="color: var(--text-light); font-size: 1.2rem;">Enter Budget First</div>`;
-         if(submitBtn) submitBtn.disabled = true;
     } else {
         if (remaining < 0) {
             // Over Budget
             html = `
                 <div style="font-size: 1.8rem; font-weight: 700; color: var(--danger);">
-                    ⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER
+                    ⚠️ ${remaining.toFixed(1)} hrs
                 </div>
-                <div style="font-size: 0.8rem; color: var(--danger);">Over Budget! Reduce hours to continue.</div>
+                <div style="font-size: 0.8rem; color: var(--danger);">Over Budget! (Max: ${totalBudget})</div>
             `;
-            if(submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '⚠️ Reduce Hours';
-            }
-        } else if (remaining === 0) {
-            // Perfect allocation
-            html = `
-                <div style="font-size: 1.8rem; font-weight: 700; color: var(--success);">
-                    ✅ ${remaining.toFixed(1)} hrs
-                </div>
-                <div style="font-size: 0.8rem; color: var(--success);">
-                    Perfectly Allocated!
-                </div>
-            `;
-            if(submitBtn && !submitBtn.innerText.includes("Completed")) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
-            }
+            if(submitBtn) submitBtn.disabled = true;
         } else {
-            // Valid - still has remaining
+            // Valid
             html = `
-                <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary-blue);">
+                <div style="font-size: 1.8rem; font-weight: 700; color: ${remaining === 0 ? 'var(--success)' : 'var(--primary-blue)'};">
                     ${remaining.toFixed(1)} hrs
                 </div>
                 <div style="font-size: 0.8rem; color: var(--text-light);">
                     Remaining to Allocate
                 </div>
             `;
-            if(submitBtn && !submitBtn.innerText.includes("Completed")) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
-            }
+            if(submitBtn && submitBtn.innerText !== "Allocation Complete") submitBtn.disabled = false;
         }
         
         // Add breakdown context
         if (previouslyAssigned > 0) {
-             html += `<div style="font-size: 0.75rem; color: #666; margin-top: 5px;">(Previously: ${previouslyAssigned.toFixed(1)}h + New: ${currentSessionAllocation.toFixed(1)}h = ${totalUsage.toFixed(1)}h used)</div>`;
+             html += `<div style="font-size: 0.75rem; color: #666; margin-top: 5px;">(Prev: ${previouslyAssigned} + New: ${currentSessionAllocation})</div>`;
         }
     }
     
@@ -12313,6 +12180,43 @@ async function submitProposalAllocation() {
     
     <div class="card" id="timesheetHistoryContainer">
         <p class="text-center text-light mt-3" id="historyMessage">Select a month to view history.</p>
+    </div>
+</div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3>Log Hours</h3>
+            <button onclick="showTimesheetModal()" class="btn btn-primary">
+                <span class="btn-icon">+</span> Log Hours
+            </button>
+        </div>
+
+        <!-- Timesheet Summary -->
+        <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
+            <!-- Will be populated by JavaScript -->
+        </div>
+                            
+
+        <!-- Timesheet Entries Table -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Project</th>
+                    <th>Hours</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="timesheetTableBody">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 2rem;">
+                        No timesheet entries yet
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -15703,35 +15607,14 @@ function handleTonnageInput() {
             
             <!-- Total Hours Input -->
             <div class="form-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
-                <h3 style="color: var(--text-dark); margin-bottom: 1rem;">⏱️ Project Hours Budget</h3>
-                
-                <!-- Hours Summary Cards -->
-                <div id="hoursAllocationSummary" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 0.8rem; opacity: 0.9;">Total Budget</div>
-                        <div id="displayTotalBudget" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 0.8rem; opacity: 0.9;">Already Assigned</div>
-                        <div id="displayAlreadyAssigned" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 0.8rem; opacity: 0.9;">Allocating Now</div>
-                        <div id="displayCurrentAllocation" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
-                    </div>
-                    <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
-                        <div style="font-size: 0.8rem; opacity: 0.9;">Remaining</div>
-                        <div id="displayRemainingHours" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
-                    </div>
-                </div>
-                
+                <h3 style="color: var(--text-dark); margin-bottom: 1rem;">⏱️ Total Project Hours</h3>
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
                         <label for="cooTotalProjectHours">Total Allocated Hours <span class="required">*</span></label>
                         <input type="number" id="cooTotalProjectHours" class="form-control" 
                                placeholder="e.g., 120" min="1" step="0.5" 
                                oninput="updateRemainingHours()" required>
-                        <small class="form-text" id="budgetSourceText">Total hours budget for this project</small>
+                        <small class="form-text">Total hours budget for this project</small>
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>Remaining Hours to Allocate</label>
