@@ -10072,24 +10072,34 @@ function validateDesignerSelection() {
 }
 
 /**
- * Submit the multi-designer allocation with strict validation
+ * ✅ FIXED: Submit COO Multi-Designer Allocation
+ * Handles both scenarios: estimation hours OR manual COO entry
  */
 async function submitCooMultiDesignerAllocation() {
     const projectId = document.getElementById('cooAllocProjectId').value;
     const totalHoursInput = document.getElementById('cooTotalProjectHours');
     const totalBudget = parseFloat(totalHoursInput.value);
     const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
+    const hoursSource = totalHoursInput.dataset.hoursSource || 'unknown';
+    
+    // Validation: Budget must be set
+    if (!totalBudget || totalBudget <= 0) {
+        alert('⚠️ Please enter the Total Allocated Hours before proceeding.');
+        return;
+    }
     
     // Project Details inputs
     const targetDate = document.getElementById('cooTargetCompletionDate').value;
     const priority = document.getElementById('cooProjectPriority').value;
     const generalNotes = document.getElementById('cooAllocationNotes').value;
 
-    // Validation: Inputs exist
-    const selects = document.querySelectorAll('.designer-select');
-    if (selects.length === 0) return; 
-
     // Collect designer allocations
+    const selects = document.querySelectorAll('.designer-select');
+    if (selects.length === 0) {
+        alert('⚠️ Please add at least one designer allocation.');
+        return;
+    }
+
     const designerAllocations = [];
     let currentSessionTotal = 0;
     
@@ -10100,13 +10110,13 @@ async function submitCooMultiDesignerAllocation() {
         const notesTextarea = document.getElementById(`notes${rowNum}`);
         
         if (!select.value) {
-            alert(`Please select a designer for allocation #${i + 1}`);
+            alert(`⚠️ Please select a designer for allocation #${i + 1}`);
             return;
         }
         
         const hours = parseFloat(hoursInput.value);
         if (!hours || hours <= 0) {
-            alert(`Please enter valid hours for allocation #${i + 1}`);
+            alert(`⚠️ Please enter valid hours for allocation #${i + 1}`);
             return;
         }
         
@@ -10123,29 +10133,41 @@ async function submitCooMultiDesignerAllocation() {
         });
     }
     
-    // --- STRICT BLOCKING LOGIC ---
+    // ============================================
+    // ✅ CRITICAL: STRICT VALIDATION - Prevent over-allocation
+    // ============================================
+    
     const newTotalAllocated = previouslyAllocated + currentSessionTotal;
     
-    // Allow a tiny float margin of error (0.1)
-    if (newTotalAllocated > totalBudget + 0.1) {
+    if (newTotalAllocated > totalBudget + 0.1) { // Allow 0.1 float tolerance
         const overage = (newTotalAllocated - totalBudget).toFixed(1);
-        alert(`⛔ BLOCKING ENTRY: You are exceeding the total project budget by ${overage} hours.\n\nTotal Budget: ${totalBudget}\nAlready Used: ${previouslyAllocated}\nTrying to Add: ${currentSessionTotal}\n\nPlease reduce the hours to proceed.`);
-        return; // Stop execution
+        alert(`⛔ ALLOCATION BLOCKED: Exceeding budget by ${overage} hours\n\n` +
+              `Total Budget: ${totalBudget} hrs\n` +
+              `Previously Allocated: ${previouslyAllocated} hrs\n` +
+              `Trying to Add: ${currentSessionTotal} hrs\n` +
+              `Would Result In: ${newTotalAllocated} hrs\n\n` +
+              `Please reduce the allocation to proceed.`);
+        return; // ⛔ STOP EXECUTION
     }
 
-    // Validate no duplicates
+    // Validate no duplicate designers
     if (!validateDesignerSelection()) {
         alert('⚠️ You cannot assign the same designer twice. Please select different designers.');
         return;
     }
     
+    // Confirmation
     const confirmText = `
-📊 Allocation Summary:
-━━━━━━━━━━━━━━━━━━━━━━
-Total Hours: ${totalBudget}hrs
+📊 Allocation Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Total Budget: ${totalBudget} hrs
+${previouslyAllocated > 0 ? `Previously Allocated: ${previouslyAllocated} hrs\n` : ''}Current Allocation: ${currentSessionTotal} hrs
+New Total: ${newTotalAllocated} hrs
+Remaining: ${(totalBudget - newTotalAllocated).toFixed(1)} hrs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Designers: ${designerAllocations.length}
-${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours}hrs`).join('')}
-━━━━━━━━━━━━━━━━━━━━━━
+${designerAllocations.map((d, i) => `\n${i+1}. ${d.designerName}: ${d.allocatedHours} hrs`).join('')}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 Proceed with allocation?`.trim();
     
@@ -10156,28 +10178,45 @@ Proceed with allocation?`.trim();
     try {
         showLoading();
         
-        // --- FIX: Construct Payload with Legacy Fields ---
+        // ============================================
+        // ✅ CRITICAL: Prepare Payload for Backend
+        // ============================================
+        
         const allocationData = {
             action: 'allocate_to_multiple_designers',
             data: {
                 projectId: projectId,
-                totalAllocatedHours: newTotalAllocated, // Update total in DB
+                
+                // ✅ CRITICAL: Set the budget and source
+                maxAllocatedHours: totalBudget, // Lock the budget
+                maxHoursSource: hoursSource, // Track source
+                
+                // Total allocated after this operation
+                totalAllocatedHours: newTotalAllocated,
+                
+                // Designer allocations
                 designerAllocations: designerAllocations,
+                
+                // Project details
                 targetCompletionDate: targetDate || null,
                 priority: priority,
                 allocationNotes: generalNotes,
-                isIncremental: true,
-
-                // IMPORTANT: Backend likely validates these fields existence
+                
+                // Legacy fields for backend compatibility
                 assignedDesignerUids: designerAllocations.map(d => d.designerUid),
                 assignedDesignerNames: designerAllocations.map(d => d.designerName),
+                assignedDesignerEmails: designerAllocations.map(d => d.designerEmail),
                 designerHours: designerAllocations.reduce((acc, d) => {
                     acc[d.designerUid] = d.allocatedHours;
                     return acc;
-                }, {})
+                }, {}),
+                
+                // Incremental flag
+                isIncremental: true
             }
         };
         
+        // Send to backend
         const response = await apiCall(`projects?id=${projectId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -10185,9 +10224,13 @@ Proceed with allocation?`.trim();
         });
         
         if (response.success) {
-            showSuccessModal('✅ Project Allocated Successfully!', 'Designers have been notified.');
+            showSuccessModal(
+                '✅ Project Allocated Successfully!',
+                `Designers have been notified and can now start working on the project.`
+            );
             closeCooMultiDesignerModal();
             
+            // Refresh the projects view
             if (typeof showAllProjects === 'function') {
                 await showAllProjects();
             }
@@ -10197,7 +10240,7 @@ Proceed with allocation?`.trim();
         
     } catch (error) {
         console.error('Error allocating project:', error);
-        alert('❌ Error allocating project: ' + error.message);
+        alert('❌ Error: ' + error.message);
     } finally {
         hideLoading();
     }
