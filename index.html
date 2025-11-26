@@ -9882,22 +9882,23 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         const totalHoursInput = document.getElementById('cooTotalProjectHours');
         const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline');
         const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+        const budgetSourceText = document.getElementById('budgetSourceText');
 
         let totalBudget = 0;
         let source = "Manual Entry";
         let isBudgetLocked = false;
         
-        // Priority 1: Already saved Max Hours (means it was set manually or from estimation)
+        // Priority 1: Already saved Max Hours (means COO already set it manually before)
         if (project.maxAllocatedHours && project.maxAllocatedHours > 0) {
             totalBudget = parseFloat(project.maxAllocatedHours);
-            source = project.maxHoursSource || "Previously Set";
-            isBudgetLocked = true;
+            source = project.maxHoursSource || "Previously Set by COO";
+            isBudgetLocked = true; // LOCK - COO already entered this
         } 
         // Priority 2: Estimation exists and Max Hours is not set
         else if (project.estimation && (project.estimation.totalHours || project.estimation.manhours)) {
             totalBudget = parseFloat(project.estimation.totalHours || project.estimation.manhours);
-            source = "Estimation";
-            isBudgetLocked = true;
+            source = "From Estimation";
+            isBudgetLocked = true; // LOCK - Using estimation hours
         }
         
         // B. Determine Already Allocated Hours (The Usage)
@@ -9909,17 +9910,41 @@ async function showCooMultiDesignerAllocationModal(projectId) {
             totalHoursInput.value = totalBudget.toFixed(1);
             totalHoursInput.readOnly = true;
             totalHoursInput.style.backgroundColor = '#e9ecef';
+            totalHoursInput.style.cursor = 'not-allowed';
             totalHoursInput.title = `Budget is locked. Source: ${source}`;
+            if (budgetSourceText) {
+                budgetSourceText.innerHTML = `<strong style="color: #059669;">🔒 Budget Locked</strong> - Source: ${source}`;
+            }
         } else {
             totalHoursInput.value = '';
             totalHoursInput.readOnly = false;
             totalHoursInput.style.backgroundColor = '#fff';
+            totalHoursInput.style.cursor = 'text';
             totalHoursInput.placeholder = "Enter Total Project Budget (Must be > 0)";
-            totalHoursInput.title = "Enter a budget to lock it.";
+            totalHoursInput.title = "Enter budget hours - this will be locked after first allocation";
+            if (budgetSourceText) {
+                budgetSourceText.innerHTML = `<span style="color: #d97706;">⚠️ Enter total hours budget (will be locked after allocation)</span>`;
+            }
         }
         
         // Store crucial values in dataset for submission/calculation functions
         totalHoursInput.dataset.alreadyAllocated = previouslyAllocated;
+        totalHoursInput.dataset.isBudgetLocked = isBudgetLocked;
+        
+        // Update the display cards
+        const displayTotalBudget = document.getElementById('displayTotalBudget');
+        const displayAlreadyAssigned = document.getElementById('displayAlreadyAssigned');
+        const displayRemainingHours = document.getElementById('displayRemainingHours');
+        
+        if (displayTotalBudget) {
+            displayTotalBudget.textContent = isBudgetLocked ? `${totalBudget.toFixed(1)} hrs` : '-- hrs';
+        }
+        if (displayAlreadyAssigned) {
+            displayAlreadyAssigned.textContent = `${previouslyAllocated.toFixed(1)} hrs`;
+        }
+        if (displayRemainingHours) {
+            displayRemainingHours.textContent = isBudgetLocked ? `${remainingBudget.toFixed(1)} hrs` : '-- hrs';
+        }
         
         // D. Status Check: Fully Allocated?
         const isFullyAllocated = isBudgetLocked && remainingBudget <= 0.1; // Allow float margin
@@ -9948,10 +9973,20 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         } else {
             // Partial or New Allocation
             if (previouslyAllocated > 0) {
-                 // Display Partial Alloted message
+                 // Display Partial Alloted message with existing designer breakdown
+                 let existingAllocationsHtml = '';
+                 if (project.designerAllocations && project.designerAllocations.length > 0) {
+                     existingAllocationsHtml = `
+                         <div style="margin-top: 0.5rem; font-size: 0.9rem;">
+                             <strong>Current Assignments:</strong>
+                             ${project.designerAllocations.map(a => `<span style="background: #fef3c7; padding: 2px 8px; border-radius: 4px; margin: 2px;">${a.designerName}: ${a.allocatedHours}h</span>`).join(' ')}
+                         </div>
+                     `;
+                 }
                  document.getElementById('designerAllocationsContainer').innerHTML = `
                     <div class="alert alert-warning" style="padding: 1rem; margin-bottom: 1rem; background: #fffbe5; color: #92400e; border: 1px solid #fcd34d; border-radius: 8px;">
-                        <strong>Partial Alloted:</strong> ${previouslyAllocated.toFixed(1)}hrs already assigned. ${remainingBudget.toFixed(1)}hrs remaining.
+                        <strong>⚠️ Partial Allocation:</strong> ${previouslyAllocated.toFixed(1)} hrs already assigned. <strong>${remainingBudget.toFixed(1)} hrs remaining</strong> to allocate.
+                        ${existingAllocationsHtml}
                     </div>
                 `;
             }
@@ -10057,8 +10092,8 @@ function updateRemainingHours() {
     // 1. Get Budget (from input value)
     const totalBudget = parseFloat(totalInput.value) || 0;
     
-    // 2. Get Previously Assigned (from DB, stored in dataset)
-    const previouslyAssigned = parseFloat(totalInput.dataset.alreadyUsed) || 0;
+    // 2. Get Previously Assigned (from DB, stored in dataset) - FIX: use correct attribute name
+    const previouslyAssigned = parseFloat(totalInput.dataset.alreadyAllocated) || 0;
     
     // 3. Get Currently Typing (from rows)
     const hoursInputs = document.querySelectorAll('.hours-input');
@@ -10073,38 +10108,93 @@ function updateRemainingHours() {
     
     const remainingDisplay = document.getElementById('cooRemainingHours');
     const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+    
+    // Update the summary display cards
+    const displayTotalBudget = document.getElementById('displayTotalBudget');
+    const displayAlreadyAssigned = document.getElementById('displayAlreadyAssigned');
+    const displayCurrentAllocation = document.getElementById('displayCurrentAllocation');
+    const displayRemainingHours = document.getElementById('displayRemainingHours');
+    
+    if (displayTotalBudget) {
+        displayTotalBudget.textContent = totalBudget > 0 ? `${totalBudget.toFixed(1)} hrs` : '-- hrs';
+    }
+    if (displayAlreadyAssigned) {
+        displayAlreadyAssigned.textContent = `${previouslyAssigned.toFixed(1)} hrs`;
+    }
+    if (displayCurrentAllocation) {
+        displayCurrentAllocation.textContent = `${currentSessionAllocation.toFixed(1)} hrs`;
+    }
+    if (displayRemainingHours) {
+        if (totalBudget > 0) {
+            displayRemainingHours.textContent = `${remaining.toFixed(1)} hrs`;
+            // Change color based on status
+            const card = displayRemainingHours.closest('div[style*="background"]');
+            if (card) {
+                if (remaining < 0) {
+                    card.style.background = 'linear-gradient(135deg, #ef4444, #dc2626)'; // Red for over budget
+                } else if (remaining === 0) {
+                    card.style.background = 'linear-gradient(135deg, #10b981, #059669)'; // Green for perfect
+                } else {
+                    card.style.background = 'linear-gradient(135deg, #8b5cf6, #7c3aed)'; // Purple for remaining
+                }
+            }
+        } else {
+            displayRemainingHours.textContent = '-- hrs';
+        }
+    }
 
-    // 5. Render
+    // 5. Render the main remaining display
     let html = '';
     
     if (totalBudget === 0) {
          html = `<div style="color: var(--text-light); font-size: 1.2rem;">Enter Budget First</div>`;
+         if(submitBtn) submitBtn.disabled = true;
     } else {
         if (remaining < 0) {
             // Over Budget
             html = `
                 <div style="font-size: 1.8rem; font-weight: 700; color: var(--danger);">
-                    ⚠️ ${remaining.toFixed(1)} hrs
+                    ⚠️ ${Math.abs(remaining).toFixed(1)} hrs OVER
                 </div>
-                <div style="font-size: 0.8rem; color: var(--danger);">Over Budget! (Max: ${totalBudget})</div>
+                <div style="font-size: 0.8rem; color: var(--danger);">Over Budget! Reduce hours to continue.</div>
             `;
-            if(submitBtn) submitBtn.disabled = true;
-        } else {
-            // Valid
+            if(submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⚠️ Reduce Hours';
+            }
+        } else if (remaining === 0) {
+            // Perfect allocation
             html = `
-                <div style="font-size: 1.8rem; font-weight: 700; color: ${remaining === 0 ? 'var(--success)' : 'var(--primary-blue)'};">
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--success);">
+                    ✅ ${remaining.toFixed(1)} hrs
+                </div>
+                <div style="font-size: 0.8rem; color: var(--success);">
+                    Perfectly Allocated!
+                </div>
+            `;
+            if(submitBtn && !submitBtn.innerText.includes("Completed")) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
+            }
+        } else {
+            // Valid - still has remaining
+            html = `
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary-blue);">
                     ${remaining.toFixed(1)} hrs
                 </div>
                 <div style="font-size: 0.8rem; color: var(--text-light);">
                     Remaining to Allocate
                 </div>
             `;
-            if(submitBtn && submitBtn.innerText !== "Allocation Complete") submitBtn.disabled = false;
+            if(submitBtn && !submitBtn.innerText.includes("Completed")) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span class="btn-icon">✓</span> Allocate Project';
+            }
         }
         
         // Add breakdown context
         if (previouslyAssigned > 0) {
-             html += `<div style="font-size: 0.75rem; color: #666; margin-top: 5px;">(Prev: ${previouslyAssigned} + New: ${currentSessionAllocation})</div>`;
+             html += `<div style="font-size: 0.75rem; color: #666; margin-top: 5px;">(Previously: ${previouslyAssigned.toFixed(1)}h + New: ${currentSessionAllocation.toFixed(1)}h = ${totalUsage.toFixed(1)}h used)</div>`;
         }
     }
     
@@ -12177,43 +12267,6 @@ async function submitProposalAllocation() {
     
     <div class="card" id="timesheetHistoryContainer">
         <p class="text-center text-light mt-3" id="historyMessage">Select a month to view history.</p>
-    </div>
-</div>
-
-    <div class="card">
-        <div class="card-header">
-            <h3>Log Hours</h3>
-            <button onclick="showTimesheetModal()" class="btn btn-primary">
-                <span class="btn-icon">+</span> Log Hours
-            </button>
-        </div>
-
-        <!-- Timesheet Summary -->
-        <div id="timesheetSummary" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
-            <!-- Will be populated by JavaScript -->
-        </div>
-                            
-
-        <!-- Timesheet Entries Table -->
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Project</th>
-                    <th>Hours</th>
-                    <th>Description</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="timesheetTableBody">
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 2rem;">
-                        No timesheet entries yet
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 </div>
 
@@ -15604,14 +15657,35 @@ function handleTonnageInput() {
             
             <!-- Total Hours Input -->
             <div class="form-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
-                <h3 style="color: var(--text-dark); margin-bottom: 1rem;">⏱️ Total Project Hours</h3>
+                <h3 style="color: var(--text-dark); margin-bottom: 1rem;">⏱️ Project Hours Budget</h3>
+                
+                <!-- Hours Summary Cards -->
+                <div id="hoursAllocationSummary" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.8rem; opacity: 0.9;">Total Budget</div>
+                        <div id="displayTotalBudget" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.8rem; opacity: 0.9;">Already Assigned</div>
+                        <div id="displayAlreadyAssigned" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.8rem; opacity: 0.9;">Allocating Now</div>
+                        <div id="displayCurrentAllocation" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white; padding: 1rem; border-radius: 10px; text-align: center;">
+                        <div style="font-size: 0.8rem; opacity: 0.9;">Remaining</div>
+                        <div id="displayRemainingHours" style="font-size: 1.8rem; font-weight: 700;">0 hrs</div>
+                    </div>
+                </div>
+                
                 <div class="form-row">
                     <div class="form-group" style="flex: 1;">
                         <label for="cooTotalProjectHours">Total Allocated Hours <span class="required">*</span></label>
                         <input type="number" id="cooTotalProjectHours" class="form-control" 
                                placeholder="e.g., 120" min="1" step="0.5" 
                                oninput="updateRemainingHours()" required>
-                        <small class="form-text">Total hours budget for this project</small>
+                        <small class="form-text" id="budgetSourceText">Total hours budget for this project</small>
                     </div>
                     <div class="form-group" style="flex: 1;">
                         <label>Remaining Hours to Allocate</label>
