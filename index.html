@@ -10049,37 +10049,65 @@ function removeDesignerAllocation(rowNumber) {
     }
 }
 
-/**
- * Update remaining hours display strictly accounting for previous allocations
- */
 function updateRemainingHours() {
-    const totalHoursInput = document.getElementById('cooTotalProjectHours');
-    const totalBudget = parseFloat(totalHoursInput.value) || 0;
+    const totalInput = document.getElementById('cooTotalProjectHours');
     
-    // 1. Get hours saved in DB (stored in dataset by showModal function)
-    const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
+    // 1. Get Budget (from input value)
+    const totalBudget = parseFloat(totalInput.value) || 0;
     
-    // 2. Get hours currently being typed in the modal
+    // 2. Get Previously Assigned (from DB, stored in dataset)
+    const previouslyAssigned = parseFloat(totalInput.dataset.alreadyUsed) || 0;
+    
+    // 3. Get Currently Typing (from rows)
     const hoursInputs = document.querySelectorAll('.hours-input');
     let currentSessionAllocation = 0;
     hoursInputs.forEach(input => {
         currentSessionAllocation += parseFloat(input.value) || 0;
     });
     
-    // 3. Calculate Total Used and Remaining
-    const totalUsed = previouslyAllocated + currentSessionAllocation;
-    const remaining = totalBudget - totalUsed;
+    // 4. Calculate
+    const totalUsage = previouslyAssigned + currentSessionAllocation;
+    const remaining = totalBudget - totalUsage;
     
     const remainingDisplay = document.getElementById('cooRemainingHours');
+    const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+
+    // 5. Render
+    let html = '';
     
-    // 4. Update Display
-    let statusHtml = `<div style="font-size: 1.8rem; font-weight: 700;">${remaining.toFixed(1)} hrs</div>`;
-    
-    if (previouslyAllocated > 0) {
-        statusHtml += `<div style="font-size: 0.8rem; opacity: 0.8;">(Budget: ${totalBudget} - Prev: ${previouslyAllocated} - Current: ${currentSessionAllocation})</div>`;
+    if (totalBudget === 0) {
+         html = `<div style="color: var(--text-light); font-size: 1.2rem;">Enter Budget First</div>`;
+    } else {
+        if (remaining < 0) {
+            // Over Budget
+            html = `
+                <div style="font-size: 1.8rem; font-weight: 700; color: var(--danger);">
+                    ⚠️ ${remaining.toFixed(1)} hrs
+                </div>
+                <div style="font-size: 0.8rem; color: var(--danger);">Over Budget! (Max: ${totalBudget})</div>
+            `;
+            if(submitBtn) submitBtn.disabled = true;
+        } else {
+            // Valid
+            html = `
+                <div style="font-size: 1.8rem; font-weight: 700; color: ${remaining === 0 ? 'var(--success)' : 'var(--primary-blue)'};">
+                    ${remaining.toFixed(1)} hrs
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-light);">
+                    Remaining to Allocate
+                </div>
+            `;
+            if(submitBtn && submitBtn.innerText !== "Allocation Complete") submitBtn.disabled = false;
+        }
+        
+        // Add breakdown context
+        if (previouslyAssigned > 0) {
+             html += `<div style="font-size: 0.75rem; color: #666; margin-top: 5px;">(Prev: ${previouslyAssigned} + New: ${currentSessionAllocation})</div>`;
+        }
     }
     
-    remainingDisplay.innerHTML = statusHtml;
+    remainingDisplay.innerHTML = html;
+}
     
     // 5. Handle Over-Budget State (Visuals & Button Locking)
     const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
