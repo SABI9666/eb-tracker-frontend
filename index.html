@@ -3026,6 +3026,42 @@ window.addEventListener('click', function(event) {
         closeSingleModal(event.target);
     }
 });
+
+        // Status helper functions
+        function getStatusBadgeClass(status) {
+            const statusClasses = {
+                'pending': 'status-pending',
+                'pending_allocation': 'status-pending',
+                'in_progress': 'status-in-progress',
+                'assigned': 'status-assigned',
+                'completed': 'status-completed',
+                'won': 'status-won',
+                'lost': 'status-lost',
+                'submitted': 'status-submitted',
+                'estimated': 'status-estimated',
+                'approved': 'status-approved',
+                'rejected': 'status-rejected'
+            };
+            return statusClasses[status] || 'status-pending';
+        }
+        
+        function getStatusText(status) {
+            const statusTexts = {
+                'pending': 'Pending',
+                'pending_allocation': 'Pending Allocation',
+                'in_progress': 'In Progress',
+                'assigned': 'Assigned',
+                'completed': 'Completed',
+                'won': 'Won',
+                'lost': 'Lost',
+                'submitted': 'Submitted',
+                'estimated': 'Estimated',
+                'approved': 'Approved',
+                'rejected': 'Rejected'
+            };
+            return statusTexts[status] || status?.replace(/_/g, ' ') || 'Unknown';
+        }
+
         function formatDate(ts) {
             // Handles Firebase timestamp objects OR ISO strings
             if (!ts) return 'N/A';
@@ -4617,7 +4653,7 @@ function checkHoursAllocation() {
 /**
  * Submit timesheet (with allocation check)
  */
-async function submitTimesheet(event) {
+async function submitTimesheetLegacy(event) {
     event.preventDefault();
     
     const projectId = document.getElementById('timesheetProjectId').value;
@@ -8799,13 +8835,13 @@ async function showTasks() {
                     <div class="project-card">
                         <div class="project-header">
                             <h3>${project.projectName || 'Untitled Project'}</h3>
-                            <span class="project-status ${project.status.replace(/_/g, '-')}">${project.status.replace(/_/g, ' ')}</span>
+                            <span class="project-status ${(project.status || 'pending').replace(/_/g, '-')}">${(project.status || 'pending').replace(/_/g, ' ')}</span>
                         </div>
                         <div class="project-details">
                             <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
                             <p><strong>Project Code:</strong> ${project.projectCode || 'N/A'}</p>
                             <p><strong>Target Date:</strong> ${project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set'}</p>
-                            <p><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</p>
+                            <p><strong>Allocated Hours:</strong> ${(project.maxAllocatedHours || 0) + (project.additionalHours || 0)}h</p>
                         </div>
                         <div class="project-actions">
                             <button class="btn btn-primary" onclick="viewDesignerProject('${project.id}')">
@@ -8832,7 +8868,10 @@ async function showTasks() {
         // DELIVERABLES (Designer)
         // ============================================
 
-        async function showDesignerDashboard() { /* ... (Unchanged) ... */ }
+        async function showDesignerDashboard() {
+            // Redirect to Project Allocations view which is the main designer dashboard
+            await showDesignerAllocations();
+        }
                 async function viewDesignerProject(projectId) {
             console.log('👀 Opening project:', projectId);
             setActiveNav('');
@@ -12982,8 +13021,8 @@ function updateTimesheetAllocationInfo() {
                     }
                     
                     // Refresh dashboard if displayed
-                    if (typeof loadDesignerDashboard === 'function') {
-                        loadDesignerDashboard();
+                    if (typeof showDesignerAllocations === 'function') {
+                        showDesignerAllocations();
                     }
                     
                 } else if (response.exceedsAllocation) {
@@ -13153,6 +13192,91 @@ async function submitAdditionalTimeRequest() {
  * Show Pending Time Requests (for designers)
  */
 async function showPendingTimeRequests() {
+    try {
+        showLoading();
+        
+        const response = await apiCall('time-requests');
+        
+        if (!response.success) {
+            throw new Error('Failed to load time requests');
+        }
+        
+        const requests = response.data || [];
+        const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'info_requested');
+        
+        let requestsHtml = '';
+        
+        if (pendingRequests.length === 0) {
+            requestsHtml = `
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h3>No Pending Requests</h3>
+                    <p>You don't have any pending additional time requests.</p>
+                </div>
+            `;
+        } else {
+            requestsHtml = pendingRequests.map(req => `
+                <div class="card" style="margin-bottom: 1rem; border-left: 4px solid ${req.status === 'info_requested' ? '#ff9800' : '#2196F3'};">
+                    <div style="padding: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div>
+                                <h4 style="margin: 0;">${req.projectName}</h4>
+                                <small style="color: #666;">${req.clientCompany}</small>
+                            </div>
+                            <span class="badge" style="background: ${req.status === 'info_requested' ? '#ff9800' : '#2196F3'};">
+                                ${req.status === 'info_requested' ? 'Info Requested' : 'Pending Review'}
+                            </span>
+                        </div>
+                        
+                        <div style="margin: 1rem 0; padding: 0.75rem; background: #f5f5f5; border-radius: 4px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                <div><strong>Requested:</strong> ${req.requestedHours}h</div>
+                                <div><strong>Current:</strong> ${req.currentHoursLogged}h / ${req.currentAllocatedHours}h</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin: 1rem 0;">
+                            <strong>Reason:</strong>
+                            <p style="margin: 0.5rem 0; color: #555;">${req.reason}</p>
+                        </div>
+                        
+                        ${req.reviewComment ? `
+                            <div style="margin: 1rem 0; padding: 0.75rem; background: #fff3cd; border-radius: 4px;">
+                                <strong>COO Comment:</strong>
+                                <p style="margin: 0.5rem 0; color: #856404;">${req.reviewComment}</p>
+                            </div>
+                        ` : ''}
+                        
+                        <small style="color: #666;">
+                            Submitted: ${req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        const mainContent = document.getElementById('mainContent');
+        mainContent.innerHTML = `
+            <div class="page-header">
+                <h2>⏱️ My Time Requests</h2>
+                <p class="subtitle">Track your additional time requests</p>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <button onclick="showTimesheet()" class="btn btn-outline">← Back to Timesheet</button>
+            </div>
+            
+            ${requestsHtml}
+        `;
+        
+        hideLoading();
+        
+    } catch (error) {
+        console.error('Error loading time requests:', error);
+        alert('Error: ' + error.message);
+        hideLoading();
+    }
+}
 
 /**
  * Direct Request Additional Time Modal (without exceeding timesheet context)
@@ -13322,94 +13446,6 @@ async function submitDirectTimeRequest() {
         console.error('Error submitting time request:', error);
         alert('Error: ' + error.message);
     } finally {
-        hideLoading();
-    }
-}
-
-// Original showPendingTimeRequests continues below
-async function showPendingTimeRequests() {
-    try {
-        showLoading();
-        
-        const response = await apiCall('time-requests');
-        
-        if (!response.success) {
-            throw new Error('Failed to load time requests');
-        }
-        
-        const requests = response.data || [];
-        const pendingRequests = requests.filter(r => r.status === 'pending' || r.status === 'info_requested');
-        
-        let requestsHtml = '';
-        
-        if (pendingRequests.length === 0) {
-            requestsHtml = `
-                <div style="text-align: center; padding: 3rem; color: #666;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
-                    <h3>No Pending Requests</h3>
-                    <p>You don't have any pending additional time requests.</p>
-                </div>
-            `;
-        } else {
-            requestsHtml = pendingRequests.map(req => `
-                <div class="card" style="margin-bottom: 1rem; border-left: 4px solid ${req.status === 'info_requested' ? '#ff9800' : '#2196F3'};">
-                    <div style="padding: 1rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                            <div>
-                                <h4 style="margin: 0;">${req.projectName}</h4>
-                                <small style="color: #666;">${req.clientCompany}</small>
-                            </div>
-                            <span class="badge" style="background: ${req.status === 'info_requested' ? '#ff9800' : '#2196F3'};">
-                                ${req.status === 'info_requested' ? 'Info Requested' : 'Pending Review'}
-                            </span>
-                        </div>
-                        
-                        <div style="margin: 1rem 0; padding: 0.75rem; background: #f5f5f5; border-radius: 4px;">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
-                                <div><strong>Requested:</strong> ${req.requestedHours}h</div>
-                                <div><strong>Current:</strong> ${req.currentHoursLogged}h / ${req.currentAllocatedHours}h</div>
-                            </div>
-                        </div>
-                        
-                        <div style="margin: 1rem 0;">
-                            <strong>Reason:</strong>
-                            <p style="margin: 0.5rem 0; color: #555;">${req.reason}</p>
-                        </div>
-                        
-                        ${req.reviewComment ? `
-                            <div style="margin: 1rem 0; padding: 0.75rem; background: #fff3cd; border-radius: 4px;">
-                                <strong>COO Comment:</strong>
-                                <p style="margin: 0.5rem 0; color: #856404;">${req.reviewComment}</p>
-                            </div>
-                        ` : ''}
-                        
-                        <small style="color: #666;">
-                            Submitted: ${req.createdAt ? new Date(req.createdAt.seconds * 1000).toLocaleString() : 'N/A'}
-                        </small>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        const mainContent = document.getElementById('mainContent');
-        mainContent.innerHTML = `
-            <div class="page-header">
-                <h2>⏱️ My Time Requests</h2>
-                <p class="subtitle">Track your additional time requests</p>
-            </div>
-            
-            <div style="margin-bottom: 1.5rem;">
-                <button onclick="showTimesheet()" class="btn btn-outline">← Back to Timesheet</button>
-            </div>
-            
-            ${requestsHtml}
-        `;
-        
-        hideLoading();
-        
-    } catch (error) {
-        console.error('Error loading time requests:', error);
-        alert('Error: ' + error.message);
         hideLoading();
     }
 }
@@ -14609,6 +14645,79 @@ async function loadDesignerTimesheet() {
     }
 }
 
+
+async function loadTimesheetHistory(monthFilter) {
+    const container = document.getElementById('timesheetHistoryContainer');
+    if (!container) return;
+    
+    if (!monthFilter) {
+        container.innerHTML = '<p class="text-center text-light mt-3">Select a month to view history.</p>';
+        return;
+    }
+    
+    try {
+        container.innerHTML = '<div class="loading-spinner"></div>';
+        
+        const response = await apiCall('timesheets');
+        if (!response.success) {
+            throw new Error('Failed to load timesheets');
+        }
+        
+        const entries = response.data || [];
+        
+        // Filter by month
+        const [year, month] = monthFilter.split('-').map(Number);
+        const filteredEntries = entries.filter(entry => {
+            const entryDate = entry.date?.seconds 
+                ? new Date(entry.date.seconds * 1000)
+                : new Date(entry.date);
+            return entryDate.getFullYear() === year && entryDate.getMonth() + 1 === month;
+        });
+        
+        if (filteredEntries.length === 0) {
+            container.innerHTML = '<p class="text-center text-light mt-3">No timesheet entries for this month.</p>';
+            return;
+        }
+        
+        // Calculate total hours
+        const totalHours = filteredEntries.reduce((sum, e) => sum + parseFloat(e.hours || 0), 0);
+        
+        container.innerHTML = `
+            <div style="margin-bottom: 1rem; padding: 1rem; background: #e3f2fd; border-radius: 8px;">
+                <strong>Total Hours for ${new Date(year, month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}:</strong> 
+                ${totalHours.toFixed(1)}h (${filteredEntries.length} entries)
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Project</th>
+                        <th>Hours</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${filteredEntries.map(entry => `
+                        <tr>
+                            <td>${formatDate(entry.date)}</td>
+                            <td>${entry.projectName || 'N/A'}</td>
+                            <td>${entry.hours}h</td>
+                            <td>${entry.description || '-'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (error) {
+        console.error('Error loading timesheet history:', error);
+        container.innerHTML = `<p class="text-center text-danger">Error: ${error.message}</p>`;
+    }
+}
+
+async function editTimesheetEntry(entryId) {
+    alert('Edit functionality coming soon. For now, please delete and re-create the entry.');
+    // TODO: Implement edit modal
+}
 
 async function deleteTimesheetEntry(entryId) {
     if (!confirm('Delete this timesheet entry?')) return;
