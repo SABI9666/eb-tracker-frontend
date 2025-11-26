@@ -8631,6 +8631,7 @@ async function showDesignerAllocations() {
                 <div class="modal-body" id="projectFilesContent" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
                     <div style="display: flex; justify-content: center; align-items: center; padding: 3rem;">
                         <div class="loading-spinner"></div>
+                        <span style="margin-left: 1rem; color: #6b7280;">Loading files...</span>
                     </div>
                 </div>
                 
@@ -8656,48 +8657,85 @@ async function showDesignerAllocations() {
         console.log('📦 Project details:', project);
         
         // Update project name with more details
-        document.getElementById('filesModalProjectName').innerHTML = `
-            <span>${projectName}</span>
-            <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectCode || 'No Code'} | ${project.clientCompany || ''}</span>
-        `;
+        const projectInfoDisplay = document.getElementById('filesModalProjectName');
+        if (projectInfoDisplay) {
+            projectInfoDisplay.innerHTML = `
+                <span>${projectName}</span>
+                <span style="opacity: 0.7; margin-left: 1rem;">| ${project.projectNumber || project.projectCode || 'No Code'} | ${project.clientCompany || ''}</span>
+            `;
+        }
         
         // Fetch files using multiple approaches
         let files = [];
+        let fetchErrors = [];
         
         // Approach 1: Try fetching by projectId
         try {
+            console.log('🔍 Fetching files by projectId:', projectId);
             const response1 = await apiCall(`files?projectId=${projectId}`);
-            if (response1.success && response1.data && response1.data.length > 0) {
+            console.log('📁 Response 1:', response1);
+            if (response1.success && response1.data && Array.isArray(response1.data) && response1.data.length > 0) {
                 files = response1.data;
                 console.log('✅ Files found using projectId:', files.length);
             }
         } catch (err) {
             console.log('⚠️ Could not fetch files by projectId:', err.message);
+            fetchErrors.push('projectId: ' + err.message);
         }
         
         // Approach 2: If no files found and we have a proposalId, try that
         if (files.length === 0 && project.proposalId) {
             try {
+                console.log('🔍 Fetching files by proposalId:', project.proposalId);
                 const response2 = await apiCall(`files/list?proposalId=${project.proposalId}`);
-                if (response2.success && response2.data && response2.data.length > 0) {
+                console.log('📁 Response 2:', response2);
+                if (response2.success && response2.data && Array.isArray(response2.data) && response2.data.length > 0) {
                     files = response2.data;
-                    console.log('✅ Files found using proposalId:', files.length);
+                    console.log('✅ Files found using proposalId (list endpoint):', files.length);
                 }
             } catch (err) {
-                console.log('⚠️ Could not fetch files by proposalId:', err.message);
+                console.log('⚠️ Could not fetch files by proposalId (list):', err.message);
+                fetchErrors.push('proposalId list: ' + err.message);
             }
         }
         
         // Approach 3: Try the legacy endpoint as a fallback
         if (files.length === 0 && project.proposalId) {
             try {
+                console.log('🔍 Fetching files by proposalId (legacy):', project.proposalId);
                 const response3 = await apiCall(`files?proposalId=${project.proposalId}`);
-                if (response3.success && response3.data && response3.data.length > 0) {
+                console.log('📁 Response 3:', response3);
+                if (response3.success && response3.data && Array.isArray(response3.data) && response3.data.length > 0) {
                     files = response3.data;
                     console.log('✅ Files found using legacy endpoint:', files.length);
                 }
             } catch (err) {
                 console.log('⚠️ Could not fetch files using legacy endpoint:', err.message);
+                fetchErrors.push('proposalId legacy: ' + err.message);
+            }
+        }
+        
+        // Approach 4: Check if files are embedded in project document
+        if (files.length === 0 && project.files && Array.isArray(project.files) && project.files.length > 0) {
+            files = project.files;
+            console.log('✅ Files found embedded in project document:', files.length);
+        }
+        
+        // Approach 5: Check proposal directly for files
+        if (files.length === 0 && project.proposalId) {
+            try {
+                console.log('🔍 Fetching proposal to check for embedded files:', project.proposalId);
+                const proposalResponse = await apiCall(`proposals?id=${project.proposalId}`);
+                if (proposalResponse.success && proposalResponse.data) {
+                    const proposal = proposalResponse.data;
+                    if (proposal.files && Array.isArray(proposal.files) && proposal.files.length > 0) {
+                        files = proposal.files;
+                        console.log('✅ Files found embedded in proposal document:', files.length);
+                    }
+                }
+            } catch (err) {
+                console.log('⚠️ Could not fetch proposal for files:', err.message);
+                fetchErrors.push('proposal embedded: ' + err.message);
             }
         }
         
@@ -8715,10 +8753,16 @@ async function showDesignerAllocations() {
                     </p>
                     <div style="margin-top: 1.5rem; padding: 1rem; background: #f3f4f6; border-radius: 8px; display: inline-block;">
                         <small style="color: #6b7280;">
-                            <strong>Project:</strong> ${project.projectCode || 'N/A'} &nbsp;|&nbsp; 
+                            <strong>Project:</strong> ${project.projectNumber || project.projectCode || 'N/A'} &nbsp;|&nbsp; 
                             <strong>Client:</strong> ${project.clientCompany || 'N/A'}
+                            ${project.proposalId ? `<br><strong>Proposal ID:</strong> ${project.proposalId}` : '<br><span style="color: #f59e0b;">⚠️ No proposal linked</span>'}
                         </small>
                     </div>
+                    ${fetchErrors.length > 0 ? `
+                        <div style="margin-top: 1rem; padding: 0.5rem; background: #fef3c7; border-radius: 4px; font-size: 0.75rem; color: #92400e;">
+                            Debug: ${fetchErrors.join(', ')}
+                        </div>
+                    ` : ''}
                 </div>
             `;
             return;
@@ -8734,7 +8778,7 @@ async function showDesignerAllocations() {
         };
         
         files.forEach(file => {
-            const type = file.fileType || 'other';
+            const type = file.fileType || file.type || 'other';
             if (filesByType[type]) {
                 filesByType[type].push(file);
             } else {
@@ -8779,9 +8823,15 @@ async function showDesignerAllocations() {
                     <div style="display: grid; gap: 0.75rem;">
                         ${typeFiles.map((file, index) => {
                             const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
-                            const uploadedBy = file.uploadedByName || 'Unknown';
+                            const uploadedBy = file.uploadedByName || file.uploadedBy || 'Unknown';
                             const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
-                            const fileExt = file.fileName.split('.').pop().toUpperCase();
+                            const fileName = file.fileName || file.name || 'Unknown File';
+                            const fileExt = fileName.split('.').pop().toUpperCase();
+                            const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
+                            
+                            // Escape special characters for onclick handlers
+                            const safeUrl = fileUrl.replace(/'/g, "\\'").replace(/"/g, '\\"');
+                            const safeFileName = fileName.replace(/'/g, "\\'").replace(/"/g, '\\"');
                             
                             return `
                                 <div style="display: flex; align-items: center; padding: 1rem; background: white; border: 1px solid #e5e7eb; border-radius: 10px; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.05);"
@@ -8793,8 +8843,8 @@ async function showDesignerAllocations() {
                                     </div>
                                     
                                     <div style="flex: 1; min-width: 0;">
-                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${file.fileName}">
-                                            ${file.fileName}
+                                        <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${fileName}">
+                                            ${fileName}
                                         </div>
                                         <div style="font-size: 0.8rem; color: #6b7280;">
                                             <span>📤 ${uploadedBy}</span>
@@ -8805,18 +8855,22 @@ async function showDesignerAllocations() {
                                     </div>
                                     
                                     <div style="display: flex; gap: 0.5rem; margin-left: 1rem; flex-shrink: 0;">
-                                        <button onclick="window.open('${file.fileUrl}', '_blank')" 
-                                                class="btn btn-outline btn-sm"
-                                                style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
-                                                title="View in new tab">
-                                            👁️ View
-                                        </button>
-                                        <button onclick="downloadFile('${file.fileUrl}', '${file.fileName}')" 
-                                                class="btn btn-primary btn-sm"
-                                                style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
-                                                title="Download file">
-                                            ⬇️ Download
-                                        </button>
+                                        ${fileUrl ? `
+                                            <button onclick="window.open('${safeUrl}', '_blank')" 
+                                                    class="btn btn-outline btn-sm"
+                                                    style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
+                                                    title="View in new tab">
+                                                👁️ View
+                                            </button>
+                                            <button onclick="downloadFile('${safeUrl}', '${safeFileName}')" 
+                                                    class="btn btn-primary btn-sm"
+                                                    style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem;"
+                                                    title="Download file">
+                                                ⬇️ Download
+                                            </button>
+                                        ` : `
+                                            <span style="color: #ef4444; font-size: 0.8rem;">⚠️ No URL available</span>
+                                        `}
                                     </div>
                                 </div>
                             `;
