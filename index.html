@@ -8575,6 +8575,10 @@ async function showDesignerAllocations() {
         hideLoading();
     }
 }
+
+// ✅ Make showDesignerAllocations globally accessible
+window.showDesignerAllocations = showDesignerAllocations;
+
      async function showProjectFilesModal(projectId, projectName) {
     console.log('📂 Opening files for project:', projectId, projectName);
 
@@ -8583,29 +8587,33 @@ async function showDesignerAllocations() {
     // --- This prevents the "TypeError: Cannot set properties of null" error
     // --- because the elements like 'projectFilesModalTitle' are guaranteed to be in the DOM.
     // -----------------------------------------------------------------------------------
-    let modal = document.getElementById('projectFilesModal');
-    if (!modal) {
-        // Define the full HTML structure for the project files modal
-        const modalHtml = `
-            <div class="modal-overlay" id="projectFilesModal" onclick="handleModalOverlayClick(event, 'projectFilesModal')">
-                <div class="modal-content" style="max-width: 900px;">
-                    <div class="modal-header">
-                        <h2 id="projectFilesModalTitle"></h2>
-                        <span class="close-modal" onclick="closeModal('projectFilesModal')">&times;</span>
-                    </div>
-                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                        <p id="projectFilesModalSubtitle" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
-                        <div id="projectFilesContent">
-                            </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-outline" onclick="closeModal('projectFilesModal')">Close</button>
+    // FIXED: Remove existing modal first to prevent stale data
+    let existingModal = document.getElementById('projectFilesModal');
+    if (existingModal) {
+        existingModal.remove();
+    }
+    
+    // Define the full HTML structure for the project files modal
+    const modalHtml = `
+        <div class="modal-overlay" id="projectFilesModal" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="handleModalOverlayClick(event, 'projectFilesModal')">
+            <div class="modal-content" style="max-width: 900px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="projectFilesModalTitle" style="margin: 0;"></h2>
+                    <span class="close-modal" onclick="closeProjectFilesModal()" style="cursor: pointer; font-size: 2rem; color: #666; line-height: 1;">&times;</span>
+                </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding: 1.5rem;">
+                    <p id="projectFilesModalSubtitle" style="color: var(--text-light); margin-bottom: 1.5rem;"></p>
+                    <div id="projectFilesContent">
                     </div>
                 </div>
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+                    <button class="btn btn-outline" onclick="closeProjectFilesModal()">Close</button>
+                </div>
             </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    }
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    document.body.classList.add('modal-open');
     // -----------------------------------------------------------------------------------
 
     // 1. Get DOM elements (These are now guaranteed to exist)
@@ -8614,12 +8622,11 @@ async function showDesignerAllocations() {
     const content = document.getElementById('projectFilesContent');
 
     // 2. Set initial state (Title and Loading spinner)
-    title.textContent = `Project Files: ${projectName}`;
-    subtitle.textContent = `Loading files for project ID: ${projectId}`;
-    content.innerHTML = '<div class="loading-spinner"></div>';
+    title.textContent = `📂 Project Files: ${projectName}`;
+    subtitle.textContent = `Loading files for project...`;
+    content.innerHTML = '<div class="loading-spinner" style="text-align: center; padding: 2rem;"><div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary-blue); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto;"></div><p style="margin-top: 1rem; color: var(--text-light);">Loading files...</p></div>';
 
-    // 3. Open the modal
-    openModal('projectFilesModal'); 
+    // 3. Modal is already visible (display: flex set inline) 
 
     try {
         // 4. First, get the project details to find the proposalId
@@ -8795,6 +8802,19 @@ async function showDesignerAllocations() {
         `;
     }
 }
+
+// ✅ FIXED: Dedicated close function for project files modal
+function closeProjectFilesModal() {
+    const modal = document.getElementById('projectFilesModal');
+    if (modal) {
+        modal.remove();
+    }
+    document.body.classList.remove('modal-open');
+}
+
+// Make it globally accessible
+window.closeProjectFilesModal = closeProjectFilesModal;
+window.showProjectFilesModal = showProjectFilesModal;
                                 
 // Helper function to format file size
 function formatFileSize(bytes) {
@@ -9644,6 +9664,7 @@ async function markProjectComplete(projectId) {
         async function showActivities() {
             setActiveNav('nav-activities');
             const main = document.getElementById('mainContent');
+            main.style.display = 'block'; // Ensure main content is visible
             showLoading();
 
             try {
@@ -9668,7 +9689,7 @@ async function markProjectComplete(projectId) {
 
                 main.innerHTML = `
                     <div class="page-header">
-                        <h2>All Activities</h2>
+                        <h2>📝 All Activities</h2>
                         <div class="subtitle">A log of all actions taken in the system.</div>
                     </div>
                     <div class="action-section">
@@ -9684,6 +9705,9 @@ async function markProjectComplete(projectId) {
                 hideLoading();
             }
         }
+        
+        // ✅ Make showActivities globally accessible
+        window.showActivities = showActivities;
 
         // ============================================
         // DIAGNOSTICS
@@ -11789,44 +11813,82 @@ async function submitProposalAllocation() {
         
         // ✅ FIX: Forward declarations for designer functions defined in second script block
         // These functions are fully implemented later in the file but need to be accessible from HTML
-        window.showTasks = function() {
-            // Will be properly defined in second script block
-            console.log('showTasks called - waiting for definition');
-            setTimeout(() => {
-                if (typeof window.showTasksImpl === 'function') {
-                    window.showTasksImpl();
-                }
-            }, 100);
+        // FIXED: Using async/await pattern with retry to ensure implementations are loaded
+        
+        window.showTasks = async function() {
+            console.log('🔄 showTasks called');
+            // Wait for implementation to be defined (max 2 seconds)
+            let attempts = 0;
+            while (typeof window.showTasksImpl !== 'function' && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof window.showTasksImpl === 'function') {
+                window.showTasksImpl();
+            } else {
+                console.error('❌ showTasksImpl not defined after waiting');
+                alert('Error: Tasks function not loaded. Please refresh the page.');
+            }
         };
         
-        window.showTimesheet = function() {
-            console.log('showTimesheet called - waiting for definition');
-            setTimeout(() => {
-                if (typeof window.showTimesheetImpl === 'function') {
-                    window.showTimesheetImpl();
-                }
-            }, 100);
+        window.showTimesheet = async function() {
+            console.log('🔄 showTimesheet called');
+            // Wait for implementation to be defined (max 2 seconds)
+            let attempts = 0;
+            while (typeof window.showTimesheetImpl !== 'function' && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof window.showTimesheetImpl === 'function') {
+                window.showTimesheetImpl();
+            } else {
+                console.error('❌ showTimesheetImpl not defined after waiting');
+                alert('Error: Timesheet function not loaded. Please refresh the page.');
+            }
         };
         
-        window.showTimesheetModal = function(projectId) {
-            console.log('showTimesheetModal called - waiting for definition');
-            setTimeout(() => {
-                if (typeof window.showTimesheetModalImpl === 'function') {
-                    window.showTimesheetModalImpl(projectId);
-                }
-            }, 100);
+        window.showTimesheetModal = async function(projectId) {
+            console.log('🔄 showTimesheetModal called for project:', projectId);
+            // Wait for implementation to be defined (max 2 seconds)
+            let attempts = 0;
+            while (typeof window.showTimesheetModalImpl !== 'function' && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof window.showTimesheetModalImpl === 'function') {
+                window.showTimesheetModalImpl(projectId);
+            } else {
+                console.error('❌ showTimesheetModalImpl not defined after waiting');
+                alert('Error: Log Time function not loaded. Please refresh the page.');
+            }
         };
         
-        window.showRequestTimeModalDirect = function(projectId, projectName, allocatedHours, usedHours) {
-            console.log('showRequestTimeModalDirect called - waiting for definition');
-            setTimeout(() => {
-                if (typeof window.showRequestTimeModalDirectImpl === 'function') {
-                    window.showRequestTimeModalDirectImpl(projectId, projectName, allocatedHours, usedHours);
-                }
-            }, 100);
+        window.showRequestTimeModalDirect = async function(projectId, projectName, allocatedHours, usedHours) {
+            console.log('🔄 showRequestTimeModalDirect called');
+            // Wait for implementation to be defined (max 2 seconds)
+            let attempts = 0;
+            while (typeof window.showRequestTimeModalDirectImpl !== 'function' && attempts < 20) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (typeof window.showRequestTimeModalDirectImpl === 'function') {
+                window.showRequestTimeModalDirectImpl(projectId, projectName, allocatedHours, usedHours);
+            } else {
+                console.error('❌ showRequestTimeModalDirectImpl not defined after waiting');
+                alert('Error: Request Time function not loaded. Please refresh the page.');
+            }
         };
         
-        console.log('✅ All onclick functions registered globally');
+        // Also make showProjectFilesModal globally available
+        window.showProjectFilesModal = window.showProjectFilesModal || async function(projectId, projectName) {
+            console.log('🔄 showProjectFilesModal called for:', projectId, projectName);
+            // This function is defined earlier in the file, so it should be available
+            if (typeof showProjectFilesModal === 'function') {
+                showProjectFilesModal(projectId, projectName);
+            }
+        };
+        
+        console.log('✅ All onclick functions registered globally with async/await pattern');
     </script>
 
     <div id="cooProjectNumberSection" style="display: none;">
@@ -13980,30 +14042,44 @@ async function submitRejectTimeRequest() {
 function closeTimesheetModal() {
     const modal = document.getElementById('timesheetModalOverlay');
     if (modal) modal.remove();
+    document.body.classList.remove('modal-open');
 }
 
 function closeRequestTimeModal() {
     const modal = document.getElementById('requestTimeModalOverlay');
     if (modal) modal.remove();
+    document.body.classList.remove('modal-open');
 }
 
 function closeRejectModal() {
     const modal = document.getElementById('rejectModalOverlay');
     if (modal) modal.remove();
+    document.body.classList.remove('modal-open');
 }
 
 function closeAllModals() {
     // Remove all modal overlays
     const modals = document.querySelectorAll('.modal-overlay');
     modals.forEach(modal => modal.remove());
+    document.body.classList.remove('modal-open');
 }
+
+// ✅ Make modal close functions globally accessible
+window.closeTimesheetModal = closeTimesheetModal;
+window.closeRequestTimeModal = closeRequestTimeModal;
+window.closeRejectModal = closeRejectModal;
+window.closeAllModals = closeAllModals;
 
 function handleModalOverlayClick(event, modalId) {
     // Close modal only if clicking directly on overlay (not on modal content)
     if (event.target.id === modalId) {
         document.getElementById(modalId).remove();
+        document.body.classList.remove('modal-open');
     }
 }
+
+// ✅ Make handleModalOverlayClick globally accessible
+window.handleModalOverlayClick = handleModalOverlayClick;
 
 // Add keyboard ESC to close modals
 document.addEventListener('keydown', function(event) {
@@ -14742,13 +14818,15 @@ function viewProjectDetails(projectId) {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.id = 'projectDetailsModal';
+        // FIXED: Add inline styles to ensure modal displays properly
+        modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;';
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 700px;">
-                <div class="modal-header">
-                    <h3>📋 Project Details</h3>
-                    <button class="modal-close" onclick="closeProjectDetailsModal()">&times;</button>
+            <div class="modal-content" style="max-width: 700px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="margin: 0;">📋 Project Details</h3>
+                    <button class="modal-close" onclick="closeProjectDetailsModal()" style="background: none; border: none; font-size: 2rem; cursor: pointer; color: #666;">&times;</button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" style="padding: 1.5rem; max-height: 60vh; overflow-y: auto;">
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
                         <div><strong>Project Name:</strong><br>${project.projectName || 'N/A'}</div>
                         <div><strong>Client:</strong><br>${project.clientCompany || 'N/A'}</div>
@@ -14760,7 +14838,7 @@ function viewProjectDetails(projectId) {
                         <div style="grid-column: 1 / -1;"><strong>Special Instructions:</strong><br>${project.specialInstructions || 'None'}</div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem;">
                     <button class="btn btn-primary" onclick="showDesignerUploadModal('${projectId}'); closeProjectDetailsModal();">
                         📤 Upload Files
                     </button>
@@ -14770,6 +14848,7 @@ function viewProjectDetails(projectId) {
         `;
         
         document.body.appendChild(modal);
+        document.body.classList.add('modal-open');
     });
 }
 
@@ -14782,6 +14861,7 @@ console.log('✅ viewProjectDetails implementation registered');
 function closeProjectDetailsModal() {
     const modal = document.getElementById('projectDetailsModal');
     if (modal) modal.remove();
+    document.body.classList.remove('modal-open');
 }
 
 // ============================================
@@ -14976,13 +15056,15 @@ function showDesignerUploadModal(projectId) {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.id = 'designerUploadModal';
+    // FIXED: Add inline styles to ensure modal displays properly
+    modal.style.cssText = 'display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;';
     modal.innerHTML = `
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2>Upload Project Files</h2>
-                <span class="close-modal" onclick="closeDesignerUploadModal()">&times;</span>
+        <div class="modal-content" style="max-width: 600px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin: 0;">📤 Upload Project Files</h2>
+                <span class="close-modal" onclick="closeDesignerUploadModal()" style="cursor: pointer; font-size: 2rem; color: #666;">&times;</span>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="padding: 1.5rem; max-height: 60vh; overflow-y: auto;">
                 <form id="designerUploadForm" onsubmit="submitDesignerUpload(event, '${projectId}')">
                     <div class="form-group">
                         <label>Upload Files *</label>
@@ -15012,7 +15094,7 @@ function showDesignerUploadModal(projectId) {
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
+            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem;">
                 <button type="button" class="btn btn-outline" onclick="closeDesignerUploadModal()">Cancel</button>
                 <button type="button" class="btn btn-primary" onclick="submitDesignerUpload(event, '${projectId}')">Upload Files</button>
             </div>
@@ -15020,12 +15102,13 @@ function showDesignerUploadModal(projectId) {
     `;
     
     document.body.appendChild(modal);
+    document.body.classList.add('modal-open');
 }
 
 function closeDesignerUploadModal() {
     const modal = document.getElementById('designerUploadModal');
     if (modal) modal.remove();
-    closeModal();
+    document.body.classList.remove('modal-open');
 }
 
 function updateDesignerFileList() {
@@ -15040,6 +15123,11 @@ function updateDesignerFileList() {
         fileList.innerHTML = '';
     }
 }
+
+// ✅ Make designer upload functions globally accessible
+window.showDesignerUploadModal = showDesignerUploadModal;
+window.closeDesignerUploadModal = closeDesignerUploadModal;
+window.updateDesignerFileList = updateDesignerFileList;
 
 async function submitDesignerUpload(event, projectId) {
     if(event) event.preventDefault();
