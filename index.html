@@ -11813,53 +11813,339 @@ async function submitProposalAllocation() {
         
         // ✅ FIX: Forward declarations for designer functions defined in second script block
         // These functions are fully implemented later in the file but need to be accessible from HTML
-        // FIXED: Using async/await pattern with retry to ensure implementations are loaded
+        // FIXED: Implementing functions directly here instead of waiting for later definitions
         
         window.showTasks = async function() {
             console.log('🔄 showTasks called');
-            // Wait for implementation to be defined (max 2 seconds)
-            let attempts = 0;
-            while (typeof window.showTasksImpl !== 'function' && attempts < 20) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            if (typeof window.showTasksImpl === 'function') {
-                window.showTasksImpl();
-            } else {
-                console.error('❌ showTasksImpl not defined after waiting');
-                alert('Error: Tasks function not loaded. Please refresh the page.');
+            setActiveNav('nav-tasks');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block';
+            showLoading();
+            
+            try {
+                // Fetch projects assigned to this designer
+                const response = await apiCall('projects?assignedToMe=true');
+                
+                if (!response.success) {
+                    throw new Error('Failed to load projects');
+                }
+                
+                let rawProjects = response.data || [];
+                
+                // Ensure specific client-side filtering just in case backend returns all
+                const projects = rawProjects.filter(p => 
+                    (p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)) ||
+                    (p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid))
+                );
+                
+                const projectsHtml = projects.length > 0 ? projects.map(project => `
+                    <div class="project-card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid var(--border);">
+                        <div class="project-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: var(--text-dark);">${project.projectName || 'Untitled Project'}</h3>
+                            <span class="project-status" style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; background: var(--light-blue); color: var(--primary-blue);">${project.status || 'N/A'}</span>
+                        </div>
+                        <div class="project-details" style="margin-bottom: 1rem; color: var(--text-light);">
+                            <p style="margin: 0.5rem 0;"><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
+                            <p style="margin: 0.5rem 0;"><strong>Project Code:</strong> ${project.projectCode || 'N/A'}</p>
+                            <p style="margin: 0.5rem 0;"><strong>Target Date:</strong> ${project.targetCompletionDate ? formatDate(project.targetCompletionDate) : 'Not set'}</p>
+                            <p style="margin: 0.5rem 0;"><strong>Status:</strong> ${project.designStatus || 'N/A'}</p>
+                            <p style="margin: 0.5rem 0;"><strong>Design Manager:</strong> ${project.designLeadName || 'N/A'}</p>
+                        </div>
+                        <div class="project-actions" style="display: flex; gap: 0.5rem;">
+                            <button class="btn btn-primary" onclick="showDesignerUploadModal('${project.id}')">
+                                📤 Upload Files
+                            </button>
+                            <button class="btn btn-outline" onclick="viewProjectDetails('${project.id}')">
+                                👁️ View Details
+                            </button>
+                        </div>
+                    </div>
+                `).join('') : '<p style="text-align: center; padding: 2rem; color: var(--text-light);">No projects assigned yet.</p>';
+                
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>📋 My Tasks</h2>
+                        <p class="subtitle">Projects assigned to you</p>
+                    </div>
+                    
+                    <div class="dashboard-stats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div class="stat-number" style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${projects.length}</div>
+                            <div class="stat-label" style="color: var(--text-light);">Total Projects</div>
+                        </div>
+                        <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div class="stat-number" style="font-size: 2.5rem; font-weight: 700; color: var(--success);">${projects.filter(p => p.status === 'active' || p.status === 'in_progress').length}</div>
+                            <div class="stat-label" style="color: var(--text-light);">Active Projects</div>
+                        </div>
+                        <div class="stat-card" style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <div class="stat-number" style="font-size: 2.5rem; font-weight: 700; color: var(--accent-blue);">${projects.filter(p => p.status === 'completed').length}</div>
+                            <div class="stat-label" style="color: var(--text-light);">Completed</div>
+                        </div>
+                    </div>
+                    
+                    <div class="action-section" style="background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <h3 style="margin-bottom: 1.5rem;">Your Projects</h3>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem;">
+                            ${projectsHtml}
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading tasks:', error);
+                main.innerHTML = `<div class="error-message" style="background: #fee; padding: 2rem; border-radius: 12px; text-align: center;"><h3>⚠️ Error Loading Projects</h3><p>${error.message}</p><button onclick="showTasks()" class="btn btn-primary" style="margin-top: 1rem;">Retry</button></div>`;
+            } finally {
+                hideLoading();
             }
         };
         
         window.showTimesheet = async function() {
             console.log('🔄 showTimesheet called');
-            // Wait for implementation to be defined (max 2 seconds)
-            let attempts = 0;
-            while (typeof window.showTimesheetImpl !== 'function' && attempts < 20) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            if (typeof window.showTimesheetImpl === 'function') {
-                window.showTimesheetImpl();
-            } else {
-                console.error('❌ showTimesheetImpl not defined after waiting');
-                alert('Error: Timesheet function not loaded. Please refresh the page.');
+            setActiveNav('nav-timesheet');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block';
+            showLoading();
+            
+            try {
+                console.log('⏱️ Loading Timesheet...');
+                
+                // Load designer's projects and timesheet entries
+                const projectsResponse = await apiCall('projects?assignedToMe=true');
+                const timesheetResponse = await apiCall('timesheets');
+                
+                let projects = [];
+                let entries = [];
+                
+                if (projectsResponse.success) {
+                    const rawProjects = projectsResponse.data || [];
+                    projects = rawProjects.filter(p => 
+                        (p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid)) ||
+                        (p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid))
+                    );
+                }
+                
+                if (timesheetResponse.success) {
+                    entries = timesheetResponse.data || [];
+                }
+                
+                // Calculate summary - helper functions
+                const isThisWeek = (dateStr) => {
+                    if (!dateStr) return false;
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const weekStart = new Date(now.setDate(now.getDate() - now.getDay()));
+                    weekStart.setHours(0, 0, 0, 0);
+                    return date >= weekStart;
+                };
+                
+                const isThisMonth = (dateStr) => {
+                    if (!dateStr) return false;
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+                };
+                
+                const thisWeekHours = entries
+                    .filter(e => isThisWeek(e.date))
+                    .reduce((sum, e) => sum + parseFloat(e.hours || 0), 0);
+                
+                const thisMonthHours = entries
+                    .filter(e => isThisMonth(e.date))
+                    .reduce((sum, e) => sum + parseFloat(e.hours || 0), 0);
+                
+                // Build entries table
+                const entriesHtml = entries.length > 0 ? entries.slice(0, 20).map(entry => `
+                    <tr>
+                        <td>${entry.date || 'N/A'}</td>
+                        <td>${entry.projectName || 'Unknown Project'}</td>
+                        <td><strong>${parseFloat(entry.hours || 0).toFixed(2)}h</strong></td>
+                        <td>${entry.description || 'No description'}</td>
+                        <td><span style="padding: 0.25rem 0.5rem; border-radius: 4px; background: ${entry.status === 'approved' ? '#d4edda' : '#fff3cd'}; color: ${entry.status === 'approved' ? '#155724' : '#856404'};">${entry.status || 'Pending'}</span></td>
+                        <td>-</td>
+                    </tr>
+                `).join('') : `<tr><td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-light);">No timesheet entries yet. Click "Log Hours" to add your first entry.</td></tr>`;
+                
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>⏱️ My Timesheet</h2>
+                        <p class="subtitle">Track your hours on assigned projects</p>
+                    </div>
+                    
+                    <div class="card" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                            <h3 style="margin: 0;">Log Hours</h3>
+                            <button onclick="showTimesheetModal()" class="btn btn-primary">
+                                <span>+</span> Log Hours
+                            </button>
+                        </div>
+                        
+                        <!-- Timesheet Summary -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; padding: 1rem;">
+                            <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
+                                <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">This Week</div>
+                                <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${thisWeekHours.toFixed(1)}h</div>
+                            </div>
+                            <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
+                                <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">This Month</div>
+                                <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${thisMonthHours.toFixed(1)}h</div>
+                            </div>
+                            <div class="stat-card" style="background: white; border: 2px solid var(--border); border-radius: 10px; padding: 1rem; text-align: center;">
+                                <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Active Projects</div>
+                                <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary-blue);">${projects.length}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Timesheet Entries Table -->
+                        <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: var(--light-blue);">
+                                    <th style="padding: 1rem; text-align: left;">Date</th>
+                                    <th style="padding: 1rem; text-align: left;">Project</th>
+                                    <th style="padding: 1rem; text-align: left;">Hours</th>
+                                    <th style="padding: 1rem; text-align: left;">Description</th>
+                                    <th style="padding: 1rem; text-align: left;">Status</th>
+                                    <th style="padding: 1rem; text-align: left;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${entriesHtml}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Timesheet error:', error);
+                main.innerHTML = `<div class="error-message" style="background: #fee; padding: 2rem; border-radius: 12px; text-align: center;"><h3>⚠️ Error Loading Timesheet</h3><p>${error.message}</p><button onclick="showTimesheet()" class="btn btn-primary" style="margin-top: 1rem;">Retry</button></div>`;
+            } finally {
+                hideLoading();
             }
         };
         
-        window.showTimesheetModal = async function(projectId) {
+        window.showTimesheetModal = async function(projectId = null) {
             console.log('🔄 showTimesheetModal called for project:', projectId);
-            // Wait for implementation to be defined (max 2 seconds)
-            let attempts = 0;
-            while (typeof window.showTimesheetModalImpl !== 'function' && attempts < 20) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
-            }
-            if (typeof window.showTimesheetModalImpl === 'function') {
-                window.showTimesheetModalImpl(projectId);
-            } else {
-                console.error('❌ showTimesheetModalImpl not defined after waiting');
-                alert('Error: Log Time function not loaded. Please refresh the page.');
+            try {
+                showLoading();
+                
+                // Fetch all projects
+                const response = await apiCall('projects');
+                if (!response.success) {
+                    throw new Error('Failed to load projects');
+                }
+                
+                const projects = response.data || [];
+                // Filter for projects assigned to the current designer
+                const assignedProjects = projects.filter(p => {
+                    const inDesigners = p.assignedDesigners && p.assignedDesigners.includes(currentUser.uid);
+                    const inUids = p.assignedDesignerUids && p.assignedDesignerUids.includes(currentUser.uid);
+                    return inDesigners || inUids;
+                });
+                
+                if (assignedProjects.length === 0) {
+                    alert('You are not assigned to any projects yet.');
+                    hideLoading();
+                    return;
+                }
+                
+                // Close any existing modals first
+                closeAllModals();
+                
+                const modalHtml = `
+                    <div class="modal-overlay" id="timesheetModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="handleModalOverlayClick(event, 'timesheetModalOverlay')">
+                        <div class="modal-content" style="max-width: 600px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                            <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                                <h2 style="margin: 0;">📋 Log Hours</h2>
+                                <span class="close-modal" onclick="closeTimesheetModal()" style="cursor: pointer; font-size: 2rem; color: #666;">&times;</span>
+                            </div>
+                            
+                            <div class="modal-body" style="padding: 1.5rem; max-height: 60vh; overflow-y: auto;">
+                                <form id="timesheetForm" onsubmit="event.preventDefault(); submitTimesheet();">
+                                    <div class="form-group" style="margin-bottom: 1rem;">
+                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Project <span style="color: red;">*</span></label>
+                                        <select id="timesheetProjectId" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;" required>
+                                            <option value="">Select a project...</option>
+                                            ${assignedProjects.map(project => `
+                                                <option value="${project.id}" 
+                                                        data-allocated="${(project.maxAllocatedHours || 0) + (project.additionalHours || 0)}" 
+                                                        data-logged="${project.hoursLogged || 0}">
+                                                    ${project.projectName} - ${project.clientCompany}
+                                                </option>
+                                            `).join('')}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 1rem;">
+                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Date <span style="color: red;">*</span></label>
+                                        <input type="date" id="timesheetDate" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;"
+                                               max="${new Date().toISOString().split('T')[0]}" required>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 1rem;">
+                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Hours <span style="color: red;">*</span></label>
+                                        <input type="number" id="timesheetHours" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px;"
+                                               min="0.25" max="24" step="0.25" required 
+                                               placeholder="e.g., 8 or 2.5">
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 1rem;">
+                                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Description <span style="color: red;">*</span></label>
+                                        <textarea id="timesheetDescription" class="form-control" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; resize: vertical;"
+                                                  placeholder="Describe what you worked on..." required></textarea>
+                                    </div>
+
+                                    <div id="timesheetAllocationInfo" 
+                                         style="display: none; padding: 1rem; background: #e3f2fd; 
+                                                border-radius: 8px; margin-top: 1rem; border-left: 4px solid #2196F3;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span>Hours Logged:</span>
+                                            <strong id="timesheetCurrentHours">0h</strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span>Hours Allocated:</span>
+                                            <strong id="timesheetAllocatedHours">0h</strong>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span>Hours Remaining:</span>
+                                            <strong id="timesheetRemainingHours" style="color: #4CAF50;">0h</strong>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="timesheetWarning" style="display: none; padding: 1rem; background: #fff3cd; 
+                                         border-radius: 8px; margin-top: 1rem; border-left: 4px solid #ff9800; color: #856404;">
+                                        <strong>⚠️ Warning:</strong> <span id="timesheetWarningText"></span>
+                                    </div>
+                                </form>
+                            </div>
+                            
+                            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem;">
+                                <button type="button" onclick="closeTimesheetModal()" class="btn btn-outline">Cancel</button>
+                                <button type="button" onclick="submitTimesheet()" class="btn btn-success">
+                                    Log Hours
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                document.body.classList.add('modal-open');
+                document.getElementById('timesheetDate').value = new Date().toISOString().split('T')[0];
+                
+                // Add change listener for project selection
+                document.getElementById('timesheetProjectId').addEventListener('change', updateTimesheetAllocationInfo);
+                document.getElementById('timesheetHours').addEventListener('input', updateTimesheetAllocationInfo);
+                
+                if (projectId) {
+                    document.getElementById('timesheetProjectId').value = projectId;
+                    updateTimesheetAllocationInfo();
+                }
+                
+                hideLoading();
+                
+            } catch (error) {
+                console.error('Error showing timesheet modal:', error);
+                alert('Error loading timesheet form: ' + error.message);
+                hideLoading();
             }
         };
         
@@ -11888,7 +12174,46 @@ async function submitProposalAllocation() {
             }
         };
         
-        console.log('✅ All onclick functions registered globally with async/await pattern');
+        // Helper function for timesheet allocation info
+        window.updateTimesheetAllocationInfo = function() {
+            const projectSelect = document.getElementById('timesheetProjectId');
+            const hoursInput = document.getElementById('timesheetHours');
+            const infoDiv = document.getElementById('timesheetAllocationInfo');
+            const warningDiv = document.getElementById('timesheetWarning');
+            const warningText = document.getElementById('timesheetWarningText');
+            
+            if (!projectSelect || !projectSelect.value) {
+                if (infoDiv) infoDiv.style.display = 'none';
+                if (warningDiv) warningDiv.style.display = 'none';
+                return;
+            }
+            
+            const selectedOption = projectSelect.options[projectSelect.selectedIndex];
+            const allocated = parseFloat(selectedOption.dataset.allocated) || 0;
+            const logged = parseFloat(selectedOption.dataset.logged) || 0;
+            const remaining = allocated - logged;
+            const hoursToAdd = parseFloat(hoursInput.value) || 0;
+            const newTotal = logged + hoursToAdd;
+            
+            document.getElementById('timesheetCurrentHours').textContent = logged.toFixed(2) + 'h';
+            document.getElementById('timesheetAllocatedHours').textContent = allocated.toFixed(2) + 'h';
+            document.getElementById('timesheetRemainingHours').textContent = remaining.toFixed(2) + 'h';
+            document.getElementById('timesheetRemainingHours').style.color = 
+                remaining < 5 ? '#f44336' : '#4CAF50';
+            
+            infoDiv.style.display = 'block';
+            
+            // Show warning if exceeding allocation
+            if (hoursToAdd > 0 && newTotal > allocated && allocated > 0) {
+                const exceeded = newTotal - allocated;
+                warningText.textContent = `Adding ${hoursToAdd}h will exceed allocation by ${exceeded.toFixed(2)}h. You'll need to request additional time from COO.`;
+                warningDiv.style.display = 'block';
+            } else {
+                warningDiv.style.display = 'none';
+            }
+        };
+        
+        console.log('✅ All designer functions implemented directly');
     </script>
 
     <div id="cooProjectNumberSection" style="display: none;">
