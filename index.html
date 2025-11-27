@@ -2704,6 +2704,7 @@ body.modal-open {
             }
             throw error;
         }
+    }
 
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Application starting...');
@@ -14600,6 +14601,12 @@ async function submitAdditionalTimeRequest() {
  * Show Pending Time Requests (for designers)
  */
 async function showPendingTimeRequests() {
+    // This function is replaced by window.showCOOTimeRequests in the first script block
+    console.log('showPendingTimeRequests called - redirecting to showCOOTimeRequests');
+    if (typeof window.showCOOTimeRequests === 'function') {
+        return window.showCOOTimeRequests();
+    }
+}
 
 /**
  * Direct Request Additional Time Modal (without exceeding timesheet context)
