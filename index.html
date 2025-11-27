@@ -7805,26 +7805,44 @@ async function submitEditedPricing() {
 
             try {
                 showLoading();
-                const formData = new FormData();
-                Array.from(fileInput.files).forEach(file => formData.append('files', file));
-                formData.append('fileType', fileType);
-                // Note: These files are not associated with a proposal/project
-                // The backend API at POST /api/files should handle this case.
                 
-                const response = await apiCall('files', { 
-                    method: 'POST', 
-                    body: formData 
-                });
+                // Upload each file individually using the correct endpoint
+                const files = Array.from(fileInput.files);
+                let successCount = 0;
+                
+                for (const file of files) {
+                    const formData = new FormData();
+                    formData.append('file', file);  // Single 'file' not 'files'
+                    formData.append('proposalId', '');  // Empty = general files
+                    formData.append('fileType', fileType);
+                    
+                    console.log(`📤 Uploading: ${file.name}`);
+                    
+                    const response = await apiCall('files/upload-file', { 
+                        method: 'POST', 
+                        body: formData 
+                    });
 
-                if (response.success) {
-                    showNotification('Files uploaded successfully!', 'success');
-                    document.getElementById('fileManagerUploadForm').reset();
-                    document.getElementById('fileMgrFilePreview').innerHTML = '';
-                    showFiles(); // Refresh file list
-                } else {
-                    throw new Error(response.error || 'File upload failed');
+                    if (response.success) {
+                        successCount++;
+                        console.log(`✅ Uploaded: ${file.name}`);
+                    } else {
+                        console.error(`❌ Failed: ${file.name}`, response.error);
+                    }
                 }
+                
+                if (successCount === files.length) {
+                    showNotification(`${successCount} file(s) uploaded successfully!`, 'success');
+                } else {
+                    showNotification(`${successCount} of ${files.length} files uploaded.`, 'warning');
+                }
+                
+                document.getElementById('fileManagerUploadForm').reset();
+                document.getElementById('fileMgrFilePreview').innerHTML = '';
+                showFiles(); // Refresh file list
+                
             } catch (error) {
+                console.error('Upload error:', error);
                 showNotification(`Upload Error: ${error.message}`, 'error');
             } finally {
                 hideLoading();
@@ -16627,16 +16645,16 @@ function toggleDesignHours() {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            // Ensure null/undefined becomes an empty string or explicitly null string for FormData
+            // CRITICAL: Send empty string if no proposalId - backend converts to null
             formData.append('proposalId', proposalId || ''); 
             formData.append('fileType', fileType || 'project');
             
-            // ✅ FIX: Use the specific query param trigger defined in the backend
-            const response = await apiCall('files?action=upload', {
+            // ✅ FIX: Use 'files/upload-file' endpoint that backend expects
+            const response = await apiCall('files/upload-file', {
                 method: 'POST',
                 body: formData
                 // Note: Content-Type header is NOT set here; 
-                // apiCall helper usually handles this by detecting FormData
+                // apiCall helper handles FormData correctly
             });
             
             if (!response.success) {
