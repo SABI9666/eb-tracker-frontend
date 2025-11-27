@@ -16609,9 +16609,7 @@ function toggleDesignHours() {
 }
   
 
-// ============================================
-    // ✅ GLOBAL FILE UPLOAD FUNCTION (MUST BE HERE)
-    // ============================================
+// ✅ GLOBAL FILE UPLOAD FUNCTION
     async function uploadFileDirectly(file, proposalId, fileType) {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log(`🚀 Uploading: ${file.name}`);
@@ -16619,14 +16617,16 @@ function toggleDesignHours() {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('proposalId', proposalId || '');
+            // Ensure null/undefined becomes an empty string or explicitly null string for FormData
+            formData.append('proposalId', proposalId || ''); 
             formData.append('fileType', fileType || 'project');
             
-            // console.log('📤 Sending to backend...');
-            
-            const response = await apiCall('files/upload-file', {
+            // ✅ FIX: Use the specific query param trigger defined in the backend
+            const response = await apiCall('files?action=upload', {
                 method: 'POST',
                 body: formData
+                // Note: Content-Type header is NOT set here; 
+                // apiCall helper usually handles this by detecting FormData
             });
             
             if (!response.success) {
