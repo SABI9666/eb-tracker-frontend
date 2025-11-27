@@ -12707,6 +12707,146 @@ Examples:
         };
         
         console.log('✅ All designer functions implemented directly');
+        
+        // ============================================
+        // ✅ COO TIME REQUEST FUNCTIONS - MUST BE IN FIRST SCRIPT BLOCK
+        // ============================================
+        
+        window.approveTimeRequest = async function(requestId, hours) {
+            console.log('✅ approveTimeRequest called', { requestId, hours });
+            
+            const comment = prompt(`Approve ${hours}h additional time?\n\nOptional comment for designer:`);
+            
+            if (comment === null) return; // Cancelled
+            
+            try {
+                showLoading();
+                
+                const response = await apiCall(`time-requests?id=${requestId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'approve',
+                        approvedHours: hours,
+                        comment: comment || 'Approved',
+                        applyToTimesheet: true
+                    })
+                });
+                
+                console.log('📥 Approve response:', response);
+                
+                if (response.success) {
+                    alert(`✅ Approved ${hours}h additional time!`);
+                    // Refresh the time requests list
+                    if (typeof showCOOTimeRequests === 'function') {
+                        showCOOTimeRequests();
+                    }
+                } else {
+                    throw new Error(response.error || 'Failed to approve');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error approving time request:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+        
+        window.showRejectTimeRequestModal = function(requestId) {
+            console.log('🔄 showRejectTimeRequestModal called', requestId);
+            closeAllModals();
+            
+            const modalHtml = `
+                <div class="modal-overlay" id="rejectModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="handleModalOverlayClick(event, 'rejectModalOverlay')">
+                    <div class="modal-content" style="max-width: 500px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 12px 12px 0 0;">
+                            <h2 style="margin: 0;">❌ Reject Time Request</h2>
+                            <span class="close-modal" onclick="closeRejectModal()" style="cursor: pointer; font-size: 2rem;">&times;</span>
+                        </div>
+                        
+                        <div class="modal-body" style="padding: 1.5rem;">
+                            <input type="hidden" id="rejectRequestId" value="${requestId}">
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Reason for Rejection <span style="color: red;">*</span></label>
+                                <textarea id="rejectComment" class="form-control" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"
+                                          placeholder="Please explain why this request is being rejected..." required></textarea>
+                                <small style="color: #666;">Minimum 10 characters</small>
+                            </div>
+                        </div>
+                        
+                        <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                            <button type="button" onclick="closeRejectModal()" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: white;">Cancel</button>
+                            <button type="button" onclick="submitRejectTimeRequest()" class="btn btn-danger" style="padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; background: #dc2626; color: white; border: none; font-weight: 600;">
+                                Reject Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.body.classList.add('modal-open');
+        };
+        
+        window.submitRejectTimeRequest = async function() {
+            console.log('📤 submitRejectTimeRequest called');
+            
+            const requestId = document.getElementById('rejectRequestId')?.value;
+            const comment = document.getElementById('rejectComment')?.value?.trim();
+            
+            if (!comment || comment.length < 10) {
+                alert('Please provide a detailed reason for rejection (at least 10 characters)');
+                return;
+            }
+            
+            try {
+                showLoading();
+                
+                const response = await apiCall(`time-requests?id=${requestId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'reject',
+                        comment: comment
+                    })
+                });
+                
+                console.log('📥 Reject response:', response);
+                
+                if (response.success) {
+                    closeRejectModal();
+                    alert('❌ Request rejected');
+                    if (typeof showCOOTimeRequests === 'function') {
+                        showCOOTimeRequests();
+                    }
+                } else {
+                    throw new Error(response.error || 'Failed to reject');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error rejecting time request:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        };
+        
+        window.closeRejectModal = function() {
+            const modal = document.getElementById('rejectModalOverlay');
+            if (modal) modal.remove();
+            document.body.classList.remove('modal-open');
+        };
+        
+        window.showRequestInfoModal = function(requestId) {
+            const info = prompt('Enter additional information request for designer:');
+            if (info && info.trim()) {
+                alert('Request for info feature coming soon. Message: ' + info);
+            }
+        };
+        
+        console.log('✅ COO Time Request functions registered');
     </script>
 
     <div id="cooProjectNumberSection" style="display: none;">
