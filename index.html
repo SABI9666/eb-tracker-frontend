@@ -2610,16 +2610,17 @@ body.modal-open {
                     throw new Error('Authentication token expired. Please log in again.');
                 }
             }
+          // Inside apiCall function...
+          const defaultHeaders = {};
+          if (authToken) {
+          defaultHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
 
-            const defaultHeaders = {};
-            if (authToken) {
-                defaultHeaders['Authorization'] = `Bearer ${authToken}`;
-            }
-            if (!(options.body instanceof FormData)) {
-                defaultHeaders['Content-Type'] = 'application/json';
-            }
-
-            const finalOptions = {
+        // ✅ CRITICAL: Do NOT set Content-Type for FormData. 
+        // The browser automatically sets it with the boundary.
+        if (!(options.body instanceof FormData)) {
+       defaultHeaders['Content-Type'] = 'application/json';
+}
                 method: options.method || 'GET',
                 ...options,
                 headers: { ...defaultHeaders, ...(options.headers || {}) },
