@@ -4604,49 +4604,13 @@ function checkHoursAllocation() {
 }
 
 /**
- * Submit timesheet (with allocation check)
+ * Submit timesheet (LEGACY - use window.submitTimesheet instead)
  */
-async function submitTimesheet(event) {
-    event.preventDefault();
+async function submitTimesheetLegacy(event) {
+    if (event) event.preventDefault();
     
-    const projectId = document.getElementById('timesheetProjectId').value;
-    const date = document.getElementById('timesheetDate').value;
-    const hours = parseFloat(document.getElementById('timesheetHours').value);
-    const description = document.getElementById('timesheetDescription').value;
-    
-    try {
-        showLoading();
-        
-        const response = await apiCall('timesheets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                projectId,
-                date,
-                hours,
-                description
-            })
-        });
-        
-        if (response.success) {
-            showSuccessModal('Timesheet Submitted', 'Your timesheet has been recorded successfully.');
-            await showTasks(); // Go back to tasks view
-        } else {
-            // Check if it's an allocation exceeded error
-            if (response.exceedsAllocation) {
-                // Show request additional time modal
-                showRequestTimeModal(response);
-            } else {
-                throw new Error(response.error || 'Failed to submit timesheet');
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error submitting timesheet:', error);
-        alert(`Error: ${error.message}`);
-    } finally {
-        hideLoading();
-    }
+    // Redirect to the main submitTimesheet function
+    window.submitTimesheet();
 }
 
 /**
@@ -8695,6 +8659,10 @@ window.showDesignerAllocations = showDesignerAllocations;
             return;
         }
 
+        // 6. Log files for debugging
+        console.log('📂 Files to display:', files);
+        files.forEach((f, i) => console.log(`  File ${i}:`, f));
+
         // 6. Group files by type for better organization
         const filesByType = {
             drawing: [],
@@ -8705,6 +8673,9 @@ window.showDesignerAllocations = showDesignerAllocations;
         };
         
         files.forEach(file => {
+            // Skip null/undefined files
+            if (!file) return;
+            
             const type = file.fileType || 'other';
             if (filesByType[type]) {
                 filesByType[type].push(file);
@@ -8738,15 +8709,30 @@ window.showDesignerAllocations = showDesignerAllocations;
                     </h3>
                     <div class="files-grid">
                         ${typeFiles.map(file => {
+                            // Defensive checks for file properties
+                            if (!file) return '';
+                            
                             const uploadDate = file.uploadedAt ? formatDate(file.uploadedAt) : 'N/A';
-                            const uploadedBy = file.uploadedByName || 'Unknown User';
+                            const uploadedBy = file.uploadedByName || file.uploadedBy || 'Unknown User';
                             const fileSize = file.fileSize ? formatFileSize(file.fileSize) : '';
+                            const fileName = file.fileName || file.originalName || file.name || 'Unknown File';
+                            const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
+                            
+                            // Skip files without URL
+                            if (!fileUrl) {
+                                console.warn('File without URL:', file);
+                                return '';
+                            }
+                            
+                            // Safely escape filename for onclick
+                            const safeFileName = (fileName || 'download').replace(/'/g, "\\'").replace(/"/g, '\\"');
+                            const safeUrl = (fileUrl || '').replace(/'/g, "\\'");
                             
                             return `
                                 <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9fafb; border: 2px solid #e5e7eb; border-radius: 10px; margin-bottom: 0.75rem; transition: all 0.3s ease;">
                                     <div style="flex: 1; min-width: 0;">
                                         <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-dark); margin-bottom: 0.25rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                            📄 ${file.fileName}
+                                            📄 ${fileName}
                                         </div>
                                         <div style="font-size: 0.85rem; color: var(--text-light);">
                                             Uploaded by <strong>${uploadedBy}</strong> on ${uploadDate}
@@ -8754,20 +8740,18 @@ window.showDesignerAllocations = showDesignerAllocations;
                                         </div>
                                     </div>
                                     <div style="display: flex; gap: 0.5rem; flex-shrink: 0; margin-left: 1rem;">
-                                        <a href="${file.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" 
-                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--text-dark); cursor: pointer;"
-                                           title="View ${file.fileName}">
+                                        <a href="${fileUrl}" target="_blank" rel="noopener noreferrer" 
+                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid #ddd; background: white; color: #333; cursor: pointer; font-size: 0.9rem;">
                                             👁️ View
                                         </a>
-                                        <button onclick="downloadFile('${file.fileUrl}', '${file.fileName.replace(/'/g, "\\'")}')" class="btn btn-primary btn-sm"
-                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; border-radius: 6px; border: none; background: var(--primary-blue); color: white; cursor: pointer;"
-                                           title="Download ${file.fileName}">
+                                        <button onclick="downloadFile('${safeUrl}', '${safeFileName}')" 
+                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; border-radius: 6px; border: none; background: #1e40af; color: white; cursor: pointer; font-size: 0.9rem;">
                                             ⬇️ Download
                                         </button>
                                     </div>
                                 </div>
                             `;
-                        }).join('')}
+                        }).filter(html => html).join('')}
                     </div>
                 </div>
             `;
