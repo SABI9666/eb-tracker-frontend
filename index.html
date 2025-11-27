@@ -8754,16 +8754,16 @@ window.showDesignerAllocations = showDesignerAllocations;
                                         </div>
                                     </div>
                                     <div style="display: flex; gap: 0.5rem; flex-shrink: 0; margin-left: 1rem;">
-                                        <a href="${file.fileUrl}" target="_blank" class="btn btn-outline btn-sm" 
-                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                        <a href="${file.fileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" 
+                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; border-radius: 6px; border: 1px solid var(--border); background: white; color: var(--text-dark); cursor: pointer;"
                                            title="View ${file.fileName}">
                                             👁️ View
                                         </a>
-                                        <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-primary btn-sm"
-                                           style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem;"
+                                        <button onclick="downloadFile('${file.fileUrl}', '${file.fileName.replace(/'/g, "\\'")}')" class="btn btn-primary btn-sm"
+                                           style="display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.5rem 1rem; border-radius: 6px; border: none; background: var(--primary-blue); color: white; cursor: pointer;"
                                            title="Download ${file.fileName}">
                                             ⬇️ Download
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             `;
@@ -11811,6 +11811,103 @@ async function submitProposalAllocation() {
         // Payment functions
         if (typeof viewPayment !== 'undefined') window.viewPayment = viewPayment;
         
+        // ============================================
+        // ✅ MODAL HELPER FUNCTIONS - Must be defined before designer functions
+        // ============================================
+        
+        window.closeAllModals = function() {
+            const modals = document.querySelectorAll('.modal-overlay');
+            modals.forEach(modal => modal.remove());
+            document.body.classList.remove('modal-open');
+        };
+        
+        window.handleModalOverlayClick = function(event, modalId) {
+            if (event.target.id === modalId) {
+                document.getElementById(modalId).remove();
+                document.body.classList.remove('modal-open');
+            }
+        };
+        
+        window.closeTimesheetModal = function() {
+            const modal = document.getElementById('timesheetModalOverlay');
+            if (modal) modal.remove();
+            document.body.classList.remove('modal-open');
+        };
+        
+        window.closeProjectFilesModal = function() {
+            const modal = document.getElementById('projectFilesModal');
+            if (modal) modal.remove();
+            document.body.classList.remove('modal-open');
+        };
+        
+        window.closeProjectDetailsModal = function() {
+            const modal = document.getElementById('projectDetailsModal');
+            if (modal) modal.remove();
+            document.body.classList.remove('modal-open');
+        };
+        
+        window.closeDesignerUploadModal = function() {
+            const modal = document.getElementById('designerUploadModal');
+            if (modal) modal.remove();
+            document.body.classList.remove('modal-open');
+        };
+        
+        console.log('✅ Modal helper functions registered');
+        
+        // ============================================
+        // ✅ FILE DOWNLOAD FUNCTION
+        // ============================================
+        window.downloadFile = async function(fileUrl, fileName) {
+            console.log('⬇️ Downloading file:', fileName, 'from:', fileUrl);
+            try {
+                // Show loading indicator
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '⏳ Downloading...';
+                btn.disabled = true;
+                
+                // Fetch the file
+                const response = await fetch(fileUrl);
+                if (!response.ok) {
+                    throw new Error('Failed to fetch file');
+                }
+                
+                // Get the blob
+                const blob = await response.blob();
+                
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = fileName || 'download';
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Restore button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                
+                console.log('✅ Download completed:', fileName);
+            } catch (error) {
+                console.error('❌ Download failed:', error);
+                // Fallback: Open in new tab
+                window.open(fileUrl, '_blank');
+                
+                // Restore button if available
+                if (event && event.target) {
+                    event.target.innerHTML = '⬇️ Download';
+                    event.target.disabled = false;
+                }
+            }
+        };
+        
+        console.log('✅ Download function registered');
+        
         // ✅ FIX: Forward declarations for designer functions defined in second script block
         // These functions are fully implemented later in the file but need to be accessible from HTML
         // FIXED: Implementing functions directly here instead of waiting for later definitions
@@ -13622,7 +13719,7 @@ function updateTimesheetAllocationInfo() {
 /**
          * Submit Timesheet Entry
          */
-        async function submitTimesheet() {
+        window.submitTimesheet = async function() {
             const projectId = document.getElementById('timesheetProjectId').value;
             const date = document.getElementById('timesheetDate').value;
             const hours = parseFloat(document.getElementById('timesheetHours').value);
@@ -13660,7 +13757,11 @@ function updateTimesheetAllocationInfo() {
                     const timesheetData = { projectId, date, hours, description };
 
                     closeTimesheetModal(); // Close the log hours modal
-                    showRequestAdditionalTimeModal(allocationData, timesheetData); // Show the request modal
+                    if (typeof showRequestAdditionalTimeModal === 'function') {
+                        showRequestAdditionalTimeModal(allocationData, timesheetData); // Show the request modal
+                    } else {
+                        alert('You have exceeded your allocated hours. Please contact COO for additional time.');
+                    }
                     
                     return; // Stop before calling the API
                 }
@@ -13680,14 +13781,9 @@ function updateTimesheetAllocationInfo() {
                     closeTimesheetModal();
                     alert(`✅ ${hours} hours logged successfully for ${date}!`);
                     
-                    // Refresh timesheet view if displayed
-                    if (document.getElementById('timesheetSection')?.style.display === 'block') {
-                        loadDesignerTimesheet();
-                    }
-                    
-                    // Refresh dashboard if displayed
-                    if (typeof loadDesignerDashboard === 'function') {
-                        loadDesignerDashboard();
+                    // Refresh the designer allocations view
+                    if (typeof showDesignerAllocations === 'function') {
+                        showDesignerAllocations();
                     }
                     
                 } else if (response.exceedsAllocation) {
@@ -13695,7 +13791,11 @@ function updateTimesheetAllocationInfo() {
                     console.warn("Backend check: Allocation exceeded. This should have been caught by the frontend.");
                     hideLoading();
                     closeTimesheetModal();
-                    showRequestAdditionalTimeModal(response, { projectId, date, hours, description });
+                    if (typeof showRequestAdditionalTimeModal === 'function') {
+                        showRequestAdditionalTimeModal(response, { projectId, date, hours, description });
+                    } else {
+                        alert('You have exceeded your allocated hours. Please contact COO for additional time.');
+                    }
                     
                 } else {
                     throw new Error(response.error || 'Failed to log hours');
@@ -13705,12 +13805,9 @@ function updateTimesheetAllocationInfo() {
                 console.error('Error submitting timesheet:', error);
                 alert('Error logging hours: ' + error.message);
             } finally {
-                // Only hide loading if it's not already hidden by the error path
-                if (document.getElementById('loadingSpinner').style.display === 'flex') {
-                    hideLoading();
-                }
+                hideLoading();
             }
-        }
+        };
 
 /**
  * Show Request Additional Time Modal
