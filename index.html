@@ -8495,10 +8495,10 @@ async function showDesignerAllocations() {
                                 data-remaining="${myRemaining}">
                             ⏱️ Log Time
                         </button>
-                        ${(myAllocatedHours <= 0 || myRemaining <= 5) ? `
+                        ${myRemaining <= 5 ? `
                             <button class="btn btn-warning btn-sm" 
                                     onclick="showRequestTimeModalDirect('${p.id}', '${p.projectName.replace(/'/g, "\\'")}', ${myAllocatedHours}, ${usedHours})">
-                                ⏰ ${myAllocatedHours <= 0 ? 'Request Allocation' : 'Request Time'}
+                                ⏰ Request Time
                             </button>
                         ` : ''}
                     </td>
@@ -12329,19 +12329,10 @@ async function submitProposalAllocation() {
         window.showRequestTimeModalDirect = function(projectId, projectName, allocatedHours, usedHours) {
             console.log('🔄 showRequestTimeModalDirect called', { projectId, projectName, allocatedHours, usedHours });
             
-            // Ensure numeric values
-            allocatedHours = parseFloat(allocatedHours) || 0;
-            usedHours = parseFloat(usedHours) || 0;
-            
             closeAllModals();
             
             const remaining = allocatedHours - usedHours;
-            const suggestedHours = allocatedHours > 0 ? Math.max(10, Math.ceil((allocatedHours * 0.25))) : 10; // Suggest 25% more or at least 10h
-            
-            // Display text for allocation
-            const allocDisplay = allocatedHours > 0 ? allocatedHours.toFixed(1) + 'h' : 'Not Set';
-            const usedDisplay = usedHours.toFixed(1) + 'h';
-            const remainingDisplay = allocatedHours > 0 ? remaining.toFixed(1) + 'h' : 'N/A';
+            const suggestedHours = Math.max(10, Math.ceil((allocatedHours * 0.25))); // Suggest 25% more or at least 10h
             
             const modalHtml = `
                 <div class="modal-overlay" id="requestTimeDirectModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="handleModalOverlayClick(event, 'requestTimeDirectModalOverlay')">
@@ -12356,27 +12347,21 @@ async function submitProposalAllocation() {
                                 <h4 style="margin: 0 0 0.5rem 0; color: #1565c0;">📊 Project: ${projectName}</h4>
                                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem;">
                                     <div style="text-align: center;">
-                                        <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2;">${allocDisplay}</div>
+                                        <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2;">${allocatedHours.toFixed(1)}h</div>
                                         <small style="color: #666;">Allocated</small>
                                     </div>
                                     <div style="text-align: center;">
-                                        <div style="font-size: 1.5rem; font-weight: bold; color: #ff9800;">${usedDisplay}</div>
+                                        <div style="font-size: 1.5rem; font-weight: bold; color: #ff9800;">${usedHours.toFixed(1)}h</div>
                                         <small style="color: #666;">Used</small>
                                     </div>
                                     <div style="text-align: center;">
-                                        <div style="font-size: 1.5rem; font-weight: bold; color: ${remaining < 0 ? '#f44336' : remaining < 5 ? '#ff9800' : '#4caf50'};">${remainingDisplay}</div>
+                                        <div style="font-size: 1.5rem; font-weight: bold; color: ${remaining < 0 ? '#f44336' : remaining < 5 ? '#ff9800' : '#4caf50'};">${remaining.toFixed(1)}h</div>
                                         <small style="color: #666;">Remaining</small>
                                     </div>
                                 </div>
                             </div>
                             
-                            ${allocatedHours <= 0 ? `
-                                <div style="padding: 1rem; background: #e3f2fd; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #2196f3;">
-                                    <p style="margin: 0; color: #1565c0;">
-                                        ℹ️ <strong>No Hours Allocated Yet.</strong> Request your initial time allocation for this project.
-                                    </p>
-                                </div>
-                            ` : remaining <= 0 ? `
+                            ${remaining <= 0 ? `
                                 <div style="padding: 1rem; background: #ffebee; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #f44336;">
                                     <p style="margin: 0; color: #c62828;">
                                         ⚠️ <strong>Budget Exceeded!</strong> You've used all your allocated hours. 
@@ -12403,7 +12388,7 @@ async function submitProposalAllocation() {
                                     <input type="number" id="directRequestedHours" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px;"
                                            min="1" step="0.5" 
                                            value="${suggestedHours}" required>
-                                    <small style="color: #666;">Suggested: ${suggestedHours}h ${allocatedHours > 0 ? '(25% additional buffer)' : '(initial allocation)'}</small>
+                                    <small style="color: #666;">Suggested: ${suggestedHours}h (25% additional buffer)</small>
                                 </div>
                                 
                                 <div class="form-group" style="margin-bottom: 1rem;">
@@ -12709,15 +12694,148 @@ Examples:
         console.log('✅ All designer functions implemented directly');
         
         // ============================================
-        // ✅ COO TIME REQUEST FUNCTIONS - MUST BE IN FIRST SCRIPT BLOCK
+        // ✅ COO TIME REQUEST FUNCTIONS
         // ============================================
+        
+        window.showCOOTimeRequests = async function() {
+            console.log('🔄 showCOOTimeRequests called');
+            
+            const userRole = (typeof currentUserRole !== 'undefined' && currentUserRole) ? currentUserRole.trim().toLowerCase() : '';
+            console.log('User role:', userRole);
+            
+            if (!['coo', 'director'].includes(userRole)) {
+                alert('Access denied. COO/Director only. Your role: ' + userRole);
+                return;
+            }
+            
+            try {
+                showLoading();
+                setActiveNav('nav-time-requests');
+                
+                const response = await apiCall('time-requests?status=pending');
+                console.log('📥 Time requests response:', response);
+                
+                if (!response.success) {
+                    throw new Error('Failed to load time requests');
+                }
+                
+                const requests = response.data || [];
+                
+                let requestsHtml = '';
+                
+                if (requests.length === 0) {
+                    requestsHtml = `
+                        <div style="text-align: center; padding: 3rem; color: #666;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                            <h3>All Caught Up!</h3>
+                            <p>No pending time requests to review.</p>
+                        </div>
+                    `;
+                } else {
+                    requestsHtml = requests.map(req => `
+                        <div class="card" style="margin-bottom: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="padding: 1.5rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                                    <div>
+                                        <h3 style="margin: 0 0 0.25rem 0;">${req.projectName || 'Unknown Project'}</h3>
+                                        <small style="color: #666;">${req.projectCode || 'N/A'} - ${req.clientCompany || 'N/A'}</small>
+                                    </div>
+                                    <span style="background: #ff9800; color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem;">Pending Review</span>
+                                </div>
+                                
+                                <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+                                        <div>
+                                            <small style="color: #666;">Requested By</small>
+                                            <div style="font-weight: 600;">${req.designerName || 'Unknown'}</div>
+                                        </div>
+                                        <div>
+                                            <small style="color: #666;">Additional Hours</small>
+                                            <div style="font-weight: 600; color: #2196F3; font-size: 1.2rem;">${req.requestedHours || 0}h</div>
+                                        </div>
+                                        <div>
+                                            <small style="color: #666;">Current Usage</small>
+                                            <div style="font-weight: 600;">${req.currentHoursLogged || 0}h / ${req.currentAllocatedHours || 0}h</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div style="margin: 1rem 0;">
+                                    <strong>Reason for Additional Time:</strong>
+                                    <p style="margin: 0.5rem 0; padding: 1rem; background: #fff; border-left: 3px solid #2196F3; color: #555;">
+                                        ${req.reason || 'No reason provided'}
+                                    </p>
+                                </div>
+                                
+                                <div style="margin: 1rem 0;">
+                                    <small style="color: #666;">
+                                        Submitted: ${req.createdAt ? new Date(req.createdAt.seconds ? req.createdAt.seconds * 1000 : req.createdAt).toLocaleString() : 'N/A'}
+                                    </small>
+                                </div>
+                                
+                                <div style="display: flex; gap: 1rem; margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #ddd;">
+                                    <button onclick="approveTimeRequest('${req.id}', ${req.requestedHours || 0})" 
+                                            style="flex: 1; padding: 0.75rem 1rem; border-radius: 8px; border: none; background: #10b981; color: white; cursor: pointer; font-weight: 600;">
+                                        ✅ Approve ${req.requestedHours || 0}h
+                                    </button>
+                                    <button onclick="showRejectTimeRequestModal('${req.id}')" 
+                                            style="flex: 1; padding: 0.75rem 1rem; border-radius: 8px; border: none; background: #ef4444; color: white; cursor: pointer; font-weight: 600;">
+                                        ❌ Reject
+                                    </button>
+                                    <button onclick="showRequestInfoModal('${req.id}')" 
+                                            style="padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid #ddd; background: white; cursor: pointer;">
+                                        💬 Request Info
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+                const mainContent = document.getElementById('mainContent');
+                mainContent.style.display = 'block';
+                mainContent.innerHTML = `
+                    <div class="page-header">
+                        <h2>⏱️ Additional Time Requests</h2>
+                        <p class="subtitle">Review and approve/reject designer requests for additional hours</p>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+                        <div style="background: white; padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                            <div style="font-size: 2rem; font-weight: 700; color: #ff9800;">${requests.length}</div>
+                            <div style="color: #666;">Pending Requests</div>
+                        </div>
+                    </div>
+                    
+                    <div class="requests-list">
+                        ${requestsHtml}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Error loading time requests:', error);
+                const mainContent = document.getElementById('mainContent');
+                mainContent.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #ef4444;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                        <h3>Error Loading Time Requests</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showCOOTimeRequests()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; border-radius: 8px; border: none; background: #1e40af; color: white; cursor: pointer;">
+                            🔄 Retry
+                        </button>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        };
         
         window.approveTimeRequest = async function(requestId, hours) {
             console.log('✅ approveTimeRequest called', { requestId, hours });
             
             const comment = prompt(`Approve ${hours}h additional time?\n\nOptional comment for designer:`);
             
-            if (comment === null) return; // Cancelled
+            if (comment === null) return; // User cancelled
             
             try {
                 showLoading();
@@ -12737,16 +12855,13 @@ Examples:
                 
                 if (response.success) {
                     alert(`✅ Approved ${hours}h additional time!`);
-                    // Refresh the time requests list
-                    if (typeof showCOOTimeRequests === 'function') {
-                        showCOOTimeRequests();
-                    }
+                    showCOOTimeRequests(); // Refresh list
                 } else {
                     throw new Error(response.error || 'Failed to approve');
                 }
                 
             } catch (error) {
-                console.error('❌ Error approving time request:', error);
+                console.error('❌ Error approving:', error);
                 alert('Error: ' + error.message);
             } finally {
                 hideLoading();
@@ -12758,27 +12873,26 @@ Examples:
             closeAllModals();
             
             const modalHtml = `
-                <div class="modal-overlay" id="rejectModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="handleModalOverlayClick(event, 'rejectModalOverlay')">
-                    <div class="modal-content" style="max-width: 500px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                        <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 12px 12px 0 0;">
+                <div class="modal-overlay" id="rejectModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="if(event.target.id === 'rejectModalOverlay') { this.remove(); document.body.classList.remove('modal-open'); }">
+                    <div class="modal-content" style="max-width: 500px; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                        <div class="modal-header" style="padding: 1.5rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white;">
                             <h2 style="margin: 0;">❌ Reject Time Request</h2>
-                            <span class="close-modal" onclick="closeRejectModal()" style="cursor: pointer; font-size: 2rem;">&times;</span>
                         </div>
                         
                         <div class="modal-body" style="padding: 1.5rem;">
                             <input type="hidden" id="rejectRequestId" value="${requestId}">
                             
-                            <div class="form-group" style="margin-bottom: 1rem;">
+                            <div style="margin-bottom: 1rem;">
                                 <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Reason for Rejection <span style="color: red;">*</span></label>
-                                <textarea id="rejectComment" class="form-control" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; resize: vertical;"
-                                          placeholder="Please explain why this request is being rejected..." required></textarea>
+                                <textarea id="rejectComment" rows="4" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 8px; resize: vertical; box-sizing: border-box;"
+                                          placeholder="Please explain why this request is being rejected..."></textarea>
                                 <small style="color: #666;">Minimum 10 characters</small>
                             </div>
                         </div>
                         
-                        <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
-                            <button type="button" onclick="closeRejectModal()" class="btn btn-outline" style="padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: white;">Cancel</button>
-                            <button type="button" onclick="submitRejectTimeRequest()" class="btn btn-danger" style="padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; background: #dc2626; color: white; border: none; font-weight: 600;">
+                        <div style="padding: 1rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.5rem;">
+                            <button type="button" onclick="document.getElementById('rejectModalOverlay').remove(); document.body.classList.remove('modal-open');" style="padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; border: 1px solid #ddd; background: white;">Cancel</button>
+                            <button type="button" onclick="submitRejectTimeRequest()" style="padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; background: #dc2626; color: white; border: none; font-weight: 600;">
                                 Reject Request
                             </button>
                         </div>
@@ -12816,33 +12930,26 @@ Examples:
                 console.log('📥 Reject response:', response);
                 
                 if (response.success) {
-                    closeRejectModal();
+                    document.getElementById('rejectModalOverlay')?.remove();
+                    document.body.classList.remove('modal-open');
                     alert('❌ Request rejected');
-                    if (typeof showCOOTimeRequests === 'function') {
-                        showCOOTimeRequests();
-                    }
+                    showCOOTimeRequests(); // Refresh list
                 } else {
                     throw new Error(response.error || 'Failed to reject');
                 }
                 
             } catch (error) {
-                console.error('❌ Error rejecting time request:', error);
+                console.error('❌ Error rejecting:', error);
                 alert('Error: ' + error.message);
             } finally {
                 hideLoading();
             }
         };
         
-        window.closeRejectModal = function() {
-            const modal = document.getElementById('rejectModalOverlay');
-            if (modal) modal.remove();
-            document.body.classList.remove('modal-open');
-        };
-        
         window.showRequestInfoModal = function(requestId) {
-            const info = prompt('Enter additional information request for designer:');
+            const info = prompt('Enter message to request more information from designer:');
             if (info && info.trim()) {
-                alert('Request for info feature coming soon. Message: ' + info);
+                alert('Request for info feature coming soon.\n\nYour message: ' + info);
             }
         };
         
@@ -14754,7 +14861,7 @@ async function showPendingTimeRequests() {
 /**
          * Show COO Time Request Dashboard
          */
-          window.showCOOTimeRequests = async function() {
+          async function showCOOTimeRequests() {
             // FIX: Use the correct global variable 'currentUserRole'
             const userRole = currentUserRole ? currentUserRole.trim().toLowerCase() : '';
             if (!['coo', 'director'].includes(userRole)) {
@@ -14877,7 +14984,7 @@ async function showPendingTimeRequests() {
 /**
  * Approve Time Request
  */
-window.approveTimeRequest = async function(requestId, hours) {
+async function approveTimeRequest(requestId, hours) {
     const comment = prompt(`Approve ${hours}h additional time?\n\nOptional comment for designer:`);
     
     if (comment === null) return; // Cancelled
@@ -14898,13 +15005,13 @@ window.approveTimeRequest = async function(requestId, hours) {
         
         if (response.success) {
             alert(`✅ Approved ${hours}h additional time!`);
-            // Trigger email notification
-            if (typeof triggerEmailNotification === 'function') {
-                triggerEmailNotification('time_request.approved', { 
-                    requestId: requestId,
-                    hours: hours 
-                });
-            }
+            // --- ADD THIS LINE ---
+           // You might need to pass designerEmail to this function or let backend fetch it
+           triggerEmailNotification('time_request.approved', { 
+           requestId: requestId,
+           hours: hours 
+    });
+    // --------------------
             showCOOTimeRequests(); // Refresh list
         } else {
             throw new Error(response.error || 'Failed to approve');
@@ -14916,23 +15023,23 @@ window.approveTimeRequest = async function(requestId, hours) {
     } finally {
         hideLoading();
     }
-};
+}
 
 /**
  * Show Reject Time Request Modal
  */
-window.showRejectTimeRequestModal = function(requestId) {
+function showRejectTimeRequestModal(requestId) {
     closeAllModals();
     
     const modalHtml = `
-        <div class="modal-overlay" id="rejectModalOverlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; align-items: center; justify-content: center;" onclick="handleModalOverlayClick(event, 'rejectModalOverlay')">
-            <div class="modal-content" style="max-width: 500px; background: white; border-radius: 12px; max-height: 90vh; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
-                <div class="modal-header" style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border-radius: 12px 12px 0 0;">
-                    <h2 style="margin: 0;">❌ Reject Time Request</h2>
-                    <span class="close-modal" onclick="closeRejectModal()" style="cursor: pointer; font-size: 2rem;">&times;</span>
+        <div class="modal-overlay" id="rejectModalOverlay" onclick="handleModalOverlayClick(event, 'rejectModalOverlay')">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2>❌ Reject Time Request</h2>
+                    <span class="close-modal" onclick="closeRejectModal()">&times;</span>
                 </div>
                 
-                <div class="modal-body" style="padding: 1.5rem;">
+                <div class="modal-body">
                     <input type="hidden" id="rejectRequestId" value="${requestId}">
                     <div class="form-group">
                         <label>Reason for Rejection <span class="required">*</span></label>
@@ -14957,9 +15064,9 @@ window.showRejectTimeRequestModal = function(requestId) {
 /**
  * Submit Rejection
  */
-window.submitRejectTimeRequest = async function() {
-    const requestId = document.getElementById('rejectRequestId')?.value;
-    const comment = document.getElementById('rejectComment')?.value?.trim();
+async function submitRejectTimeRequest() {
+    const requestId = document.getElementById('rejectRequestId').value;
+    const comment = document.getElementById('rejectComment').value.trim();
     
     if (!comment || comment.length < 10) {
         alert('Please provide a detailed reason for rejection (at least 10 characters)');
@@ -14992,7 +15099,7 @@ window.submitRejectTimeRequest = async function() {
     } finally {
         hideLoading();
     }
-};
+}
 
 /**
  * Modal Close Functions - Fix for stuck modals
