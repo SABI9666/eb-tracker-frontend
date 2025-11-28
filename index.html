@@ -5785,6 +5785,15 @@ function showCreateProposalModal() {
                     <button class="btn btn-danger btn-sm" onclick="markProposalLost('${p.id}')" style="margin-left: 10px;">❌ LOST</button>
                  `;
             }
+             // --- ADD THIS BLOCK: Generate Word Quote Button for BDM ---
+            if (currentUserRole === 'bdm' && p.pricing && p.pricing.quoteValue) {
+                 actionsHtml += `
+                    <button class="btn btn-outline btn-sm" style="margin-left: 10px; border-color: #2563eb; color: #2563eb;" 
+                            onclick="generateWordQuote('${p.id}')">
+                        📄 Generate Word Quote
+                    </button>
+                 `;
+            }
 
 
             // BDM delete button - only for own proposals and if not too far in workflow
