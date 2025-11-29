@@ -1,95 +1,148 @@
 /**
  * quotation_generator.js
- * Handles the generation of Word documents (.docx) from the BDM Portal data.
- * Requires: docxtemplater, pizzip, FileSaver, pizzip-utils
+ * Specific version for Woodcraft R&D Sample Quote Structure
  */
 
-// Load the binary content of the template file
-function loadFile(url, callback) {
-    PizZipUtils.getBinaryContent(url, callback);
+// Helper: Load file from server
+function loadFileFromServer(url, callback) {
+    PizZipUtils.getBinaryContent(url, function (error, content) {
+        if (error) {
+            callback(error, null);
+        } else {
+            callback(null, content);
+        }
+    });
 }
 
 async function generateWordQuote(proposalId) {
-    console.log("📄 Generating Word Quote for ID:", proposalId);
+    console.log("📄 Generating Quote for ID:", proposalId);
 
-    // 1. Fetch Proposal Data using the existing apiCall from index.html
+    // 1. Fetch Proposal Data
     try {
+        if (typeof showLoading === 'function') showLoading();
+
+        // Fetch data from your backend
         const response = await apiCall(`proposals?id=${proposalId}`);
         if (!response.success || !response.data) {
-            alert("Failed to fetch proposal data for quotation generation.");
+            alert("Failed to fetch proposal data.");
+            if (typeof hideLoading === 'function') hideLoading();
             return;
         }
-        const proposal = response.data;
+        const p = response.data;
 
-        // 2. Prepare Data Object (Mapping DB fields to Word Template tags)
+        // 2. Prepare Data (Mapping Database Fields -> Word Tags)
+        
+        // Format services for the loop {#services}...{/services}
+        // If p.estimation.services is ["Steel Detailing", "PE Stamping"], this creates an array of objects
+        const servicesList = (p.estimation?.services || []).map(s => ({ name: s }));
+
         const quoteData = {
-            quote_no: proposal.pricing?.projectNumber || "DRAFT",
-            project_name: proposal.projectName || "N/A",
-            client_company: proposal.clientCompany || "N/A",
-            client_contact: proposal.clientContact || "Client", // Ensure this field exists or default
-            date: new Date().toLocaleDateString('en-GB'), // Format: DD/MM/YYYY
-            price: proposal.pricing?.quoteValue ? proposal.pricing.quoteValue.toLocaleString() : "0.00",
-            currency: proposal.pricing?.currency || "$",
-            lead_time: proposal.timeline || "TBD",
+            // --- HEADER INFO ---
+            quote_no: p.pricing?.projectNumber || "DRAFT",
+            date: new Date().toLocaleDateString('en-GB'), // e.g., 18.11.2025
             
-            // Additional fields based on your document
-            bdm_name: currentUser ? currentUser.displayName : "Sales Team",
-            variation_rate: proposal.pricing?.hourlyRate || "20"
+            // --- CLIENT INFO ---
+            client_company: p.clientCompany || "Client Company",
+            client_contact: p.clientContact || "Client Contact", // Ensure this field exists in your DB or it defaults
+            project_name: p.projectName || "Project Name",
+
+            // --- PRICING ---
+            // Formats 1920 to "1,920.00"
+            price: p.pricing?.quoteValue ? parseFloat(p.pricing.quoteValue).toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00",
+            currency: p.pricing?.currency || "$",
+            
+            // --- VARIATION & TIMELINE ---
+            // Maps to "$ 20 per hour" in your sample 
+            var_rate: p.pricing?.hourlyRate || "20", 
+            // Maps to "4 Days" in your sample 
+            lead_time: p.timeline || p.pricing?.leadTime || "TBD", 
+
+            // --- SIGNATORY ---
+            // Maps to "Steve Peterson" 
+            bdm_name: (currentUser && currentUser.displayName) ? currentUser.displayName : (p.createdByName || "Sales Team"),
+            // Maps to "Business Development Coordinator" 
+            bdm_role: (currentUser && currentUser.role) ? currentUser.role.toUpperCase() : "Business Development Manager",
+
+            // --- SERVICES LOOP ---
+            services: servicesList
         };
 
-        // 3. Load the Template and Render
-        // Note: You must place 'proposal_template.docx' in your root directory
-        loadFile("./proposal_template.docx", function (error, content) {
+        // 3. Load Template and Render
+        // Ensure you named your file exactly 'proposal_template.docx' and put it in the root folder
+        loadFileFromServer("./proposal_template.docx", function(error, content) {
             if (error) {
-                console.error("Error loading template:", error);
-                alert("Error loading 'proposal_template.docx'. Please ensure the file exists in the root folder.");
+                console.warn("⚠️ Template not found on server. Asking user for file...");
+                
+                // Fallback: Ask user to upload the file if not found on server
+                const fileInput = document.getElementById('wordTemplateInput');
+                if(!fileInput) {
+                    alert("Template not found and no file input available."); 
+                    return;
+                }
+                
+                if(confirm("Server template missing. Click OK to select your 'proposal_template.docx' manually.")) {
+                    fileInput.click();
+                    fileInput.onchange = function(e) {
+                        const file = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = function(evt) { renderDoc(evt.target.result, quoteData); };
+                        reader.readAsBinaryString(file);
+                    };
+                }
+                if (typeof hideLoading === 'function') hideLoading();
                 return;
             }
-
-            try {
-                const zip = new PizZip(content);
-                const doc = new window.docxtemplater(zip, {
-                    paragraphLoop: true,
-                    linebreaks: true,
-                });
-
-                // Render the document (replace tags with data)
-                doc.render(quoteData);
-
-                // Get the binary output
-                const out = doc.getZip().generate({
-                    type: "blob",
-                    mimeType:
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                });
-
-                // 4. Save the file
-                const filename = `Quote_${quoteData.quote_no}_${quoteData.project_name.replace(/[^a-z0-9]/gi, '_')}.docx`;
-                saveAs(out, filename);
-                
-                console.log("✅ Word document generated successfully");
-
-            } catch (error) {
-                console.error("Error generating document:", error);
-                
-                // Handle Docxtemplater errors specifically
-                if (error.properties && error.properties.errors) {
-                    const errorMessages = error.properties.errors.map(function (err) {
-                        return err.properties.explanation;
-                    }).join("\n");
-                    console.log("Template Errors:", errorMessages);
-                    alert("Template Error: " + errorMessages);
-                } else {
-                    alert("Error generating document: " + error.message);
-                }
-            }
+            // If found on server, render immediately
+            renderDoc(content, quoteData);
         });
 
-    } catch (apiError) {
-        console.error("API Error during quote generation:", apiError);
-        alert("Failed to retrieve proposal data.");
+    } catch (err) {
+        console.error("Error:", err);
+        alert("Error generating quote: " + err.message);
+        if (typeof hideLoading === 'function') hideLoading();
     }
 }
 
-// Attach function to window to ensure visibility
+// Internal function to do the actual DocxTemplater rendering
+function renderDoc(content, data) {
+    try {
+        const zip = new PizZip(content);
+        const doc = new window.docxtemplater(zip, {
+            paragraphLoop: true,
+            linebreaks: true,
+        });
+
+        doc.render(data);
+
+        const out = doc.getZip().generate({
+            type: "blob",
+            mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        });
+
+        // Save file with dynamic name: Quote_Q_24417_ProjectName.docx
+        const safeProjName = (data.project_name).replace(/[^a-z0-9]/gi, '_');
+        saveAs(out, `Quote_${data.quote_no}_${safeProjName}.docx`);
+        
+        console.log("✅ Document generated.");
+    } catch (error) {
+        handleDocErrors(error);
+    } finally {
+        if (typeof hideLoading === 'function') hideLoading();
+    }
+}
+
+function handleDocErrors(error) {
+    if (error.properties && error.properties.errors) {
+        const errorMessages = error.properties.errors.map(function (err) {
+            return err.properties.explanation;
+        }).join("\n");
+        console.log("Template Errors:", errorMessages);
+        alert("Template Error: The tags in your Word doc don't match the data.\n" + errorMessages);
+    } else {
+        console.log(error);
+        alert("Error: " + error.message);
+    }
+}
+
+// Attach to window
 window.generateWordQuote = generateWordQuote;
