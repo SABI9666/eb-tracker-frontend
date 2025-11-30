@@ -1,6 +1,7 @@
 /**
  * quotation_generator.js
- * Specific version for Woodcraft R&D Sample Quote Structure
+ * Updated version for Edanbrook Quote Generation
+ * Maps BDM Proposal data to Word template placeholders
  */
 
 // Helper: Load file from server
@@ -17,11 +18,10 @@ function loadFileFromServer(url, callback) {
 async function generateWordQuote(proposalId) {
     console.log("📄 Generating Quote for ID:", proposalId);
 
-    // 1. Fetch Proposal Data
     try {
         if (typeof showLoading === 'function') showLoading();
 
-        // Fetch data from your backend
+        // 1. Fetch Proposal Data from backend
         const response = await apiCall(`proposals?id=${proposalId}`);
         if (!response.success || !response.data) {
             alert("Failed to fetch proposal data.");
@@ -30,66 +30,87 @@ async function generateWordQuote(proposalId) {
         }
         const p = response.data;
 
-        // 2. Prepare Data (Mapping Database Fields -> Word Tags)
-        
-        // Format services for the loop {#services}...{/services}
-        // If p.estimation.services is ["Steel Detailing", "PE Stamping"], this creates an array of objects
-        const servicesList = (p.estimation?.services || []).map(s => ({ name: s }));
+        console.log("📋 Proposal Data:", p);
 
+        // 2. Get selected services from estimation
+        const selectedServices = p.estimation?.services || [];
+
+        // 3. Prepare Data (Mapping Database Fields -> Word Template Tags)
+        // Create services list as comma-separated string
+        const servicesList = selectedServices.join(', ') || 'Steel Detailing';
+        
         const quoteData = {
-            // --- HEADER INFO ---
-            quote_no: p.pricing?.projectNumber || "DRAFT",
-            date: new Date().toLocaleDateString('en-GB'), // e.g., 18.11.2025
+            // --- HEADER INFO (Cover Page) ---
+            quote_no: p.pricing?.projectNumber || 'DRAFT',
+            // Handle split quote number (Q_24 prefix and 404 suffix)
+            quote_no_prefix: (p.pricing?.projectNumber || 'DRAFT').substring(0, 4), // "Q_24" or similar
+            quote_no_suffix: (p.pricing?.projectNumber || 'DRAFT').substring(4), // "404" etc.
+            project_name: p.projectName || 'Project Name',
             
             // --- CLIENT INFO ---
-            client_company: p.clientCompany || "Client Company",
-            client_contact: p.clientContact || "Client Contact", // Ensure this field exists in your DB or it defaults
-            project_name: p.projectName || "Project Name",
-
-            // --- PRICING ---
-            // Formats 1920 to "1,920.00"
-            price: p.pricing?.quoteValue ? parseFloat(p.pricing.quoteValue).toLocaleString(undefined, {minimumFractionDigits: 2}) : "0.00",
-            currency: p.pricing?.currency || "$",
+            client_name: p.clientContact || 'Client Contact',
+            client_company: p.clientCompany || 'Client Company',
+            client_company_short: (p.clientCompany || 'Client Company').split(' Inc')[0].split(' LLC')[0],
             
-            // --- VARIATION & TIMELINE ---
-            // Maps to "$ 20 per hour" in your sample 
-            var_rate: p.pricing?.hourlyRate || "20", 
-            // Maps to "4 Days" in your sample 
-            lead_time: p.timeline || p.pricing?.leadTime || "TBD", 
-
-            // --- SIGNATORY ---
-            // Maps to "Steve Peterson" 
-            bdm_name: (currentUser && currentUser.displayName) ? currentUser.displayName : (p.createdByName || "Sales Team"),
-            // Maps to "Business Development Coordinator" 
-            bdm_role: (currentUser && currentUser.role) ? currentUser.role.toUpperCase() : "Business Development Manager",
-
-            // --- SERVICES LOOP ---
-            services: servicesList
+            // --- DATE ---
+            date: formatDate(new Date()),
+            
+            // --- SERVICES LIST (comma-separated) ---
+            services_list: servicesList,
+            
+            // --- PRICING SECTION ---
+            total_price: formatCurrency(p.pricing?.quoteValue, p.pricing?.currency),
+            price_value: p.pricing?.quoteValue || '0',
+            currency: p.pricing?.currency || 'USD',
+            
+            // --- VARIATION RATE ---
+            hourly_rate: p.pricing?.hourlyRate || '20',
+            
+            // --- DELIVERY SCHEDULE ---
+            lead_time: p.timeline ? `${p.timeline} ${getTimeUnit(p.timeline)}` : 'TBD',
+            
+            // --- SIGNATORY INFO ---
+            bdm_name: getBDMName(p),
+            bdm_role: getBDMRole(),
+            company_name: 'Edanbrook Consultancy Services INC'
         };
 
-        // 3. Load Template and Render
-        // Ensure you named your file exactly 'proposal_template.docx' and put it in the root folder
+        console.log("📝 Quote Data Prepared:", quoteData);
+
+        // 4. Load Template and Render
         loadFileFromServer("./proposal_template.docx", function(error, content) {
             if (error) {
                 console.warn("⚠️ Template not found on server. Asking user for file...");
                 
-                // Fallback: Ask user to upload the file if not found on server
+                // Fallback: Ask user to upload the file
                 const fileInput = document.getElementById('wordTemplateInput');
-                if(!fileInput) {
-                    alert("Template not found and no file input available."); 
+                if (!fileInput) {
+                    alert("Template not found and no file input available. Please ensure 'proposal_template.docx' is in the project root."); 
+                    if (typeof hideLoading === 'function') hideLoading();
                     return;
                 }
                 
-                if(confirm("Server template missing. Click OK to select your 'proposal_template.docx' manually.")) {
+                if (confirm("Server template missing. Click OK to select your 'proposal_template.docx' manually.")) {
                     fileInput.click();
                     fileInput.onchange = function(e) {
                         const file = e.target.files[0];
+                        if (!file) {
+                            if (typeof hideLoading === 'function') hideLoading();
+                            return;
+                        }
                         const reader = new FileReader();
-                        reader.onload = function(evt) { renderDoc(evt.target.result, quoteData); };
+                        reader.onload = function(evt) { 
+                            renderDoc(evt.target.result, quoteData); 
+                        };
+                        reader.onerror = function() {
+                            alert("Error reading template file.");
+                            if (typeof hideLoading === 'function') hideLoading();
+                        };
                         reader.readAsBinaryString(file);
                     };
+                } else {
+                    if (typeof hideLoading === 'function') hideLoading();
                 }
-                if (typeof hideLoading === 'function') hideLoading();
                 return;
             }
             // If found on server, render immediately
@@ -97,33 +118,114 @@ async function generateWordQuote(proposalId) {
         });
 
     } catch (err) {
-        console.error("Error:", err);
+        console.error("❌ Error:", err);
         alert("Error generating quote: " + err.message);
         if (typeof hideLoading === 'function') hideLoading();
     }
 }
 
+// Helper function to format currency
+function formatCurrency(value, currency) {
+    if (!value) return '0.00';
+    const num = parseFloat(value);
+    const symbol = getCurrencySymbol(currency);
+    return `${symbol} ${num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+}
+
+// Helper function to get currency symbol
+function getCurrencySymbol(currency) {
+    const symbols = {
+        'USD': '$',
+        'AUD': 'A$',
+        'CAD': 'C$',
+        'GBP': '£',
+        'EUR': '€',
+        '$': '$'
+    };
+    return symbols[currency] || currency || '$';
+}
+
+// Helper function to get time unit (week/weeks/day/days)
+function getTimeUnit(value) {
+    if (!value) return '';
+    const num = parseInt(value);
+    // Check if the value contains "day" (case insensitive)
+    if (String(value).toLowerCase().includes('day')) {
+        return num === 1 ? 'day' : 'days';
+    }
+    // Default to weeks
+    return num === 1 ? 'week' : 'weeks';
+}
+
+// Helper function to format date
+function formatDate(date) {
+    if (!date) return '';
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0');
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+// Helper function to get BDM name
+function getBDMName(proposal) {
+    // Priority: currentUser > createdByName > default
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) {
+        return currentUser.displayName;
+    }
+    if (proposal.createdByName) {
+        return proposal.createdByName;
+    }
+    return 'Sales Team';
+}
+
+// Helper function to get BDM role
+function getBDMRole() {
+    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role) {
+        // Format role nicely
+        const role = currentUser.role.toLowerCase();
+        if (role === 'bdm') return 'Business Development Manager';
+        if (role === 'coo') return 'Chief Operating Officer';
+        if (role === 'director') return 'Director';
+        // Capitalize first letter of each word
+        return currentUser.role.replace(/\b\w/g, l => l.toUpperCase());
+    }
+    return 'Business Development Manager';
+}
+
 // Internal function to do the actual DocxTemplater rendering
 function renderDoc(content, data) {
     try {
+        console.log("🔄 Rendering document with data:", data);
+        
         const zip = new PizZip(content);
         const doc = new window.docxtemplater(zip, {
             paragraphLoop: true,
             linebreaks: true,
+            delimiters: { start: '{', end: '}' }
         });
 
-        doc.render(data);
+        // Set the data
+        doc.setData(data);
+        
+        // Render the document
+        doc.render();
 
+        // Generate output
         const out = doc.getZip().generate({
             type: "blob",
             mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         });
 
-        // Save file with dynamic name: Quote_Q_24417_ProjectName.docx
-        const safeProjName = (data.project_name).replace(/[^a-z0-9]/gi, '_');
-        saveAs(out, `Quote_${data.quote_no}_${safeProjName}.docx`);
+        // Save file with dynamic name
+        const safeProjName = (data.project_name || 'Project').replace(/[^a-z0-9]/gi, '_');
+        const safeQuoteNo = (data.quote_no || 'DRAFT').replace(/[^a-z0-9]/gi, '_');
+        const fileName = `Quote_${safeQuoteNo}_${safeProjName}.docx`;
         
-        console.log("✅ Document generated.");
+        saveAs(out, fileName);
+        
+        console.log("✅ Document generated:", fileName);
+        
     } catch (error) {
         handleDocErrors(error);
     } finally {
@@ -132,17 +234,20 @@ function renderDoc(content, data) {
 }
 
 function handleDocErrors(error) {
+    console.error("❌ Document Error:", error);
+    
     if (error.properties && error.properties.errors) {
         const errorMessages = error.properties.errors.map(function (err) {
-            return err.properties.explanation;
+            return `Tag: ${err.properties.tag || 'unknown'} - ${err.properties.explanation || err.message}`;
         }).join("\n");
         console.log("Template Errors:", errorMessages);
-        alert("Template Error: The tags in your Word doc don't match the data.\n" + errorMessages);
+        alert("Template Error: The tags in your Word doc don't match the data.\n\n" + errorMessages + 
+              "\n\nPlease ensure your template uses the correct placeholder tags like {quote_no}, {project_name}, etc.");
     } else {
-        console.log(error);
-        alert("Error: " + error.message);
+        console.log("General Error:", error);
+        alert("Error generating document: " + error.message);
     }
 }
 
-// Attach to window
+// Attach to window for global access
 window.generateWordQuote = generateWordQuote;
