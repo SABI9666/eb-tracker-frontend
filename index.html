@@ -2503,7 +2503,7 @@ body.modal-open {
                             div.innerHTML = `
                                 <strong>${file.fileName || file.originalName}</strong><br>
                                 <small>Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</small><br>
-                                <a href="${file.url || file.fileUrl}" target="_blank" class="btn btn-primary btn-sm">Download</a>
+                                <a href="${file.url || file.fileUrl || file.downloadUrl || '#'}" target="_blank" class="btn btn-primary btn-sm">Download</a>
                             `;
                             filesList.appendChild(div);
                         });
@@ -5737,6 +5737,14 @@ function showCreateProposalModal() {
 
         function renderProposalDetailModal(p, files = []) {
              console.log('Rendering proposal modal. User Role:', currentUserRole, 'Proposal Status:', p.status); // DEBUG Line
+            
+            // Normalize file URLs - ensure each file has a 'url' property
+            files = files.map(f => ({
+                ...f,
+                url: f.url || f.fileUrl || f.downloadUrl || '',
+                originalName: f.originalName || f.fileName || 'Unknown File'
+            }));
+            
             const projectFiles = files.filter(f => !f.fileType || f.fileType === 'project');
             const estimationFiles = files.filter(f => f.fileType === 'estimation');
             const linkFiles = files.filter(f => f.fileType === 'link');
@@ -5868,18 +5876,20 @@ function showCreateProposalModal() {
                     estimationFilesHtml = `
                         <div class="form-section">
                             <h4>Estimation Files ${getFileAccessIndicator({ fileType: 'estimation' }, p.status)}</h4>
-                            ${estimationFiles.map(file => `
+                            ${estimationFiles.map(file => {
+                                const fileUrl = file.url || file.fileUrl || file.downloadUrl || '#';
+                                return `
                                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #fff; border-radius: 5px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
-                                    <span>📊 ${file.originalName}</span>
+                                    <span>📊 ${file.originalName || file.fileName || 'Unknown File'}</span>
                                     <div>
-                                        <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
-                                        <button class="btn btn-primary btn-sm" onclick="downloadFile('${file.url}', '${file.originalName}')">Download</button>
-                                        ${file.canDelete ? `
-                                            <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>
-                                        ` : ''}
+                                        <button class="btn btn-outline btn-sm" onclick="window.open('${fileUrl}', '_blank')">View</button>
+                                        <button class="btn btn-primary btn-sm" onclick="downloadFile('${fileUrl}', '${file.originalName || file.fileName || 'download'}')">Download</button>
+                                        ${file.canDelete ? \`
+                                            <button class="btn btn-danger btn-sm" onclick="deleteFile('\${file.id}'); closeModal(); viewProposal('\${p.id}');">🗑️ Delete</button>
+                                        \` : ''}
                                     </div>
                                 </div>
-                            `).join('')}
+                            `}).join('')}
                         </div>
                     `;
                 } else {
@@ -6274,12 +6284,17 @@ function showCreateProposalModal() {
 }
 
         async function loadProjectFiles(proposalId) {
-            // ... (This function remains unchanged)
             try {
                 const { success, data } = await apiCall(`files?proposalId=${proposalId}`);
                 const projectFilesView = document.getElementById('projectFilesView');
                 if (success && data) {
-                    const projectFiles = data.filter(f => !f.fileType || f.fileType === 'project');
+                    // Normalize file URLs
+                    const normalizedFiles = data.map(f => ({
+                        ...f,
+                        url: f.url || f.fileUrl || f.downloadUrl || '',
+                        originalName: f.originalName || f.fileName || 'Unknown File'
+                    }));
+                    const projectFiles = normalizedFiles.filter(f => !f.fileType || f.fileType === 'project');
                     const filesHtml = projectFiles.length ? projectFiles.map(file => `
                         <div class="action-item" style="margin-bottom: 1rem; padding: 1rem;">
                             <div class="action-content"><strong>📄 ${file.originalName}</strong></div>
@@ -7954,12 +7969,15 @@ async function submitEditedPricing() {
                 return;
             }
 
-            const filesHtml = files.map(file => `
+            const filesHtml = files.map(file => {
+                const fileUrl = file.url || file.fileUrl || file.downloadUrl || '#';
+                const fileName = file.originalName || file.fileName || fileUrl;
+                return `
                 <div class="action-item" style="padding: 1rem;">
                     <div class="action-content">
                         <strong>
                             ${file.fileType === 'link' ? '🔗' : '📄'} 
-                            ${file.originalName || file.url}
+                            ${fileName}
                         </strong>
                         <div class="action-meta">
                             Type: ${file.fileType || 'file'} | 
@@ -7970,11 +7988,11 @@ async function submitEditedPricing() {
                         </div>
                     </div>
                     <div class="action-buttons">
-                        <button class="btn btn-outline btn-sm" onclick="window.open('${file.url}', '_blank')">View</button>
+                        <button class="btn btn-outline btn-sm" onclick="window.open('${fileUrl}', '_blank')">View</button>
                         ${file.canDelete ? `<button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}')">Delete</button>` : ''}
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             
             container.innerHTML = filesHtml;
         }
@@ -8892,47 +8910,59 @@ function formatFileSize(bytes) {
                 );
                 
                 const drawingsHtml = drawings.length > 0 
-                    ? drawings.map(file => `
+                    ? drawings.map(file => {
+                        const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
+                        if (!fileUrl) {
+                            console.warn('Drawing file without URL:', file);
+                            return '';
+                        }
+                        return `
                         <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;">
                             <div>
-                                <span style="font-weight: 500;">📄 ${file.fileName}</span>
+                                <span style="font-weight: 500;">📄 ${file.fileName || file.originalName || 'Unknown File'}</span>
                                 <br>
-                                <small style="color: #6b7280;">Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</small>
+                                <small style="color: #6b7280;">Uploaded: ${file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : 'N/A'}</small>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <a href="${file.fileUrl}" target="_blank" class="btn btn-primary btn-sm" 
+                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm" 
                                    style="text-decoration: none; display: inline-block;">
                                     👁️ View
                                 </a>
-                                <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-success btn-sm"
+                                <a href="${fileUrl}" download="${file.fileName || file.originalName || 'download'}" class="btn btn-success btn-sm"
                                    style="text-decoration: none; display: inline-block;">
                                     ⬇️ Download
                                 </a>
                             </div>
                         </div>
-                    `).join('')
+                    `}).filter(html => html).join('')
                     : '<p style="color: #6b7280; text-align: center; padding: 20px;">No drawings available for this project</p>';
                 
                 const specsHtml = specifications.length > 0
-                    ? specifications.map(file => `
+                    ? specifications.map(file => {
+                        const fileUrl = file.fileUrl || file.url || file.downloadUrl || '';
+                        if (!fileUrl) {
+                            console.warn('Specification file without URL:', file);
+                            return '';
+                        }
+                        return `
                         <div class="file-item" style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px;">
                             <div>
-                                <span style="font-weight: 500;">📄 ${file.fileName}</span>
+                                <span style="font-weight: 500;">📄 ${file.fileName || file.originalName || 'Unknown File'}</span>
                                 <br>
-                                <small style="color: #6b7280;">Uploaded: ${new Date(file.uploadedAt).toLocaleDateString()}</small>
+                                <small style="color: #6b7280;">Uploaded: ${file.uploadedAt ? new Date(file.uploadedAt).toLocaleDateString() : 'N/A'}</small>
                             </div>
                             <div style="display: flex; gap: 8px;">
-                                <a href="${file.fileUrl}" target="_blank" class="btn btn-primary btn-sm"
+                                <a href="${fileUrl}" target="_blank" class="btn btn-primary btn-sm"
                                    style="text-decoration: none; display: inline-block;">
                                     👁️ View
                                 </a>
-                                <a href="${file.fileUrl}" download="${file.fileName}" class="btn btn-success btn-sm"
+                                <a href="${fileUrl}" download="${file.fileName || file.originalName || 'download'}" class="btn btn-success btn-sm"
                                    style="text-decoration: none; display: inline-block;">
                                     ⬇️ Download
                                 </a>
                             </div>
                         </div>
-                    `).join('')
+                    `}).filter(html => html).join('')
                     : '<p style="color: #6b7280; text-align: center; padding: 20px;">No specifications available for this project</p>';
                 
                 // Display the project details modal
@@ -11129,16 +11159,18 @@ async function showAllocateProjectModal(projectId) {
             filesList.innerHTML = '';
 
             files.forEach(file => {
+                const fileUrl = file.url || file.fileUrl || file.downloadUrl || '#';
+                const fileName = file.originalName || file.fileName || 'Unknown File';
                 const fileItem = document.createElement('div');
                 fileItem.className = 'file-item';
                 fileItem.innerHTML = `
                     <div class="file-info">
-                        <span class="file-name">${file.originalName}</span>
+                        <span class="file-name">${fileName}</span>
                         <span class="file-size">${formatFileSize(file.fileSize)}</span>
                         <span class="file-date">${formatDate(file.uploadedAt)}</span>
                     </div>
                     <div class="file-actions">
-                        <a href="${file.url}" target="_blank" class="btn-download">Download</a>
+                        <a href="${fileUrl}" target="_blank" class="btn-download">Download</a>
                     </div>
                 `;
                 filesList.appendChild(fileItem);
