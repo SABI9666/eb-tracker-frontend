@@ -39,39 +39,47 @@ async function generateWordQuote(proposalId) {
         // Create services list as comma-separated string
         const servicesList = selectedServices.join(', ') || 'Steel Detailing';
         
+        // Calculate lead time from Timeline field (from BDM proposal)
+        // Timeline is stored as number of weeks
+        const timelineValue = p.timeline || '';
+        let leadTime = '';
+        if (timelineValue) {
+            const num = parseInt(timelineValue);
+            if (!isNaN(num)) {
+                leadTime = num === 1 ? '1 week' : `${num} weeks`;
+            } else {
+                leadTime = timelineValue; // Use as-is if not a number
+            }
+        }
+        
         const quoteData = {
             // --- HEADER INFO (Cover Page) ---
             quote_no: p.pricing?.projectNumber || 'DRAFT',
-            // Handle split quote number (Q_24 prefix and 404 suffix)
-            quote_no_prefix: (p.pricing?.projectNumber || 'DRAFT').substring(0, 4), // "Q_24" or similar
-            quote_no_suffix: (p.pricing?.projectNumber || 'DRAFT').substring(4), // "404" etc.
             project_name: p.projectName || 'Project Name',
             
             // --- CLIENT INFO ---
-            client_name: p.clientContact || 'Client Contact',
+            // Client name from proposal clientContact field
+            client_name: p.clientContact || 'Client',
             client_company: p.clientCompany || 'Client Company',
-            client_company_short: (p.clientCompany || 'Client Company').split(' Inc')[0].split(' LLC')[0],
             
             // --- DATE ---
             date: formatDate(new Date()),
             
-            // --- SERVICES LIST (comma-separated) ---
+            // --- SERVICES LIST ---
             services_list: servicesList,
             
             // --- PRICING SECTION ---
-            total_price: formatCurrency(p.pricing?.quoteValue, p.pricing?.currency),
+            // Price from COO pricing - quoteValue field
             price_value: p.pricing?.quoteValue || '0',
-            currency: p.pricing?.currency || 'USD',
             
-            // --- VARIATION RATE ---
-            hourly_rate: p.pricing?.hourlyRate || '20',
-            
-            // --- DELIVERY SCHEDULE ---
-            lead_time: p.timeline ? `${p.timeline} ${getTimeUnit(p.timeline)}` : 'TBD',
+            // --- LEAD TIME ---
+            // From BDM proposal Timeline field
+            lead_time: leadTime,
             
             // --- SIGNATORY INFO ---
-            bdm_name: getBDMName(p),
-            bdm_role: getBDMRole(),
+            // BDM name from createdByName (who created the proposal)
+            bdm_name: p.createdByName || 'Sales Team',
+            bdm_role: getBDMRole(p),
             company_name: 'Edanbrook Consultancy Services INC'
         };
 
@@ -124,40 +132,7 @@ async function generateWordQuote(proposalId) {
     }
 }
 
-// Helper function to format currency
-function formatCurrency(value, currency) {
-    if (!value) return '0.00';
-    const num = parseFloat(value);
-    const symbol = getCurrencySymbol(currency);
-    return `${symbol} ${num.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-}
-
-// Helper function to get currency symbol
-function getCurrencySymbol(currency) {
-    const symbols = {
-        'USD': '$',
-        'AUD': 'A$',
-        'CAD': 'C$',
-        'GBP': '£',
-        'EUR': '€',
-        '$': '$'
-    };
-    return symbols[currency] || currency || '$';
-}
-
-// Helper function to get time unit (week/weeks/day/days)
-function getTimeUnit(value) {
-    if (!value) return '';
-    const num = parseInt(value);
-    // Check if the value contains "day" (case insensitive)
-    if (String(value).toLowerCase().includes('day')) {
-        return num === 1 ? 'day' : 'days';
-    }
-    // Default to weeks
-    return num === 1 ? 'week' : 'weeks';
-}
-
-// Helper function to format date
+// Helper function to format date as DD.MM.YYYY
 function formatDate(date) {
     if (!date) return '';
     const d = new Date(date);
@@ -167,29 +142,18 @@ function formatDate(date) {
     return `${day}.${month}.${year}`;
 }
 
-// Helper function to get BDM name
-function getBDMName(proposal) {
-    // Priority: currentUser > createdByName > default
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.displayName) {
-        return currentUser.displayName;
-    }
-    if (proposal.createdByName) {
-        return proposal.createdByName;
-    }
-    return 'Sales Team';
-}
-
 // Helper function to get BDM role
-function getBDMRole() {
-    if (typeof currentUser !== 'undefined' && currentUser && currentUser.role) {
-        // Format role nicely
-        const role = currentUser.role.toLowerCase();
+// Priority: Check if the creator has a role stored, otherwise default
+function getBDMRole(proposal) {
+    // If proposal has createdByRole, use it
+    if (proposal.createdByRole) {
+        const role = proposal.createdByRole.toLowerCase();
         if (role === 'bdm') return 'Business Development Manager';
         if (role === 'coo') return 'Chief Operating Officer';
         if (role === 'director') return 'Director';
-        // Capitalize first letter of each word
-        return currentUser.role.replace(/\b\w/g, l => l.toUpperCase());
+        return proposal.createdByRole;
     }
+    // Default role for BDM
     return 'Business Development Manager';
 }
 
@@ -242,7 +206,7 @@ function handleDocErrors(error) {
         }).join("\n");
         console.log("Template Errors:", errorMessages);
         alert("Template Error: The tags in your Word doc don't match the data.\n\n" + errorMessages + 
-              "\n\nPlease ensure your template uses the correct placeholder tags like {quote_no}, {project_name}, etc.");
+              "\n\nPlease ensure your template uses the correct placeholder tags.");
     } else {
         console.log("General Error:", error);
         alert("Error generating document: " + error.message);
