@@ -69,8 +69,12 @@ async function generateWordQuote(proposalId) {
             services_list: servicesList,
             
             // --- PRICING SECTION ---
-            // Price from COO pricing - quoteValue field
+            // Item price (for individual service row) - same as total for single service
+            item_price: p.pricing?.quoteValue || '0',
+            // Total price from COO pricing - quoteValue field
             price_value: p.pricing?.quoteValue || '0',
+            // Hourly rate for variation rates
+            hourly_rate: p.pricing?.hourlyRate || '20',
             
             // --- LEAD TIME ---
             // From BDM proposal Timeline field
