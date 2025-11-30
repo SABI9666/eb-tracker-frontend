@@ -5873,23 +5873,27 @@ function showCreateProposalModal() {
             let estimationFilesHtml = '';
             if (estimationFiles.length > 0) {
                 if (canAccessEstimationFile(p.status)) {
+                    const estimationFilesItems = estimationFiles.map(file => {
+                        const fileUrl = file.url || file.fileUrl || file.downloadUrl || '#';
+                        const fileName = file.originalName || file.fileName || 'Unknown File';
+                        const deleteBtn = file.canDelete ? 
+                            `<button class="btn btn-danger btn-sm" onclick="deleteFile('${file.id}'); closeModal(); viewProposal('${p.id}');">🗑️ Delete</button>` : '';
+                        return `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #fff; border-radius: 5px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
+                                <span>📊 ${fileName}</span>
+                                <div>
+                                    <button class="btn btn-outline btn-sm" onclick="window.open('${fileUrl}', '_blank')">View</button>
+                                    <button class="btn btn-primary btn-sm" onclick="downloadFile('${fileUrl}', '${fileName}')">Download</button>
+                                    ${deleteBtn}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    
                     estimationFilesHtml = `
                         <div class="form-section">
                             <h4>Estimation Files ${getFileAccessIndicator({ fileType: 'estimation' }, p.status)}</h4>
-                            ${estimationFiles.map(file => {
-                                const fileUrl = file.url || file.fileUrl || file.downloadUrl || '#';
-                                return `
-                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: #fff; border-radius: 5px; margin-bottom: 0.5rem; border: 1px solid var(--border);">
-                                    <span>📊 ${file.originalName || file.fileName || 'Unknown File'}</span>
-                                    <div>
-                                        <button class="btn btn-outline btn-sm" onclick="window.open('${fileUrl}', '_blank')">View</button>
-                                        <button class="btn btn-primary btn-sm" onclick="downloadFile('${fileUrl}', '${file.originalName || file.fileName || 'download'}')">Download</button>
-                                        ${file.canDelete ? \`
-                                            <button class="btn btn-danger btn-sm" onclick="deleteFile('\${file.id}'); closeModal(); viewProposal('\${p.id}');">🗑️ Delete</button>
-                                        \` : ''}
-                                    </div>
-                                </div>
-                            `}).join('')}
+                            ${estimationFilesItems}
                         </div>
                     `;
                 } else {
