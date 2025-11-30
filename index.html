@@ -6924,11 +6924,19 @@ async function editProposal(proposalId) {
                 const selectedTypes = Array.from(document.querySelectorAll('input[name="editProjectType"]:checked')).map(cb => cb.value);
                 if (selectedTypes.length === 0) throw new Error('Please select at least one Project Type.');
 
-                // Update details
+                // Collect new links from the form
+                const newLinks = [];
+                document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
+                    const url = group.querySelector('input[type="url"]').value;
+                    const title = group.querySelector('input[type="text"]').value;
+                    if (url) newLinks.push({ url, title: title || url, description: title });
+                });
+
+                // Update proposal details (using correct action: update_basic_info)
                 await apiCall(`proposals?id=${proposalId}`, {
                     method: 'PUT',
                     body: JSON.stringify({ 
-                        action: 'update_details', 
+                        action: 'update_basic_info', 
                         data: {
                             projectName: document.getElementById('editProjectName').value || '',
                             clientCompany: document.getElementById('editClientCompany').value || '',
@@ -6936,37 +6944,24 @@ async function editProposal(proposalId) {
                             timeline: document.getElementById('editTimeline').value || '',
                             country: document.getElementById('editCountry').value || '',
                             priority: document.getElementById('editPriority').value || 'Medium',
-                            scopeOfWork: document.getElementById('editScopeOfWork').value || ''
+                            scopeOfWork: document.getElementById('editScopeOfWork').value || '',
+                            projectLinks: newLinks.length > 0 ? newLinks : undefined
                         } 
                     })
                 });
 
-               // Upload new files (using new direct method)
-if (window.currentEditStagedFiles.length > 0) {
-    console.log("Starting edit file uploads...");
-    for (const file of window.currentEditStagedFiles) {
-        try {
-            await uploadFileDirectly(file, proposalId, 'project');
-            console.log(`✅ Uploaded: ${file.name}`);
-        } catch (uploadError) {
-            console.error(`❌ Failed to upload ${file.name}:`, uploadError);
-            alert(`Failed to upload ${file.name}: ${uploadError.message}`);
-        }
-    }
-}
-
-                // Save new links
-                const newLinks = [];
-                document.querySelectorAll('#editLinksContainer .link-input-group').forEach(group => {
-                    const url = group.querySelector('input[type="url"]').value;
-                    const title = group.querySelector('input[type="text"]').value;
-                    if (url) newLinks.push({ url, title: title || url, description: title });
-                });
-                if (newLinks.length > 0) {
-                    await apiCall('proposals?id=' + proposalId, { // Use proposal endpoint for adding links to array
-                         method: 'PUT',
-                         body: JSON.stringify({ action: 'add_links', data: { links: newLinks } })
-                    });
+                // Upload new files (using new direct method)
+                if (window.currentEditStagedFiles.length > 0) {
+                    console.log("Starting edit file uploads...");
+                    for (const file of window.currentEditStagedFiles) {
+                        try {
+                            await uploadFileDirectly(file, proposalId, 'project');
+                            console.log(`✅ Uploaded: ${file.name}`);
+                        } catch (uploadError) {
+                            console.error(`❌ Failed to upload ${file.name}:`, uploadError);
+                            alert(`Failed to upload ${file.name}: ${uploadError.message}`);
+                        }
+                    }
                 }
 
                 alert('✅ Proposal updated successfully!');
