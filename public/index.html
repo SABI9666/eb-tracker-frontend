@@ -10306,25 +10306,23 @@ function renderExistingAllocations(project) {
         const hours = parseFloat(designerHours[uid]) || 0;
         
         return `
-            <div class="designer-edit-row" id="existingAlloc_${uid}" data-uid="${uid}" data-original="${hours}">
-                <div class="designer-edit-info">
-                    <div class="name">👤 ${name}</div>
-                    <div class="email">${email}</div>
+            <div class="designer-edit-row" id="existingAlloc_${uid}" data-uid="${uid}" data-original="${hours}" 
+                 style="display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: white; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid #e5e7eb;">
+                <div class="designer-edit-info" style="flex: 1;">
+                    <div class="name" style="font-weight: 600; color: #1f2937;">👤 ${name}</div>
+                    <div class="email" style="font-size: 0.85rem; color: #6b7280;">${email}</div>
                 </div>
-                <div class="designer-edit-hours">
+                <div class="designer-edit-hours" style="display: flex; align-items: center; gap: 0.5rem;">
                     <input type="number" id="existingHours_${uid}" class="form-control existing-hours-input" 
                            value="${hours}" min="0" step="0.5" data-original="${hours}"
                            style="width: 100px; text-align: center; font-weight: 600;"
                            onchange="highlightExistingHoursChange('${uid}')">
-                    <span>hours</span>
+                    <span style="color: #6b7280;">hours</span>
                 </div>
-                <div class="designer-edit-actions">
-                    <button type="button" class="btn btn-success btn-sm" onclick="saveExistingDesignerHours('${uid}', '${name}', '${email}')">
+                <div class="designer-edit-actions" style="display: flex; gap: 0.5rem; margin-left: 1rem;">
+                    <button type="button" class="btn btn-success btn-sm" onclick="saveExistingDesignerHours('${uid}', '${name}', '${email}')" 
+                            style="padding: 0.4rem 0.75rem;">
                         💾 Save
-                    </button>
-                    <button type="button" class="btn btn-outline btn-sm" onclick="requestHoursChangeFromModal('${uid}', '${name}', '${email}', ${hours})" 
-                            style="border-color: #8b5cf6; color: #8b5cf6;">
-                        📤 Request
                     </button>
                 </div>
             </div>
@@ -10499,65 +10497,71 @@ function requestHoursChangeFromModal(designerUid, designerName, designerEmail, c
 }
 
 /**
- * Toggle budget edit mode
+ * Request budget change (requires Director approval)
  */
 function toggleBudgetEdit() {
-    const input = document.getElementById('cooTotalProjectHours');
-    const btn = document.getElementById('editBudgetBtn');
+    const projectId = window.currentEditProjectId;
+    const project = window.currentEditProject;
+    const currentBudget = parseFloat(project.maxAllocatedHours) || 0;
     
-    if (input.readOnly) {
-        // Enable editing
-        input.readOnly = false;
-        input.style.backgroundColor = '#fff8dc';
-        input.style.border = '2px solid #f59e0b';
-        btn.innerHTML = '🔒 Lock Budget';
-        btn.classList.add('btn-warning');
-        btn.classList.remove('btn-outline');
-        alert('⚠️ Budget editing enabled. Remember to lock when done.\n\nNote: Increasing the budget may require Director approval.');
-    } else {
-        // Lock editing
-        const newBudget = parseFloat(input.value) || 0;
-        if (newBudget <= 0) {
-            alert('Please enter a valid budget before locking.');
-            return;
-        }
-        
-        input.readOnly = true;
-        input.style.backgroundColor = '#e9ecef';
-        input.style.border = '2px solid #10b981';
-        btn.innerHTML = '✏️ Edit Budget';
-        btn.classList.remove('btn-warning');
-        btn.classList.add('btn-outline');
-        
-        // Save new budget to backend
-        saveBudgetChange(newBudget);
+    // Show a prompt for new budget
+    const newBudget = prompt(`Current Budget: ${currentBudget} hours\n\nEnter new budget hours (requires Director approval):`);
+    
+    if (!newBudget || isNaN(parseFloat(newBudget))) {
+        return;
     }
+    
+    const newBudgetNum = parseFloat(newBudget);
+    if (newBudgetNum === currentBudget) {
+        alert('No change in budget');
+        return;
+    }
+    
+    const reason = prompt(`Reason for budget change (${currentBudget}h → ${newBudgetNum}h):\n\nThis is required for Director approval.`);
+    
+    if (!reason || reason.trim() === '') {
+        alert('Reason is required for budget change request');
+        return;
+    }
+    
+    // Submit budget change request to Director
+    submitBudgetChangeRequest(projectId, currentBudget, newBudgetNum, reason);
 }
 
 /**
- * Save budget change to backend
+ * Submit budget change request to Director
  */
-async function saveBudgetChange(newBudget) {
-    const projectId = window.currentEditProjectId;
-    
+async function submitBudgetChangeRequest(projectId, currentBudget, newBudget, reason) {
     try {
-        const response = await apiCall(`projects?id=${projectId}`, {
-            method: 'PUT',
+        showLoading();
+        
+        const project = window.currentEditProject;
+        
+        const response = await apiCall('allocation-requests', {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                action: 'update_max_hours',
-                data: {
-                    maxAllocatedHours: newBudget
-                }
+                projectId: projectId,
+                requestType: 'budget_change',
+                currentBudget: currentBudget,
+                requestedBudget: newBudget,
+                reason: reason,
+                projectName: project.projectName,
+                projectCode: project.projectNumber || project.projectCode,
+                clientCompany: project.clientCompany
             })
         });
         
         if (response.success) {
-            console.log('✅ Budget updated to', newBudget);
-            window.currentEditProject.maxAllocatedHours = newBudget;
+            alert(`✅ Budget change request submitted!\n\nCurrent: ${currentBudget}h\nRequested: ${newBudget}h\n\nAwaiting Director approval.`);
+        } else {
+            throw new Error(response.error || 'Failed to submit request');
         }
     } catch (error) {
-        console.error('Error saving budget:', error);
+        console.error('Error submitting budget change:', error);
+        alert('❌ Error: ' + error.message);
+    } finally {
+        hideLoading();
     }
 }
 
