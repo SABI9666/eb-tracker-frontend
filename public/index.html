@@ -10070,7 +10070,34 @@ async function showCooMultiDesignerAllocationModal(projectId) {
         
         // 3. Populate project info
         document.getElementById('cooAllocProjectId').value = projectId;
-        document.getElementById('cooAllocProjectNumberInput').value = project.projectNumber || '';
+        
+        // Setup project number field with Save/Edit buttons
+        const projectNumberInput = document.getElementById('cooAllocProjectNumberInput');
+        const saveBtn = document.getElementById('saveProjectNumberBtn');
+        const editBtn = document.getElementById('editProjectNumberBtn');
+        const statusText = document.getElementById('projectNumberStatus');
+        
+        projectNumberInput.value = project.projectNumber || '';
+        projectNumberInput.dataset.original = project.projectNumber || '';
+        
+        if (project.projectNumber) {
+            // Has project number - show as locked with Edit button
+            projectNumberInput.readOnly = true;
+            projectNumberInput.style.background = 'rgba(255,255,255,0.7)';
+            saveBtn.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+            statusText.textContent = '✓ Saved';
+            statusText.style.color = '#86efac';
+        } else {
+            // No project number - show as editable
+            projectNumberInput.readOnly = false;
+            projectNumberInput.style.background = 'rgba(255,255,255,0.95)';
+            saveBtn.style.display = 'none';
+            editBtn.style.display = 'none';
+            statusText.textContent = 'Enter project number and click Save';
+            statusText.style.color = 'rgba(255,255,255,0.7)';
+        }
+        
         document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
         document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
         
@@ -10903,6 +10930,121 @@ function validateDesignerSelection() {
  * ✅ FIXED: Submit COO Multi-Designer Allocation
  * Handles both scenarios: estimation hours OR manual COO entry
  */
+/**
+ * Mark project number as changed - show Save button
+ */
+function markProjectNumberChanged() {
+    const input = document.getElementById('cooAllocProjectNumberInput');
+    const saveBtn = document.getElementById('saveProjectNumberBtn');
+    const editBtn = document.getElementById('editProjectNumberBtn');
+    const statusText = document.getElementById('projectNumberStatus');
+    
+    const currentValue = input.value.trim();
+    const originalValue = input.dataset.original || '';
+    
+    if (currentValue !== originalValue && currentValue !== '') {
+        saveBtn.style.display = 'inline-block';
+        editBtn.style.display = 'none';
+        statusText.textContent = 'Click Save to update';
+        statusText.style.color = '#fbbf24';
+    } else if (currentValue === '' && originalValue === '') {
+        saveBtn.style.display = 'none';
+        editBtn.style.display = 'none';
+        statusText.textContent = 'Enter project number';
+        statusText.style.color = 'rgba(255,255,255,0.7)';
+    }
+}
+
+/**
+ * Enable project number editing
+ */
+function enableProjectNumberEdit() {
+    const input = document.getElementById('cooAllocProjectNumberInput');
+    const saveBtn = document.getElementById('saveProjectNumberBtn');
+    const editBtn = document.getElementById('editProjectNumberBtn');
+    const statusText = document.getElementById('projectNumberStatus');
+    
+    input.readOnly = false;
+    input.style.background = 'rgba(255,255,255,0.95)';
+    input.focus();
+    input.select();
+    
+    editBtn.style.display = 'none';
+    statusText.textContent = 'Edit and click Save';
+    statusText.style.color = '#fbbf24';
+}
+
+/**
+ * Save project number to database
+ */
+async function saveProjectNumber() {
+    const projectId = document.getElementById('cooAllocProjectId').value;
+    const input = document.getElementById('cooAllocProjectNumberInput');
+    const saveBtn = document.getElementById('saveProjectNumberBtn');
+    const editBtn = document.getElementById('editProjectNumberBtn');
+    const statusText = document.getElementById('projectNumberStatus');
+    
+    const projectNumber = input.value.trim();
+    
+    if (!projectNumber) {
+        alert('Please enter a project number');
+        input.focus();
+        return;
+    }
+    
+    try {
+        // Show loading state
+        saveBtn.textContent = '⏳...';
+        saveBtn.disabled = true;
+        
+        const response = await apiCall(`projects?id=${projectId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'update_project_number',
+                data: {
+                    projectNumber: projectNumber
+                }
+            })
+        });
+        
+        if (response.success) {
+            // Update UI to saved state
+            input.dataset.original = projectNumber;
+            input.readOnly = true;
+            input.style.background = 'rgba(255,255,255,0.7)';
+            
+            saveBtn.style.display = 'none';
+            editBtn.style.display = 'inline-block';
+            
+            statusText.textContent = '✓ Saved';
+            statusText.style.color = '#86efac';
+            
+            // Update stored project data
+            if (window.currentEditProject) {
+                window.currentEditProject.projectNumber = projectNumber;
+            }
+            
+            // Brief success flash
+            input.style.border = '2px solid #10b981';
+            setTimeout(() => {
+                input.style.border = 'none';
+            }, 2000);
+            
+        } else {
+            throw new Error(response.error || 'Failed to save project number');
+        }
+    } catch (error) {
+        console.error('Error saving project number:', error);
+        alert('❌ Error: ' + error.message);
+        statusText.textContent = 'Save failed - try again';
+        statusText.style.color = '#f87171';
+    } finally {
+        saveBtn.textContent = '💾 Save';
+        saveBtn.disabled = false;
+    }
+}
+
 async function submitCooMultiDesignerAllocation() {
     const projectId = document.getElementById('cooAllocProjectId').value;
     const totalHoursInput = document.getElementById('cooTotalProjectHours');
@@ -17535,9 +17677,21 @@ function toggleDesignHours() {
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
                     <div>
                         <label style="font-size: 0.85rem; opacity: 0.9;">Project Number:</label>
-                        <input type="text" id="cooAllocProjectNumberInput" class="form-control" 
-                               placeholder="Enter project number" 
-                               style="background: rgba(255,255,255,0.95); color: #1e293b; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border-radius: 6px; border: none;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
+                            <input type="text" id="cooAllocProjectNumberInput" class="form-control" 
+                                   placeholder="Enter project number" 
+                                   style="background: rgba(255,255,255,0.95); color: #1e293b; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border-radius: 6px; border: none; flex: 1;"
+                                   onchange="markProjectNumberChanged()">
+                            <button type="button" id="saveProjectNumberBtn" onclick="saveProjectNumber()" 
+                                    style="display: none; background: #10b981; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
+                                💾 Save
+                            </button>
+                            <button type="button" id="editProjectNumberBtn" onclick="enableProjectNumberEdit()" 
+                                    style="display: none; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); padding: 0.4rem 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
+                                ✏️ Edit
+                            </button>
+                        </div>
+                        <small id="projectNumberStatus" style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem; display: block;"></small>
                     </div>
                     <div>
                         <label style="font-size: 0.85rem; opacity: 0.9;">Project Name:</label>
