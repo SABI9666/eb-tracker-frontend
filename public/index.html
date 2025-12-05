@@ -2995,6 +2995,31 @@ body.modal-open {
             }
         }, 50 * 60 * 1000);
 
+
+        // Test backend connection
+        async function testBackendConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Backend health check:', data);
+                    return true;
+                } else {
+                    console.warn('⚠️ Backend returned non-OK status:', response.status);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Backend connection failed:', error);
+                return false;
+            }
+        }
+
         function setupEventListeners() {
             document.querySelectorAll('.role-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -3022,7 +3047,9 @@ body.modal-open {
             } catch (error) {
                 console.error('Login error:', error);
                 showMessage(
-                    error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found'
+                    error.code === 'auth/wrong-password' || 
+                    error.code === 'auth/user-not-found' || 
+                    error.code === 'auth/invalid-login-credentials'
                         ? 'Invalid email or password.'
                         : 'Login failed: ' + error.message,
                     'error'
