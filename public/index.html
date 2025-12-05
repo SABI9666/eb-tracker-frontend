@@ -3177,8 +3177,8 @@ body.modal-open {
             setDisplay('allocationRequestsNavItem', currentUserRole === 'director'); // Only Director sees Allocation Requests
             
             // Leave Request System - Menu Visibility
-            // Employees can submit leave requests (BDM, Estimator, Designer, Accounts, COO)
-            setDisplay('leaveRequestNavItem', ['bdm', 'estimator', 'designer', 'accounts', 'coo'].includes(roleForCheck));
+            // All employees can submit leave requests
+            setDisplay('leaveRequestNavItem', ['bdm', 'estimator', 'designer', 'accounts', 'coo', 'hr', 'director'].includes(roleForCheck));
             
             // Approvers can see leave approvals (COO, Director, HR)
             setDisplay('leaveApprovalNavItem', ['coo', 'director', 'hr'].includes(roleForCheck));
