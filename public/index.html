@@ -9980,49 +9980,6 @@ async function markProjectComplete(projectId) {
         function showWorkflow() { /* ... (Unchanged) ... */ }
         function showReports() { /* ... (Unchanged) ... */ }
         function showSettings() { /* ... (Unchanged) ... */ }
-                        This project is <strong>fully allocated</strong><br>
-                        <span style="font-size: 1.2rem; font-weight: 700;">${previouslyAllocated.toFixed(1)} / ${totalBudget.toFixed(1)} hours</span>
-                    </p>
-                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">Use "Edit" buttons above to modify existing allocations.</p>
-                </div>
-            `;
-            
-            if (addDesignerBtn) addDesignerBtn.style.display = 'none';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerText = "✅ Fully Allocated";
-                submitBtn.style.opacity = "0.6";
-            }
-            
-        } else {
-            // ✅ CASE 3: Partial or New Allocation (ENABLED)
-            if (addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerText = "Allocate Project";
-                submitBtn.style.opacity = "1";
-            }
-            
-            addDesignerAllocation(); // Add first row
-        }
-        
-        // Show modal
-        document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
-        
-        // Update visual display
-        updateRemainingHours();
-        
-    } catch (error) {
-        console.error('Error showing allocation modal:', error);
-        alert('Error: ' + error.message);
-    } finally {
-        hideLoading();
-    }
-}
-
-/**
- * ✅ NEW: Render existing designer allocations with edit capabilities
- */
 function renderExistingAllocations(project) {
     const section = document.getElementById('existingAllocationsSection');
     const list = document.getElementById('existingAllocationsList');
