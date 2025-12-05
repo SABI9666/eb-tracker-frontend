@@ -2217,6 +2217,7 @@ body.modal-open {
                                 <div class="role-btn" data-role="director">Director</div>
                                 <div class="role-btn" data-role="designer">Designer</div>
                                 <div class="role-btn" data-role="accounts">Accounts</div>
+                                <div class="role-btn" data-role="hr">HR</div>
                             </div>
                             <input type="hidden" id="selectedRole" value="bdm">
                         </div>
@@ -2348,6 +2349,17 @@ body.modal-open {
                         <span class="nav-icon">⏱️</span>My Timesheet
                     </a>
                 </li>
+                <li id="leaveRequestNavItem" style="display: none;">
+                    <a href="#" onclick="showLeaveRequest()" id="nav-leave-request">
+                        <span class="nav-icon">📅</span>Leave Request
+                    </a>
+                </li>
+                <li id="leaveApprovalNavItem" style="display: none;">
+                    <a href="#" onclick="showLeaveApprovals()" id="nav-leave-approval">
+                        <span class="nav-icon">✅</span>Leave Approvals
+                        <span class="notification-count" id="leaveApprovalsBadge" style="display: none; margin-left: 10px; background: var(--warning); color: #856404; width: auto; height: auto; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; border: none;">0</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 
@@ -2468,6 +2480,7 @@ body.modal-open {
             designer: [],
             accounts: ["accounts@edanbrook.com", "finance@edanbrook.com"],
             bdm: []
+            hr: ["hr@edanbrook.com"],
         };
         let currentUser = null;
         let currentUserRole = '';
@@ -3109,6 +3122,22 @@ body.modal-open {
             setDisplay('executiveMonitoringNavItem', isManagement); // Executive Dashboard ENABLED for COO & Director
             setDisplay('timeRequestsNavItem', isManagement);
             setDisplay('allocationRequestsNavItem', currentUserRole === 'director'); // Only Director sees Allocation Requests
+            
+            // Leave Request System - Menu Visibility
+            // Employees can submit leave requests (BDM, Estimator, Designer, Accounts, COO)
+            setDisplay('leaveRequestNavItem', ['bdm', 'estimator', 'designer', 'accounts', 'coo'].includes(roleForCheck));
+            
+            // Approvers can see leave approvals (COO, Director, HR)
+            setDisplay('leaveApprovalNavItem', ['coo', 'director', 'hr'].includes(roleForCheck));
+            
+            // Update leave approvals badge for approvers
+            if (['coo', 'director', 'hr'].includes(roleForCheck)) {
+                loadPendingLeaveApprovals().then(response => {
+                    if (response && response.success) {
+                        updateLeaveApprovalsBadge(response.data?.length || 0);
+                    }
+                }).catch(() => {});
+            }
             
             // Update badge for Director
             if (currentUserRole === 'director') {
@@ -9951,6 +9980,530 @@ async function markProjectComplete(projectId) {
         function showWorkflow() { /* ... (Unchanged) ... */ }
         function showReports() { /* ... (Unchanged) ... */ }
         function showSettings() { /* ... (Unchanged) ... */ }
+// ============================================
+// LEAVE REQUEST SYSTEM - JAVASCRIPT FUNCTIONS
+// ============================================
+
+// Show Leave Request Submission Page (For Employees)
+async function showLeaveRequest() {
+    updateActiveNav('nav-leave-request');
+    const container = document.getElementById('mainContent');
+    
+    container.innerHTML = `
+        <div class="dashboard-header">
+            <div class="header-left">
+                <h1>📅 Leave Requests</h1>
+                <p>Submit and track your leave requests</p>
+            </div>
+            <button class="btn-primary" onclick="openModal('leaveRequestModal')">
+                ➕ New Leave Request
+            </button>
+        </div>
+
+        <div class="leave-filters">
+            <div class="filter-chip active" data-filter="all">All Requests</div>
+            <div class="filter-chip" data-filter="pending">Pending</div>
+            <div class="filter-chip" data-filter="approved">Approved</div>
+            <div class="filter-chip" data-filter="rejected">Rejected</div>
+        </div>
+
+        <div id="myLeaveRequestsContainer">
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner"></div>
+                <p>Loading your leave requests...</p>
+            </div>
+        </div>
+    `;
+
+    // Add filter functionality
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            filterLeaveRequests(filter);
+        });
+    });
+
+    // Load leave requests
+    await loadMyLeaveRequests();
+}
+
+// Load Employee's Leave Requests
+async function loadMyLeaveRequests() {
+    try {
+        const response = await apiCall('leave-requests/my-requests');
+        
+        if (response.success) {
+            displayLeaveRequests(response.data, 'myLeaveRequestsContainer');
+        } else {
+            showMessage('Failed to load leave requests', 'error');
+        }
+    } catch (error) {
+        console.error('Load leave requests error:', error);
+        showMessage('Error loading leave requests', 'error');
+    }
+}
+
+// Display Leave Requests
+function displayLeaveRequests(requests, containerId) {
+    const container = document.getElementById(containerId);
+    
+    if (!requests || requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📅</div>
+                <div class="empty-state-title">No Leave Requests</div>
+                <div class="empty-state-text">You haven't submitted any leave requests yet.</div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = requests.map(req => {
+        const statusClass = req.status === 'pending' ? 'pending' : 
+                          req.status === 'approved' ? 'approved' : 'rejected';
+        const cardClass = `leave-card status-${req.status}`;
+        
+        return `
+            <div class="${cardClass}" data-status="${req.status}">
+                <div class="leave-header">
+                    <div class="leave-title">
+                        ${req.leaveType} - ${req.numberOfDays} day(s)
+                    </div>
+                    <span class="leave-status-badge ${statusClass}">
+                        ${req.status}
+                    </span>
+                </div>
+                
+                <div class="leave-details">
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">Start Date</span>
+                        <span class="leave-detail-value">${formatDate(req.startDate)}</span>
+                    </div>
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">End Date</span>
+                        <span class="leave-detail-value">${formatDate(req.endDate)}</span>
+                    </div>
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">Days</span>
+                        <span class="leave-detail-value">${req.numberOfDays}</span>
+                    </div>
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">Submitted</span>
+                        <span class="leave-detail-value">${formatDate(req.createdAt)}</span>
+                    </div>
+                </div>
+                
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Reason</span>
+                    <span class="leave-detail-value">${req.reason}</span>
+                </div>
+                
+                ${renderLeaveTimeline(req)}
+                
+                ${req.emergencyContact ? `
+                    <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
+                        <strong>Emergency Contact:</strong> ${req.emergencyContact} 
+                        ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Render Leave Approval Timeline
+function renderLeaveTimeline(leave) {
+    const stages = [
+        {
+            number: 1,
+            title: 'Reporting Officer',
+            status: leave.reportingOfficerStatus,
+            icon: leave.reportingOfficerStatus === 'approved' ? '✅' : 
+                  leave.reportingOfficerStatus === 'rejected' ? '❌' : '⏳',
+            comments: leave.reportingOfficerComments,
+            current: leave.currentStage === 1
+        },
+        {
+            number: 2,
+            title: 'HR Review',
+            status: leave.hrStatus,
+            icon: leave.hrStatus === 'approved' ? '✅' : 
+                  leave.hrStatus === 'rejected' ? '❌' : '⏳',
+            comments: leave.hrComments,
+            category: leave.hrCategory,
+            current: leave.currentStage === 2
+        },
+        {
+            number: 3,
+            title: 'Director Approval',
+            status: leave.directorStatus,
+            icon: leave.directorStatus === 'approved' ? '✅' : 
+                  leave.directorStatus === 'rejected' ? '❌' : '⏳',
+            comments: leave.directorComments,
+            current: leave.currentStage === 3
+        }
+    ];
+
+    return `
+        <div class="leave-timeline">
+            <strong style="display: block; margin-bottom: 0.5rem;">Approval Progress:</strong>
+            ${stages.map(stage => {
+                let stageClass = '';
+                if (stage.status === 'approved') stageClass = 'completed';
+                else if (stage.status === 'rejected') stageClass = 'rejected';
+                else if (stage.current) stageClass = 'current';
+                
+                return `
+                    <div class="timeline-stage ${stageClass}">
+                        <div class="timeline-icon">${stage.icon}</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Stage ${stage.number}: ${stage.title}</div>
+                            <div class="timeline-info">
+                                Status: ${stage.status.toUpperCase()}
+                                ${stage.comments ? `<br>Comments: ${stage.comments}` : ''}
+                                ${stage.category ? `<br>Category: ${stage.category}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// Filter Leave Requests
+function filterLeaveRequests(filter) {
+    const cards = document.querySelectorAll('.leave-card');
+    cards.forEach(card => {
+        if (filter === 'all' || card.dataset.status === filter) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Submit Leave Request
+async function submitLeaveRequest(event) {
+    event.preventDefault();
+    
+    const leaveData = {
+        leaveType: document.getElementById('leaveType').value,
+        startDate: document.getElementById('leaveStartDate').value,
+        endDate: document.getElementById('leaveEndDate').value,
+        reason: document.getElementById('leaveReason').value,
+        emergencyContact: document.getElementById('emergencyContact').value,
+        emergencyPhone: document.getElementById('emergencyPhone').value
+    };
+
+    try {
+        const response = await apiCall('leave-requests/submit', 'POST', leaveData);
+        
+        if (response.success) {
+            showMessage('Leave request submitted successfully!', 'success');
+            closeModal('leaveRequestModal');
+            document.getElementById('leaveRequestForm').reset();
+            await loadMyLeaveRequests();
+        } else {
+            showMessage(response.error || 'Failed to submit leave request', 'error');
+        }
+    } catch (error) {
+        console.error('Submit leave error:', error);
+        showMessage('Error submitting leave request', 'error');
+    }
+}
+
+// ============================================
+// LEAVE APPROVALS (For COO, Director, HR)
+// ============================================
+
+// Show Leave Approvals Dashboard
+async function showLeaveApprovals() {
+    updateActiveNav('nav-leave-approval');
+    const container = document.getElementById('mainContent');
+    
+    const roleTitle = currentUserRole === 'hr' ? 'HR' : 
+                     currentUserRole === 'coo' ? 'Reporting Officer (COO)' : 
+                     'Director (Final Approval)';
+    
+    container.innerHTML = `
+        <div class="dashboard-header">
+            <div class="header-left">
+                <h1>✅ Leave Approvals</h1>
+                <p>${roleTitle} - Review and approve leave requests</p>
+            </div>
+        </div>
+
+        <div class="leave-filters">
+            <div class="filter-chip active" data-filter="pending">Pending Approval</div>
+            <div class="filter-chip" data-filter="all">All Requests</div>
+        </div>
+
+        <div id="leaveApprovalsContainer">
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner"></div>
+                <p>Loading pending approvals...</p>
+            </div>
+        </div>
+    `;
+
+    // Add filter functionality
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            if (filter === 'pending') {
+                loadPendingLeaveApprovals();
+            } else {
+                loadAllLeaveRequests();
+            }
+        });
+    });
+
+    // Load pending approvals
+    await loadPendingLeaveApprovals();
+}
+
+// Load Pending Leave Approvals Based on Role
+async function loadPendingLeaveApprovals() {
+    try {
+        let endpoint = '';
+        
+        if (currentUserRole === 'coo' || currentUserRole === 'director') {
+            endpoint = 'leave-requests/pending-stage1'; // Reporting Officer
+        } else if (currentUserRole === 'hr') {
+            endpoint = 'leave-requests/pending-stage2'; // HR
+        } else if (currentUserRole === 'director') {
+            endpoint = 'leave-requests/pending-stage3'; // Final Director Approval
+        }
+
+        const response = await apiCall(endpoint);
+        
+        if (response.success) {
+            displayLeaveApprovalsForRole(response.data);
+            updateLeaveApprovalsBadge(response.data.length);
+        } else {
+            showMessage('Failed to load leave approvals', 'error');
+        }
+    } catch (error) {
+        console.error('Load leave approvals error:', error);
+        showMessage('Error loading leave approvals', 'error');
+    }
+}
+
+// Display Leave Approvals for Approver Role
+function displayLeaveApprovalsForRole(requests) {
+    const container = document.getElementById('leaveApprovalsContainer');
+    
+    if (!requests || requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-title">No Pending Approvals</div>
+                <div class="empty-state-text">All leave requests have been processed.</div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = requests.map(req => `
+        <div class="leave-card status-pending">
+            <div class="leave-header">
+                <div class="leave-title">
+                    ${req.employeeName} - ${req.leaveType}
+                </div>
+                <span class="leave-status-badge pending">Pending Your Approval</span>
+            </div>
+            
+            <div class="leave-details">
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Employee</span>
+                    <span class="leave-detail-value">${req.employeeName}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Role</span>
+                    <span class="leave-detail-value">${req.employeeRole.toUpperCase()}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Leave Type</span>
+                    <span class="leave-detail-value">${req.leaveType}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Duration</span>
+                    <span class="leave-detail-value">${req.numberOfDays} day(s)</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Start Date</span>
+                    <span class="leave-detail-value">${formatDate(req.startDate)}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">End Date</span>
+                    <span class="leave-detail-value">${formatDate(req.endDate)}</span>
+                </div>
+            </div>
+            
+            <div class="leave-detail-item" style="margin-top: 1rem;">
+                <span class="leave-detail-label">Reason</span>
+                <span class="leave-detail-value">${req.reason}</span>
+            </div>
+            
+            ${req.emergencyContact ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
+                    <strong>Emergency Contact:</strong> ${req.emergencyContact} 
+                    ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
+                </div>
+            ` : ''}
+            
+            ${renderLeaveTimeline(req)}
+            
+            <div class="approval-actions">
+                <div class="approval-form">
+                    ${currentUserRole === 'hr' ? `
+                        <div class="form-group">
+                            <label>HR Leave Category</label>
+                            <select id="hrCategory-${req.id}">
+                                <option value="${req.leaveType}">${req.leaveType}</option>
+                                <option value="Sick Leave">Sick Leave</option>
+                                <option value="Casual Leave">Casual Leave</option>
+                                <option value="Earned Leave">Earned Leave</option>
+                                <option value="Unpaid Leave">Unpaid Leave</option>
+                                <option value="Emergency Leave">Emergency Leave</option>
+                            </select>
+                        </div>
+                    ` : ''}
+                    <textarea placeholder="Add comments (optional)" id="comments-${req.id}" rows="3"></textarea>
+                    <div class="approval-buttons">
+                        <button class="btn-approve" onclick="approveLeaveRequest('${req.id}')">
+                            ✅ Approve
+                        </button>
+                        <button class="btn-reject" onclick="rejectLeaveRequest('${req.id}')">
+                            ❌ Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Approve Leave Request
+async function approveLeaveRequest(leaveId) {
+    const comments = document.getElementById(`comments-${leaveId}`).value;
+    let endpoint = '';
+    let payload = { action: 'approve', comments };
+
+    // Determine endpoint based on role
+    if (currentUserRole === 'coo' || (currentUserRole === 'director' && document.querySelector(`[data-stage="1"]`))) {
+        endpoint = `leave-requests/stage1/${leaveId}`;
+    } else if (currentUserRole === 'hr') {
+        endpoint = `leave-requests/stage2/${leaveId}`;
+        const hrCategory = document.getElementById(`hrCategory-${leaveId}`)?.value;
+        payload.hrCategory = hrCategory;
+    } else if (currentUserRole === 'director') {
+        endpoint = `leave-requests/stage3/${leaveId}`;
+    }
+
+    if (!confirm('Are you sure you want to APPROVE this leave request?')) {
+        return;
+    }
+
+    try {
+        const response = await apiCall(endpoint, 'PUT', payload);
+        
+        if (response.success) {
+            showMessage('Leave request approved successfully!', 'success');
+            await loadPendingLeaveApprovals();
+        } else {
+            showMessage(response.error || 'Failed to approve leave request', 'error');
+        }
+    } catch (error) {
+        console.error('Approve leave error:', error);
+        showMessage('Error approving leave request', 'error');
+    }
+}
+
+// Reject Leave Request
+async function rejectLeaveRequest(leaveId) {
+    const comments = document.getElementById(`comments-${leaveId}`).value;
+    
+    if (!comments.trim()) {
+        showMessage('Please provide a reason for rejection', 'error');
+        return;
+    }
+
+    let endpoint = '';
+    const payload = { action: 'reject', comments };
+
+    // Determine endpoint based on role
+    if (currentUserRole === 'coo' || (currentUserRole === 'director' && document.querySelector(`[data-stage="1"]`))) {
+        endpoint = `leave-requests/stage1/${leaveId}`;
+    } else if (currentUserRole === 'hr') {
+        endpoint = `leave-requests/stage2/${leaveId}`;
+    } else if (currentUserRole === 'director') {
+        endpoint = `leave-requests/stage3/${leaveId}`;
+    }
+
+    if (!confirm('Are you sure you want to REJECT this leave request?')) {
+        return;
+    }
+
+    try {
+        const response = await apiCall(endpoint, 'PUT', payload);
+        
+        if (response.success) {
+            showMessage('Leave request rejected', 'success');
+            await loadPendingLeaveApprovals();
+        } else {
+            showMessage(response.error || 'Failed to reject leave request', 'error');
+        }
+    } catch (error) {
+        console.error('Reject leave error:', error);
+        showMessage('Error rejecting leave request', 'error');
+    }
+}
+
+// Load All Leave Requests (For management reporting)
+async function loadAllLeaveRequests() {
+    try {
+        const response = await apiCall('leave-requests/all/requests');
+        
+        if (response.success) {
+            displayLeaveRequests(response.data, 'leaveApprovalsContainer');
+        } else {
+            showMessage('Failed to load leave requests', 'error');
+        }
+    } catch (error) {
+        console.error('Load all leave requests error:', error);
+        showMessage('Error loading leave requests', 'error');
+    }
+}
+
+// Update Leave Approvals Badge
+function updateLeaveApprovalsBadge(count) {
+    const badge = document.getElementById('leaveApprovalsBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Format Date Helper
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
         
         // REPLACED IMPLEMENTATION
         async function showActivities() {
@@ -18803,6 +19356,321 @@ async function updateDirectorRequestsBadge() {
 // if (currentUserRole === 'director') { updateDirectorRequestsBadge(); }
 
 </script>
+
+<!-- ============================================
+     LEAVE REQUEST SYSTEM - MODALS & SECTIONS
+     ============================================ -->
+
+<!-- Leave Request Submission Modal -->
+<div id="leaveRequestModal" class="modal">
+    <div class="modal-content">
+        <span class="close-button" onclick="closeModal('leaveRequestModal')">&times;</span>
+        <h2>📅 Submit Leave Request</h2>
+        <form id="leaveRequestForm" onsubmit="submitLeaveRequest(event)">
+            <div class="form-group">
+                <label>Leave Type *</label>
+                <select id="leaveType" required>
+                    <option value="">Select Leave Type</option>
+                    <option value="Sick Leave">Sick Leave</option>
+                    <option value="Casual Leave">Casual Leave</option>
+                    <option value="Earned Leave">Earned Leave</option>
+                    <option value="Maternity Leave">Maternity Leave</option>
+                    <option value="Paternity Leave">Paternity Leave</option>
+                    <option value="Unpaid Leave">Unpaid Leave</option>
+                    <option value="Compensatory Off">Compensatory Off</option>
+                    <option value="Emergency Leave">Emergency Leave</option>
+                </select>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Start Date *</label>
+                    <input type="date" id="leaveStartDate" required>
+                </div>
+                <div class="form-group">
+                    <label>End Date *</label>
+                    <input type="date" id="leaveEndDate" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Reason *</label>
+                <textarea id="leaveReason" rows="4" required placeholder="Please provide reason for leave request..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>Emergency Contact Name</label>
+                <input type="text" id="emergencyContact" placeholder="Name of emergency contact">
+            </div>
+            
+            <div class="form-group">
+                <label>Emergency Contact Phone</label>
+                <input type="tel" id="emergencyPhone" placeholder="Emergency contact number">
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeModal('leaveRequestModal')">Cancel</button>
+                <button type="submit" class="btn-primary">Submit Request</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Leave Approval Detail Modal -->
+<div id="leaveApprovalModal" class="modal">
+    <div class="modal-content large">
+        <span class="close-button" onclick="closeModal('leaveApprovalModal')">&times;</span>
+        <h2>✅ Leave Request Approval</h2>
+        <div id="leaveApprovalContent"></div>
+    </div>
+</div>
+
+<style>
+/* Leave Request Specific Styles */
+.leave-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    border-left: 4px solid #3b82f6;
+}
+
+.leave-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.leave-card.status-pending {
+    border-left-color: #f59e0b;
+}
+
+.leave-card.status-approved {
+    border-left-color: #10b981;
+}
+
+.leave-card.status-rejected {
+    border-left-color: #ef4444;
+}
+
+.leave-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.leave-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-dark);
+}
+
+.leave-status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+}
+
+.leave-status-badge.pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.leave-status-badge.approved {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.leave-status-badge.rejected {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.leave-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.leave-detail-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.leave-detail-label {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    margin-bottom: 0.25rem;
+}
+
+.leave-detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.leave-timeline {
+    background: var(--background);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.timeline-stage {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    background: white;
+}
+
+.timeline-stage.completed {
+    background: #d1fae5;
+}
+
+.timeline-stage.rejected {
+    background: #fee2e2;
+}
+
+.timeline-stage.current {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+}
+
+.timeline-icon {
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.timeline-content {
+    flex: 1;
+}
+
+.timeline-title {
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.timeline-info {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.approval-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border);
+}
+
+.approval-form {
+    width: 100%;
+}
+
+.approval-form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-family: inherit;
+}
+
+.approval-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-approve {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-approve:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.btn-reject {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-reject:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.leave-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background: white;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.filter-chip.active {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: white;
+    border-color: #2563eb;
+}
+
+.filter-chip:hover {
+    transform: translateY(-2px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-dark);
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-text {
+    color: var(--text-light);
+}
+</style>
+
 </body>
                                 
 </html>
