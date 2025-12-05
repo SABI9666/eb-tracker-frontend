@@ -2828,6 +2828,15 @@ body.modal-open {
             const MAX_RETRIES = 2;
             const RETRY_DELAY = 2000;
             const url = `${API_BASE}/api/${endpoint}`;
+            
+            console.log('🔵 apiCall invoked with:', { 
+                endpoint, 
+                options, 
+                optionsType: typeof options,
+                optionsKeys: Object.keys(options),
+                method: options.method,
+                hasBody: !!options.body
+            });
 
             if (!authToken && currentUser && !endpoint.includes('health')) {
                 try {
@@ -2858,6 +2867,14 @@ body.modal-open {
             mode: 'cors',
             credentials: 'omit' // FIXED: Don't send credentials with origin: '*'
         };
+        
+        console.log('🟢 finalOptions:', {
+            method: finalOptions.method,
+            hasBody: !!finalOptions.body,
+            bodyType: typeof finalOptions.body,
+            bodyPreview: finalOptions.body ? finalOptions.body.substring(0, 100) : 'NO BODY',
+            headers: finalOptions.headers
+        });
 
         try {
             console.log(`📤 API Call [${finalOptions.method}]: ${url}`);
@@ -2867,19 +2884,28 @@ body.modal-open {
             const contentType = response.headers.get('content-type');
             let responseData;
 
+            console.log('📋 Response content-type:', contentType);
+            console.log('📋 Response status:', response.status, response.statusText);
+            console.log('📋 Response ok:', response.ok);
+
             if (contentType && contentType.includes('application/json')) {
                 const responseText = await response.text();
+                console.log('📄 Raw response text:', responseText.substring(0, 500));
                 try {
                     responseData = responseText ? JSON.parse(responseText) : {};
+                    console.log('📦 Parsed response data:', responseData);
                 } catch (parseError) {
                     console.error('❌ JSON parse error:', parseError);
                     throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
                 }
             } else {
                 responseData = await response.text();
+                console.log('📄 Non-JSON response:', responseData.substring(0, 500));
             }
 
             if (!response.ok) {
+                console.error('❌ Response not OK. Status:', response.status);
+                console.error('❌ Response data:', responseData);
                 if (response.status === 401) {
                     console.error('❌ 401 Unauthorized - Token may be invalid');
                     if (currentUser && retryCount === 0) {
@@ -18724,6 +18750,11 @@ function filterLeaveRequests(filter) {
 async function submitLeaveRequest(event) {
     event.preventDefault();
     
+    console.log('🚀 Starting leave request submission...');
+    console.log('👤 Current user:', currentUser ? currentUser.email : 'NOT LOGGED IN');
+    console.log('🎭 Current role:', currentUserRole);
+    console.log('🔑 Auth token exists:', !!authToken);
+    
     const leaveData = {
         leaveType: document.getElementById('leaveType').value,
         startDate: document.getElementById('leaveStartDate').value,
@@ -18732,9 +18763,17 @@ async function submitLeaveRequest(event) {
         emergencyContact: document.getElementById('emergencyContact').value,
         emergencyPhone: document.getElementById('emergencyPhone').value
     };
+    
+    console.log('📝 Leave data to submit:', leaveData);
+    console.log('🌐 API URL will be:', `${API_BASE}/api/leave-requests/submit`);
 
     try {
-        const response = await apiCall('leave-requests/submit', 'POST', leaveData);
+        const response = await apiCall('leave-requests/submit', { 
+            method: 'POST', 
+            body: JSON.stringify(leaveData) 
+        });
+        
+        console.log('✅ Received response:', response);
         
         if (response.success) {
             showMessage('Leave request submitted successfully!', 'success');
@@ -18745,8 +18784,11 @@ async function submitLeaveRequest(event) {
             showMessage(response.error || 'Failed to submit leave request', 'error');
         }
     } catch (error) {
-        console.error('Submit leave error:', error);
-        showMessage('Error submitting leave request', 'error');
+        console.error('❌ Submit leave error:', error);
+        console.error('❌ Error name:', error.name);
+        console.error('❌ Error message:', error.message);
+        console.error('❌ Error stack:', error.stack);
+        showMessage('Error submitting leave request: ' + error.message, 'error');
     }
 }
 
@@ -19032,7 +19074,10 @@ async function approveLeaveRequest(leaveId, stage) {
     }
 
     try {
-        const response = await apiCall(endpoint, 'PUT', payload);
+        const response = await apiCall(endpoint, { 
+            method: 'PUT', 
+            body: JSON.stringify(payload) 
+        });
         
         if (response.success) {
             showMessage('Leave request approved successfully!', 'success');
@@ -19072,7 +19117,10 @@ async function rejectLeaveRequest(leaveId, stage) {
     }
 
     try {
-        const response = await apiCall(endpoint, 'PUT', payload);
+        const response = await apiCall(endpoint, { 
+            method: 'PUT', 
+            body: JSON.stringify(payload) 
+        });
         
         if (response.success) {
             showMessage('Leave request rejected', 'success');
