@@ -3221,6 +3221,7 @@ showApp.retried = false;
             document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
             document.getElementById(navId)?.classList.add('active');
         }
+        const updateActiveNav = setActiveNav; // Alias for leave request functions
 
         // ============================================
         // HELPER FUNCTIONS
