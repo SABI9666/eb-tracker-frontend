@@ -9980,839 +9980,6 @@ async function markProjectComplete(projectId) {
         function showWorkflow() { /* ... (Unchanged) ... */ }
         function showReports() { /* ... (Unchanged) ... */ }
         function showSettings() { /* ... (Unchanged) ... */ }
-// ============================================
-// LEAVE REQUEST SYSTEM - JAVASCRIPT FUNCTIONS
-// ============================================
-
-// Show Leave Request Submission Page (For Employees)
-async function showLeaveRequest() {
-    updateActiveNav('nav-leave-request');
-    const container = document.getElementById('mainContent');
-    
-    container.innerHTML = `
-        <div class="dashboard-header">
-            <div class="header-left">
-                <h1>📅 Leave Requests</h1>
-                <p>Submit and track your leave requests</p>
-            </div>
-            <button class="btn-primary" onclick="openModal('leaveRequestModal')">
-                ➕ New Leave Request
-            </button>
-        </div>
-
-        <div class="leave-filters">
-            <div class="filter-chip active" data-filter="all">All Requests</div>
-            <div class="filter-chip" data-filter="pending">Pending</div>
-            <div class="filter-chip" data-filter="approved">Approved</div>
-            <div class="filter-chip" data-filter="rejected">Rejected</div>
-        </div>
-
-        <div id="myLeaveRequestsContainer">
-            <div style="text-align: center; padding: 3rem;">
-                <div class="spinner"></div>
-                <p>Loading your leave requests...</p>
-            </div>
-        </div>
-    `;
-
-    // Add filter functionality
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.addEventListener('click', function() {
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            const filter = this.dataset.filter;
-            filterLeaveRequests(filter);
-        });
-    });
-
-    // Load leave requests
-    await loadMyLeaveRequests();
-}
-
-// Load Employee's Leave Requests
-async function loadMyLeaveRequests() {
-    try {
-        const response = await apiCall('leave-requests/my-requests');
-        
-        if (response.success) {
-            displayLeaveRequests(response.data, 'myLeaveRequestsContainer');
-        } else {
-            showMessage('Failed to load leave requests', 'error');
-        }
-    } catch (error) {
-        console.error('Load leave requests error:', error);
-        showMessage('Error loading leave requests', 'error');
-    }
-}
-
-// Display Leave Requests
-function displayLeaveRequests(requests, containerId) {
-    const container = document.getElementById(containerId);
-    
-    if (!requests || requests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📅</div>
-                <div class="empty-state-title">No Leave Requests</div>
-                <div class="empty-state-text">You haven't submitted any leave requests yet.</div>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = requests.map(req => {
-        const statusClass = req.status === 'pending' ? 'pending' : 
-                          req.status === 'approved' ? 'approved' : 'rejected';
-        const cardClass = `leave-card status-${req.status}`;
-        
-        return `
-            <div class="${cardClass}" data-status="${req.status}">
-                <div class="leave-header">
-                    <div class="leave-title">
-                        ${req.leaveType} - ${req.numberOfDays} day(s)
-                    </div>
-                    <span class="leave-status-badge ${statusClass}">
-                        ${req.status}
-                    </span>
-                </div>
-                
-                <div class="leave-details">
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">Start Date</span>
-                        <span class="leave-detail-value">${formatDate(req.startDate)}</span>
-                    </div>
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">End Date</span>
-                        <span class="leave-detail-value">${formatDate(req.endDate)}</span>
-                    </div>
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">Days</span>
-                        <span class="leave-detail-value">${req.numberOfDays}</span>
-                    </div>
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">Submitted</span>
-                        <span class="leave-detail-value">${formatDate(req.createdAt)}</span>
-                    </div>
-                </div>
-                
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Reason</span>
-                    <span class="leave-detail-value">${req.reason}</span>
-                </div>
-                
-                ${renderLeaveTimeline(req)}
-                
-                ${req.emergencyContact ? `
-                    <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
-                        <strong>Emergency Contact:</strong> ${req.emergencyContact} 
-                        ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-// Render Leave Approval Timeline
-function renderLeaveTimeline(leave) {
-    const stages = [
-        {
-            number: 1,
-            title: 'Reporting Officer',
-            status: leave.reportingOfficerStatus,
-            icon: leave.reportingOfficerStatus === 'approved' ? '✅' : 
-                  leave.reportingOfficerStatus === 'rejected' ? '❌' : '⏳',
-            comments: leave.reportingOfficerComments,
-            current: leave.currentStage === 1
-        },
-        {
-            number: 2,
-            title: 'HR Review',
-            status: leave.hrStatus,
-            icon: leave.hrStatus === 'approved' ? '✅' : 
-                  leave.hrStatus === 'rejected' ? '❌' : '⏳',
-            comments: leave.hrComments,
-            category: leave.hrCategory,
-            current: leave.currentStage === 2
-        },
-        {
-            number: 3,
-            title: 'Director Approval',
-            status: leave.directorStatus,
-            icon: leave.directorStatus === 'approved' ? '✅' : 
-                  leave.directorStatus === 'rejected' ? '❌' : '⏳',
-            comments: leave.directorComments,
-            current: leave.currentStage === 3
-        }
-    ];
-
-    return `
-        <div class="leave-timeline">
-            <strong style="display: block; margin-bottom: 0.5rem;">Approval Progress:</strong>
-            ${stages.map(stage => {
-                let stageClass = '';
-                if (stage.status === 'approved') stageClass = 'completed';
-                else if (stage.status === 'rejected') stageClass = 'rejected';
-                else if (stage.current) stageClass = 'current';
-                
-                return `
-                    <div class="timeline-stage ${stageClass}">
-                        <div class="timeline-icon">${stage.icon}</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Stage ${stage.number}: ${stage.title}</div>
-                            <div class="timeline-info">
-                                Status: ${stage.status.toUpperCase()}
-                                ${stage.comments ? `<br>Comments: ${stage.comments}` : ''}
-                                ${stage.category ? `<br>Category: ${stage.category}` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-}
-
-// Filter Leave Requests
-function filterLeaveRequests(filter) {
-    const cards = document.querySelectorAll('.leave-card');
-    cards.forEach(card => {
-        if (filter === 'all' || card.dataset.status === filter) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
-// Submit Leave Request
-async function submitLeaveRequest(event) {
-    event.preventDefault();
-    
-    const leaveData = {
-        leaveType: document.getElementById('leaveType').value,
-        startDate: document.getElementById('leaveStartDate').value,
-        endDate: document.getElementById('leaveEndDate').value,
-        reason: document.getElementById('leaveReason').value,
-        emergencyContact: document.getElementById('emergencyContact').value,
-        emergencyPhone: document.getElementById('emergencyPhone').value
-    };
-
-    try {
-        const response = await apiCall('leave-requests/submit', 'POST', leaveData);
-        
-        if (response.success) {
-            showMessage('Leave request submitted successfully!', 'success');
-            closeModal('leaveRequestModal');
-            document.getElementById('leaveRequestForm').reset();
-            await loadMyLeaveRequests();
-        } else {
-            showMessage(response.error || 'Failed to submit leave request', 'error');
-        }
-    } catch (error) {
-        console.error('Submit leave error:', error);
-        showMessage('Error submitting leave request', 'error');
-    }
-}
-
-// ============================================
-// LEAVE APPROVALS (For COO, Director, HR)
-// ============================================
-
-// Show Leave Approvals Dashboard
-async function showLeaveApprovals() {
-    updateActiveNav('nav-leave-approval');
-    const container = document.getElementById('mainContent');
-    
-    const roleTitle = currentUserRole === 'hr' ? 'HR' : 
-                     currentUserRole === 'coo' ? 'Reporting Officer (COO)' : 
-                     'Director (Final Approval)';
-    
-    container.innerHTML = `
-        <div class="dashboard-header">
-            <div class="header-left">
-                <h1>✅ Leave Approvals</h1>
-                <p>${roleTitle} - Review and approve leave requests</p>
-            </div>
-        </div>
-
-        <div class="leave-filters">
-            <div class="filter-chip active" data-filter="pending">Pending Approval</div>
-            <div class="filter-chip" data-filter="all">All Requests</div>
-        </div>
-
-        <div id="leaveApprovalsContainer">
-            <div style="text-align: center; padding: 3rem;">
-                <div class="spinner"></div>
-                <p>Loading pending approvals...</p>
-            </div>
-        </div>
-    `;
-
-    // Add filter functionality
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.addEventListener('click', function() {
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            const filter = this.dataset.filter;
-            if (filter === 'pending') {
-                loadPendingLeaveApprovals();
-            } else {
-                loadAllLeaveRequests();
-            }
-        });
-    });
-
-    // Load pending approvals
-    await loadPendingLeaveApprovals();
-}
-
-// Load Pending Leave Approvals Based on Role
-async function loadPendingLeaveApprovals() {
-    try {
-        let endpoint = '';
-        
-        if (currentUserRole === 'coo' || currentUserRole === 'director') {
-            endpoint = 'leave-requests/pending-stage1'; // Reporting Officer
-        } else if (currentUserRole === 'hr') {
-            endpoint = 'leave-requests/pending-stage2'; // HR
-        } else if (currentUserRole === 'director') {
-            endpoint = 'leave-requests/pending-stage3'; // Final Director Approval
-        }
-
-        const response = await apiCall(endpoint);
-        
-        if (response.success) {
-            displayLeaveApprovalsForRole(response.data);
-            updateLeaveApprovalsBadge(response.data.length);
-        } else {
-            showMessage('Failed to load leave approvals', 'error');
-        }
-    } catch (error) {
-        console.error('Load leave approvals error:', error);
-        showMessage('Error loading leave approvals', 'error');
-    }
-}
-
-// Display Leave Approvals for Approver Role
-function displayLeaveApprovalsForRole(requests) {
-    const container = document.getElementById('leaveApprovalsContainer');
-    
-    if (!requests || requests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">✅</div>
-                <div class="empty-state-title">No Pending Approvals</div>
-                <div class="empty-state-text">All leave requests have been processed.</div>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = requests.map(req => `
-        <div class="leave-card status-pending">
-            <div class="leave-header">
-                <div class="leave-title">
-                    ${req.employeeName} - ${req.leaveType}
-                </div>
-                <span class="leave-status-badge pending">Pending Your Approval</span>
-            </div>
-            
-            <div class="leave-details">
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Employee</span>
-                    <span class="leave-detail-value">${req.employeeName}</span>
-                </div>
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Role</span>
-                    <span class="leave-detail-value">${req.employeeRole.toUpperCase()}</span>
-                </div>
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Leave Type</span>
-                    <span class="leave-detail-value">${req.leaveType}</span>
-                </div>
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Duration</span>
-                    <span class="leave-detail-value">${req.numberOfDays} day(s)</span>
-                </div>
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Start Date</span>
-                    <span class="leave-detail-value">${formatDate(req.startDate)}</span>
-                </div>
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">End Date</span>
-                    <span class="leave-detail-value">${formatDate(req.endDate)}</span>
-                </div>
-            </div>
-            
-            <div class="leave-detail-item" style="margin-top: 1rem;">
-                <span class="leave-detail-label">Reason</span>
-                <span class="leave-detail-value">${req.reason}</span>
-            </div>
-            
-            ${req.emergencyContact ? `
-                <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
-                    <strong>Emergency Contact:</strong> ${req.emergencyContact} 
-                    ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
-                </div>
-            ` : ''}
-            
-            ${renderLeaveTimeline(req)}
-            
-            <div class="approval-actions">
-                <div class="approval-form">
-                    ${currentUserRole === 'hr' ? `
-                        <div class="form-group">
-                            <label>HR Leave Category</label>
-                            <select id="hrCategory-${req.id}">
-                                <option value="${req.leaveType}">${req.leaveType}</option>
-                                <option value="Sick Leave">Sick Leave</option>
-                                <option value="Casual Leave">Casual Leave</option>
-                                <option value="Earned Leave">Earned Leave</option>
-                                <option value="Unpaid Leave">Unpaid Leave</option>
-                                <option value="Emergency Leave">Emergency Leave</option>
-                            </select>
-                        </div>
-                    ` : ''}
-                    <textarea placeholder="Add comments (optional)" id="comments-${req.id}" rows="3"></textarea>
-                    <div class="approval-buttons">
-                        <button class="btn-approve" onclick="approveLeaveRequest('${req.id}')">
-                            ✅ Approve
-                        </button>
-                        <button class="btn-reject" onclick="rejectLeaveRequest('${req.id}')">
-                            ❌ Reject
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Approve Leave Request
-async function approveLeaveRequest(leaveId) {
-    const comments = document.getElementById(`comments-${leaveId}`).value;
-    let endpoint = '';
-    let payload = { action: 'approve', comments };
-
-    // Determine endpoint based on role
-    if (currentUserRole === 'coo' || (currentUserRole === 'director' && document.querySelector(`[data-stage="1"]`))) {
-        endpoint = `leave-requests/stage1/${leaveId}`;
-    } else if (currentUserRole === 'hr') {
-        endpoint = `leave-requests/stage2/${leaveId}`;
-        const hrCategory = document.getElementById(`hrCategory-${leaveId}`)?.value;
-        payload.hrCategory = hrCategory;
-    } else if (currentUserRole === 'director') {
-        endpoint = `leave-requests/stage3/${leaveId}`;
-    }
-
-    if (!confirm('Are you sure you want to APPROVE this leave request?')) {
-        return;
-    }
-
-    try {
-        const response = await apiCall(endpoint, 'PUT', payload);
-        
-        if (response.success) {
-            showMessage('Leave request approved successfully!', 'success');
-            await loadPendingLeaveApprovals();
-        } else {
-            showMessage(response.error || 'Failed to approve leave request', 'error');
-        }
-    } catch (error) {
-        console.error('Approve leave error:', error);
-        showMessage('Error approving leave request', 'error');
-    }
-}
-
-// Reject Leave Request
-async function rejectLeaveRequest(leaveId) {
-    const comments = document.getElementById(`comments-${leaveId}`).value;
-    
-    if (!comments.trim()) {
-        showMessage('Please provide a reason for rejection', 'error');
-        return;
-    }
-
-    let endpoint = '';
-    const payload = { action: 'reject', comments };
-
-    // Determine endpoint based on role
-    if (currentUserRole === 'coo' || (currentUserRole === 'director' && document.querySelector(`[data-stage="1"]`))) {
-        endpoint = `leave-requests/stage1/${leaveId}`;
-    } else if (currentUserRole === 'hr') {
-        endpoint = `leave-requests/stage2/${leaveId}`;
-    } else if (currentUserRole === 'director') {
-        endpoint = `leave-requests/stage3/${leaveId}`;
-    }
-
-    if (!confirm('Are you sure you want to REJECT this leave request?')) {
-        return;
-    }
-
-    try {
-        const response = await apiCall(endpoint, 'PUT', payload);
-        
-        if (response.success) {
-            showMessage('Leave request rejected', 'success');
-            await loadPendingLeaveApprovals();
-        } else {
-            showMessage(response.error || 'Failed to reject leave request', 'error');
-        }
-    } catch (error) {
-        console.error('Reject leave error:', error);
-        showMessage('Error rejecting leave request', 'error');
-    }
-}
-
-// Load All Leave Requests (For management reporting)
-async function loadAllLeaveRequests() {
-    try {
-        const response = await apiCall('leave-requests/all/requests');
-        
-        if (response.success) {
-            displayLeaveRequests(response.data, 'leaveApprovalsContainer');
-        } else {
-            showMessage('Failed to load leave requests', 'error');
-        }
-    } catch (error) {
-        console.error('Load all leave requests error:', error);
-        showMessage('Error loading leave requests', 'error');
-    }
-}
-
-// Update Leave Approvals Badge
-function updateLeaveApprovalsBadge(count) {
-    const badge = document.getElementById('leaveApprovalsBadge');
-    if (badge) {
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-// Format Date Helper
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-}
-        
-        // REPLACED IMPLEMENTATION
-        async function showActivities() {
-            setActiveNav('nav-activities');
-            const main = document.getElementById('mainContent');
-            main.style.display = 'block'; // Ensure main content is visible
-            showLoading();
-
-            try {
-                const response = await apiCall('activities');
-                if (!response.success || !response.data) {
-                    throw new Error(response.error || 'Failed to load activities');
-                }
-                
-                const activities = response.data;
-                const activitiesHtml = activities.length ? activities.map(act => `
-                    <div class="action-item">
-                        <div class="action-content">
-                            <strong>${act.details}</strong>
-                            <div class="action-meta">
-                                By ${act.performedByName || 'System'} (${act.performedByRole || 'N/A'}) - ${formatDate(act.timestamp)}
-                                ${act.proposalId ? ` | Proposal: ${act.proposalId}` : ''}
-                                ${act.projectId ? ` | Project: ${act.projectId}` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `).join('') : '<p>No recent activities found.</p>';
-
-                main.innerHTML = `
-                    <div class="page-header">
-                        <h2>📝 All Activities</h2>
-                        <div class="subtitle">A log of all actions taken in the system.</div>
-                    </div>
-                    <div class="action-section">
-                        <h3>Activity Log</h3>
-                        ${activitiesHtml}
-                    </div>
-                `;
-
-            } catch (error) {
-                console.error('❌ Error fetching activities:', error);
-                main.innerHTML = `<div class="error-message"><h3>Error Loading Activities</h3><p>${error.message}</p></div>`;
-            } finally {
-                hideLoading();
-            }
-        }
-        
-        // ✅ Make showActivities globally accessible
-        window.showActivities = showActivities;
-
-        // ============================================
-        // DIAGNOSTICS
-        // ============================================
-
-        async function testBackendConnection() { /* ... (Unchanged) ... */ }
-        async function runDiagnostics() { /* ... (Unchanged) ... */ }
-
-let designerAllocationCounter = 0;
-let availableDesigners = [];
-
-/**
- * Load all available designers for allocation
- */
-async function loadAvailableDesigners() {
-    try {
-        const [designersResponse, designLeadsResponse] = await Promise.all([
-            apiCall('users?role=designer'),
-            apiCall('users?role=design_lead')
-        ]);
-        
-        availableDesigners = [];
-        
-        if (designersResponse.success && designersResponse.data) {
-            availableDesigners.push(...designersResponse.data.map(d => ({...d, roleType: 'designer'})));
-        }
-        
-        if (designLeadsResponse.success && designLeadsResponse.data) {
-            availableDesigners.push(...designLeadsResponse.data.map(d => ({...d, roleType: 'design_lead'})));
-        }
-        
-        console.log('Available designers loaded:', availableDesigners.length);
-        
-    } catch (error) {
-        console.error('Error loading designers:', error);
-        availableDesigners = [];
-    }
-}
-
-/**
- * ✅ FIXED: Show COO Multi-Designer Allocation Modal
- * Handles both scenarios: Hours from Estimation OR Manual COO Entry (Tonnage case)
- */
-async function showCooMultiDesignerAllocationModal(projectId) {
-    try {
-        showLoading();
-        
-        // 1. Load project details
-        const projectResponse = await apiCall(`projects?id=${projectId}`);
-        if (!projectResponse.success || !projectResponse.data) {
-            throw new Error('Failed to load project details');
-        }
-        
-        const project = projectResponse.data;
-        
-        // Store project data globally for edit functions
-        window.currentEditProject = project;
-        window.currentEditProjectId = projectId;
-        
-        // 2. Load available designers
-        await loadAvailableDesigners();
-        
-        if (availableDesigners.length === 0) {
-            alert('No designers found in the system. Please create designer accounts first.');
-            hideLoading();
-            return;
-        }
-        
-        // 3. Populate project info
-        document.getElementById('cooAllocProjectId').value = projectId;
-        
-        // Setup project number field with Save/Edit buttons
-        const projectNumberInput = document.getElementById('cooAllocProjectNumberInput');
-        const saveBtn = document.getElementById('saveProjectNumberBtn');
-        const editBtn = document.getElementById('editProjectNumberBtn');
-        const statusText = document.getElementById('projectNumberStatus');
-        
-        projectNumberInput.value = project.projectNumber || '';
-        projectNumberInput.dataset.original = project.projectNumber || '';
-        
-        if (project.projectNumber) {
-            // Has project number - show as locked with Edit button
-            projectNumberInput.readOnly = true;
-            projectNumberInput.style.background = 'rgba(255,255,255,0.7)';
-            saveBtn.style.display = 'none';
-            editBtn.style.display = 'inline-block';
-            statusText.textContent = '✓ Saved';
-            statusText.style.color = '#86efac';
-        } else {
-            // No project number - show as editable
-            projectNumberInput.readOnly = false;
-            projectNumberInput.style.background = 'rgba(255,255,255,0.95)';
-            saveBtn.style.display = 'none';
-            editBtn.style.display = 'none';
-            statusText.textContent = 'Enter project number and click Save';
-            statusText.style.color = 'rgba(255,255,255,0.7)';
-        }
-        
-        document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
-        document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
-        
-        // ============================================
-        // ✅ CRITICAL FIX: TWO SCENARIOS LOGIC
-        // ============================================
-        
-        const totalHoursInput = document.getElementById('cooTotalProjectHours');
-        
-        // SCENARIO A: Estimator entered HOURS (not tonnage)
-        const estimationHours = parseFloat(project.estimation?.totalHours || 0);
-        const estimationUsedTonnage = project.estimation?.usedTonnageForDesign || false;
-        
-        // SCENARIO B: Previously saved Max Hours (from manual COO entry)
-        const savedMaxHours = parseFloat(project.maxAllocatedHours || 0);
-        
-        // Already allocated hours in the system
-        const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
-        
-        let totalBudget = 0;
-        let isLocked = false;
-        let hoursSource = '';
-        
-        // LOGIC FLOW:
-        if (estimationHours > 0 && !estimationUsedTonnage) {
-            // ✅ SCENARIO A: Estimator entered HOURS directly
-            totalBudget = estimationHours;
-            isLocked = true;
-            hoursSource = 'from_estimation_hours';
-            console.log('✅ Scenario A: Using estimation hours (not tonnage)');
-            
-        } else if (estimationUsedTonnage && savedMaxHours > 0) {
-            // ✅ SCENARIO B: Estimator used TONNAGE, COO manually entered hours
-            totalBudget = savedMaxHours;
-            isLocked = true;
-            hoursSource = 'from_coo_manual_tonnage';
-            console.log('✅ Scenario B: Using COO manual hours (tonnage case)');
-            
-        } else if (estimationUsedTonnage && savedMaxHours === 0) {
-            // ⚠️ SCENARIO B (Not Yet Completed): Tonnage entered, COO needs to enter hours
-            totalBudget = 0;
-            isLocked = false;
-            hoursSource = 'awaiting_coo_manual_entry';
-            console.log('⚠️ Scenario B (Incomplete): Tonnage entered, awaiting COO manual entry');
-            
-        } else if (savedMaxHours > 0) {
-            // Fallback: Previously saved hours exist
-            totalBudget = savedMaxHours;
-            isLocked = true;
-            hoursSource = 'from_previous_entry';
-            console.log('✅ Fallback: Using previously saved hours');
-        }
-        
-        // Calculate remaining budget
-        const remainingBudget = Math.max(0, totalBudget - previouslyAllocated);
-        
-        // ============================================
-        // Set UI State based on scenario
-        // ============================================
-        
-        totalHoursInput.value = totalBudget > 0 ? totalBudget : '';
-        totalHoursInput.readOnly = isLocked;
-        
-        // Show/hide Edit Budget button
-        const editBudgetBtn = document.getElementById('editBudgetBtn');
-        if (editBudgetBtn) {
-            editBudgetBtn.style.display = isLocked && totalBudget > 0 ? 'inline-block' : 'none';
-        }
-        
-        if (isLocked) {
-            // Locked state - budget is set
-            totalHoursInput.style.backgroundColor = '#e9ecef';
-            totalHoursInput.style.border = '2px solid #10b981';
-            totalHoursInput.style.fontWeight = '700';
-            
-            if (hoursSource === 'from_estimation_hours') {
-                totalHoursInput.title = "🔒 Locked: Hours from Estimator (not tonnage)";
-            } else if (hoursSource === 'from_coo_manual_tonnage') {
-                totalHoursInput.title = "🔒 Locked: Hours manually entered by COO (tonnage case)";
-            } else {
-                totalHoursInput.title = "🔒 Locked: Budget previously set";
-            }
-            
-        } else {
-            // Unlocked state - COO needs to enter hours
-            totalHoursInput.style.backgroundColor = '#fff8dc';
-            totalHoursInput.style.border = '2px solid #f59e0b';
-            totalHoursInput.style.fontWeight = '600';
-            totalHoursInput.placeholder = "⚠️ Enter Total Hours (Tonnage was used in estimation)";
-            totalHoursInput.title = "Manual entry required: Estimator used tonnage";
-        }
-        
-        // Store metadata for calculations
-        totalHoursInput.dataset.alreadyAllocated = previouslyAllocated;
-        totalHoursInput.dataset.hoursSource = hoursSource;
-        
-        // ============================================
-        // ✅ NEW: RENDER EXISTING ALLOCATIONS WITH EDIT
-        // ============================================
-        
-        renderExistingAllocations(project);
-        
-        // ============================================
-        // Designer Allocation Section State
-        // ============================================
-        
-        const designerContainer = document.getElementById('designerAllocationsContainer');
-        const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline[onclick="addDesignerAllocation()"]');
-        const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
-        
-        // Reset form
-        designerAllocationCounter = 0;
-        designerContainer.innerHTML = '';
-        document.getElementById('cooAllocationNotes').value = '';
-        document.getElementById('cooTargetCompletionDate').value = '';
-        document.getElementById('cooProjectPriority').value = 'Normal';
-        
-        // ============================================
-        // LOGIC: When to enable/disable Designer Allocation
-        // ============================================
-        
-        if (totalBudget === 0) {
-            // ⚠️ CASE 1: No budget set yet (awaiting COO manual entry)
-            designerContainer.innerHTML = `
-                <div class="alert alert-info" style="padding: 1.5rem; background: #e3f2fd; color: #0d47a1; border: 2px solid #2196f3; border-radius: 8px; text-align: center;">
-                    <h4 style="margin: 0 0 0.5rem 0;">ℹ️ Total Hours Required</h4>
-                    <p style="margin: 0;">Please enter the <strong>Total Allocated Hours</strong> above before allocating to designers.</p>
-                </div>
-            `;
-            
-            if (addDesignerBtn) addDesignerBtn.style.display = 'none';
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.innerText = "Enter Hours First";
-                submitBtn.style.opacity = "0.5";
-            }
-            
-            // Add event listener to enable designer section when hours are entered
-            totalHoursInput.addEventListener('input', function() {
-                const enteredHours = parseFloat(this.value) || 0;
-                if (enteredHours > 0) {
-                    // Enable designer allocation section
-                    designerContainer.innerHTML = '';
-                    addDesignerAllocation();
-                    
-                    if (addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
-                    if (submitBtn) {
-                        submitBtn.disabled = false;
-                        submitBtn.innerText = "Allocate Project";
-                        submitBtn.style.opacity = "1";
-                    }
-                    
-                    updateRemainingHours();
-                }
-            });
-            
-        } else if (remainingBudget <= 0.1) {
-            // ✅ CASE 2: Fully Allocated (LOCK)
-            designerContainer.innerHTML = `
-                <div class="alert alert-success" style="padding: 1.5rem; background: #d1fae5; color: #065f46; border: 2px solid #10b981; border-radius: 8px; text-align: center;">
-                    <h4 style="margin: 0 0 0.5rem 0;">✅ Allocation Complete</h4>
-                    <p style="margin: 0;">
                         This project is <strong>fully allocated</strong><br>
                         <span style="font-size: 1.2rem; font-weight: 700;">${previouslyAllocated.toFixed(1)} / ${totalBudget.toFixed(1)} hours</span>
                     </p>
@@ -19362,6 +18529,544 @@ async function updateDirectorRequestsBadge() {
      ============================================ -->
 
 <!-- Leave Request Submission Modal -->
+<script>
+// ============================================
+// LEAVE REQUEST SYSTEM - ALL FUNCTIONS
+// ============================================
+
+// Show Leave Request Submission Page (For Employees)
+async function showLeaveRequest() {
+    updateActiveNav('nav-leave-request');
+    const container = document.getElementById('mainContent');
+    
+    container.innerHTML = `
+        <div class="dashboard-header">
+            <div class="header-left">
+                <h1>📅 Leave Requests</h1>
+                <p>Submit and track your leave requests</p>
+            </div>
+            <button class="btn-primary" onclick="openModal('leaveRequestModal')">
+                ➕ New Leave Request
+            </button>
+        </div>
+
+        <div class="leave-filters">
+            <div class="filter-chip active" data-filter="all">All Requests</div>
+            <div class="filter-chip" data-filter="pending">Pending</div>
+            <div class="filter-chip" data-filter="approved">Approved</div>
+            <div class="filter-chip" data-filter="rejected">Rejected</div>
+        </div>
+
+        <div id="myLeaveRequestsContainer">
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner"></div>
+                <p>Loading your leave requests...</p>
+            </div>
+        </div>
+    `;
+
+    // Add filter functionality
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            filterLeaveRequests(filter);
+        });
+    });
+
+    // Load leave requests
+    await loadMyLeaveRequests();
+}
+
+// Load Employee's Leave Requests
+async function loadMyLeaveRequests() {
+    try {
+        const response = await apiCall('leave-requests/my-requests');
+        
+        if (response.success) {
+            displayLeaveRequests(response.data, 'myLeaveRequestsContainer');
+        } else {
+            showMessage('Failed to load leave requests', 'error');
+        }
+    } catch (error) {
+        console.error('Load leave requests error:', error);
+        showMessage('Error loading leave requests', 'error');
+    }
+}
+
+// Display Leave Requests
+function displayLeaveRequests(requests, containerId) {
+    const container = document.getElementById(containerId);
+    
+    if (!requests || requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">📅</div>
+                <div class="empty-state-title">No Leave Requests</div>
+                <div class="empty-state-text">You haven't submitted any leave requests yet.</div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = requests.map(req => {
+        const statusClass = req.status === 'pending' ? 'pending' : 
+                          req.status === 'approved' ? 'approved' : 'rejected';
+        const cardClass = `leave-card status-${req.status}`;
+        
+        return `
+            <div class="${cardClass}" data-status="${req.status}">
+                <div class="leave-header">
+                    <div class="leave-title">
+                        ${req.leaveType} - ${req.numberOfDays} day(s)
+                    </div>
+                    <span class="leave-status-badge ${statusClass}">
+                        ${req.status}
+                    </span>
+                </div>
+                
+                <div class="leave-details">
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">Start Date</span>
+                        <span class="leave-detail-value">${formatDate(req.startDate)}</span>
+                    </div>
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">End Date</span>
+                        <span class="leave-detail-value">${formatDate(req.endDate)}</span>
+                    </div>
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">Days</span>
+                        <span class="leave-detail-value">${req.numberOfDays}</span>
+                    </div>
+                    <div class="leave-detail-item">
+                        <span class="leave-detail-label">Submitted</span>
+                        <span class="leave-detail-value">${formatDate(req.createdAt)}</span>
+                    </div>
+                </div>
+                
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Reason</span>
+                    <span class="leave-detail-value">${req.reason}</span>
+                </div>
+                
+                ${renderLeaveTimeline(req)}
+                
+                ${req.emergencyContact ? `
+                    <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
+                        <strong>Emergency Contact:</strong> ${req.emergencyContact} 
+                        ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+    }).join('');
+}
+
+// Render Leave Approval Timeline
+function renderLeaveTimeline(leave) {
+    const stages = [
+        {
+            number: 1,
+            title: 'Reporting Officer',
+            status: leave.reportingOfficerStatus,
+            icon: leave.reportingOfficerStatus === 'approved' ? '✅' : 
+                  leave.reportingOfficerStatus === 'rejected' ? '❌' : '⏳',
+            comments: leave.reportingOfficerComments,
+            current: leave.currentStage === 1
+        },
+        {
+            number: 2,
+            title: 'HR Review',
+            status: leave.hrStatus,
+            icon: leave.hrStatus === 'approved' ? '✅' : 
+                  leave.hrStatus === 'rejected' ? '❌' : '⏳',
+            comments: leave.hrComments,
+            category: leave.hrCategory,
+            current: leave.currentStage === 2
+        },
+        {
+            number: 3,
+            title: 'Director Approval',
+            status: leave.directorStatus,
+            icon: leave.directorStatus === 'approved' ? '✅' : 
+                  leave.directorStatus === 'rejected' ? '❌' : '⏳',
+            comments: leave.directorComments,
+            current: leave.currentStage === 3
+        }
+    ];
+
+    return `
+        <div class="leave-timeline">
+            <strong style="display: block; margin-bottom: 0.5rem;">Approval Progress:</strong>
+            ${stages.map(stage => {
+                let stageClass = '';
+                if (stage.status === 'approved') stageClass = 'completed';
+                else if (stage.status === 'rejected') stageClass = 'rejected';
+                else if (stage.current) stageClass = 'current';
+                
+                return `
+                    <div class="timeline-stage ${stageClass}">
+                        <div class="timeline-icon">${stage.icon}</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Stage ${stage.number}: ${stage.title}</div>
+                            <div class="timeline-info">
+                                Status: ${stage.status.toUpperCase()}
+                                ${stage.comments ? `<br>Comments: ${stage.comments}` : ''}
+                                ${stage.category ? `<br>Category: ${stage.category}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('')}
+        </div>
+    `;
+}
+
+// Filter Leave Requests
+function filterLeaveRequests(filter) {
+    const cards = document.querySelectorAll('.leave-card');
+    cards.forEach(card => {
+        if (filter === 'all' || card.dataset.status === filter) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Submit Leave Request
+async function submitLeaveRequest(event) {
+    event.preventDefault();
+    
+    const leaveData = {
+        leaveType: document.getElementById('leaveType').value,
+        startDate: document.getElementById('leaveStartDate').value,
+        endDate: document.getElementById('leaveEndDate').value,
+        reason: document.getElementById('leaveReason').value,
+        emergencyContact: document.getElementById('emergencyContact').value,
+        emergencyPhone: document.getElementById('emergencyPhone').value
+    };
+
+    try {
+        const response = await apiCall('leave-requests/submit', 'POST', leaveData);
+        
+        if (response.success) {
+            showMessage('Leave request submitted successfully!', 'success');
+            closeModal('leaveRequestModal');
+            document.getElementById('leaveRequestForm').reset();
+            await loadMyLeaveRequests();
+        } else {
+            showMessage(response.error || 'Failed to submit leave request', 'error');
+        }
+    } catch (error) {
+        console.error('Submit leave error:', error);
+        showMessage('Error submitting leave request', 'error');
+    }
+}
+
+// Show Leave Approvals Dashboard
+async function showLeaveApprovals() {
+    updateActiveNav('nav-leave-approval');
+    const container = document.getElementById('mainContent');
+    
+    const roleTitle = currentUserRole === 'hr' ? 'HR' : 
+                     currentUserRole === 'coo' ? 'Reporting Officer (COO)' : 
+                     'Director (Final Approval)';
+    
+    container.innerHTML = `
+        <div class="dashboard-header">
+            <div class="header-left">
+                <h1>✅ Leave Approvals</h1>
+                <p>${roleTitle} - Review and approve leave requests</p>
+            </div>
+        </div>
+
+        <div class="leave-filters">
+            <div class="filter-chip active" data-filter="pending">Pending Approval</div>
+            <div class="filter-chip" data-filter="all">All Requests</div>
+        </div>
+
+        <div id="leaveApprovalsContainer">
+            <div style="text-align: center; padding: 3rem;">
+                <div class="spinner"></div>
+                <p>Loading pending approvals...</p>
+            </div>
+        </div>
+    `;
+
+    // Add filter functionality
+    document.querySelectorAll('.filter-chip').forEach(chip => {
+        chip.addEventListener('click', function() {
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            this.classList.add('active');
+            const filter = this.dataset.filter;
+            if (filter === 'pending') {
+                loadPendingLeaveApprovals();
+            } else {
+                loadAllLeaveRequests();
+            }
+        });
+    });
+
+    // Load pending approvals
+    await loadPendingLeaveApprovals();
+}
+
+// Load Pending Leave Approvals Based on Role
+async function loadPendingLeaveApprovals() {
+    try {
+        let endpoint = '';
+        
+        // Determine correct stage endpoint based on role
+        if (currentUserRole === 'hr') {
+            endpoint = 'leave-requests/pending-stage2'; // HR reviews Stage 2
+        } else if (currentUserRole === 'director') {
+            // Check if there are any Stage 3 (final) pending first
+            const stage3Response = await apiCall('leave-requests/pending-stage3');
+            if (stage3Response.success && stage3Response.data && stage3Response.data.length > 0) {
+                // Director has Stage 3 (final) approvals
+                displayLeaveApprovalsForRole(stage3Response.data, 3);
+                updateLeaveApprovalsBadge(stage3Response.data.length);
+                return stage3Response;
+            } else {
+                // No Stage 3, show Stage 1 if any
+                endpoint = 'leave-requests/pending-stage1';
+            }
+        } else if (currentUserRole === 'coo') {
+            endpoint = 'leave-requests/pending-stage1'; // COO is Reporting Officer
+        }
+
+        const response = await apiCall(endpoint);
+        
+        if (response.success) {
+            const stage = currentUserRole === 'hr' ? 2 : 
+                         currentUserRole === 'director' ? 1 : 1;
+            displayLeaveApprovalsForRole(response.data, stage);
+            updateLeaveApprovalsBadge(response.data ? response.data.length : 0);
+            return response;
+        } else {
+            showMessage('Failed to load leave approvals', 'error');
+        }
+    } catch (error) {
+        console.error('Load leave approvals error:', error);
+        showMessage('Error loading leave approvals', 'error');
+    }
+}
+
+// Display Leave Approvals for Approver Role
+function displayLeaveApprovalsForRole(requests, stage) {
+    const container = document.getElementById('leaveApprovalsContainer');
+    
+    if (!requests || requests.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">✅</div>
+                <div class="empty-state-title">No Pending Approvals</div>
+                <div class="empty-state-text">All leave requests have been processed.</div>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = requests.map(req => `
+        <div class="leave-card status-pending">
+            <div class="leave-header">
+                <div class="leave-title">
+                    ${req.employeeName} - ${req.leaveType}
+                </div>
+                <span class="leave-status-badge pending">Pending Your Approval</span>
+            </div>
+            
+            <div class="leave-details">
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Employee</span>
+                    <span class="leave-detail-value">${req.employeeName}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Role</span>
+                    <span class="leave-detail-value">${req.employeeRole.toUpperCase()}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Leave Type</span>
+                    <span class="leave-detail-value">${req.leaveType}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Duration</span>
+                    <span class="leave-detail-value">${req.numberOfDays} day(s)</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">Start Date</span>
+                    <span class="leave-detail-value">${formatDate(req.startDate)}</span>
+                </div>
+                <div class="leave-detail-item">
+                    <span class="leave-detail-label">End Date</span>
+                    <span class="leave-detail-value">${formatDate(req.endDate)}</span>
+                </div>
+            </div>
+            
+            <div class="leave-detail-item" style="margin-top: 1rem;">
+                <span class="leave-detail-label">Reason</span>
+                <span class="leave-detail-value">${req.reason}</span>
+            </div>
+            
+            ${req.emergencyContact ? `
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
+                    <strong>Emergency Contact:</strong> ${req.emergencyContact} 
+                    ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
+                </div>
+            ` : ''}
+            
+            ${renderLeaveTimeline(req)}
+            
+            <div class="approval-actions">
+                <div class="approval-form">
+                    ${currentUserRole === 'hr' ? `
+                        <div class="form-group">
+                            <label>HR Leave Category</label>
+                            <select id="hrCategory-${req.id}" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 1rem;">
+                                <option value="${req.leaveType}">${req.leaveType}</option>
+                                <option value="Sick Leave">Sick Leave</option>
+                                <option value="Casual Leave">Casual Leave</option>
+                                <option value="Earned Leave">Earned Leave</option>
+                                <option value="Unpaid Leave">Unpaid Leave</option>
+                                <option value="Emergency Leave">Emergency Leave</option>
+                            </select>
+                        </div>
+                    ` : ''}
+                    <textarea placeholder="Add comments (optional)" id="comments-${req.id}" rows="3"></textarea>
+                    <div class="approval-buttons">
+                        <button class="btn-approve" onclick="approveLeaveRequest('${req.id}', ${stage})">
+                            ✅ Approve
+                        </button>
+                        <button class="btn-reject" onclick="rejectLeaveRequest('${req.id}', ${stage})">
+                            ❌ Reject
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Approve Leave Request
+async function approveLeaveRequest(leaveId, stage) {
+    const comments = document.getElementById(`comments-${leaveId}`).value;
+    let endpoint = '';
+    let payload = { action: 'approve', comments };
+
+    // Determine endpoint based on stage
+    if (stage === 1) {
+        endpoint = `leave-requests/stage1/${leaveId}`;
+    } else if (stage === 2) {
+        endpoint = `leave-requests/stage2/${leaveId}`;
+        const hrCategory = document.getElementById(`hrCategory-${leaveId}`)?.value;
+        payload.hrCategory = hrCategory;
+    } else if (stage === 3) {
+        endpoint = `leave-requests/stage3/${leaveId}`;
+    }
+
+    if (!confirm('Are you sure you want to APPROVE this leave request?')) {
+        return;
+    }
+
+    try {
+        const response = await apiCall(endpoint, 'PUT', payload);
+        
+        if (response.success) {
+            showMessage('Leave request approved successfully!', 'success');
+            await loadPendingLeaveApprovals();
+        } else {
+            showMessage(response.error || 'Failed to approve leave request', 'error');
+        }
+    } catch (error) {
+        console.error('Approve leave error:', error);
+        showMessage('Error approving leave request', 'error');
+    }
+}
+
+// Reject Leave Request
+async function rejectLeaveRequest(leaveId, stage) {
+    const comments = document.getElementById(`comments-${leaveId}`).value;
+    
+    if (!comments.trim()) {
+        showMessage('Please provide a reason for rejection', 'error');
+        return;
+    }
+
+    let endpoint = '';
+    const payload = { action: 'reject', comments };
+
+    // Determine endpoint based on stage
+    if (stage === 1) {
+        endpoint = `leave-requests/stage1/${leaveId}`;
+    } else if (stage === 2) {
+        endpoint = `leave-requests/stage2/${leaveId}`;
+    } else if (stage === 3) {
+        endpoint = `leave-requests/stage3/${leaveId}`;
+    }
+
+    if (!confirm('Are you sure you want to REJECT this leave request?')) {
+        return;
+    }
+
+    try {
+        const response = await apiCall(endpoint, 'PUT', payload);
+        
+        if (response.success) {
+            showMessage('Leave request rejected', 'success');
+            await loadPendingLeaveApprovals();
+        } else {
+            showMessage(response.error || 'Failed to reject leave request', 'error');
+        }
+    } catch (error) {
+        console.error('Reject leave error:', error);
+        showMessage('Error rejecting leave request', 'error');
+    }
+}
+
+// Load All Leave Requests (For management reporting)
+async function loadAllLeaveRequests() {
+    try {
+        const response = await apiCall('leave-requests/all/requests');
+        
+        if (response.success) {
+            displayLeaveRequests(response.data, 'leaveApprovalsContainer');
+        } else {
+            showMessage('Failed to load leave requests', 'error');
+        }
+    } catch (error) {
+        console.error('Load all leave requests error:', error);
+        showMessage('Error loading leave requests', 'error');
+    }
+}
+
+// Update Leave Approvals Badge
+function updateLeaveApprovalsBadge(count) {
+    const badge = document.getElementById('leaveApprovalsBadge');
+    if (badge) {
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline-block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+}
+
+// Format Date Helper
+function formatDate(dateString) {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+}
+
+console.log('✅ Leave Request System functions loaded');
+</script>
 <div id="leaveRequestModal" class="modal">
     <div class="modal-content">
         <span class="close-button" onclick="closeModal('leaveRequestModal')">&times;</span>
