@@ -5639,7 +5639,7 @@ function showCreateProposalModal() {
 
     const projectTypes = [
         'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
-        'Joist Detailing', 'As-built Drawings'
+        'Joist Detailing', 'As-built Drawings', 'Rebar Detailing'
     ];
 
     const modalHtml = `
@@ -5665,6 +5665,15 @@ function showCreateProposalModal() {
                                 <div class="form-group">
                                     <label>Client Company <span class="required">*</span></label>
                                     <input type="text" id="clientCompany" class="form-control" placeholder="Enter client company" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Client Name (Optional)</label>
+                                    <input type="text" id="clientName" class="form-control" placeholder="Enter client contact name">
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty for layout balance -->
                                 </div>
                             </div>
                             <div class="form-row">
@@ -5861,6 +5870,7 @@ function showCreateProposalModal() {
         const formData = {
             projectName: document.getElementById('projectName').value,
             clientCompany: document.getElementById('clientCompany').value,
+            clientName: document.getElementById('clientName').value || '',
             projectType: selectedTypes,
             country: document.getElementById('country').value,
             timeline: document.getElementById('timeline').value,
@@ -6175,6 +6185,7 @@ function showCreateProposalModal() {
                                     <p><strong>Scope:</strong> ${p.scopeOfWork || 'N/A'}</p>
                                     <p><strong>Timeline:</strong> ${p.timeline || 'N/A'}</p>
                                     <p><strong>Country:</strong> ${p.country || 'N/A'}</p>
+                                    ${p.clientName ? `<p><strong>Client Name:</strong> ${p.clientName}</p>` : ''}
                                     <p><strong>Created by:</strong> ${p.createdByName || 'N/A'} on ${formatDate(p.createdAt)}</p>
                                 </div>
 
@@ -6353,6 +6364,7 @@ function showCreateProposalModal() {
                             <label class="service-item"><input type="checkbox" name="services" value="Joist Detailing"><span>Joist Detailing</span></label>
                             <label class="service-item"><input type="checkbox" name="services" value="As-built Drawings"><span>As-built Drawings</span></label>
                             <label class="service-item"><input type="checkbox" name="services" value="Engineering Services"><span>Engineering Services</span></label>
+                            <label class="service-item"><input type="checkbox" name="services" value="Rebar Detailing"><span>Rebar Detailing</span></label>
                         </div>
                     </div>
 
@@ -6587,7 +6599,7 @@ function showCreateProposalModal() {
                                 <div class="form-section">
                                     <h4>Edit Services</h4>
                                     <div class="service-grid">
-                                        ${['Steel Detailing', 'Miscellaneous Steel Detailing', 'Connection Design', 'PE Stamping', 'Joist Detailing', 'As-built Drawings'].map(service => `
+                                        ${['Steel Detailing', 'Miscellaneous Steel Detailing', 'Connection Design', 'PE Stamping', 'Joist Detailing', 'As-built Drawings', 'Rebar Detailing'].map(service => `
                                             <label class="service-item ${estimation.services?.includes(service) ? 'checked' : ''}">
                                                 <input type="checkbox" name="editServices" value="${service}" ${estimation.services?.includes(service) ? 'checked' : ''}>
                                                 <span>${service}</span>
@@ -6942,7 +6954,7 @@ async function editProposal(proposalId) {
 
         const projectTypes = [
             'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
-            'Joist Detailing', 'As-built Drawings'
+            'Joist Detailing', 'As-built Drawings', 'Rebar Detailing'
         ];
 
         const modalHtml = `
@@ -6969,6 +6981,15 @@ async function editProposal(proposalId) {
                                 <div class="form-group">
                                     <label>Client Company *</label>
                                     <input type="text" id="editClientCompany" class="form-control" value="${p.clientCompany || ''}" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Client Name (Optional)</label>
+                                    <input type="text" id="editClientName" class="form-control" value="${p.clientName || ''}" placeholder="Enter client contact name">
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty for layout balance -->
                                 </div>
                             </div>
                             <div class="form-row">
@@ -7200,6 +7221,7 @@ async function editProposal(proposalId) {
                         data: {
                             projectName: document.getElementById('editProjectName').value || '',
                             clientCompany: document.getElementById('editClientCompany').value || '',
+                            clientName: document.getElementById('editClientName').value || '',
                             projectType: selectedTypes,
                             timeline: document.getElementById('editTimeline').value || '',
                             country: document.getElementById('editCountry').value || '',
