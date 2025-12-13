@@ -2217,7 +2217,6 @@ body.modal-open {
                                 <div class="role-btn" data-role="director">Director</div>
                                 <div class="role-btn" data-role="designer">Designer</div>
                                 <div class="role-btn" data-role="accounts">Accounts</div>
-                                <div class="role-btn" data-role="hr">HR</div>
                             </div>
                             <input type="hidden" id="selectedRole" value="bdm">
                         </div>
@@ -2349,17 +2348,6 @@ body.modal-open {
                         <span class="nav-icon">⏱️</span>My Timesheet
                     </a>
                 </li>
-                <li id="leaveRequestNavItem" style="display: none;">
-                    <a href="#" onclick="showLeaveRequest()" id="nav-leave-request">
-                        <span class="nav-icon">📅</span>Leave Request
-                    </a>
-                </li>
-                <li id="leaveApprovalNavItem" style="display: none;">
-                    <a href="#" onclick="showLeaveApprovals()" id="nav-leave-approval">
-                        <span class="nav-icon">✅</span>Leave Approvals
-                        <span class="notification-count" id="leaveApprovalsBadge" style="display: none; margin-left: 10px; background: var(--warning); color: #856404; width: auto; height: auto; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; border: none;">0</span>
-                    </a>
-                </li>
             </ul>
         </nav>
 
@@ -2479,8 +2467,7 @@ body.modal-open {
             design_lead: ["aravindhan.tech@edanbrook.in"],
             designer: [],
             accounts: ["accounts@edanbrook.com", "finance@edanbrook.com"],
-            bdm: [],
-            hr: ["hr@edanbrook.com"]
+            bdm: []
         };
         let currentUser = null;
         let currentUserRole = '';
@@ -2828,15 +2815,6 @@ body.modal-open {
             const MAX_RETRIES = 2;
             const RETRY_DELAY = 2000;
             const url = `${API_BASE}/api/${endpoint}`;
-            
-            console.log('🔵 apiCall invoked with:', { 
-                endpoint, 
-                options, 
-                optionsType: typeof options,
-                optionsKeys: Object.keys(options),
-                method: options.method,
-                hasBody: !!options.body
-            });
 
             if (!authToken && currentUser && !endpoint.includes('health')) {
                 try {
@@ -2867,14 +2845,6 @@ body.modal-open {
             mode: 'cors',
             credentials: 'omit' // FIXED: Don't send credentials with origin: '*'
         };
-        
-        console.log('🟢 finalOptions:', {
-            method: finalOptions.method,
-            hasBody: !!finalOptions.body,
-            bodyType: typeof finalOptions.body,
-            bodyPreview: finalOptions.body ? finalOptions.body.substring(0, 100) : 'NO BODY',
-            headers: finalOptions.headers
-        });
 
         try {
             console.log(`📤 API Call [${finalOptions.method}]: ${url}`);
@@ -2884,28 +2854,19 @@ body.modal-open {
             const contentType = response.headers.get('content-type');
             let responseData;
 
-            console.log('📋 Response content-type:', contentType);
-            console.log('📋 Response status:', response.status, response.statusText);
-            console.log('📋 Response ok:', response.ok);
-
             if (contentType && contentType.includes('application/json')) {
                 const responseText = await response.text();
-                console.log('📄 Raw response text:', responseText.substring(0, 500));
                 try {
                     responseData = responseText ? JSON.parse(responseText) : {};
-                    console.log('📦 Parsed response data:', responseData);
                 } catch (parseError) {
                     console.error('❌ JSON parse error:', parseError);
                     throw new Error(`Invalid JSON response: ${responseText.substring(0, 100)}`);
                 }
             } else {
                 responseData = await response.text();
-                console.log('📄 Non-JSON response:', responseData.substring(0, 500));
             }
 
             if (!response.ok) {
-                console.error('❌ Response not OK. Status:', response.status);
-                console.error('❌ Response data:', responseData);
                 if (response.status === 401) {
                     console.error('❌ 401 Unauthorized - Token may be invalid');
                     if (currentUser && retryCount === 0) {
@@ -3021,31 +2982,6 @@ body.modal-open {
             }
         }, 50 * 60 * 1000);
 
-
-        // Test backend connection
-        async function testBackendConnection() {
-            try {
-                const response = await fetch(`${API_BASE}/health`, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Backend health check:', data);
-                    return true;
-                } else {
-                    console.warn('⚠️ Backend returned non-OK status:', response.status);
-                    return false;
-                }
-            } catch (error) {
-                console.error('❌ Backend connection failed:', error);
-                return false;
-            }
-        }
-
         function setupEventListeners() {
             document.querySelectorAll('.role-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -3073,9 +3009,7 @@ body.modal-open {
             } catch (error) {
                 console.error('Login error:', error);
                 showMessage(
-                    error.code === 'auth/wrong-password' || 
-                    error.code === 'auth/user-not-found' || 
-                    error.code === 'auth/invalid-login-credentials'
+                    error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found'
                         ? 'Invalid email or password.'
                         : 'Login failed: ' + error.message,
                     'error'
@@ -3176,22 +3110,6 @@ body.modal-open {
             setDisplay('timeRequestsNavItem', isManagement);
             setDisplay('allocationRequestsNavItem', currentUserRole === 'director'); // Only Director sees Allocation Requests
             
-            // Leave Request System - Menu Visibility
-            // All employees can submit leave requests
-            setDisplay('leaveRequestNavItem', ['bdm', 'estimator', 'designer', 'accounts', 'coo', 'hr', 'director'].includes(roleForCheck));
-            
-            // Approvers can see leave approvals (COO, Director, HR)
-            setDisplay('leaveApprovalNavItem', ['coo', 'director', 'hr'].includes(roleForCheck));
-            
-            // Update leave approvals badge for approvers
-            if (['coo', 'director', 'hr'].includes(roleForCheck)) {
-                loadPendingLeaveApprovals().then(response => {
-                    if (response && response.success) {
-                        updateLeaveApprovalsBadge(response.data?.length || 0);
-                    }
-                }).catch(() => {});
-            }
-            
             // Update badge for Director
             if (currentUserRole === 'director') {
                 updateDirectorRequestsBadge();
@@ -3247,7 +3165,6 @@ showApp.retried = false;
             document.querySelectorAll('.nav-menu a').forEach(a => a.classList.remove('active'));
             document.getElementById(navId)?.classList.add('active');
         }
-        const updateActiveNav = setActiveNav; // Alias for leave request functions
 
         // ============================================
         // HELPER FUNCTIONS
@@ -3500,7 +3417,7 @@ async function triggerEmailNotification(eventName, data = {}) {
                         <div class="action-item">
                             <div class="action-content">
                                 <strong>${item.projectName}</strong>
-                                <div class="action-meta">Client: ${item.clientCompany} | Status: ${item.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
+                                <div class="action-meta">Client: ${item.clientCompany} | Status: ${item.status.replace(/_/g, ' ')}</div>
                             </div>
                             <div class="action-buttons">
                                 ${getActionButtons(item, currentUserRole)}
@@ -3931,14 +3848,14 @@ function renderProposals(proposals) {
     }
 
     const proposalsHtml = otherProposals?.length ? otherProposals.map(p => {
-        let statusDisplay = (p.status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-        let statusClass = (p.status || '').toLowerCase().replace(/_/g, '-');
+        let statusDisplay = p.status.toUpperCase().replace(/_/g, ' ');
+        let statusClass = p.status.toLowerCase().replace(/_/g, '-');
         
         if (p.pricing && p.pricing.projectNumber && p.status === 'pricing_complete') {
-            statusDisplay = 'Pricing Complete';
+            statusDisplay = 'PRICING COMPLETE';
             statusClass = 'pricing-complete';
         } else if (p.status === 'estimated' && p.pricing && p.pricing.projectNumber) {
-            statusDisplay = 'Pricing Complete';
+            statusDisplay = 'PRICING COMPLETE';
             statusClass = 'pricing-complete';
         }
         
@@ -4021,7 +3938,7 @@ function renderProposalsTable(proposals) {
     }
 
     const proposalsHtml = proposals.map(p => {
-        const statusDisplay = (p.status || 'Draft').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        const statusDisplay = (p.status || 'DRAFT').toUpperCase().replace(/_/g, ' ');
         const statusClass = (p.status || 'draft').toLowerCase().replace(/_/g, '-');
         
         // Calculate allocation status for won proposals
@@ -4453,7 +4370,7 @@ function renderExecutiveProjectsTable(projects) {
                 </td>
                 <td>${statusBadge}</td>
                 <td>${p.designLeadName || 'Not Assigned'}</td>
-                <td><span class="badge badge-info">${(p.status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span></td>
+                <td><span class="badge badge-info">${p.status.replace('_', ' ')}</span></td>
             </tr>
         `;
     }).join('');
@@ -5613,7 +5530,7 @@ setInterval(updatePendingRequestsBadge, 60000); // Update every minute
                             <td>${p.pricing?.projectNumber ? 
                                 `<span class="project-number-badge" style="font-size: 0.9rem;">${p.pricing.projectNumber}</span>` : 
                                 '<span class="proposal-status status-pending">Not Assigned</span>'}</td>
-                            <td><span class="proposal-status status-${p.status}">${(p.status || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span></td>
+                            <td><span class="proposal-status status-${p.status}">${p.status.toUpperCase()}</span></td>
                             <td>${allocationStatusDisplay}</td>
                             <td><div class="action-buttons">${actionButtons}</div></td>
                         </tr>
@@ -5722,7 +5639,7 @@ function showCreateProposalModal() {
 
     const projectTypes = [
         'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
-        'Joist Detailing', 'As-built Drawings'
+        'Joist Detailing', 'As-built Drawings', 'Rebar Detailing'
     ];
 
     const modalHtml = `
@@ -5748,6 +5665,15 @@ function showCreateProposalModal() {
                                 <div class="form-group">
                                     <label>Client Company <span class="required">*</span></label>
                                     <input type="text" id="clientCompany" class="form-control" placeholder="Enter client company" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Client Name (Optional)</label>
+                                    <input type="text" id="clientName" class="form-control" placeholder="Enter client contact name">
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty for layout balance -->
                                 </div>
                             </div>
                             <div class="form-row">
@@ -5944,6 +5870,7 @@ function showCreateProposalModal() {
         const formData = {
             projectName: document.getElementById('projectName').value,
             clientCompany: document.getElementById('clientCompany').value,
+            clientName: document.getElementById('clientName').value || '',
             projectType: selectedTypes,
             country: document.getElementById('country').value,
             timeline: document.getElementById('timeline').value,
@@ -6248,7 +6175,7 @@ function showCreateProposalModal() {
                             <div style="margin-bottom: 2rem;"> 
                                 <strong>Status:</strong>
                                 <span class="proposal-status status-${p.status.toLowerCase().replace(/_/g, '-')}">
-                                    ${p.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                    ${p.status.replace(/_/g, ' ').toUpperCase()}
                                 </span>
                             </div>
 
@@ -6258,6 +6185,7 @@ function showCreateProposalModal() {
                                     <p><strong>Scope:</strong> ${p.scopeOfWork || 'N/A'}</p>
                                     <p><strong>Timeline:</strong> ${p.timeline || 'N/A'}</p>
                                     <p><strong>Country:</strong> ${p.country || 'N/A'}</p>
+                                    ${p.clientName ? `<p><strong>Client Name:</strong> ${p.clientName}</p>` : ''}
                                     <p><strong>Created by:</strong> ${p.createdByName || 'N/A'} on ${formatDate(p.createdAt)}</p>
                                 </div>
 
@@ -6436,6 +6364,7 @@ function showCreateProposalModal() {
                             <label class="service-item"><input type="checkbox" name="services" value="Joist Detailing"><span>Joist Detailing</span></label>
                             <label class="service-item"><input type="checkbox" name="services" value="As-built Drawings"><span>As-built Drawings</span></label>
                             <label class="service-item"><input type="checkbox" name="services" value="Engineering Services"><span>Engineering Services</span></label>
+                            <label class="service-item"><input type="checkbox" name="services" value="Rebar Detailing"><span>Rebar Detailing</span></label>
                         </div>
                     </div>
 
@@ -6670,7 +6599,7 @@ function showCreateProposalModal() {
                                 <div class="form-section">
                                     <h4>Edit Services</h4>
                                     <div class="service-grid">
-                                        ${['Steel Detailing', 'Miscellaneous Steel Detailing', 'Connection Design', 'PE Stamping', 'Joist Detailing', 'As-built Drawings'].map(service => `
+                                        ${['Steel Detailing', 'Miscellaneous Steel Detailing', 'Connection Design', 'PE Stamping', 'Joist Detailing', 'As-built Drawings', 'Rebar Detailing'].map(service => `
                                             <label class="service-item ${estimation.services?.includes(service) ? 'checked' : ''}">
                                                 <input type="checkbox" name="editServices" value="${service}" ${estimation.services?.includes(service) ? 'checked' : ''}>
                                                 <span>${service}</span>
@@ -7025,7 +6954,7 @@ async function editProposal(proposalId) {
 
         const projectTypes = [
             'Steel Detailing', 'Miscellaneous Steel', 'Connection Design', 'PE Stamping',
-            'Joist Detailing', 'As-built Drawings'
+            'Joist Detailing', 'As-built Drawings', 'Rebar Detailing'
         ];
 
         const modalHtml = `
@@ -7052,6 +6981,15 @@ async function editProposal(proposalId) {
                                 <div class="form-group">
                                     <label>Client Company *</label>
                                     <input type="text" id="editClientCompany" class="form-control" value="${p.clientCompany || ''}" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Client Name (Optional)</label>
+                                    <input type="text" id="editClientName" class="form-control" value="${p.clientName || ''}" placeholder="Enter client contact name">
+                                </div>
+                                <div class="form-group">
+                                    <!-- Empty for layout balance -->
                                 </div>
                             </div>
                             <div class="form-row">
@@ -7283,6 +7221,7 @@ async function editProposal(proposalId) {
                         data: {
                             projectName: document.getElementById('editProjectName').value || '',
                             clientCompany: document.getElementById('editClientCompany').value || '',
+                            clientName: document.getElementById('editClientName').value || '',
                             projectType: selectedTypes,
                             timeline: document.getElementById('editTimeline').value || '',
                             country: document.getElementById('editCountry').value || '',
@@ -8378,11 +8317,10 @@ function createProjectCard(project) {
         <div class="project-card">
             <div class="project-header">
                 <h3>${project.projectName}</h3>
-                <span class="project-status ${project.status.replace(/_/g, '-')}">${project.status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</span>
+                <span class="project-status ${project.status.replace(/_/g, '-')}">${project.status.replace(/_/g, ' ')}</span>
             </div>
             <div class="project-details">
                 <p><strong>Client:</strong> ${project.clientCompany || 'N/A'}</p>
-                <p><strong>Project Number:</strong> ${project.projectNumber || 'N/A'}</p>
                 <p><strong>Code:</strong> ${project.projectCode || 'N/A'}</p>
                 <p><strong>Allocated:</strong> ${allocDate}</p>
                 <p><strong>Target:</strong> ${targetDate}</p>
@@ -8839,7 +8777,6 @@ async function showDesignerAllocations() {
                         <strong>${p.projectName || 'Unknown Project'}</strong><br>
                         <small style="color: var(--text-light);">${p.projectCode || 'No Code'}</small>
                     </td>
-                    <td><strong>${p.projectNumber || 'N/A'}</strong></td>
                     <td>${p.clientCompany || 'N/A'}</td>
                     <td>${targetDate}</td>
 
@@ -8895,7 +8832,6 @@ async function showDesignerAllocations() {
                     <thead>
                         <tr>
                             <th>Project</th>
-                            <th>Project Number</th>
                             <th>Client</th>
                             <th>Target Date</th>
                             <th style="text-align: center;">My Allocated Hours</th>
@@ -10034,6 +9970,331 @@ async function markProjectComplete(projectId) {
         function showWorkflow() { /* ... (Unchanged) ... */ }
         function showReports() { /* ... (Unchanged) ... */ }
         function showSettings() { /* ... (Unchanged) ... */ }
+        
+        // REPLACED IMPLEMENTATION
+        async function showActivities() {
+            setActiveNav('nav-activities');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block'; // Ensure main content is visible
+            showLoading();
+
+            try {
+                const response = await apiCall('activities');
+                if (!response.success || !response.data) {
+                    throw new Error(response.error || 'Failed to load activities');
+                }
+                
+                const activities = response.data;
+                const activitiesHtml = activities.length ? activities.map(act => `
+                    <div class="action-item">
+                        <div class="action-content">
+                            <strong>${act.details}</strong>
+                            <div class="action-meta">
+                                By ${act.performedByName || 'System'} (${act.performedByRole || 'N/A'}) - ${formatDate(act.timestamp)}
+                                ${act.proposalId ? ` | Proposal: ${act.proposalId}` : ''}
+                                ${act.projectId ? ` | Project: ${act.projectId}` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : '<p>No recent activities found.</p>';
+
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>📝 All Activities</h2>
+                        <div class="subtitle">A log of all actions taken in the system.</div>
+                    </div>
+                    <div class="action-section">
+                        <h3>Activity Log</h3>
+                        ${activitiesHtml}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Error fetching activities:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Activities</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // ✅ Make showActivities globally accessible
+        window.showActivities = showActivities;
+
+        // ============================================
+        // DIAGNOSTICS
+        // ============================================
+
+        async function testBackendConnection() { /* ... (Unchanged) ... */ }
+        async function runDiagnostics() { /* ... (Unchanged) ... */ }
+
+let designerAllocationCounter = 0;
+let availableDesigners = [];
+
+/**
+ * Load all available designers for allocation
+ */
+async function loadAvailableDesigners() {
+    try {
+        const [designersResponse, designLeadsResponse] = await Promise.all([
+            apiCall('users?role=designer'),
+            apiCall('users?role=design_lead')
+        ]);
+        
+        availableDesigners = [];
+        
+        if (designersResponse.success && designersResponse.data) {
+            availableDesigners.push(...designersResponse.data.map(d => ({...d, roleType: 'designer'})));
+        }
+        
+        if (designLeadsResponse.success && designLeadsResponse.data) {
+            availableDesigners.push(...designLeadsResponse.data.map(d => ({...d, roleType: 'design_lead'})));
+        }
+        
+        console.log('Available designers loaded:', availableDesigners.length);
+        
+    } catch (error) {
+        console.error('Error loading designers:', error);
+        availableDesigners = [];
+    }
+}
+
+/**
+ * ✅ FIXED: Show COO Multi-Designer Allocation Modal
+ * Handles both scenarios: Hours from Estimation OR Manual COO Entry (Tonnage case)
+ */
+async function showCooMultiDesignerAllocationModal(projectId) {
+    try {
+        showLoading();
+        
+        // 1. Load project details
+        const projectResponse = await apiCall(`projects?id=${projectId}`);
+        if (!projectResponse.success || !projectResponse.data) {
+            throw new Error('Failed to load project details');
+        }
+        
+        const project = projectResponse.data;
+        
+        // Store project data globally for edit functions
+        window.currentEditProject = project;
+        window.currentEditProjectId = projectId;
+        
+        // 2. Load available designers
+        await loadAvailableDesigners();
+        
+        if (availableDesigners.length === 0) {
+            alert('No designers found in the system. Please create designer accounts first.');
+            hideLoading();
+            return;
+        }
+        
+        // 3. Populate project info
+        document.getElementById('cooAllocProjectId').value = projectId;
+        document.getElementById('cooAllocProjectNumber').textContent = project.projectNumber || 'N/A';
+        document.getElementById('cooAllocProjectName').textContent = project.projectName || 'N/A';
+        document.getElementById('cooAllocClientName').textContent = project.clientCompany || 'N/A';
+        
+        // ============================================
+        // ✅ CRITICAL FIX: TWO SCENARIOS LOGIC
+        // ============================================
+        
+        const totalHoursInput = document.getElementById('cooTotalProjectHours');
+        
+        // SCENARIO A: Estimator entered HOURS (not tonnage)
+        const estimationHours = parseFloat(project.estimation?.totalHours || 0);
+        const estimationUsedTonnage = project.estimation?.usedTonnageForDesign || false;
+        
+        // SCENARIO B: Previously saved Max Hours (from manual COO entry)
+        const savedMaxHours = parseFloat(project.maxAllocatedHours || 0);
+        
+        // Already allocated hours in the system
+        const previouslyAllocated = parseFloat(project.totalAllocatedHours || 0);
+        
+        let totalBudget = 0;
+        let isLocked = false;
+        let hoursSource = '';
+        
+        // LOGIC FLOW:
+        if (estimationHours > 0 && !estimationUsedTonnage) {
+            // ✅ SCENARIO A: Estimator entered HOURS directly
+            totalBudget = estimationHours;
+            isLocked = true;
+            hoursSource = 'from_estimation_hours';
+            console.log('✅ Scenario A: Using estimation hours (not tonnage)');
+            
+        } else if (estimationUsedTonnage && savedMaxHours > 0) {
+            // ✅ SCENARIO B: Estimator used TONNAGE, COO manually entered hours
+            totalBudget = savedMaxHours;
+            isLocked = true;
+            hoursSource = 'from_coo_manual_tonnage';
+            console.log('✅ Scenario B: Using COO manual hours (tonnage case)');
+            
+        } else if (estimationUsedTonnage && savedMaxHours === 0) {
+            // ⚠️ SCENARIO B (Not Yet Completed): Tonnage entered, COO needs to enter hours
+            totalBudget = 0;
+            isLocked = false;
+            hoursSource = 'awaiting_coo_manual_entry';
+            console.log('⚠️ Scenario B (Incomplete): Tonnage entered, awaiting COO manual entry');
+            
+        } else if (savedMaxHours > 0) {
+            // Fallback: Previously saved hours exist
+            totalBudget = savedMaxHours;
+            isLocked = true;
+            hoursSource = 'from_previous_entry';
+            console.log('✅ Fallback: Using previously saved hours');
+        }
+        
+        // Calculate remaining budget
+        const remainingBudget = Math.max(0, totalBudget - previouslyAllocated);
+        
+        // ============================================
+        // Set UI State based on scenario
+        // ============================================
+        
+        totalHoursInput.value = totalBudget > 0 ? totalBudget : '';
+        totalHoursInput.readOnly = isLocked;
+        
+        // Show/hide Edit Budget button
+        const editBudgetBtn = document.getElementById('editBudgetBtn');
+        if (editBudgetBtn) {
+            editBudgetBtn.style.display = isLocked && totalBudget > 0 ? 'inline-block' : 'none';
+        }
+        
+        if (isLocked) {
+            // Locked state - budget is set
+            totalHoursInput.style.backgroundColor = '#e9ecef';
+            totalHoursInput.style.border = '2px solid #10b981';
+            totalHoursInput.style.fontWeight = '700';
+            
+            if (hoursSource === 'from_estimation_hours') {
+                totalHoursInput.title = "🔒 Locked: Hours from Estimator (not tonnage)";
+            } else if (hoursSource === 'from_coo_manual_tonnage') {
+                totalHoursInput.title = "🔒 Locked: Hours manually entered by COO (tonnage case)";
+            } else {
+                totalHoursInput.title = "🔒 Locked: Budget previously set";
+            }
+            
+        } else {
+            // Unlocked state - COO needs to enter hours
+            totalHoursInput.style.backgroundColor = '#fff8dc';
+            totalHoursInput.style.border = '2px solid #f59e0b';
+            totalHoursInput.style.fontWeight = '600';
+            totalHoursInput.placeholder = "⚠️ Enter Total Hours (Tonnage was used in estimation)";
+            totalHoursInput.title = "Manual entry required: Estimator used tonnage";
+        }
+        
+        // Store metadata for calculations
+        totalHoursInput.dataset.alreadyAllocated = previouslyAllocated;
+        totalHoursInput.dataset.hoursSource = hoursSource;
+        
+        // ============================================
+        // ✅ NEW: RENDER EXISTING ALLOCATIONS WITH EDIT
+        // ============================================
+        
+        renderExistingAllocations(project);
+        
+        // ============================================
+        // Designer Allocation Section State
+        // ============================================
+        
+        const designerContainer = document.getElementById('designerAllocationsContainer');
+        const addDesignerBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-outline[onclick="addDesignerAllocation()"]');
+        const submitBtn = document.querySelector('#cooMultiDesignerAllocationModal .btn-success');
+        
+        // Reset form
+        designerAllocationCounter = 0;
+        designerContainer.innerHTML = '';
+        document.getElementById('cooAllocationNotes').value = '';
+        document.getElementById('cooTargetCompletionDate').value = '';
+        document.getElementById('cooProjectPriority').value = 'Normal';
+        
+        // ============================================
+        // LOGIC: When to enable/disable Designer Allocation
+        // ============================================
+        
+        if (totalBudget === 0) {
+            // ⚠️ CASE 1: No budget set yet (awaiting COO manual entry)
+            designerContainer.innerHTML = `
+                <div class="alert alert-info" style="padding: 1.5rem; background: #e3f2fd; color: #0d47a1; border: 2px solid #2196f3; border-radius: 8px; text-align: center;">
+                    <h4 style="margin: 0 0 0.5rem 0;">ℹ️ Total Hours Required</h4>
+                    <p style="margin: 0;">Please enter the <strong>Total Allocated Hours</strong> above before allocating to designers.</p>
+                </div>
+            `;
+            
+            if (addDesignerBtn) addDesignerBtn.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "Enter Hours First";
+                submitBtn.style.opacity = "0.5";
+            }
+            
+            // Add event listener to enable designer section when hours are entered
+            totalHoursInput.addEventListener('input', function() {
+                const enteredHours = parseFloat(this.value) || 0;
+                if (enteredHours > 0) {
+                    // Enable designer allocation section
+                    designerContainer.innerHTML = '';
+                    addDesignerAllocation();
+                    
+                    if (addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerText = "Allocate Project";
+                        submitBtn.style.opacity = "1";
+                    }
+                    
+                    updateRemainingHours();
+                }
+            });
+            
+        } else if (remainingBudget <= 0.1) {
+            // ✅ CASE 2: Fully Allocated (LOCK)
+            designerContainer.innerHTML = `
+                <div class="alert alert-success" style="padding: 1.5rem; background: #d1fae5; color: #065f46; border: 2px solid #10b981; border-radius: 8px; text-align: center;">
+                    <h4 style="margin: 0 0 0.5rem 0;">✅ Allocation Complete</h4>
+                    <p style="margin: 0;">
+                        This project is <strong>fully allocated</strong><br>
+                        <span style="font-size: 1.2rem; font-weight: 700;">${previouslyAllocated.toFixed(1)} / ${totalBudget.toFixed(1)} hours</span>
+                    </p>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem; opacity: 0.8;">Use "Edit" buttons above to modify existing allocations.</p>
+                </div>
+            `;
+            
+            if (addDesignerBtn) addDesignerBtn.style.display = 'none';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = "✅ Fully Allocated";
+                submitBtn.style.opacity = "0.6";
+            }
+            
+        } else {
+            // ✅ CASE 3: Partial or New Allocation (ENABLED)
+            if (addDesignerBtn) addDesignerBtn.style.display = 'inline-block';
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerText = "Allocate Project";
+                submitBtn.style.opacity = "1";
+            }
+            
+            addDesignerAllocation(); // Add first row
+        }
+        
+        // Show modal
+        document.getElementById('cooMultiDesignerAllocationModal').style.display = 'flex';
+        
+        // Update visual display
+        updateRemainingHours();
+        
+    } catch (error) {
+        console.error('Error showing allocation modal:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * ✅ NEW: Render existing designer allocations with edit capabilities
+ */
 function renderExistingAllocations(project) {
     const section = document.getElementById('existingAllocationsSection');
     const list = document.getElementById('existingAllocationsList');
@@ -10264,25 +10525,24 @@ function toggleBudgetEdit() {
     const projectId = window.currentEditProjectId;
     const project = window.currentEditProject;
     const currentBudget = parseFloat(project.maxAllocatedHours) || 0;
-    const totalAllocated = parseFloat(project.totalAllocatedHours) || 0;
     
     // Show the budget change modal
-    showBudgetChangeModal(projectId, project.projectName, currentBudget, totalAllocated);
+    showBudgetChangeModal(projectId, project.projectName, currentBudget);
 }
 
 /**
- * Show Budget Change Request Modal - Professional Form
+ * Show Budget Change Request Modal
  */
-function showBudgetChangeModal(projectId, projectName, currentBudget, totalAllocated) {
+function showBudgetChangeModal(projectId, projectName, currentBudget) {
     // Create modal if it doesn't exist
     let modal = document.getElementById('budgetChangeModal');
     if (!modal) {
         const modalHtml = `
             <div id="budgetChangeModal" class="modal" style="display: none;">
-                <div class="modal-content new-modal" style="max-width: 600px;">
+                <div class="modal-content new-modal" style="max-width: 550px;">
                     <div class="modal-header" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
                         <div>
-                            <h2 style="color: white;">📊 Request Additional Hours</h2>
+                            <h2 style="color: white;">📊 Request Budget Change</h2>
                             <div class="subtitle" style="color: rgba(255,255,255,0.9);">Requires Director Approval</div>
                         </div>
                         <span class="close-modal" onclick="closeBudgetChangeModal()">&times;</span>
@@ -10291,72 +10551,33 @@ function showBudgetChangeModal(projectId, projectName, currentBudget, totalAlloc
                     <div class="modal-body">
                         <input type="hidden" id="budgetChangeProjectId" />
                         
-                        <!-- Project Info Section -->
-                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; color: white;">
-                            <div style="font-size: 0.85rem; opacity: 0.9;">Project</div>
-                            <div style="font-size: 1.2rem; font-weight: 700;" id="budgetChangeProjectName"></div>
+                        <div style="background: #fef3c7; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; border-left: 4px solid #f59e0b;">
+                            <div style="font-weight: 600; color: #92400e;" id="budgetChangeProjectName"></div>
+                            <div style="font-size: 0.9rem; color: #b45309;">Current Budget: <strong id="budgetChangeCurrent">0</strong> hours</div>
                         </div>
                         
-                        <!-- Current Status Section -->
-                        <div style="background: #f8fafc; padding: 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; border: 1px solid #e2e8f0;">
-                            <h4 style="margin: 0 0 1rem 0; color: #475569;">📈 Current Status</h4>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; text-align: center;">
-                                <div>
-                                    <div style="font-size: 0.8rem; color: #64748b;">Current Budget</div>
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b;" id="budgetChangeCurrent">0</div>
-                                    <div style="font-size: 0.75rem; color: #94a3b8;">hours</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.8rem; color: #64748b;">Already Allocated</div>
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: #3b82f6;" id="budgetChangeAllocated">0</div>
-                                    <div style="font-size: 0.75rem; color: #94a3b8;">hours</div>
-                                </div>
-                                <div>
-                                    <div style="font-size: 0.8rem; color: #64748b;">Remaining</div>
-                                    <div style="font-size: 1.5rem; font-weight: 700; color: #10b981;" id="budgetChangeRemaining">0</div>
-                                    <div style="font-size: 0.75rem; color: #94a3b8;">hours</div>
-                                </div>
-                            </div>
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label for="budgetChangeNewHours" style="font-weight: 600;">New Budget Hours <span class="required">*</span></label>
+                            <input type="number" id="budgetChangeNewHours" class="form-control" 
+                                   placeholder="Enter new total budget hours" min="1" step="0.5" required
+                                   oninput="updateBudgetChangeDiff()"
+                                   style="font-size: 1.1rem; padding: 0.75rem;">
+                            <div id="budgetChangeDiff" style="margin-top: 0.5rem; font-weight: 600;"></div>
                         </div>
                         
-                        <!-- Request Form -->
-                        <div style="background: #fffbeb; padding: 1.25rem; border-radius: 10px; border: 2px solid #f59e0b;">
-                            <h4 style="margin: 0 0 1rem 0; color: #92400e;">📝 Request Details</h4>
-                            
-                            <div class="form-group" style="margin-bottom: 1.25rem;">
-                                <label style="font-weight: 600; color: #78350f;">Additional Hours Required <span class="required">*</span></label>
-                                <div style="display: flex; align-items: center; gap: 1rem;">
-                                    <input type="number" id="budgetChangeAdditionalHours" class="form-control" 
-                                           placeholder="e.g., 50" min="1" step="0.5" required
-                                           oninput="updateBudgetChangePreview()"
-                                           style="font-size: 1.2rem; padding: 0.75rem; flex: 1; font-weight: 600;">
-                                    <span style="color: #92400e; font-weight: 600;">hours</span>
-                                </div>
-                                <small style="color: #b45309;">Enter the number of additional hours needed</small>
-                            </div>
-                            
-                            <div id="budgetChangePreview" style="display: none; background: white; padding: 1rem; border-radius: 8px; margin-bottom: 1.25rem; border: 1px solid #fcd34d;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="color: #78350f;">New Total Budget:</span>
-                                    <span style="font-size: 1.3rem; font-weight: 700; color: #d97706;" id="budgetChangeNewTotal">0h</span>
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label style="font-weight: 600; color: #78350f;">Reason / Justification <span class="required">*</span></label>
-                                <textarea id="budgetChangeReason" class="form-control" rows="4" required
-                                          placeholder="Please explain why additional hours are required...&#10;&#10;Examples:&#10;• Additional scope requested by client&#10;• Unforeseen design complexity&#10;• Revision requirements&#10;• Extended project timeline"
-                                          style="resize: vertical;"></textarea>
-                                <small style="color: #b45309;">This justification is required and will be reviewed by the Director</small>
-                            </div>
+                        <div class="form-group">
+                            <label for="budgetChangeReason" style="font-weight: 600;">Reason for Change <span class="required">*</span></label>
+                            <textarea id="budgetChangeReason" class="form-control" rows="4" required
+                                      placeholder="Please explain why the budget needs to be changed...&#10;&#10;Example: Additional scope added by client, unforeseen complexity, etc."
+                                      style="resize: vertical;"></textarea>
+                            <small class="form-text" style="color: #6b7280;">This comment is mandatory and will be sent to the Director for review.</small>
                         </div>
                     </div>
                     
                     <div class="modal-footer">
                         <button type="button" class="btn btn-cancel" onclick="closeBudgetChangeModal()">Cancel</button>
-                        <button type="button" class="btn" onclick="submitBudgetChangeFromModal()" 
-                                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: white; font-weight: 600;">
-                            📤 Submit Request to Director
+                        <button type="button" class="btn btn-warning" onclick="submitBudgetChangeFromModal()" style="background: #f59e0b; border-color: #f59e0b;">
+                            📤 Submit for Approval
                         </button>
                     </div>
                 </div>
@@ -10370,14 +10591,12 @@ function showBudgetChangeModal(projectId, projectName, currentBudget, totalAlloc
     document.getElementById('budgetChangeProjectId').value = projectId;
     document.getElementById('budgetChangeProjectName').textContent = projectName;
     document.getElementById('budgetChangeCurrent').textContent = currentBudget.toFixed(1);
-    document.getElementById('budgetChangeAllocated').textContent = totalAllocated.toFixed(1);
-    document.getElementById('budgetChangeRemaining').textContent = (currentBudget - totalAllocated).toFixed(1);
-    document.getElementById('budgetChangeAdditionalHours').value = '';
+    document.getElementById('budgetChangeNewHours').value = '';
     document.getElementById('budgetChangeReason').value = '';
-    document.getElementById('budgetChangePreview').style.display = 'none';
+    document.getElementById('budgetChangeDiff').innerHTML = '';
     
     // Store current budget for calculation
-    document.getElementById('budgetChangeAdditionalHours').dataset.current = currentBudget;
+    document.getElementById('budgetChangeNewHours').dataset.current = currentBudget;
     
     // Show modal
     modal.style.display = 'flex';
@@ -10394,22 +10613,26 @@ function closeBudgetChangeModal() {
 }
 
 /**
- * Update budget change preview
+ * Update budget change difference display
  */
-function updateBudgetChangePreview() {
-    const input = document.getElementById('budgetChangeAdditionalHours');
+function updateBudgetChangeDiff() {
+    const input = document.getElementById('budgetChangeNewHours');
     const current = parseFloat(input.dataset.current) || 0;
-    const additional = parseFloat(input.value) || 0;
-    const newTotal = current + additional;
+    const newValue = parseFloat(input.value) || 0;
+    const diff = newValue - current;
     
-    const preview = document.getElementById('budgetChangePreview');
-    const newTotalDisplay = document.getElementById('budgetChangeNewTotal');
+    const diffDisplay = document.getElementById('budgetChangeDiff');
     
-    if (additional > 0) {
-        preview.style.display = 'block';
-        newTotalDisplay.textContent = `${newTotal.toFixed(1)}h`;
+    if (newValue > 0) {
+        if (diff > 0) {
+            diffDisplay.innerHTML = `<span style="color: #059669;">↑ Increase by ${diff.toFixed(1)} hours</span>`;
+        } else if (diff < 0) {
+            diffDisplay.innerHTML = `<span style="color: #dc2626;">↓ Decrease by ${Math.abs(diff).toFixed(1)} hours</span>`;
+        } else {
+            diffDisplay.innerHTML = `<span style="color: #6b7280;">No change</span>`;
+        }
     } else {
-        preview.style.display = 'none';
+        diffDisplay.innerHTML = '';
     }
 }
 
@@ -10418,34 +10641,26 @@ function updateBudgetChangePreview() {
  */
 async function submitBudgetChangeFromModal() {
     const projectId = document.getElementById('budgetChangeProjectId').value;
-    const currentBudget = parseFloat(document.getElementById('budgetChangeAdditionalHours').dataset.current) || 0;
-    const additionalHours = parseFloat(document.getElementById('budgetChangeAdditionalHours').value);
+    const currentBudget = parseFloat(document.getElementById('budgetChangeNewHours').dataset.current) || 0;
+    const newBudget = parseFloat(document.getElementById('budgetChangeNewHours').value);
     const reason = document.getElementById('budgetChangeReason').value.trim();
     
     // Validation
-    if (!additionalHours || additionalHours <= 0) {
-        alert('Please enter the number of additional hours required');
-        document.getElementById('budgetChangeAdditionalHours').focus();
+    if (!newBudget || newBudget <= 0) {
+        alert('Please enter a valid new budget hours');
+        return;
+    }
+    
+    if (newBudget === currentBudget) {
+        alert('New budget is the same as current budget');
         return;
     }
     
     if (!reason) {
-        alert('Please provide a reason/justification for the additional hours. This is required for Director approval.');
+        alert('Please provide a reason for the budget change. This is required for Director approval.');
         document.getElementById('budgetChangeReason').focus();
         return;
     }
-    
-    if (reason.length < 10) {
-        alert('Please provide a more detailed justification (at least 10 characters)');
-        document.getElementById('budgetChangeReason').focus();
-        return;
-    }
-    
-    const newBudget = currentBudget + additionalHours;
-    
-    const confirmMsg = `Request additional ${additionalHours} hours?\n\nCurrent Budget: ${currentBudget}h\nAdditional: +${additionalHours}h\nNew Total: ${newBudget}h\n\nThis request will be sent to the Director for approval.`;
-    
-    if (!confirm(confirmMsg)) return;
     
     try {
         showLoading();
@@ -10469,7 +10684,7 @@ async function submitBudgetChangeFromModal() {
         
         if (response.success) {
             closeBudgetChangeModal();
-            alert(`✅ Request Submitted Successfully!\n\nAdditional Hours: +${additionalHours}h\nNew Total Budget: ${newBudget}h\n\nAwaiting Director approval.`);
+            alert(`✅ Budget change request submitted!\n\nCurrent: ${currentBudget}h\nRequested: ${newBudget}h\n\nAwaiting Director approval.`);
         } else {
             throw new Error(response.error || 'Failed to submit request');
         }
@@ -10661,130 +10876,12 @@ function validateDesignerSelection() {
  * ✅ FIXED: Submit COO Multi-Designer Allocation
  * Handles both scenarios: estimation hours OR manual COO entry
  */
-/**
- * Mark project number as changed - show Save button
- */
-function markProjectNumberChanged() {
-    const input = document.getElementById('cooAllocProjectNumberInput');
-    const saveBtn = document.getElementById('saveProjectNumberBtn');
-    const editBtn = document.getElementById('editProjectNumberBtn');
-    const statusText = document.getElementById('projectNumberStatus');
-    
-    const currentValue = input.value.trim();
-    const originalValue = input.dataset.original || '';
-    
-    if (currentValue !== originalValue && currentValue !== '') {
-        saveBtn.style.display = 'inline-block';
-        editBtn.style.display = 'none';
-        statusText.textContent = 'Click Save to update';
-        statusText.style.color = '#fbbf24';
-    } else if (currentValue === '' && originalValue === '') {
-        saveBtn.style.display = 'none';
-        editBtn.style.display = 'none';
-        statusText.textContent = 'Enter project number';
-        statusText.style.color = 'rgba(255,255,255,0.7)';
-    }
-}
-
-/**
- * Enable project number editing
- */
-function enableProjectNumberEdit() {
-    const input = document.getElementById('cooAllocProjectNumberInput');
-    const saveBtn = document.getElementById('saveProjectNumberBtn');
-    const editBtn = document.getElementById('editProjectNumberBtn');
-    const statusText = document.getElementById('projectNumberStatus');
-    
-    input.readOnly = false;
-    input.style.background = 'rgba(255,255,255,0.95)';
-    input.focus();
-    input.select();
-    
-    editBtn.style.display = 'none';
-    statusText.textContent = 'Edit and click Save';
-    statusText.style.color = '#fbbf24';
-}
-
-/**
- * Save project number to database
- */
-async function saveProjectNumber() {
-    const projectId = document.getElementById('cooAllocProjectId').value;
-    const input = document.getElementById('cooAllocProjectNumberInput');
-    const saveBtn = document.getElementById('saveProjectNumberBtn');
-    const editBtn = document.getElementById('editProjectNumberBtn');
-    const statusText = document.getElementById('projectNumberStatus');
-    
-    const projectNumber = input.value.trim();
-    
-    if (!projectNumber) {
-        alert('Please enter a project number');
-        input.focus();
-        return;
-    }
-    
-    try {
-        // Show loading state
-        saveBtn.textContent = '⏳...';
-        saveBtn.disabled = true;
-        
-        const response = await apiCall(`projects?id=${projectId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'update_project_number',
-                data: {
-                    projectNumber: projectNumber
-                }
-            })
-        });
-        
-        if (response.success) {
-            // Update UI to saved state
-            input.dataset.original = projectNumber;
-            input.readOnly = true;
-            input.style.background = 'rgba(255,255,255,0.7)';
-            
-            saveBtn.style.display = 'none';
-            editBtn.style.display = 'inline-block';
-            
-            statusText.textContent = '✓ Saved';
-            statusText.style.color = '#86efac';
-            
-            // Update stored project data
-            if (window.currentEditProject) {
-                window.currentEditProject.projectNumber = projectNumber;
-            }
-            
-            // Brief success flash
-            input.style.border = '2px solid #10b981';
-            setTimeout(() => {
-                input.style.border = 'none';
-            }, 2000);
-            
-        } else {
-            throw new Error(response.error || 'Failed to save project number');
-        }
-    } catch (error) {
-        console.error('Error saving project number:', error);
-        alert('❌ Error: ' + error.message);
-        statusText.textContent = 'Save failed - try again';
-        statusText.style.color = '#f87171';
-    } finally {
-        saveBtn.textContent = '💾 Save';
-        saveBtn.disabled = false;
-    }
-}
-
 async function submitCooMultiDesignerAllocation() {
     const projectId = document.getElementById('cooAllocProjectId').value;
     const totalHoursInput = document.getElementById('cooTotalProjectHours');
     const totalBudget = parseFloat(totalHoursInput.value);
     const previouslyAllocated = parseFloat(totalHoursInput.dataset.alreadyAllocated) || 0;
     const hoursSource = totalHoursInput.dataset.hoursSource || 'unknown';
-    
-    // Get project number from input
-    const projectNumber = document.getElementById('cooAllocProjectNumberInput').value.trim();
     
     // Validation: Budget must be set
     if (!totalBudget || totalBudget <= 0) {
@@ -10890,9 +10987,6 @@ Proceed with allocation?`.trim();
             action: 'allocate_to_multiple_designers',
             data: {
                 projectId: projectId,
-                
-                // ✅ Project Number
-                projectNumber: projectNumber || null,
                 
                 // ✅ CRITICAL: Set the budget and source
                 maxAllocatedHours: totalBudget, // Lock the budget
@@ -17408,21 +17502,7 @@ function toggleDesignHours() {
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
                     <div>
                         <label style="font-size: 0.85rem; opacity: 0.9;">Project Number:</label>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.25rem;">
-                            <input type="text" id="cooAllocProjectNumberInput" class="form-control" 
-                                   placeholder="Enter project number" 
-                                   style="background: rgba(255,255,255,0.95); color: #1e293b; font-size: 1.1rem; font-weight: 700; padding: 0.5rem; border-radius: 6px; border: none; flex: 1;"
-                                   onchange="markProjectNumberChanged()">
-                            <button type="button" id="saveProjectNumberBtn" onclick="saveProjectNumber()" 
-                                    style="display: none; background: #10b981; color: white; border: none; padding: 0.4rem 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
-                                💾 Save
-                            </button>
-                            <button type="button" id="editProjectNumberBtn" onclick="enableProjectNumberEdit()" 
-                                    style="display: none; background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); padding: 0.4rem 0.75rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem;">
-                                ✏️ Edit
-                            </button>
-                        </div>
-                        <small id="projectNumberStatus" style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem; display: block;"></small>
+                        <div id="cooAllocProjectNumber" style="font-size: 1.2rem; font-weight: 700;"></div>
                     </div>
                     <div>
                         <label style="font-size: 0.85rem; opacity: 0.9;">Project Name:</label>
@@ -17439,9 +17519,8 @@ function toggleDesignHours() {
             <div class="form-section" style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h3 style="color: var(--text-dark); margin: 0;">⏱️ Total Project Hours</h3>
-                    <button type="button" id="editBudgetBtn" class="btn btn-outline btn-sm" onclick="toggleBudgetEdit()" 
-                            style="display: none; border-color: #f59e0b; color: #d97706;">
-                        ➕ Request Additional Hours
+                    <button type="button" id="editBudgetBtn" class="btn btn-outline btn-sm" onclick="toggleBudgetEdit()" style="display: none;">
+                        ✏️ Edit Budget
                     </button>
                 </div>
                 <div class="form-row">
@@ -17971,124 +18050,53 @@ async function loadAllocationRequests() {
             return;
         }
         
-        // Process each request with error handling
-        const cardsHtml = requests.map(req => {
-            try {
-                const createdDate = req.createdAt ? 
-                    (req.createdAt.seconds ? new Date(req.createdAt.seconds * 1000) : new Date(req.createdAt)) : null;
-                const dateStr = createdDate ? createdDate.toLocaleDateString() : 'N/A';
+        container.innerHTML = requests.map(req => {
+            const createdDate = req.createdAt ? 
+                (req.createdAt.seconds ? new Date(req.createdAt.seconds * 1000) : new Date(req.createdAt)) : null;
+            const dateStr = createdDate ? createdDate.toLocaleDateString() : 'N/A';
+            
+            return `
+            <div class="allocation-request-card ${req.status}">
+                <div class="request-header">
+                    <div class="request-info">
+                        <h4>📁 ${req.projectName || 'Unknown Project'}</h4>
+                        <div class="request-meta">
+                            Requested by <strong>${req.requestedByName}</strong> • ${dateStr}
+                        </div>
+                    </div>
+                    <span class="request-status ${req.status}">${req.status}</span>
+                </div>
                 
-                // Determine request type - check multiple indicators
-                const isBudgetChange = req.requestType === 'budget_change' || 
-                                      (req.currentBudget !== undefined && req.currentBudget !== null) ||
-                                      (req.requestedBudget !== undefined && req.requestedBudget !== null);
+                <div class="request-hours-change">
+                    <div class="hours-box">
+                        <label>Designer</label>
+                        <div class="value" style="font-size: 1rem;">👤 ${req.designerName}</div>
+                    </div>
+                    <div class="hours-box">
+                        <label>Current</label>
+                        <div class="value">${req.currentAllocatedHours}h</div>
+                    </div>
+                    <div class="hours-arrow">→</div>
+                    <div class="hours-box">
+                        <label>Requested</label>
+                        <div class="value">${req.requestedNewHours}h</div>
+                    </div>
+                    <div class="hours-diff ${req.hoursDifference >= 0 ? 'increase' : 'decrease'}">
+                        ${req.hoursDifference >= 0 ? '+' : ''}${req.hoursDifference.toFixed(1)}h
+                    </div>
+                </div>
                 
-                if (isBudgetChange) {
-                    // BUDGET CHANGE REQUEST CARD
-                    const currentBudget = Number(req.currentBudget) || 0;
-                    const requestedBudget = Number(req.requestedBudget) || 0;
-                    const budgetDiff = requestedBudget - currentBudget;
-                    
-                    return `
-                    <div class="allocation-request-card pending" style="border-left: 4px solid #f59e0b;">
-                        <div class="request-header">
-                            <div class="request-info">
-                                <h4>📊 Budget Change: ${req.projectName || 'Unknown Project'}</h4>
-                                <div class="request-meta">
-                                    Requested by <strong>${req.requestedByName || 'Unknown'}</strong> • ${dateStr}
-                                </div>
-                            </div>
-                            <span class="request-status pending" style="background: #fef3c7; color: #92400e;">Budget</span>
-                        </div>
-                        
-                        <div class="request-hours-change" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);">
-                            <div class="hours-box">
-                                <label>Current Budget</label>
-                                <div class="value">${currentBudget.toFixed(1)}h</div>
-                            </div>
-                            <div class="hours-arrow">→</div>
-                            <div class="hours-box">
-                                <label>Requested Budget</label>
-                                <div class="value">${requestedBudget.toFixed(1)}h</div>
-                            </div>
-                            <div class="hours-diff ${budgetDiff >= 0 ? 'increase' : 'decrease'}">
-                                ${budgetDiff >= 0 ? '+' : ''}${budgetDiff.toFixed(1)}h
-                            </div>
-                        </div>
-                        
-                        <div class="request-reason">
-                            <strong>Reason:</strong> ${req.reason || 'No reason provided'}
-                        </div>
-                        
-                        <div class="request-actions">
-                            <button class="btn btn-primary btn-sm" onclick="openDirectorReviewModal('${req.id}')">
-                                🔍 Review
-                            </button>
-                        </div>
-                    </div>
-                    `;
-                } else {
-                    // DESIGNER HOURS CHANGE REQUEST CARD
-                    const currentHours = Number(req.currentAllocatedHours) || 0;
-                    const requestedHours = Number(req.requestedNewHours) || 0;
-                    const hoursDiff = requestedHours - currentHours;
-                    
-                    return `
-                    <div class="allocation-request-card pending">
-                        <div class="request-header">
-                            <div class="request-info">
-                                <h4>📁 ${req.projectName || 'Unknown Project'}</h4>
-                                <div class="request-meta">
-                                    Requested by <strong>${req.requestedByName || 'Unknown'}</strong> • ${dateStr}
-                                </div>
-                            </div>
-                            <span class="request-status pending">pending</span>
-                        </div>
-                        
-                        <div class="request-hours-change">
-                            <div class="hours-box">
-                                <label>Designer</label>
-                                <div class="value" style="font-size: 1rem;">👤 ${req.designerName || 'Unknown'}</div>
-                            </div>
-                            <div class="hours-box">
-                                <label>Current</label>
-                                <div class="value">${currentHours.toFixed(1)}h</div>
-                            </div>
-                            <div class="hours-arrow">→</div>
-                            <div class="hours-box">
-                                <label>Requested</label>
-                                <div class="value">${requestedHours.toFixed(1)}h</div>
-                            </div>
-                            <div class="hours-diff ${hoursDiff >= 0 ? 'increase' : 'decrease'}">
-                                ${hoursDiff >= 0 ? '+' : ''}${hoursDiff.toFixed(1)}h
-                            </div>
-                        </div>
-                        
-                        <div class="request-reason">
-                            <strong>Reason:</strong> ${req.reason || 'No reason provided'}
-                        </div>
-                        
-                        <div class="request-actions">
-                            <button class="btn btn-primary btn-sm" onclick="openDirectorReviewModal('${req.id}')">
-                                🔍 Review
-                            </button>
-                        </div>
-                    </div>
-                    `;
-                }
-            } catch (itemError) {
-                console.error('Error rendering request:', req, itemError);
-                return `
-                    <div class="allocation-request-card" style="border-left: 4px solid #ef4444;">
-                        <div style="padding: 1rem; color: #991b1b;">
-                            ⚠️ Error displaying request (ID: ${req.id || 'unknown'})
-                        </div>
-                    </div>
-                `;
-            }
-        }).join('');
-        
-        container.innerHTML = cardsHtml;
+                <div class="request-reason">
+                    <strong>Reason:</strong> ${req.reason}
+                </div>
+                
+                <div class="request-actions">
+                    <button class="btn btn-primary btn-sm" onclick="openDirectorReviewModal('${req.id}')">
+                        🔍 Review
+                    </button>
+                </div>
+            </div>
+        `}).join('');
         
     } catch (error) {
         console.error('Error loading requests:', error);
@@ -18117,79 +18125,34 @@ async function openDirectorReviewModal(requestId) {
         }
         
         const req = response.data;
-        console.log('📋 Review request data:', req);
-        
-        // Determine request type - check multiple indicators
-        const isBudgetChange = req.requestType === 'budget_change' || 
-                              (req.currentBudget !== undefined && req.currentBudget !== null) ||
-                              (req.requestedBudget !== undefined && req.requestedBudget !== null);
         
         document.getElementById('reviewRequestId').value = requestId;
-        document.getElementById('reviewProjectName').textContent = req.projectName || 'Unknown Project';
-        document.getElementById('reviewRequestedBy').textContent = req.requestedByName || 'Unknown';
+        document.getElementById('reviewProjectName').textContent = req.projectName;
+        document.getElementById('reviewDesignerName').textContent = req.designerName;
+        document.getElementById('reviewRequestedBy').textContent = req.requestedByName;
         
         const createdDate = req.createdAt ? 
             (req.createdAt.seconds ? new Date(req.createdAt.seconds * 1000) : new Date(req.createdAt)) : null;
         document.getElementById('reviewRequestDate').textContent = createdDate ? createdDate.toLocaleDateString() : 'N/A';
         
-        // Handle different request types
-        const designerRow = document.getElementById('reviewDesignerRow');
-        const hoursLabel = document.getElementById('reviewHoursLabel');
-        
-        if (isBudgetChange) {
-            // BUDGET CHANGE REQUEST
-            if (designerRow) designerRow.style.display = 'none';
-            if (hoursLabel) hoursLabel.textContent = 'Budget';
-            
-            const currentBudget = Number(req.currentBudget) || 0;
-            const requestedBudget = Number(req.requestedBudget) || 0;
-            const diff = requestedBudget - currentBudget;
-            
-            document.getElementById('reviewDesignerName').textContent = 'N/A (Budget Change)';
-            document.getElementById('reviewCurrentHours').textContent = `${currentBudget.toFixed(1)}h`;
-            document.getElementById('reviewRequestedHours').textContent = `${requestedBudget.toFixed(1)}h`;
-            
-            const diffEl = document.getElementById('reviewHoursDiff');
-            if (diff >= 0) {
-                diffEl.style.background = '#d1fae5';
-                diffEl.style.color = '#065f46';
-                diffEl.textContent = `+${diff.toFixed(1)}h`;
-            } else {
-                diffEl.style.background = '#fee2e2';
-                diffEl.style.color = '#991b1b';
-                diffEl.textContent = `${diff.toFixed(1)}h`;
-            }
-        } else {
-            // DESIGNER HOURS CHANGE REQUEST
-            if (designerRow) designerRow.style.display = 'flex';
-            if (hoursLabel) hoursLabel.textContent = 'Allocated Hours';
-            
-            const currentHours = Number(req.currentAllocatedHours) || 0;
-            const requestedHours = Number(req.requestedNewHours) || 0;
-            const diff = requestedHours - currentHours;
-            
-            document.getElementById('reviewDesignerName').textContent = req.designerName || 'Unknown';
-            document.getElementById('reviewCurrentHours').textContent = `${currentHours.toFixed(1)}h`;
-            document.getElementById('reviewRequestedHours').textContent = `${requestedHours.toFixed(1)}h`;
-            
-            const diffEl = document.getElementById('reviewHoursDiff');
-            if (diff >= 0) {
-                diffEl.style.background = '#d1fae5';
-                diffEl.style.color = '#065f46';
-                diffEl.textContent = `+${diff.toFixed(1)}h`;
-            } else {
-                diffEl.style.background = '#fee2e2';
-                diffEl.style.color = '#991b1b';
-                diffEl.textContent = `${diff.toFixed(1)}h`;
-            }
-        }
-        
-        document.getElementById('reviewCooReason').textContent = req.reason || 'No reason provided';
+        document.getElementById('reviewCurrentHours').textContent = `${req.currentAllocatedHours}h`;
+        document.getElementById('reviewRequestedHours').textContent = `${req.requestedNewHours}h`;
+        document.getElementById('reviewCooReason').textContent = req.reason;
         document.getElementById('reviewFinalHours').value = '';
         document.getElementById('reviewDirectorComment').value = '';
         
-        // Store request type for approval
-        document.getElementById('reviewRequestId').dataset.requestType = isBudgetChange ? 'budget_change' : 'designer_hours';
+        // Hours difference display
+        const diff = req.hoursDifference || (req.requestedNewHours - req.currentAllocatedHours);
+        const diffEl = document.getElementById('reviewHoursDiff');
+        if (diff >= 0) {
+            diffEl.style.background = '#d1fae5';
+            diffEl.style.color = '#065f46';
+            diffEl.textContent = `+${diff.toFixed(1)}h`;
+        } else {
+            diffEl.style.background = '#fee2e2';
+            diffEl.style.color = '#991b1b';
+            diffEl.textContent = `${diff.toFixed(1)}h`;
+        }
         
         document.getElementById('directorReviewRequestModal').style.display = 'flex';
         
@@ -18534,1680 +18497,6 @@ async function updateDirectorRequestsBadge() {
 // if (currentUserRole === 'director') { updateDirectorRequestsBadge(); }
 
 </script>
-
-<!-- ============================================
-     LEAVE REQUEST SYSTEM - MODALS & SECTIONS
-     ============================================ -->
-
-<!-- Leave Request Submission Modal -->
-<script>
-// ============================================
-// LEAVE REQUEST SYSTEM - ALL FUNCTIONS
-// ============================================
-
-// Show Leave Request Submission Page (For Employees)
-async function showLeaveRequest() {
-    updateActiveNav('nav-leave-request');
-    const container = document.getElementById('mainContent');
-    
-    container.innerHTML = `
-        <div class="dashboard-header">
-            <div class="header-left">
-                <h1>📅 Leave Requests</h1>
-                <p>Submit and track your leave requests</p>
-            </div>
-            <button class="btn-primary" onclick="openModal('leaveRequestModal')">
-                ➕ New Leave Request
-            </button>
-        </div>
-
-        <div class="leave-filters">
-            <div class="filter-chip active" data-filter="all">All Requests</div>
-            <div class="filter-chip" data-filter="pending">Pending</div>
-            <div class="filter-chip" data-filter="approved">Approved</div>
-            <div class="filter-chip" data-filter="rejected">Rejected</div>
-        </div>
-
-        <div id="myLeaveRequestsContainer">
-            <div style="text-align: center; padding: 3rem;">
-                <div class="spinner"></div>
-                <p>Loading your leave requests...</p>
-            </div>
-        </div>
-    `;
-
-    // Add filter functionality
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.addEventListener('click', function() {
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            const filter = this.dataset.filter;
-            filterLeaveRequests(filter);
-        });
-    });
-
-    // Load leave requests
-    await loadMyLeaveRequests();
-}
-
-// Load Employee's Leave Requests
-async function loadMyLeaveRequests() {
-    try {
-        const response = await apiCall('leave-requests/my-requests');
-        
-        if (response.success) {
-            displayLeaveRequests(response.data, 'myLeaveRequestsContainer');
-        } else {
-            showMessage('Failed to load leave requests', 'error');
-        }
-    } catch (error) {
-        console.error('Load leave requests error:', error);
-        showMessage('Error loading leave requests', 'error');
-    }
-}
-
-// Display Leave Requests
-function displayLeaveRequests(requests, containerId) {
-    const container = document.getElementById(containerId);
-    
-    if (!requests || requests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">📅</div>
-                <div class="empty-state-title">No Leave Requests</div>
-                <div class="empty-state-text">You haven't submitted any leave requests yet.</div>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = requests.map(req => {
-        const statusClass = req.status === 'pending' ? 'pending' : 
-                          req.status === 'approved' ? 'approved' : 'rejected';
-        const cardClass = `leave-card status-${req.status}`;
-        
-        return `
-            <div class="${cardClass}" data-status="${req.status}">
-                <div class="leave-header">
-                    <div class="leave-title">
-                        ${req.leaveType} - ${req.numberOfDays} day(s)
-                    </div>
-                    <span class="leave-status-badge ${statusClass}">
-                        ${req.status}
-                    </span>
-                </div>
-                
-                <div class="leave-details">
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">Start Date</span>
-                        <span class="leave-detail-value">${formatDate(req.startDate)}</span>
-                    </div>
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">End Date</span>
-                        <span class="leave-detail-value">${formatDate(req.endDate)}</span>
-                    </div>
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">Days</span>
-                        <span class="leave-detail-value">${req.numberOfDays}</span>
-                    </div>
-                    <div class="leave-detail-item">
-                        <span class="leave-detail-label">Submitted</span>
-                        <span class="leave-detail-value">${formatDate(req.createdAt)}</span>
-                    </div>
-                </div>
-                
-                <div class="leave-detail-item">
-                    <span class="leave-detail-label">Reason</span>
-                    <span class="leave-detail-value">${req.reason}</span>
-                </div>
-                
-                ${renderLeaveTimeline(req)}
-                
-                ${req.emergencyContact ? `
-                    <div style="margin-top: 1rem; padding: 1rem; background: var(--background); border-radius: 8px;">
-                        <strong>Emergency Contact:</strong> ${req.emergencyContact} 
-                        ${req.emergencyPhone ? `(${req.emergencyPhone})` : ''}
-                    </div>
-                ` : ''}
-            </div>
-        `;
-    }).join('');
-}
-
-// Render Leave Approval Timeline
-function renderLeaveTimeline(leave) {
-    const stages = [
-        {
-            number: 1,
-            title: 'Reporting Officer',
-            status: leave.reportingOfficerStatus,
-            icon: leave.reportingOfficerStatus === 'approved' ? '✅' : 
-                  leave.reportingOfficerStatus === 'rejected' ? '❌' : '⏳',
-            comments: leave.reportingOfficerComments,
-            current: leave.currentStage === 1
-        },
-        {
-            number: 2,
-            title: 'HR Review',
-            status: leave.hrStatus,
-            icon: leave.hrStatus === 'approved' ? '✅' : 
-                  leave.hrStatus === 'rejected' ? '❌' : '⏳',
-            comments: leave.hrComments,
-            category: leave.hrCategory,
-            current: leave.currentStage === 2
-        },
-        {
-            number: 3,
-            title: 'Director Approval',
-            status: leave.directorStatus,
-            icon: leave.directorStatus === 'approved' ? '✅' : 
-                  leave.directorStatus === 'rejected' ? '❌' : '⏳',
-            comments: leave.directorComments,
-            current: leave.currentStage === 3
-        }
-    ];
-
-    return `
-        <div class="leave-timeline">
-            <strong style="display: block; margin-bottom: 0.5rem;">Approval Progress:</strong>
-            ${stages.map(stage => {
-                let stageClass = '';
-                if (stage.status === 'approved') stageClass = 'completed';
-                else if (stage.status === 'rejected') stageClass = 'rejected';
-                else if (stage.current) stageClass = 'current';
-                
-                return `
-                    <div class="timeline-stage ${stageClass}">
-                        <div class="timeline-icon">${stage.icon}</div>
-                        <div class="timeline-content">
-                            <div class="timeline-title">Stage ${stage.number}: ${stage.title}</div>
-                            <div class="timeline-info">
-                                Status: ${stage.status.toUpperCase()}
-                                ${stage.comments ? `<br>Comments: ${stage.comments}` : ''}
-                                ${stage.category ? `<br>Category: ${stage.category}` : ''}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('')}
-        </div>
-    `;
-}
-
-// Filter Leave Requests
-function filterLeaveRequests(filter) {
-    const cards = document.querySelectorAll('.leave-card');
-    cards.forEach(card => {
-        if (filter === 'all' || card.dataset.status === filter) {
-            card.style.display = 'block';
-        } else {
-            card.style.display = 'none';
-        }
-    });
-}
-
-// Submit Leave Request
-async function submitLeaveRequest(event) {
-    event.preventDefault();
-    
-    console.log('🚀 Starting leave request submission...');
-    console.log('👤 Current user:', currentUser ? currentUser.email : 'NOT LOGGED IN');
-    console.log('🎭 Current role:', currentUserRole);
-    console.log('🔑 Auth token exists:', !!authToken);
-    
-    const leaveData = {
-        leaveType: document.getElementById('leaveType').value,
-        startDate: document.getElementById('leaveStartDate').value,
-        endDate: document.getElementById('leaveEndDate').value,
-        reason: document.getElementById('leaveReason').value,
-        emergencyContact: document.getElementById('emergencyContact').value,
-        emergencyPhone: document.getElementById('emergencyPhone').value
-    };
-    
-    console.log('📝 Leave data to submit:', leaveData);
-    console.log('🌐 API URL will be:', `${API_BASE}/api/leave-requests/submit`);
-
-    try {
-        const response = await apiCall('leave-requests/submit', { 
-            method: 'POST', 
-            body: JSON.stringify(leaveData) 
-        });
-        
-        console.log('✅ Received response:', response);
-        
-        if (response.success) {
-            showMessage('Leave request submitted successfully!', 'success');
-            closeModal('leaveRequestModal');
-            document.getElementById('leaveRequestForm').reset();
-            await loadMyLeaveRequests();
-        } else {
-            showMessage(response.error || 'Failed to submit leave request', 'error');
-        }
-    } catch (error) {
-        console.error('❌ Submit leave error:', error);
-        console.error('❌ Error name:', error.name);
-        console.error('❌ Error message:', error.message);
-        console.error('❌ Error stack:', error.stack);
-        showMessage('Error submitting leave request: ' + error.message, 'error');
-    }
-}
-
-// Show Leave Approvals Dashboard
-async function showLeaveApprovals() {
-    updateActiveNav('nav-leave-approval');
-    const container = document.getElementById('mainContent');
-    
-    const roleTitle = currentUserRole === 'hr' ? 'HR' : 
-                     currentUserRole === 'coo' ? 'Reporting Officer (COO)' : 
-                     'Director (Final Approval)';
-    
-    container.innerHTML = `
-        <div class="dashboard-header">
-            <div class="header-left">
-                <h1>✅ Leave Approvals</h1>
-                <p>${roleTitle} - Review and approve leave requests</p>
-            </div>
-        </div>
-
-        <div class="leave-filters">
-            <div class="filter-chip active" data-filter="pending">Pending Approval</div>
-            <div class="filter-chip" data-filter="all">All Requests</div>
-        </div>
-
-        <div id="leaveApprovalsContainer">
-            <div style="text-align: center; padding: 3rem;">
-                <div class="spinner"></div>
-                <p>Loading pending approvals...</p>
-            </div>
-        </div>
-    `;
-
-    // Add filter functionality
-    document.querySelectorAll('.filter-chip').forEach(chip => {
-        chip.addEventListener('click', function() {
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
-            this.classList.add('active');
-            const filter = this.dataset.filter;
-            if (filter === 'pending') {
-                loadPendingLeaveApprovals();
-            } else {
-                loadAllLeaveRequests();
-            }
-        });
-    });
-
-    // Load pending approvals
-    await loadPendingLeaveApprovals();
-}
-
-// Load Pending Leave Approvals Based on Role
-async function loadPendingLeaveApprovals() {
-    try {
-        let endpoint = '';
-        
-        // Determine correct stage endpoint based on role
-        if (currentUserRole === 'hr') {
-            endpoint = 'leave-requests/pending-stage2'; // HR reviews Stage 2
-        } else if (currentUserRole === 'director') {
-            // Check if there are any Stage 3 (final) pending first
-            const stage3Response = await apiCall('leave-requests/pending-stage3');
-            if (stage3Response.success && stage3Response.data && stage3Response.data.length > 0) {
-                // Director has Stage 3 (final) approvals
-                displayLeaveApprovalsForRole(stage3Response.data, 3);
-                updateLeaveApprovalsBadge(stage3Response.data.length);
-                return stage3Response;
-            } else {
-                // No Stage 3, show Stage 1 if any
-                endpoint = 'leave-requests/pending-stage1';
-            }
-        } else if (currentUserRole === 'coo') {
-            endpoint = 'leave-requests/pending-stage1'; // COO is Reporting Officer
-        }
-
-        const response = await apiCall(endpoint);
-        
-        if (response.success) {
-            const stage = currentUserRole === 'hr' ? 2 : 
-                         currentUserRole === 'director' ? 1 : 1;
-            displayLeaveApprovalsForRole(response.data, stage);
-            updateLeaveApprovalsBadge(response.data ? response.data.length : 0);
-            return response;
-        } else {
-            showMessage('Failed to load leave approvals', 'error');
-        }
-    } catch (error) {
-        console.error('Load leave approvals error:', error);
-        showMessage('Error loading leave approvals', 'error');
-    }
-}
-
-// Display Leave Approvals for Approver Role
-function displayLeaveApprovalsForRole(requests, stage) {
-    const container = document.getElementById('leaveApprovalsContainer');
-    
-    if (!requests || requests.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-state-icon">✅</div>
-                <div class="empty-state-title">No Pending Approvals</div>
-                <div class="empty-state-text">All leave requests have been processed.</div>
-            </div>
-        `;
-        return;
-    }
-
-    container.innerHTML = requests.map(req => `
-        <div class="professional-approval-card">
-            <div class="approval-card-header">
-                <div class="employee-info">
-                    <div class="employee-avatar">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                            <circle cx="12" cy="7" r="4"></circle>
-                        </svg>
-                    </div>
-                    <div class="employee-details">
-                        <h3 class="employee-name">${req.employeeName}</h3>
-                        <p class="employee-role">${req.employeeRole.toUpperCase()} · ${req.leaveType}</p>
-                    </div>
-                </div>
-                <span class="status-pill pending-approval">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    Pending Approval
-                </span>
-            </div>
-            
-            <div class="approval-card-body">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                        </div>
-                        <div class="info-content">
-                            <span class="info-label">Start Date</span>
-                            <span class="info-value">${formatDate(req.startDate)}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                        </div>
-                        <div class="info-content">
-                            <span class="info-label">End Date</span>
-                            <span class="info-value">${formatDate(req.endDate)}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-icon">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <polyline points="12 6 12 12 16 14"></polyline>
-                            </svg>
-                        </div>
-                        <div class="info-content">
-                            <span class="info-label">Duration</span>
-                            <span class="info-value">${req.numberOfDays} day(s)</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="reason-section">
-                    <div class="section-title">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        Reason for Leave
-                    </div>
-                    <p class="reason-text">${req.reason}</p>
-                </div>
-                
-                ${req.emergencyContact ? `
-                    <div class="emergency-contact-section">
-                        <div class="section-title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                            </svg>
-                            Emergency Contact
-                        </div>
-                        <p class="emergency-text">${req.emergencyContact}${req.emergencyPhone ? ` · ${req.emergencyPhone}` : ''}</p>
-                    </div>
-                ` : ''}
-                
-                ${renderLeaveTimeline(req)}
-            </div>
-            
-            <div class="approval-card-actions">
-                <div class="approval-section-title">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 11 12 14 22 4"></polyline>
-                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
-                    </svg>
-                    Your Decision
-                </div>
-                
-                ${currentUserRole === 'hr' ? `
-                    <div class="form-group">
-                        <label for="hrCategory-${req.id}" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
-                            HR Leave Category
-                        </label>
-                        <select id="hrCategory-${req.id}" class="professional-input" style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px;">
-                            <option value="${req.leaveType}">${req.leaveType}</option>
-                            <option value="Sick Leave">🏥 Sick Leave</option>
-                            <option value="Casual Leave">☀️ Casual Leave</option>
-                            <option value="Earned Leave">⭐ Earned Leave</option>
-                            <option value="Unpaid Leave">📋 Unpaid Leave</option>
-                            <option value="Emergency Leave">🚨 Emergency Leave</option>
-                        </select>
-                    </div>
-                ` : ''}
-                
-                <div class="form-group">
-                    <label for="comments-${req.id}" style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: #374151;">
-                        Comments ${currentUserRole === 'hr' || stage > 1 ? '(Optional)' : ''}
-                    </label>
-                    <textarea 
-                        id="comments-${req.id}" 
-                        rows="3" 
-                        class="professional-input"
-                        style="width: 100%; padding: 0.75rem; border: 2px solid #e5e7eb; border-radius: 8px; resize: vertical;"
-                        placeholder="Add your comments here..."></textarea>
-                </div>
-                
-                <div class="approval-button-group">
-                    <button class="professional-btn btn-approve-pro" onclick="approveLeaveRequest('${req.id}', ${stage})">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                        Approve Request
-                    </button>
-                    <button class="professional-btn btn-reject-pro" onclick="rejectLeaveRequest('${req.id}', ${stage})">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                        Reject Request
-                    </button>
-                </div>
-            </div>
-        </div>
-    `).join('');
-}
-
-// Approve Leave Request
-async function approveLeaveRequest(leaveId, stage) {
-    const comments = document.getElementById(`comments-${leaveId}`).value;
-    let endpoint = '';
-    let payload = { action: 'approve', comments };
-
-    // Determine endpoint based on stage
-    if (stage === 1) {
-        endpoint = `leave-requests/stage1/${leaveId}`;
-    } else if (stage === 2) {
-        endpoint = `leave-requests/stage2/${leaveId}`;
-        const hrCategory = document.getElementById(`hrCategory-${leaveId}`)?.value;
-        payload.hrCategory = hrCategory;
-    } else if (stage === 3) {
-        endpoint = `leave-requests/stage3/${leaveId}`;
-    }
-
-    if (!confirm('Are you sure you want to APPROVE this leave request?')) {
-        return;
-    }
-
-    try {
-        const response = await apiCall(endpoint, { 
-            method: 'PUT', 
-            body: JSON.stringify(payload) 
-        });
-        
-        if (response.success) {
-            showMessage('Leave request approved successfully!', 'success');
-            await loadPendingLeaveApprovals();
-        } else {
-            showMessage(response.error || 'Failed to approve leave request', 'error');
-        }
-    } catch (error) {
-        console.error('Approve leave error:', error);
-        showMessage('Error approving leave request', 'error');
-    }
-}
-
-// Reject Leave Request
-async function rejectLeaveRequest(leaveId, stage) {
-    const comments = document.getElementById(`comments-${leaveId}`).value;
-    
-    if (!comments.trim()) {
-        showMessage('Please provide a reason for rejection', 'error');
-        return;
-    }
-
-    let endpoint = '';
-    const payload = { action: 'reject', comments };
-
-    // Determine endpoint based on stage
-    if (stage === 1) {
-        endpoint = `leave-requests/stage1/${leaveId}`;
-    } else if (stage === 2) {
-        endpoint = `leave-requests/stage2/${leaveId}`;
-    } else if (stage === 3) {
-        endpoint = `leave-requests/stage3/${leaveId}`;
-    }
-
-    if (!confirm('Are you sure you want to REJECT this leave request?')) {
-        return;
-    }
-
-    try {
-        const response = await apiCall(endpoint, { 
-            method: 'PUT', 
-            body: JSON.stringify(payload) 
-        });
-        
-        if (response.success) {
-            showMessage('Leave request rejected', 'success');
-            await loadPendingLeaveApprovals();
-        } else {
-            showMessage(response.error || 'Failed to reject leave request', 'error');
-        }
-    } catch (error) {
-        console.error('Reject leave error:', error);
-        showMessage('Error rejecting leave request', 'error');
-    }
-}
-
-// Load All Leave Requests (For management reporting)
-async function loadAllLeaveRequests() {
-    try {
-        const response = await apiCall('leave-requests/all/requests');
-        
-        if (response.success) {
-            displayLeaveRequests(response.data, 'leaveApprovalsContainer');
-        } else {
-            showMessage('Failed to load leave requests', 'error');
-        }
-    } catch (error) {
-        console.error('Load all leave requests error:', error);
-        showMessage('Error loading leave requests', 'error');
-    }
-}
-
-// Update Leave Approvals Badge
-function updateLeaveApprovalsBadge(count) {
-    const badge = document.getElementById('leaveApprovalsBadge');
-    if (badge) {
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline-block';
-        } else {
-            badge.style.display = 'none';
-        }
-    }
-}
-
-// Format Date Helper
-function formatDate(dateString) {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-    });
-}
-
-console.log('✅ Leave Request System functions loaded');
-</script>
-<div id="leaveRequestModal" class="modal">
-    <div class="modal-content professional-form">
-        <button class="modal-close-btn" onclick="closeModal('leaveRequestModal')" title="Close">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
-        
-        <div class="form-header">
-            <div class="form-icon">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                    <line x1="16" y1="2" x2="16" y2="6"></line>
-                    <line x1="8" y1="2" x2="8" y2="6"></line>
-                    <line x1="3" y1="10" x2="21" y2="10"></line>
-                </svg>
-            </div>
-            <h2>Submit Leave Request</h2>
-            <p class="form-subtitle">Please fill in all required fields to submit your leave request</p>
-        </div>
-        
-        <form id="leaveRequestForm" onsubmit="submitLeaveRequest(event)" class="professional-form-content">
-            
-            <!-- Leave Details Section -->
-            <div class="form-section">
-                <div class="section-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    <h3>Leave Details</h3>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group full-width">
-                        <label for="leaveType">
-                            <span class="label-text">Leave Type</span>
-                            <span class="label-required">*</span>
-                        </label>
-                        <div class="input-wrapper select-wrapper">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="8.5" cy="7" r="4"></circle>
-                                <polyline points="17 11 19 13 23 9"></polyline>
-                            </svg>
-                            <select id="leaveType" required class="professional-input">
-                                <option value="">Select Leave Type</option>
-                                <option value="Sick Leave">🏥 Sick Leave</option>
-                                <option value="Casual Leave">☀️ Casual Leave</option>
-                                <option value="Earned Leave">⭐ Earned Leave</option>
-                                <option value="Maternity Leave">👶 Maternity Leave</option>
-                                <option value="Paternity Leave">👨‍👦 Paternity Leave</option>
-                                <option value="Unpaid Leave">📋 Unpaid Leave</option>
-                                <option value="Compensatory Off">🔄 Compensatory Off</option>
-                                <option value="Emergency Leave">🚨 Emergency Leave</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="leaveStartDate">
-                            <span class="label-text">Start Date</span>
-                            <span class="label-required">*</span>
-                        </label>
-                        <div class="input-wrapper">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            <input type="date" id="leaveStartDate" required class="professional-input">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="leaveEndDate">
-                            <span class="label-text">End Date</span>
-                            <span class="label-required">*</span>
-                        </label>
-                        <div class="input-wrapper">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                            </svg>
-                            <input type="date" id="leaveEndDate" required class="professional-input">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group full-width">
-                        <label for="leaveReason">
-                            <span class="label-text">Reason for Leave</span>
-                            <span class="label-required">*</span>
-                        </label>
-                        <div class="input-wrapper">
-                            <textarea id="leaveReason" rows="4" required class="professional-input" placeholder="Please provide a detailed reason for your leave request..."></textarea>
-                        </div>
-                        <span class="input-hint">Provide clear and concise information about your leave</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Emergency Contact Section -->
-            <div class="form-section">
-                <div class="section-header">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                    </svg>
-                    <h3>Emergency Contact</h3>
-                    <span class="optional-badge">Optional</span>
-                </div>
-                
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="emergencyContact">
-                            <span class="label-text">Contact Name</span>
-                        </label>
-                        <div class="input-wrapper">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <input type="text" id="emergencyContact" class="professional-input" placeholder="Enter contact name">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="emergencyPhone">
-                            <span class="label-text">Contact Phone</span>
-                        </label>
-                        <div class="input-wrapper">
-                            <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                            </svg>
-                            <input type="tel" id="emergencyPhone" class="professional-input" placeholder="Enter phone number">
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Form Actions -->
-            <div class="form-actions-professional">
-                <button type="button" class="btn-cancel" onclick="closeModal('leaveRequestModal')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                    Cancel
-                </button>
-                <button type="submit" class="btn-submit">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                    Submit Request
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Leave Approval Detail Modal -->
-<div id="leaveApprovalModal" class="modal">
-    <div class="modal-content large">
-        <span class="close-button" onclick="closeModal('leaveApprovalModal')">&times;</span>
-        <h2>✅ Leave Request Approval</h2>
-        <div id="leaveApprovalContent"></div>
-    </div>
-</div>
-
-<style>
-/* ============================================ */
-/* PROFESSIONAL FORM STYLES */
-/* ============================================ */
-
-.professional-form .modal-content {
-    max-width: 700px;
-    width: 95%;
-    max-height: 90vh;
-    overflow-y: auto;
-    padding: 0;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.3);
-}
-
-/* Modal Close Button */
-.modal-close-btn {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    z-index: 10;
-    color: #6b7280;
-}
-
-.modal-close-btn:hover {
-    background: #f3f4f6;
-    border-color: #d1d5db;
-    color: #1f2937;
-    transform: rotate(90deg);
-}
-
-/* Form Header */
-.form-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 2.5rem 2rem 2rem 2rem;
-    border-radius: 16px 16px 0 0;
-    text-align: center;
-    color: white;
-    position: relative;
-}
-
-.form-icon {
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    width: 64px;
-    height: 64px;
-    border-radius: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 1rem auto;
-    border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.form-header h2 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: white;
-}
-
-.form-subtitle {
-    margin: 0;
-    font-size: 0.95rem;
-    opacity: 0.9;
-    color: rgba(255, 255, 255, 0.95);
-}
-
-/* Form Content */
-.professional-form-content {
-    padding: 2rem;
-    background: #f9fafb;
-}
-
-/* Form Sections */
-.form-section {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e5e7eb;
-}
-
-.form-section:last-of-type {
-    margin-bottom: 0;
-}
-
-.section-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #f3f4f6;
-}
-
-.section-header svg {
-    color: #667eea;
-    flex-shrink: 0;
-}
-
-.section-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #1f2937;
-    flex: 1;
-}
-
-.optional-badge {
-    background: #f3f4f6;
-    color: #6b7280;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Form Grid */
-.form-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1.25rem;
-}
-
-.form-group {
-    display: flex;
-    flex-direction: column;
-}
-
-.form-group.full-width {
-    grid-column: 1 / -1;
-}
-
-/* Labels */
-.form-group label {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #374151;
-    font-size: 0.9rem;
-}
-
-.label-text {
-    flex: 1;
-}
-
-.label-required {
-    color: #ef4444;
-    font-weight: 600;
-}
-
-/* Input Wrapper */
-.input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.input-icon {
-    position: absolute;
-    left: 14px;
-    color: #9ca3af;
-    pointer-events: none;
-    z-index: 1;
-}
-
-.select-wrapper .input-icon {
-    left: 12px;
-}
-
-/* Professional Inputs */
-.professional-input {
-    width: 100%;
-    padding: 0.75rem 1rem 0.75rem 2.75rem;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 0.95rem;
-    color: #1f2937;
-    background: white;
-    transition: all 0.2s ease;
-    font-family: inherit;
-}
-
-.professional-input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
-.professional-input::placeholder {
-    color: #9ca3af;
-}
-
-select.professional-input {
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    padding-right: 3rem;
-}
-
-textarea.professional-input {
-    resize: vertical;
-    min-height: 100px;
-    font-family: inherit;
-    line-height: 1.6;
-}
-
-.input-wrapper textarea.professional-input {
-    padding: 0.75rem 1rem;
-}
-
-.input-hint {
-    display: block;
-    margin-top: 0.5rem;
-    font-size: 0.85rem;
-    color: #6b7280;
-    font-style: italic;
-}
-
-/* Form Actions */
-.form-actions-professional {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    padding: 1.5rem 2rem;
-    background: white;
-    border-top: 2px solid #f3f4f6;
-    border-radius: 0 0 16px 16px;
-    margin: 0 -2rem -2rem -2rem;
-}
-
-.btn-cancel, .btn-submit {
-    padding: 0.75rem 1.75rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: none;
-    white-space: nowrap;
-}
-
-.btn-cancel {
-    background: #f3f4f6;
-    color: #6b7280;
-    border: 2px solid #e5e7eb;
-}
-
-.btn-cancel:hover {
-    background: #e5e7eb;
-    color: #374151;
-    transform: translateY(-1px);
-}
-
-.btn-submit {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-.btn-submit:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.btn-submit:active {
-    transform: translateY(0);
-}
-
-/* Responsive Design */
-@media (max-width: 640px) {
-    .form-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .form-group.full-width {
-        grid-column: 1;
-    }
-    
-    .form-header {
-        padding: 2rem 1.5rem 1.5rem 1.5rem;
-    }
-    
-    .form-header h2 {
-        font-size: 1.5rem;
-    }
-    
-    .professional-form-content {
-        padding: 1.5rem;
-    }
-    
-    .form-section {
-        padding: 1.25rem;
-    }
-    
-    .form-actions-professional {
-        flex-direction: column-reverse;
-        gap: 0.75rem;
-        padding: 1.25rem 1.5rem;
-        margin: 0 -1.5rem -1.5rem -1.5rem;
-    }
-    
-    .btn-cancel, .btn-submit {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .modal-close-btn {
-        top: 15px;
-        right: 15px;
-        width: 36px;
-        height: 36px;
-    }
-}
-
-/* Loading State */
-.professional-input:disabled {
-    background: #f9fafb;
-    cursor: not-allowed;
-    opacity: 0.6;
-}
-
-.btn-submit:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-    transform: none;
-}
-
-/* ============================================ */
-/* ============================================ */
-/* PROFESSIONAL APPROVAL CARD STYLES */
-/* ============================================ */
-
-.professional-approval-card {
-    background: white;
-    border-radius: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    margin-bottom: 1.5rem;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-    transition: all 0.3s ease;
-}
-
-.professional-approval-card:hover {
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-}
-
-/* Approval Card Header */
-.approval-card-header {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-    padding: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 2px solid #e5e7eb;
-}
-
-.employee-info {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.employee-avatar {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    flex-shrink: 0;
-}
-
-.employee-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.employee-name {
-    margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1f2937;
-}
-
-.employee-role {
-    margin: 0;
-    font-size: 0.9rem;
-    color: #6b7280;
-    font-weight: 500;
-}
-
-.status-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    white-space: nowrap;
-}
-
-.status-pill.pending-approval {
-    background: #fef3c7;
-    color: #92400e;
-    border: 2px solid #fcd34d;
-}
-
-/* Approval Card Body */
-.approval-card-body {
-    padding: 1.5rem;
-}
-
-.info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.info-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 1rem;
-    background: #f9fafb;
-    border-radius: 10px;
-    border: 1px solid #e5e7eb;
-}
-
-.info-icon {
-    width: 36px;
-    height: 36px;
-    background: white;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #667eea;
-    flex-shrink: 0;
-    border: 1px solid #e5e7eb;
-}
-
-.info-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    flex: 1;
-}
-
-.info-label {
-    font-size: 0.8rem;
-    color: #6b7280;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.info-value {
-    font-size: 1rem;
-    color: #1f2937;
-    font-weight: 600;
-}
-
-/* Sections */
-.reason-section, .emergency-contact-section {
-    padding: 1.25rem;
-    background: #f9fafb;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    border: 1px solid #e5e7eb;
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: #374151;
-    margin-bottom: 0.75rem;
-    font-size: 0.95rem;
-}
-
-.section-title svg {
-    color: #667eea;
-}
-
-.reason-text, .emergency-text {
-    margin: 0;
-    color: #1f2937;
-    line-height: 1.6;
-    font-size: 0.95rem;
-}
-
-/* Approval Actions */
-.approval-card-actions {
-    padding: 1.5rem;
-    background: #f9fafb;
-    border-top: 2px solid #e5e7eb;
-}
-
-.approval-section-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 600;
-    color: #1f2937;
-    margin-bottom: 1.25rem;
-    font-size: 1.05rem;
-}
-
-.approval-section-title svg {
-    color: #667eea;
-}
-
-.approval-button-group {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
-}
-
-.professional-btn {
-    flex: 1;
-    padding: 0.875rem 1.5rem;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    border: none;
-    white-space: nowrap;
-}
-
-.btn-approve-pro {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.btn-approve-pro:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-}
-
-.btn-reject-pro {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.btn-reject-pro:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
-}
-
-.professional-btn:active {
-    transform: translateY(0);
-}
-
-/* Responsive */
-@media (max-width: 640px) {
-    .approval-card-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-    
-    .status-pill {
-        align-self: flex-start;
-    }
-    
-    .info-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .approval-button-group {
-        flex-direction: column;
-    }
-    
-    .professional-btn {
-        width: 100%;
-    }
-}
-
-/* ============================================ */
-/* Leave Request Specific Styles */
-.leave-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    box-shadow: var(--card-shadow);
-    transition: all 0.3s ease;
-    border-left: 4px solid #3b82f6;
-}
-
-.leave-card:hover {
-    box-shadow: var(--card-shadow-hover);
-    transform: translateY(-2px);
-}
-
-.leave-card.status-pending {
-    border-left-color: #f59e0b;
-}
-
-.leave-card.status-approved {
-    border-left-color: #10b981;
-}
-
-.leave-card.status-rejected {
-    border-left-color: #ef4444;
-}
-
-.leave-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border);
-}
-
-.leave-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: var(--text-dark);
-}
-
-.leave-status-badge {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 0.85rem;
-    text-transform: uppercase;
-}
-
-.leave-status-badge.pending {
-    background: #fef3c7;
-    color: #92400e;
-}
-
-.leave-status-badge.approved {
-    background: #d1fae5;
-    color: #065f46;
-}
-
-.leave-status-badge.rejected {
-    background: #fee2e2;
-    color: #991b1b;
-}
-
-.leave-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.leave-detail-item {
-    display: flex;
-    flex-direction: column;
-}
-
-.leave-detail-label {
-    font-size: 0.8rem;
-    color: var(--text-light);
-    margin-bottom: 0.25rem;
-}
-
-.leave-detail-value {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.leave-timeline {
-    background: var(--background);
-    border-radius: 8px;
-    padding: 1rem;
-    margin-top: 1rem;
-}
-
-.timeline-stage {
-    display: flex;
-    align-items: center;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    border-radius: 6px;
-    background: white;
-}
-
-.timeline-stage.completed {
-    background: #d1fae5;
-}
-
-.timeline-stage.rejected {
-    background: #fee2e2;
-}
-
-.timeline-stage.current {
-    background: #fef3c7;
-    border: 2px solid #f59e0b;
-}
-
-.timeline-icon {
-    font-size: 1.5rem;
-    margin-right: 1rem;
-}
-
-.timeline-content {
-    flex: 1;
-}
-
-.timeline-title {
-    font-weight: 600;
-    color: var(--text-dark);
-}
-
-.timeline-info {
-    font-size: 0.85rem;
-    color: var(--text-light);
-}
-
-.approval-actions {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    padding-top: 1.5rem;
-    border-top: 2px solid var(--border);
-}
-
-.approval-form {
-    width: 100%;
-}
-
-.approval-form textarea {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-bottom: 1rem;
-    font-family: inherit;
-}
-
-.approval-buttons {
-    display: flex;
-    gap: 1rem;
-}
-
-.btn-approve {
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-approve:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.btn-reject {
-    background: linear-gradient(135deg, #ef4444, #dc2626);
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-reject:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.leave-filters {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-}
-
-.filter-chip {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    background: white;
-    border: 2px solid var(--border);
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.3s ease;
-}
-
-.filter-chip.active {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: white;
-    border-color: #2563eb;
-}
-
-.filter-chip:hover {
-    transform: translateY(-2px);
-}
-
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-}
-
-.empty-state-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-}
-
-.empty-state-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-dark);
-    margin-bottom: 0.5rem;
-}
-
-.empty-state-text {
-    color: var(--text-light);
-}
-</style>
-
 </body>
                                 
 </html>
