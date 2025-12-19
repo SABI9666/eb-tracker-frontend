@@ -1,11 +1,11 @@
 // ============================================
 // EBTracker Service Worker - FULL FEATURED
-// Version: 3.2.0 - Cache Version 16 (Fixed Announcement Sync Loop)
+// Version: 3.3.0 - Cache Version 17 (Image Compression + HR Menu Fix)
 // ============================================
 
-const CACHE_NAME = 'ebtracker-v16';
-const STATIC_CACHE = 'ebtracker-static-v16';
-const DYNAMIC_CACHE = 'ebtracker-dynamic-v16';
+const CACHE_NAME = 'ebtracker-v17';
+const STATIC_CACHE = 'ebtracker-static-v17';
+const DYNAMIC_CACHE = 'ebtracker-dynamic-v17';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
