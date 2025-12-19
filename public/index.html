@@ -3930,7 +3930,7 @@ body.is-ios .nav-menu {
                 <li id="paymentsNavItem" style="display: none;">
                     <a href="#" onclick="showPayments()" id="nav-payments">
                     <span class="nav-icon">💰</span>Payments</a></li>
-                <li><a href="#" onclick="showActivities()" id="nav-activities">
+                <li id="activitiesNavItem"><a href="#" onclick="showActivities()" id="nav-activities">
                     <span class="nav-icon">📝</span>Activities</a></li>
                 <li id="settingsNavItem" style="display: none;">
                 <a href="#" onclick="showSettings()" id="nav-settings">
@@ -5278,6 +5278,9 @@ body.is-ios .nav-menu {
             
             // HR Specific - Show HR Announcements and Leave Approval menus
             setDisplay('hrAnnouncementsNavItem', isHR);
+            
+            // Hide Activities from HR (HR has their own dashboard)
+            setDisplay('activitiesNavItem', !isHR);
             
             // Leave Approval visible to HR, COO, and Director
             const canApproveLeave = isHR || ['coo', 'director'].includes(roleForCheck);
@@ -12533,14 +12536,22 @@ async function markProjectComplete(projectId) {
         }
         
         // Preview joinee photo
-        function previewJoineePhoto(event) {
+        async function previewJoineePhoto(event) {
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    document.getElementById('joineePhotoPreview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
-                };
-                reader.readAsDataURL(file);
+                try {
+                    // Compress image before preview
+                    const compressedImage = await compressImage(file, 400, 0.7);
+                    document.getElementById('joineePhotoPreview').innerHTML = `<img src="${compressedImage}" alt="Preview">`;
+                } catch (error) {
+                    console.error('Error compressing image:', error);
+                    // Fallback to original if compression fails
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('joineePhotoPreview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
         }
         
@@ -12770,14 +12781,58 @@ async function markProjectComplete(projectId) {
         }
         
         // Preview birthday photo
-        function previewBirthdayPhoto(event) {
-            const file = event.target.files[0];
-            if (file) {
+        // Compress image to reduce size for Firestore (max 1MB limit)
+        function compressImage(file, maxWidth = 400, quality = 0.7) {
+            return new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    document.getElementById('birthdayPhotoPreview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Scale down if larger than maxWidth
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        // Convert to compressed JPEG
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        console.log(`📷 Image compressed: ${Math.round(compressedDataUrl.length / 1024)}KB`);
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
                 };
+                reader.onerror = reject;
                 reader.readAsDataURL(file);
+            });
+        }
+        
+        async function previewBirthdayPhoto(event) {
+            const file = event.target.files[0];
+            if (file) {
+                try {
+                    // Compress image before preview
+                    const compressedImage = await compressImage(file, 400, 0.7);
+                    document.getElementById('birthdayPhotoPreview').innerHTML = `<img src="${compressedImage}" alt="Preview">`;
+                } catch (error) {
+                    console.error('Error compressing image:', error);
+                    // Fallback to original if compression fails
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.getElementById('birthdayPhotoPreview').innerHTML = `<img src="${e.target.result}" alt="Preview">`;
+                    };
+                    reader.readAsDataURL(file);
+                }
             }
         }
         
