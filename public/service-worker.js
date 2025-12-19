@@ -1,11 +1,11 @@
 // ============================================
 // EBTracker Service Worker - FULL FEATURED
-// Version: 3.1.0 - Cache Version 15 (Firebase Firestore Announcements)
+// Version: 3.2.0 - Cache Version 16 (Fixed Announcement Sync Loop)
 // ============================================
 
-const CACHE_NAME = 'ebtracker-v15';
-const STATIC_CACHE = 'ebtracker-static-v15';
-const DYNAMIC_CACHE = 'ebtracker-dynamic-v15';
+const CACHE_NAME = 'ebtracker-v16';
+const STATIC_CACHE = 'ebtracker-static-v16';
+const DYNAMIC_CACHE = 'ebtracker-dynamic-v16';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
