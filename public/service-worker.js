@@ -1,11 +1,11 @@
 // ============================================
 // EBTracker Service Worker - FULL FEATURED
-// Version: 3.8.0 - Cache Version 22 (Beautiful News Ticker)
+// Version: 3.9.0 - Cache Version 23 (Fixed Company News Date Logic)
 // ============================================
 
-const CACHE_NAME = 'ebtracker-v22';
-const STATIC_CACHE = 'ebtracker-static-v22';
-const DYNAMIC_CACHE = 'ebtracker-dynamic-v22';
+const CACHE_NAME = 'ebtracker-v23';
+const STATIC_CACHE = 'ebtracker-static-v23';
+const DYNAMIC_CACHE = 'ebtracker-dynamic-v23';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
