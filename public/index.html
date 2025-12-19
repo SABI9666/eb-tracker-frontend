@@ -2,9 +2,79 @@
 <html lang="en">
 <head>
     <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#0d47a1">
+    <meta name="theme-color" content="#667eea">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+    
+    <!-- iOS/Safari PWA Meta Tags - COMPLETE -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="EBTracker">
+    
+    <!-- Apple Touch Icons - All Sizes for Safari -->
+    <link rel="apple-touch-icon" href="/icons/icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="57x57" href="/icons/icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/icons/icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/icons/icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/icons/icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/icons/icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/icons/icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+    
+    <!-- iOS Splash Screens - iPhone & iPad -->
+    <!-- iPhone X / XS / 11 Pro (1125x2436) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone XR / 11 (828x1792) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPhone XS Max / 11 Pro Max (1242x2688) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 12/13/14 Mini (1080x2340) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1080x2340.png" media="(device-width: 360px) and (device-height: 780px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 12/13/14 (1170x2532) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 12/13/14 Pro Max (1284x2778) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 14 Pro (1179x2556) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 14 Pro Max (1290x2796) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 15/15 Pro (1179x2556) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 15 Plus/Pro Max (1290x2796) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone 8/7/6s/6 (750x1334) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPhone 8 Plus/7 Plus/6s Plus/6 Plus (1242x2208) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)">
+    <!-- iPhone SE (640x1136) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Pro 12.9" (2048x2732) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Pro 11" (1668x2388) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1668x2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Pro 10.5" (1668x2224) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1668x2224.png" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2)">
+    <!-- iPad Mini / Air (1536x2048) -->
+    <link rel="apple-touch-startup-image" href="/splash/splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)">
+    
+    <!-- Android PWA -->
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <!-- Prevent phone number detection -->
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-TileImage" content="/icons/icon-144x144.png">
+    
     <title>EBTracker - EDANBROOK Project Management</title>
       <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.40.2/docxtemplater.js"></script>
     <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
@@ -487,6 +557,72 @@
 .announcement-list-actions {
     display: flex;
     gap: 0.5rem;
+}
+
+/* Company News Card Styles */
+.hr-card.company-news:hover {
+    border-color: #3b82f6;
+}
+
+.hr-card-icon.company-news {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.announcement-card.company-news {
+    border-top: 5px solid #3b82f6;
+}
+
+.announcement-header.company-news {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+.announcement-badge.company-news {
+    background: #3b82f6;
+    color: white;
+}
+
+.announcement-detail-icon.company-news {
+    background: #dbeafe;
+}
+
+.announcement-list-avatar.company-news {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+}
+
+/* News Priority Styles */
+.news-priority-high {
+    border-left: 4px solid #ef4444;
+}
+
+.news-priority-medium {
+    border-left: 4px solid #f59e0b;
+}
+
+.news-priority-low {
+    border-left: 4px solid #10b981;
+}
+
+.priority-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.priority-badge.high {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.priority-badge.medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.priority-badge.low {
+    background: #d1fae5;
+    color: #065f46;
 }
 
 body {
@@ -2071,6 +2207,746 @@ body.modal-open {
 }
 
 /* ============================== */
+/* ENHANCED MOBILE RESPONSIVE - iOS & Android */
+/* ============================== */
+
+/* iOS Safe Area Support */
+@supports (padding: max(0px)) {
+    .header {
+        padding-top: max(1.25rem, env(safe-area-inset-top));
+        padding-left: max(2rem, env(safe-area-inset-left));
+        padding-right: max(2rem, env(safe-area-inset-right));
+    }
+    
+    .sidebar {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+    
+    .main-content {
+        padding-bottom: max(2rem, env(safe-area-inset-bottom));
+    }
+    
+    .modal-content {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* Touch-Friendly Improvements */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger touch targets */
+    .btn {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 0.875rem 1.5rem;
+    }
+    
+    .btn-sm {
+        min-height: 40px;
+        padding: 0.625rem 1rem;
+    }
+    
+    .form-control {
+        min-height: 48px;
+        font-size: 16px; /* Prevents iOS zoom on focus */
+    }
+    
+    select.form-control {
+        font-size: 16px;
+    }
+    
+    textarea.form-control {
+        font-size: 16px;
+    }
+    
+    .nav-menu a {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Remove hover effects on touch devices */
+    .btn:hover {
+        transform: none;
+    }
+    
+    .project-card:hover,
+    .announcement-card:hover,
+    .hr-card:hover {
+        transform: none;
+    }
+    
+    /* Add active states for touch feedback */
+    .btn:active {
+        transform: scale(0.97);
+        opacity: 0.9;
+    }
+    
+    .nav-menu a:active {
+        background: rgba(102, 126, 234, 0.2);
+    }
+}
+
+/* Mobile Navigation - Hamburger Menu */
+@media (max-width: 768px) {
+    /* Mobile Header */
+    .header {
+        padding: 0.75rem 1rem;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+    }
+    
+    .header-content {
+        flex-direction: row;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+    
+    .logo {
+        gap: 0.5rem;
+    }
+    
+    .logo .logo-circle {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .company-info h1 {
+        font-size: 1.25rem;
+    }
+    
+    .company-info .subtitle {
+        display: none;
+    }
+    
+    .user-info {
+        flex-direction: row;
+        gap: 0.5rem;
+    }
+    
+    #userWelcome {
+        display: none;
+    }
+    
+    #userRole {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .btn-logout {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    
+    .notification-bell {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+    
+    /* Mobile Layout */
+    .app-container {
+        padding-top: 60px; /* Account for fixed header */
+    }
+    
+    .main-layout {
+        flex-direction: column;
+    }
+    
+    /* Mobile Sidebar - Horizontal Scroll */
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        max-height: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        background: white;
+        position: sticky;
+        top: 60px;
+        z-index: 999;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .nav-menu {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0.5rem;
+        gap: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .nav-menu::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .nav-menu li {
+        flex-shrink: 0;
+        margin: 0;
+    }
+    
+    .nav-menu a {
+        padding: 0.625rem 0.875rem;
+        font-size: 0.8rem;
+        white-space: nowrap;
+        border-radius: 8px;
+    }
+    
+    .nav-icon {
+        margin-right: 0.25rem;
+    }
+    
+    /* Main Content Mobile */
+    .main-content {
+        padding: 1rem;
+        min-height: calc(100vh - 120px);
+    }
+    
+    .page-header {
+        margin-bottom: 1rem;
+    }
+    
+    .page-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .page-header .subtitle {
+        font-size: 0.85rem;
+    }
+    
+    /* Dashboard Stats Mobile */
+    .dashboard-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+    
+    .stat-card {
+        padding: 1rem;
+    }
+    
+    .stat-number {
+        font-size: 1.75rem;
+    }
+    
+    .stat-label {
+        font-size: 0.75rem;
+    }
+    
+    /* HR Cards Mobile */
+    .hr-cards-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .hr-card {
+        padding: 1.25rem;
+    }
+    
+    .hr-card-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .hr-card h3 {
+        font-size: 1.1rem;
+    }
+    
+    .hr-card p {
+        font-size: 0.85rem;
+    }
+    
+    /* Announcements Mobile */
+    .announcements-container {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .announcement-card {
+        border-radius: 16px;
+    }
+    
+    .announcement-header {
+        padding: 1rem;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .announcement-avatar {
+        width: 60px;
+        height: 60px;
+        font-size: 1.5rem;
+    }
+    
+    .announcement-info h3 {
+        font-size: 1.1rem;
+    }
+    
+    .announcement-badge {
+        top: 0.75rem;
+        right: 0.75rem;
+        padding: 0.3rem 0.75rem;
+        font-size: 0.65rem;
+    }
+    
+    .announcement-body {
+        padding: 1rem;
+    }
+    
+    .announcement-detail {
+        padding: 0.5rem;
+    }
+    
+    .announcement-detail-icon {
+        width: 30px;
+        height: 30px;
+        font-size: 1rem;
+    }
+    
+    .announcement-detail-label {
+        font-size: 0.65rem;
+    }
+    
+    .announcement-detail-value {
+        font-size: 0.85rem;
+    }
+    
+    .announcement-message {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .announcement-footer {
+        padding: 0.75rem 1rem;
+        flex-direction: column;
+        gap: 0.25rem;
+        text-align: center;
+    }
+    
+    .announcement-list-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.75rem;
+    }
+    
+    .announcement-list-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    /* Filter Buttons Mobile */
+    .filter-buttons-container {
+        flex-direction: column;
+        padding: 0.75rem;
+    }
+    
+    .filter-btn {
+        width: 100%;
+        min-width: auto;
+        justify-content: center;
+    }
+    
+    /* Action Items Mobile */
+    .action-item {
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .action-buttons {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons .btn {
+        flex: 1;
+        min-width: calc(50% - 0.25rem);
+    }
+    
+    /* Modal Mobile - Full Screen */
+    .modal {
+        padding: 0;
+        align-items: stretch;
+    }
+    
+    .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100%;
+        max-height: 100vh !important;
+        margin: 0 !important;
+        border-radius: 0 !important;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .modal-content.large {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    
+    .modal-header {
+        border-radius: 0;
+        padding: 1rem;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: inherit;
+    }
+    
+    .modal-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .modal-footer,
+    .modal-actions {
+        padding: 1rem;
+        position: sticky;
+        bottom: 0;
+        background: white;
+        border-top: 1px solid var(--border);
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .modal-actions .btn {
+        width: 100%;
+    }
+    
+    .close-button {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+        top: 0.75rem;
+        right: 0.75rem;
+    }
+    
+    /* Form Sections Mobile */
+    .hr-form-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .hr-form-section h4 {
+        font-size: 1rem;
+        margin-bottom: 0.75rem;
+    }
+    
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+        font-size: 0.9rem;
+        margin-bottom: 0.375rem;
+    }
+    
+    /* Photo Upload Mobile */
+    .photo-upload-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+    
+    .photo-preview {
+        width: 80px;
+        height: 80px;
+        font-size: 2rem;
+    }
+    
+    .photo-upload-btn {
+        text-align: center;
+        width: 100%;
+    }
+    
+    /* Leave Request Cards Mobile */
+    .action-item > div {
+        flex-direction: column;
+    }
+    
+    /* Tables Mobile */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    table {
+        min-width: 600px;
+    }
+    
+    /* Notification Panel Mobile */
+    .notification-panel {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: calc(100vh - 60px);
+        border-radius: 0;
+    }
+}
+
+/* Extra Small Devices (iPhone SE, small Android) */
+@media (max-width: 375px) {
+    .header {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .logo .logo-circle {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+    }
+    
+    .company-info h1 {
+        font-size: 1.1rem;
+    }
+    
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 0.875rem;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .nav-menu a {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    .page-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .hr-card {
+        padding: 1rem;
+    }
+    
+    .hr-card-icon {
+        width: 45px;
+        height: 45px;
+        font-size: 1.5rem;
+    }
+    
+    .announcement-avatar {
+        width: 50px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+}
+
+/* Landscape Mode on Mobile */
+@media (max-width: 896px) and (orientation: landscape) {
+    .header {
+        padding: 0.5rem 1rem;
+    }
+    
+    .sidebar {
+        top: 50px;
+    }
+    
+    .app-container {
+        padding-top: 50px;
+    }
+    
+    .modal-content {
+        max-height: 100vh !important;
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 120px);
+    }
+    
+    .dashboard-stats {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    
+    .hr-cards-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .announcements-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Dark Mode Support (follows system preference) */
+@media (prefers-color-scheme: dark) {
+    /* Uncomment to enable dark mode
+    :root {
+        --background: #1a1a2e;
+        --text-dark: #e4e4e7;
+        --text-light: #a1a1aa;
+        --border: #3f3f46;
+        --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    }
+    
+    body {
+        background: #1a1a2e;
+    }
+    
+    .sidebar, .modal-content, .stat-card, .project-card, .hr-card {
+        background: #27273a;
+    }
+    */
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .btn {
+        border: 2px solid currentColor;
+    }
+    
+    .form-control {
+        border-width: 2px;
+    }
+    
+    .announcement-card,
+    .hr-card,
+    .stat-card {
+        border: 2px solid var(--text-dark);
+    }
+}
+
+/* Touch Active States */
+.touch-active {
+    opacity: 0.8;
+    transform: scale(0.98);
+}
+
+/* Mobile Body Classes */
+body.is-mobile {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+}
+
+body.is-ios {
+    /* iOS-specific adjustments */
+}
+
+body.is-android {
+    /* Android-specific adjustments */
+}
+
+body.keyboard-open .modal-content {
+    max-height: 60vh;
+}
+
+body.keyboard-open .sidebar {
+    display: none;
+}
+
+/* iOS viewport height fix */
+.modal-content {
+    max-height: calc(var(--vh, 1vh) * 100);
+}
+
+/* PWA Standalone Mode */
+@media (display-mode: standalone) {
+    .header {
+        padding-top: max(1.25rem, env(safe-area-inset-top));
+    }
+    
+    body.is-ios .app-container {
+        padding-top: env(safe-area-inset-top);
+    }
+}
+
+/* PWA Install Banner Animation */
+@keyframes slideUp {
+    from { transform: translateY(100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+    from { transform: translateY(0); opacity: 1; }
+    to { transform: translateY(100%); opacity: 0; }
+}
+
+/* iOS Safari Specific Fixes */
+body.is-ios {
+    /* Fix for iOS momentum scrolling */
+    -webkit-overflow-scrolling: touch;
+}
+
+body.is-ios .modal-body,
+body.is-ios .main-content,
+body.is-ios .nav-menu {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* iOS Standalone Mode - Full Screen */
+@media (display-mode: standalone) {
+    body.is-ios {
+        padding-top: constant(safe-area-inset-top); /* iOS 11 */
+        padding-top: env(safe-area-inset-top); /* iOS 12+ */
+    }
+    
+    body.is-ios .header {
+        padding-top: calc(1rem + constant(safe-area-inset-top));
+        padding-top: calc(1rem + env(safe-area-inset-top));
+    }
+    
+    body.is-ios .app-container {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+    }
+    
+    body.is-ios .sidebar {
+        top: calc(60px + constant(safe-area-inset-top));
+        top: calc(60px + env(safe-area-inset-top));
+    }
+}
+
+/* Safari-specific input styling */
+@supports (-webkit-touch-callout: none) {
+    input, textarea, select {
+        font-size: 16px !important; /* Prevent zoom on focus */
+    }
+    
+    input[type="date"],
+    input[type="time"],
+    input[type="datetime-local"] {
+        -webkit-appearance: none;
+        appearance: none;
+    }
+}
+
+/* ============================== */
 /* PRINT STYLES */
 /* ============================== */
 @media print {
@@ -2723,6 +3599,12 @@ body.modal-open {
                         <span class="nav-icon">📢</span>HR Announcements
                     </a>
                 </li>
+                <li id="hrLeaveApprovalNavItem" style="display: none;">
+                    <a href="#" onclick="showHRLeaveApproval()" id="nav-hr-leave">
+                        <span class="nav-icon">📋</span>Leave Approval
+                        <span class="notification-count" id="hrLeaveRequestsBadge" style="display: none; margin-left: 10px; background: var(--warning); color: white; width: auto; height: auto; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; border: none;">0</span>
+                    </a>
+                </li>
             </ul>
         </nav>
 
@@ -3296,9 +4178,471 @@ body.modal-open {
         }
     }
 
+    // ============================================
+    // MOBILE SUPPORT & PWA FUNCTIONS
+    // ============================================
+    
+    // Detect mobile device
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (navigator.maxTouchPoints && navigator.maxTouchPoints > 2);
+    }
+    
+    // Detect iOS
+    function isIOS() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+               (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+    
+    // Detect Android
+    function isAndroid() {
+        return /Android/i.test(navigator.userAgent);
+    }
+    
+    // Initialize mobile support
+    function initMobileSupport() {
+        const isMobile = isMobileDevice();
+        const iOS = isIOS();
+        const android = isAndroid();
+        
+        console.log(`📱 Mobile: ${isMobile}, iOS: ${iOS}, Android: ${android}`);
+        
+        // Add device class to body
+        if (isMobile) {
+            document.body.classList.add('is-mobile');
+            if (iOS) document.body.classList.add('is-ios');
+            if (android) document.body.classList.add('is-android');
+        }
+        
+        // Handle iOS viewport height bug (100vh issue)
+        if (iOS) {
+            setIOSViewportHeight();
+            window.addEventListener('resize', setIOSViewportHeight);
+            window.addEventListener('orientationchange', () => {
+                setTimeout(setIOSViewportHeight, 100);
+            });
+        }
+        
+        // Handle Android keyboard
+        if (android) {
+            handleAndroidKeyboard();
+        }
+        
+        // Prevent pull-to-refresh on mobile
+        preventPullToRefresh();
+        
+        // Handle touch events for better mobile UX
+        setupTouchHandlers();
+        
+        // Setup PWA install prompt
+        setupPWAInstallPrompt();
+        
+        console.log('✅ Mobile support initialized');
+    }
+    
+    // Fix iOS 100vh issue
+    function setIOSViewportHeight() {
+        const vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    // Handle Android keyboard visibility
+    function handleAndroidKeyboard() {
+        const originalHeight = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            const currentHeight = window.innerHeight;
+            const heightDiff = originalHeight - currentHeight;
+            
+            // Keyboard is likely open if height reduced significantly
+            if (heightDiff > 150) {
+                document.body.classList.add('keyboard-open');
+            } else {
+                document.body.classList.remove('keyboard-open');
+            }
+        });
+    }
+    
+    // Prevent pull-to-refresh on mobile (except on scrollable areas)
+    function preventPullToRefresh() {
+        let lastTouchY = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            lastTouchY = e.touches[0].clientY;
+        }, { passive: true });
+        
+        document.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+            
+            // If at top and pulling down
+            if (scrollTop === 0 && touchY > lastTouchY) {
+                // Check if target is scrollable
+                const target = e.target;
+                const isScrollable = target.closest('.modal-body, .nav-menu, .main-content');
+                
+                if (!isScrollable || isScrollable.scrollTop === 0) {
+                    // Prevent only if not in a scrollable area
+                }
+            }
+        }, { passive: true });
+    }
+    
+    // Setup touch handlers for better mobile UX
+    function setupTouchHandlers() {
+        // Add active state feedback on touch
+        document.addEventListener('touchstart', (e) => {
+            const btn = e.target.closest('.btn, .nav-menu a, .hr-card, .announcement-card');
+            if (btn) {
+                btn.classList.add('touch-active');
+            }
+        }, { passive: true });
+        
+        document.addEventListener('touchend', () => {
+            document.querySelectorAll('.touch-active').forEach(el => {
+                el.classList.remove('touch-active');
+            });
+        }, { passive: true });
+        
+        // Prevent double-tap zoom on buttons
+        let lastTap = 0;
+        document.addEventListener('touchend', (e) => {
+            const currentTime = new Date().getTime();
+            const tapLength = currentTime - lastTap;
+            
+            if (tapLength < 300 && tapLength > 0) {
+                if (e.target.closest('.btn, .nav-menu a')) {
+                    e.preventDefault();
+                }
+            }
+            lastTap = currentTime;
+        }, { passive: false });
+    }
+    
+    // PWA Install Prompt
+    let deferredPrompt = null;
+    
+    function setupPWAInstallPrompt() {
+        // Check if already in standalone mode (already installed)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                            window.navigator.standalone === true;
+        
+        if (isStandalone) {
+            console.log('✅ App is running in standalone mode (installed)');
+            return;
+        }
+        
+        // For Android Chrome - native install prompt
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            console.log('📲 PWA install prompt available (Android)');
+            showInstallBanner('android');
+        });
+        
+        window.addEventListener('appinstalled', () => {
+            console.log('✅ PWA was installed');
+            deferredPrompt = null;
+            hideInstallBanner();
+        });
+        
+        // For iOS Safari - show custom instructions
+        if (isIOS() && !isStandalone) {
+            // Delay to not annoy users immediately
+            setTimeout(() => {
+                showInstallBanner('ios');
+            }, 3000);
+        }
+    }
+    
+    function showInstallBanner(platform = 'android') {
+        // Check if already dismissed or installed
+        if (localStorage.getItem('pwaInstallDismissed')) {
+            const dismissedTime = parseInt(localStorage.getItem('pwaInstallDismissed'));
+            // Show again after 7 days
+            if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
+                return;
+            }
+        }
+        
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                            window.navigator.standalone === true;
+        if (isStandalone) return;
+        
+        // Don't show on desktop
+        if (!isMobileDevice()) return;
+        
+        // Remove existing banner
+        hideInstallBanner();
+        
+        let bannerContent = '';
+        
+        if (platform === 'ios') {
+            // iOS Safari specific instructions
+            bannerContent = `
+                <div id="pwaInstallBanner" style="
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    padding: 1rem;
+                    z-index: 10000;
+                    box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+                    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+                    animation: slideUp 0.3s ease;
+                ">
+                    <style>
+                        @keyframes slideUp {
+                            from { transform: translateY(100%); }
+                            to { transform: translateY(0); }
+                        }
+                    </style>
+                    <div style="display: flex; align-items: flex-start; gap: 1rem;">
+                        <div style="font-size: 2.5rem;">📱</div>
+                        <div style="flex: 1;">
+                            <strong style="font-size: 1.1rem;">Install EBTracker App</strong>
+                            <p style="font-size: 0.85rem; opacity: 0.95; margin-top: 0.5rem; line-height: 1.4;">
+                                Install this app on your iPhone:
+                            </p>
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.9rem;">
+                                <span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.5rem; border-radius: 6px;">1. Tap</span>
+                                <span style="font-size: 1.5rem;">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                                        <path d="M12 2L12 14M12 2L8 6M12 2L16 6M4 14V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V14" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
+                                </span>
+                                <span style="background: rgba(255,255,255,0.2); padding: 0.25rem 0.5rem; border-radius: 6px;">2. "Add to Home Screen"</span>
+                            </div>
+                        </div>
+                        <button onclick="dismissInstallBanner()" style="
+                            background: rgba(255,255,255,0.2);
+                            border: none;
+                            color: white;
+                            font-size: 1.5rem;
+                            cursor: pointer;
+                            padding: 0.5rem;
+                            border-radius: 50%;
+                            width: 36px;
+                            height: 36px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                        ">×</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Android Chrome banner
+            bannerContent = `
+                <div id="pwaInstallBanner" style="
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    color: white;
+                    padding: 1rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1rem;
+                    z-index: 10000;
+                    box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+                    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+                    animation: slideUp 0.3s ease;
+                ">
+                    <style>
+                        @keyframes slideUp {
+                            from { transform: translateY(100%); }
+                            to { transform: translateY(0); }
+                        }
+                    </style>
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1;">
+                        <span style="font-size: 2rem;">📱</span>
+                        <div>
+                            <strong>Install EBTracker</strong>
+                            <p style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.25rem;">Add to home screen for quick access</p>
+                        </div>
+                    </div>
+                    <button onclick="installPWA()" style="
+                        background: white;
+                        color: #667eea;
+                        border: none;
+                        padding: 0.75rem 1.25rem;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        cursor: pointer;
+                        white-space: nowrap;
+                    ">Install</button>
+                    <button onclick="dismissInstallBanner()" style="
+                        background: transparent;
+                        border: none;
+                        color: white;
+                        font-size: 1.5rem;
+                        cursor: pointer;
+                        padding: 0.5rem;
+                    ">×</button>
+                </div>
+            `;
+        }
+        
+        document.body.insertAdjacentHTML('beforeend', bannerContent);
+    }
+    
+    function hideInstallBanner() {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) {
+            banner.style.animation = 'slideDown 0.3s ease';
+            setTimeout(() => banner.remove(), 300);
+        }
+    }
+    
+    function dismissInstallBanner() {
+        hideInstallBanner();
+        localStorage.setItem('pwaInstallDismissed', Date.now().toString());
+    }
+    
+    async function installPWA() {
+        if (!deferredPrompt) {
+            // For iOS, show instructions
+            if (isIOS()) {
+                alert('To install:\n\n1. Tap the Share button (square with arrow)\n2. Scroll down and tap "Add to Home Screen"\n3. Tap "Add" to confirm');
+            } else {
+                console.log('No install prompt available');
+            }
+            return;
+        }
+        
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`PWA install outcome: ${outcome}`);
+        deferredPrompt = null;
+        hideInstallBanner();
+    }
+    
+    // Check if running as installed PWA
+    function isRunningAsPWA() {
+        return window.matchMedia('(display-mode: standalone)').matches || 
+               window.navigator.standalone === true ||
+               document.referrer.includes('android-app://');
+    }
+    
+    // Register Service Worker
+    function registerServiceWorker() {
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/service-worker.js');
+                    console.log('✅ Service Worker registered:', registration.scope);
+                    
+                    // Listen for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        console.log('🔄 Service Worker update found');
+                        
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // New content available
+                                showUpdateNotification();
+                            }
+                        });
+                    });
+                    
+                    // Check for updates periodically
+                    setInterval(() => {
+                        registration.update();
+                    }, 60 * 60 * 1000); // Every hour
+                    
+                } catch (error) {
+                    console.error('❌ Service Worker registration failed:', error);
+                }
+            });
+            
+            // Listen for messages from service worker
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'CACHE_UPDATED') {
+                    console.log('📢 Cache updated:', event.data.message);
+                    showUpdateNotification();
+                }
+            });
+        }
+    }
+    
+    // Show update notification
+    function showUpdateNotification() {
+        const notification = document.createElement('div');
+        notification.id = 'updateNotification';
+        notification.innerHTML = `
+            <div style="
+                position: fixed;
+                top: 1rem;
+                left: 50%;
+                transform: translateX(-50%);
+                background: linear-gradient(135deg, #10b981, #059669);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                z-index: 10001;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+                max-width: 90%;
+            ">
+                <span>🔄 New version available!</span>
+                <button onclick="location.reload()" style="
+                    background: white;
+                    color: #059669;
+                    border: none;
+                    padding: 0.5rem 1rem;
+                    border-radius: 6px;
+                    font-weight: 600;
+                    cursor: pointer;
+                ">Refresh</button>
+                <button onclick="this.parentElement.parentElement.remove()" style="
+                    background: transparent;
+                    border: none;
+                    color: white;
+                    font-size: 1.25rem;
+                    cursor: pointer;
+                ">×</button>
+            </div>
+        `;
+        
+        // Remove existing notification if any
+        const existing = document.getElementById('updateNotification');
+        if (existing) existing.remove();
+        
+        document.body.appendChild(notification);
+        
+        // Auto-hide after 10 seconds
+        setTimeout(() => {
+            const el = document.getElementById('updateNotification');
+            if (el) el.remove();
+        }, 10000);
+    }
+    
+    // Make functions globally available
+    window.installPWA = installPWA;
+    window.dismissInstallBanner = dismissInstallBanner;
+    window.isMobileDevice = isMobileDevice;
+    window.isIOS = isIOS;
+    window.isAndroid = isAndroid;
+    window.isRunningAsPWA = isRunningAsPWA;
+    window.showInstallBanner = showInstallBanner;
+
         document.addEventListener('DOMContentLoaded', () => {
             console.log('🚀 Application starting...');
             console.log('Backend URL:', API_BASE);
+            
+            // Mobile Detection and Setup
+            initMobileSupport();
+            
+            // Register Service Worker
+            registerServiceWorker();
+            
             setupEventListeners();
             testBackendConnection().then(connected => {
                 if (!connected) {
@@ -3486,18 +4830,18 @@ body.modal-open {
             setDisplay('timeRequestsNavItem', isManagement && !isHR);
             setDisplay('allocationRequestsNavItem', currentUserRole === 'director'); // Only Director sees Allocation Requests
             
-            // HR Specific - Show HR Announcements menu
+            // HR Specific - Show HR Announcements and Leave Approval menus
             setDisplay('hrAnnouncementsNavItem', isHR);
-            
-            // Hide Activities nav item for HR (it's shown by default for all)
-            const activitiesNav = document.getElementById('nav-activities');
-            if (activitiesNav && activitiesNav.parentElement) {
-                activitiesNav.parentElement.style.display = isHR ? 'none' : 'block';
-            }
+            setDisplay('hrLeaveApprovalNavItem', isHR);
             
             // Update badge for Director
             if (currentUserRole === 'director') {
                 updateDirectorRequestsBadge();
+            }
+            
+            // Update HR leave requests badge
+            if (isHR) {
+                updateHRLeaveRequestsBadge();
             }
 
             
@@ -10439,6 +11783,7 @@ async function markProjectComplete(projectId) {
                 
                 const newJoineesCount = hrAnnouncements.filter(a => a.type === 'new-joinee').length;
                 const birthdaysCount = hrAnnouncements.filter(a => a.type === 'birthday').length;
+                const companyNewsCount = hrAnnouncements.filter(a => a.type === 'company-news').length;
                 
                 main.innerHTML = `
                     <div class="page-header">
@@ -10462,6 +11807,13 @@ async function markProjectComplete(projectId) {
                                 <p>Celebrate team member birthdays. Send warm wishes and make their day special.</p>
                                 <button class="btn btn-warning">+ Add Birthday</button>
                             </div>
+                            
+                            <div class="hr-card company-news" onclick="showCompanyNewsModal()">
+                                <div class="hr-card-icon company-news">📰</div>
+                                <h3>Company News Update</h3>
+                                <p>Share important company updates, policy changes, events, and news with all employees.</p>
+                                <button class="btn btn-primary">+ Add Company News</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -10477,6 +11829,10 @@ async function markProjectComplete(projectId) {
                         <div class="stat-card" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
                             <div class="stat-number">${birthdaysCount}</div>
                             <div class="stat-label">Birthdays</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+                            <div class="stat-number">${companyNewsCount}</div>
+                            <div class="stat-label">Company News</div>
                         </div>
                     </div>
                     
@@ -10509,24 +11865,37 @@ async function markProjectComplete(projectId) {
             // Sort by date (newest first)
             const sortedAnnouncements = [...hrAnnouncements].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             
-            return sortedAnnouncements.map((announcement, index) => `
-                <div class="announcement-list-item">
-                    <div class="announcement-list-avatar ${announcement.type}">
-                        ${announcement.type === 'new-joinee' ? '👋' : '🎂'}
+            return sortedAnnouncements.map((announcement, index) => {
+                let icon = '👋';
+                let subtitle = '';
+                
+                if (announcement.type === 'new-joinee') {
+                    icon = '👋';
+                    subtitle = `Joined: ${announcement.department} • ${formatDate(announcement.joiningDate)}`;
+                } else if (announcement.type === 'birthday') {
+                    icon = '🎂';
+                    subtitle = `Birthday: ${formatDate(announcement.birthdayDate)}`;
+                } else if (announcement.type === 'company-news') {
+                    icon = '📰';
+                    subtitle = `${announcement.category || 'General'} • ${formatDate(announcement.createdAt)}`;
+                }
+                
+                return `
+                    <div class="announcement-list-item ${announcement.type === 'company-news' ? 'news-priority-' + (announcement.priority || 'low') : ''}">
+                        <div class="announcement-list-avatar ${announcement.type}">
+                            ${icon}
+                        </div>
+                        <div class="announcement-list-info">
+                            <h4>${announcement.type === 'company-news' ? announcement.title : announcement.name}</h4>
+                            <p>${subtitle}</p>
+                        </div>
+                        <div class="announcement-list-actions">
+                            <button class="btn btn-outline btn-sm" onclick="viewAnnouncementPreview(${hrAnnouncements.indexOf(announcement)})">👁️ Preview</button>
+                            <button class="btn btn-danger btn-sm" onclick="deleteAnnouncement(${hrAnnouncements.indexOf(announcement)})">🗑️ Delete</button>
+                        </div>
                     </div>
-                    <div class="announcement-list-info">
-                        <h4>${announcement.name}</h4>
-                        <p>${announcement.type === 'new-joinee' 
-                            ? `Joined: ${announcement.department} • ${formatDate(announcement.joiningDate)}`
-                            : `Birthday: ${formatDate(announcement.birthdayDate)}`
-                        }</p>
-                    </div>
-                    <div class="announcement-list-actions">
-                        <button class="btn btn-outline btn-sm" onclick="viewAnnouncementPreview(${hrAnnouncements.indexOf(announcement)})">👁️ Preview</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteAnnouncement(${hrAnnouncements.indexOf(announcement)})">🗑️ Delete</button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
         // Show New Joinee Modal
@@ -10652,8 +12021,43 @@ async function markProjectComplete(projectId) {
             alert('✅ New joinee announcement created successfully!');
         }
         
-        // Show Birthday Modal
-        function showBirthdayModal() {
+        // Show Birthday Modal with employee dropdown
+        async function showBirthdayModal() {
+            showLoading();
+            
+            // Fetch all users from the system
+            let employeeOptions = '<option value="">Select Employee</option>';
+            try {
+                const roles = ['bdm', 'estimator', 'coo', 'director', 'designer', 'accounts', 'hr'];
+                const allUsers = [];
+                
+                for (const role of roles) {
+                    try {
+                        const response = await apiCall(`users?role=${role}`);
+                        if (response.success && response.data) {
+                            allUsers.push(...response.data.map(u => ({
+                                ...u,
+                                role: role
+                            })));
+                        }
+                    } catch (e) {
+                        console.log(`Could not fetch ${role} users`);
+                    }
+                }
+                
+                // Sort by name
+                allUsers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                
+                employeeOptions += allUsers.map(user => 
+                    `<option value="${user.name || user.email}" data-email="${user.email || ''}" data-role="${user.role || ''}">${user.name || user.email} (${(user.role || '').toUpperCase()})</option>`
+                ).join('');
+                
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+            
+            hideLoading();
+            
             const modalHtml = `
                 <div id="birthdayModal" class="modal" style="display: flex;">
                     <div class="modal-content large">
@@ -10662,10 +12066,16 @@ async function markProjectComplete(projectId) {
                         
                         <form id="birthdayForm" onsubmit="submitBirthday(event)">
                             <div class="hr-form-section">
-                                <h4>👤 Employee Details</h4>
+                                <h4>👤 Select Employee</h4>
+                                <div class="form-group">
+                                    <label for="birthdayEmployee">Employee Name *</label>
+                                    <select id="birthdayEmployee" class="form-control" required onchange="onBirthdayEmployeeSelect()">
+                                        ${employeeOptions}
+                                    </select>
+                                </div>
                                 <div class="form-group">
                                     <label for="birthdayName">Full Name *</label>
-                                    <input type="text" id="birthdayName" class="form-control" required placeholder="Enter employee's full name">
+                                    <input type="text" id="birthdayName" class="form-control" required placeholder="Employee name will auto-fill">
                                 </div>
                                 <div class="form-group">
                                     <label for="birthdayDepartment">Department</label>
@@ -10724,6 +12134,32 @@ async function markProjectComplete(projectId) {
             document.getElementById('birthdayDate').valueAsDate = new Date();
         }
         
+        // Handle employee selection in birthday form
+        function onBirthdayEmployeeSelect() {
+            const select = document.getElementById('birthdayEmployee');
+            const selectedOption = select.options[select.selectedIndex];
+            const name = select.value;
+            const role = selectedOption.dataset.role || '';
+            
+            // Auto-fill the name field
+            document.getElementById('birthdayName').value = name;
+            
+            // Auto-select department based on role
+            const deptMap = {
+                'designer': 'Design',
+                'estimator': 'Estimation',
+                'bdm': 'Business Development',
+                'accounts': 'Accounts',
+                'hr': 'Human Resources',
+                'coo': 'Management',
+                'director': 'Management'
+            };
+            
+            if (deptMap[role]) {
+                document.getElementById('birthdayDepartment').value = deptMap[role];
+            }
+        }
+        
         // Preview birthday photo
         function previewBirthdayPhoto(event) {
             const file = event.target.files[0];
@@ -10765,17 +12201,141 @@ async function markProjectComplete(projectId) {
             alert('✅ Birthday announcement created successfully!');
         }
         
+        // Show Company News Modal
+        function showCompanyNewsModal() {
+            const modalHtml = `
+                <div id="companyNewsModal" class="modal" style="display: flex;">
+                    <div class="modal-content large">
+                        <span class="close-button" onclick="closeModal('companyNewsModal')">&times;</span>
+                        <h2 style="margin-bottom: 1.5rem;">📰 Add Company News Update</h2>
+                        
+                        <form id="companyNewsForm" onsubmit="submitCompanyNews(event)">
+                            <div class="hr-form-section">
+                                <h4>📋 News Details</h4>
+                                <div class="form-group">
+                                    <label for="newsTitle">News Title *</label>
+                                    <input type="text" id="newsTitle" class="form-control" required placeholder="Enter a compelling news title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="newsCategory">Category *</label>
+                                    <select id="newsCategory" class="form-control" required>
+                                        <option value="">Select Category</option>
+                                        <option value="Company Update">Company Update</option>
+                                        <option value="Policy Change">Policy Change</option>
+                                        <option value="Event">Event</option>
+                                        <option value="Achievement">Achievement</option>
+                                        <option value="Holiday Notice">Holiday Notice</option>
+                                        <option value="Training">Training</option>
+                                        <option value="Health & Safety">Health & Safety</option>
+                                        <option value="General">General</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newsPriority">Priority Level *</label>
+                                    <select id="newsPriority" class="form-control" required>
+                                        <option value="low">🟢 Low - General Information</option>
+                                        <option value="medium">🟡 Medium - Important Update</option>
+                                        <option value="high">🔴 High - Urgent / Action Required</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="hr-form-section">
+                                <h4>📝 News Content</h4>
+                                <div class="form-group">
+                                    <label for="newsSummary">Brief Summary *</label>
+                                    <input type="text" id="newsSummary" class="form-control" required placeholder="A one-line summary of the news" maxlength="150">
+                                </div>
+                                <div class="form-group">
+                                    <label for="newsContent">Full Content *</label>
+                                    <textarea id="newsContent" class="form-control" rows="6" required placeholder="Write the complete news content here..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="hr-form-section">
+                                <h4>📅 Validity (Optional)</h4>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="form-group">
+                                        <label for="newsStartDate">Show From</label>
+                                        <input type="date" id="newsStartDate" class="form-control">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="newsEndDate">Show Until</label>
+                                        <input type="date" id="newsEndDate" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="hr-form-section">
+                                <h4>🔗 Additional Link (Optional)</h4>
+                                <div class="form-group">
+                                    <label for="newsLink">External Link URL</label>
+                                    <input type="url" id="newsLink" class="form-control" placeholder="https://example.com/more-info">
+                                </div>
+                                <div class="form-group">
+                                    <label for="newsLinkText">Link Text</label>
+                                    <input type="text" id="newsLinkText" class="form-control" placeholder="Click here for more details">
+                                </div>
+                            </div>
+                            
+                            <div class="modal-actions" style="margin-top: 1.5rem;">
+                                <button type="button" class="btn btn-outline" onclick="closeModal('companyNewsModal')">Cancel</button>
+                                <button type="submit" class="btn btn-primary">📢 Publish News</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            document.getElementById('newsStartDate').valueAsDate = new Date();
+        }
+        
+        // Submit company news
+        function submitCompanyNews(event) {
+            event.preventDefault();
+            
+            const announcement = {
+                id: Date.now(),
+                type: 'company-news',
+                title: document.getElementById('newsTitle').value,
+                category: document.getElementById('newsCategory').value,
+                priority: document.getElementById('newsPriority').value,
+                summary: document.getElementById('newsSummary').value,
+                content: document.getElementById('newsContent').value,
+                startDate: document.getElementById('newsStartDate').value || null,
+                endDate: document.getElementById('newsEndDate').value || null,
+                link: document.getElementById('newsLink').value || null,
+                linkText: document.getElementById('newsLinkText').value || 'Read More',
+                createdAt: new Date().toISOString(),
+                createdBy: currentUser ? currentUser.email : 'HR'
+            };
+            
+            loadAnnouncements();
+            hrAnnouncements.push(announcement);
+            saveAnnouncements();
+            
+            closeModal('companyNewsModal');
+            showHRDashboard();
+            
+            alert('✅ Company news published successfully!');
+        }
+        
         // View announcement preview
         function viewAnnouncementPreview(index) {
             loadAnnouncements();
             const announcement = hrAnnouncements[index];
             if (!announcement) return;
             
+            let previewTitle = '👋 New Joinee';
+            if (announcement.type === 'birthday') previewTitle = '🎂 Birthday';
+            if (announcement.type === 'company-news') previewTitle = '📰 Company News';
+            
             const previewHtml = `
                 <div id="previewModal" class="modal" style="display: flex;">
                     <div class="modal-content" style="max-width: 500px;">
                         <span class="close-button" onclick="closeModal('previewModal')">&times;</span>
-                        <h3 style="margin-bottom: 1rem;">Preview: ${announcement.type === 'new-joinee' ? '👋 New Joinee' : '🎂 Birthday'}</h3>
+                        <h3 style="margin-bottom: 1rem;">Preview: ${previewTitle}</h3>
                         ${renderAnnouncementCard(announcement)}
                         <div class="modal-actions" style="margin-top: 1rem;">
                             <button class="btn btn-primary" onclick="closeModal('previewModal')">Close Preview</button>
@@ -10802,7 +12362,63 @@ async function markProjectComplete(projectId) {
         // Render a single announcement card
         function renderAnnouncementCard(announcement) {
             const isNewJoinee = announcement.type === 'new-joinee';
+            const isBirthday = announcement.type === 'birthday';
+            const isCompanyNews = announcement.type === 'company-news';
             
+            // Company News Card
+            if (isCompanyNews) {
+                const priorityColors = {
+                    high: { bg: '#fee2e2', text: '#991b1b', label: '🔴 Urgent' },
+                    medium: { bg: '#fef3c7', text: '#92400e', label: '🟡 Important' },
+                    low: { bg: '#d1fae5', text: '#065f46', label: '🟢 Info' }
+                };
+                const priority = priorityColors[announcement.priority] || priorityColors.low;
+                
+                return `
+                    <div class="announcement-card company-news news-priority-${announcement.priority || 'low'}">
+                        <span class="announcement-badge company-news">${announcement.category || 'Company Update'}</span>
+                        
+                        <div class="announcement-header company-news">
+                            <div class="announcement-avatar">📰</div>
+                            <div class="announcement-info">
+                                <h3>${announcement.title}</h3>
+                                <p style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span class="priority-badge ${announcement.priority || 'low'}">${priority.label}</span>
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="announcement-body">
+                            <div class="announcement-detail">
+                                <div class="announcement-detail-icon company-news">📋</div>
+                                <div class="announcement-detail-text">
+                                    <div class="announcement-detail-label">Summary</div>
+                                    <div class="announcement-detail-value">${announcement.summary || ''}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="announcement-message" style="border-left-color: #3b82f6; text-align: left; font-style: normal;">
+                                ${announcement.content || ''}
+                            </div>
+                            
+                            ${announcement.link ? `
+                                <div style="margin-top: 1rem; text-align: center;">
+                                    <a href="${announcement.link}" target="_blank" class="btn btn-outline btn-sm" style="text-decoration: none;">
+                                        🔗 ${announcement.linkText || 'Read More'}
+                                    </a>
+                                </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="announcement-footer">
+                            <span class="announcement-date">Posted: ${formatDate(announcement.createdAt)}</span>
+                            <span style="color: #667eea; font-weight: 600;">EDANBROOK HR</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // New Joinee and Birthday Cards
             return `
                 <div class="announcement-card ${announcement.type}">
                     <span class="announcement-badge ${announcement.type}">${isNewJoinee ? 'New Team Member' : 'Happy Birthday!'}</span>
@@ -10872,12 +12488,35 @@ async function markProjectComplete(projectId) {
         function getActiveAnnouncements() {
             loadAnnouncements();
             const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
             const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
             
             return hrAnnouncements.filter(a => {
                 const createdAt = new Date(a.createdAt);
+                
+                // For company news, check validity dates
+                if (a.type === 'company-news') {
+                    // Check start date
+                    if (a.startDate && a.startDate > todayStr) {
+                        return false; // Not yet active
+                    }
+                    // Check end date
+                    if (a.endDate && a.endDate < todayStr) {
+                        return false; // Expired
+                    }
+                }
+                
+                // Default: show announcements from last 30 days
                 return createdAt >= thirtyDaysAgo;
-            }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            }).sort((a, b) => {
+                // Sort by priority for company news (high first), then by date
+                if (a.type === 'company-news' && b.type === 'company-news') {
+                    const priorityOrder = { high: 0, medium: 1, low: 2 };
+                    const priorityDiff = (priorityOrder[a.priority] || 2) - (priorityOrder[b.priority] || 2);
+                    if (priorityDiff !== 0) return priorityDiff;
+                }
+                return new Date(b.createdAt) - new Date(a.createdAt);
+            });
         }
         
         // Render announcements section for dashboard (visible to all users)
@@ -10935,13 +12574,432 @@ async function markProjectComplete(projectId) {
         window.showHRDashboard = showHRDashboard;
         window.showNewJoineeModal = showNewJoineeModal;
         window.showBirthdayModal = showBirthdayModal;
+        window.showCompanyNewsModal = showCompanyNewsModal;
         window.previewJoineePhoto = previewJoineePhoto;
         window.previewBirthdayPhoto = previewBirthdayPhoto;
         window.submitNewJoinee = submitNewJoinee;
         window.submitBirthday = submitBirthday;
+        window.submitCompanyNews = submitCompanyNews;
         window.viewAnnouncementPreview = viewAnnouncementPreview;
         window.deleteAnnouncement = deleteAnnouncement;
         window.showAllAnnouncements = showAllAnnouncements;
+        window.onBirthdayEmployeeSelect = onBirthdayEmployeeSelect;
+
+        // ============================================
+        // HR LEAVE APPROVAL SYSTEM
+        // ============================================
+        
+        let leaveRequests = [];
+        
+        // Load leave requests from localStorage
+        function loadLeaveRequests() {
+            const stored = localStorage.getItem('leaveRequests');
+            leaveRequests = stored ? JSON.parse(stored) : [];
+            return leaveRequests;
+        }
+        
+        // Save leave requests to localStorage
+        function saveLeaveRequests() {
+            localStorage.setItem('leaveRequests', JSON.stringify(leaveRequests));
+        }
+        
+        // Update HR leave requests badge
+        function updateHRLeaveRequestsBadge() {
+            loadLeaveRequests();
+            const pendingCount = leaveRequests.filter(r => r.status === 'pending').length;
+            const badge = document.getElementById('hrLeaveRequestsBadge');
+            if (badge) {
+                badge.textContent = pendingCount;
+                badge.style.display = pendingCount > 0 ? 'inline' : 'none';
+            }
+        }
+        
+        // Show HR Leave Approval Dashboard
+        async function showHRLeaveApproval() {
+            setActiveNav('nav-hr-leave');
+            const main = document.getElementById('mainContent');
+            main.style.display = 'block';
+            showLoading();
+            
+            try {
+                loadLeaveRequests();
+                
+                const pendingRequests = leaveRequests.filter(r => r.status === 'pending');
+                const approvedRequests = leaveRequests.filter(r => r.status === 'approved');
+                const rejectedRequests = leaveRequests.filter(r => r.status === 'rejected');
+                
+                main.innerHTML = `
+                    <div class="page-header">
+                        <h2>📋 Leave Approval Dashboard</h2>
+                        <div class="subtitle">Manage employee leave requests</div>
+                    </div>
+                    
+                    <div class="dashboard-stats" style="margin-bottom: 2rem;">
+                        <div class="stat-card" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
+                            <div class="stat-number">${pendingRequests.length}</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
+                            <div class="stat-number">${approvedRequests.length}</div>
+                            <div class="stat-label">Approved</div>
+                        </div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #fee2e2, #fecaca);">
+                            <div class="stat-number">${rejectedRequests.length}</div>
+                            <div class="stat-label">Rejected</div>
+                        </div>
+                    </div>
+                    
+                    ${pendingRequests.length > 0 ? `
+                        <div class="action-section" style="margin-bottom: 2rem; background: #fffbeb; border-left: 4px solid #f59e0b;">
+                            <h3 style="color: #b45309;">⏳ Pending Leave Requests</h3>
+                            ${pendingRequests.map((req, idx) => renderLeaveRequestCard(req, leaveRequests.indexOf(req), 'pending')).join('')}
+                        </div>
+                    ` : `
+                        <div class="info-message" style="margin-bottom: 2rem;">
+                            <h4>✅ No Pending Requests</h4>
+                            <p>All leave requests have been processed.</p>
+                        </div>
+                    `}
+                    
+                    ${approvedRequests.length > 0 ? `
+                        <div class="action-section" style="margin-bottom: 2rem; background: #ecfdf5; border-left: 4px solid #10b981;">
+                            <h3 style="color: #065f46;">✅ Approved Requests</h3>
+                            ${approvedRequests.slice(0, 5).map((req, idx) => renderLeaveRequestCard(req, leaveRequests.indexOf(req), 'approved')).join('')}
+                            ${approvedRequests.length > 5 ? `<p style="text-align: center; color: #6b7280;">...and ${approvedRequests.length - 5} more</p>` : ''}
+                        </div>
+                    ` : ''}
+                    
+                    ${rejectedRequests.length > 0 ? `
+                        <div class="action-section" style="background: #fef2f2; border-left: 4px solid #ef4444;">
+                            <h3 style="color: #991b1b;">❌ Rejected Requests</h3>
+                            ${rejectedRequests.slice(0, 5).map((req, idx) => renderLeaveRequestCard(req, leaveRequests.indexOf(req), 'rejected')).join('')}
+                            ${rejectedRequests.length > 5 ? `<p style="text-align: center; color: #6b7280;">...and ${rejectedRequests.length - 5} more</p>` : ''}
+                        </div>
+                    ` : ''}
+                    
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: var(--card-shadow);">
+                        <h3 style="margin-bottom: 1rem;">📝 Test: Submit a Leave Request</h3>
+                        <p style="color: #6b7280; margin-bottom: 1rem;">Use this form to test the leave approval system.</p>
+                        <button class="btn btn-primary" onclick="showSubmitLeaveModal()">+ Submit Test Leave Request</button>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Error loading leave approval:', error);
+                main.innerHTML = `<div class="error-message"><h3>Error Loading Leave Approval</h3><p>${error.message}</p></div>`;
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Render leave request card
+        function renderLeaveRequestCard(request, index, status) {
+            const statusColors = {
+                pending: { bg: '#fef3c7', text: '#b45309', label: '⏳ Pending' },
+                approved: { bg: '#d1fae5', text: '#065f46', label: '✅ Approved' },
+                rejected: { bg: '#fee2e2', text: '#991b1b', label: '❌ Rejected' }
+            };
+            
+            const statusStyle = statusColors[status] || statusColors.pending;
+            
+            return `
+                <div class="action-item" style="background: white; margin-bottom: 1rem; border-radius: 12px; padding: 1.5rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                <div style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                    ${(request.employeeName || 'E')[0].toUpperCase()}
+                                </div>
+                                <div>
+                                    <h4 style="margin: 0; color: #1f2937;">${request.employeeName || 'Employee'}</h4>
+                                    <p style="margin: 0; font-size: 0.85rem; color: #6b7280;">${request.department || 'Department'}</p>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
+                                <div style="padding: 0.5rem; background: #f3f4f6; border-radius: 8px;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;">Leave Type</div>
+                                    <div style="font-weight: 600; color: #374151;">${request.leaveType || 'N/A'}</div>
+                                </div>
+                                <div style="padding: 0.5rem; background: #f3f4f6; border-radius: 8px;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;">From</div>
+                                    <div style="font-weight: 600; color: #374151;">${formatDate(request.fromDate)}</div>
+                                </div>
+                                <div style="padding: 0.5rem; background: #f3f4f6; border-radius: 8px;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;">To</div>
+                                    <div style="font-weight: 600; color: #374151;">${formatDate(request.toDate)}</div>
+                                </div>
+                                <div style="padding: 0.5rem; background: #f3f4f6; border-radius: 8px;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase;">Days</div>
+                                    <div style="font-weight: 600; color: #374151;">${request.totalDays || 1}</div>
+                                </div>
+                            </div>
+                            ${request.reason ? `
+                                <div style="margin-top: 1rem; padding: 0.75rem; background: #f9fafb; border-radius: 8px; border-left: 3px solid #667eea;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin-bottom: 0.25rem;">Reason</div>
+                                    <p style="margin: 0; color: #4b5563;">${request.reason}</p>
+                                </div>
+                            ` : ''}
+                            ${request.hrComment ? `
+                                <div style="margin-top: 0.75rem; padding: 0.75rem; background: ${status === 'approved' ? '#ecfdf5' : '#fef2f2'}; border-radius: 8px;">
+                                    <div style="font-size: 0.75rem; color: #9ca3af; text-transform: uppercase; margin-bottom: 0.25rem;">HR Comment</div>
+                                    <p style="margin: 0; color: #4b5563;">${request.hrComment}</p>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                            <span style="padding: 0.4rem 1rem; background: ${statusStyle.bg}; color: ${statusStyle.text}; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                ${statusStyle.label}
+                            </span>
+                            ${status === 'pending' ? `
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <button class="btn btn-success btn-sm" onclick="approveLeaveRequest(${index})">✅ Approve</button>
+                                    <button class="btn btn-danger btn-sm" onclick="rejectLeaveRequest(${index})">❌ Reject</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid #e5e7eb; font-size: 0.8rem; color: #9ca3af;">
+                        Submitted: ${formatDate(request.submittedAt)} ${request.processedAt ? `| Processed: ${formatDate(request.processedAt)}` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Show submit leave modal (for testing)
+        async function showSubmitLeaveModal() {
+            showLoading();
+            
+            // Fetch all users for the employee dropdown
+            let employeeOptions = '<option value="">Select Employee</option>';
+            try {
+                const roles = ['bdm', 'estimator', 'coo', 'director', 'designer', 'accounts', 'hr'];
+                const allUsers = [];
+                
+                for (const role of roles) {
+                    try {
+                        const response = await apiCall(`users?role=${role}`);
+                        if (response.success && response.data) {
+                            allUsers.push(...response.data.map(u => ({
+                                ...u,
+                                role: role
+                            })));
+                        }
+                    } catch (e) {
+                        console.log(`Could not fetch ${role} users`);
+                    }
+                }
+                
+                allUsers.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+                
+                employeeOptions += allUsers.map(user => 
+                    `<option value="${user.name || user.email}" data-email="${user.email || ''}" data-role="${user.role || ''}">${user.name || user.email} (${(user.role || '').toUpperCase()})</option>`
+                ).join('');
+                
+            } catch (error) {
+                console.error('Error fetching users:', error);
+            }
+            
+            hideLoading();
+            
+            const modalHtml = `
+                <div id="submitLeaveModal" class="modal" style="display: flex;">
+                    <div class="modal-content large">
+                        <span class="close-button" onclick="closeModal('submitLeaveModal')">&times;</span>
+                        <h2 style="margin-bottom: 1.5rem;">📝 Submit Leave Request</h2>
+                        
+                        <form id="leaveRequestForm" onsubmit="submitLeaveRequest(event)">
+                            <div class="hr-form-section">
+                                <h4>👤 Employee Details</h4>
+                                <div class="form-group">
+                                    <label for="leaveEmployee">Select Employee *</label>
+                                    <select id="leaveEmployee" class="form-control" required onchange="onLeaveEmployeeSelect()">
+                                        ${employeeOptions}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="leaveEmployeeName">Employee Name</label>
+                                    <input type="text" id="leaveEmployeeName" class="form-control" readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label for="leaveDepartment">Department</label>
+                                    <input type="text" id="leaveDepartment" class="form-control" readonly>
+                                </div>
+                            </div>
+                            
+                            <div class="hr-form-section">
+                                <h4>📅 Leave Details</h4>
+                                <div class="form-group">
+                                    <label for="leaveType">Leave Type *</label>
+                                    <select id="leaveType" class="form-control" required>
+                                        <option value="">Select Leave Type</option>
+                                        <option value="Annual Leave">Annual Leave</option>
+                                        <option value="Sick Leave">Sick Leave</option>
+                                        <option value="Casual Leave">Casual Leave</option>
+                                        <option value="Maternity Leave">Maternity Leave</option>
+                                        <option value="Paternity Leave">Paternity Leave</option>
+                                        <option value="Unpaid Leave">Unpaid Leave</option>
+                                        <option value="Compensatory Off">Compensatory Off</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                                    <div class="form-group">
+                                        <label for="leaveFromDate">From Date *</label>
+                                        <input type="date" id="leaveFromDate" class="form-control" required onchange="calculateLeaveDays()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="leaveToDate">To Date *</label>
+                                        <input type="date" id="leaveToDate" class="form-control" required onchange="calculateLeaveDays()">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="leaveTotalDays">Total Days</label>
+                                    <input type="number" id="leaveTotalDays" class="form-control" readonly value="1">
+                                </div>
+                            </div>
+                            
+                            <div class="hr-form-section">
+                                <h4>💬 Reason</h4>
+                                <div class="form-group">
+                                    <label for="leaveReason">Reason for Leave</label>
+                                    <textarea id="leaveReason" class="form-control" rows="3" placeholder="Enter reason for leave request..."></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="modal-actions" style="margin-top: 1.5rem;">
+                                <button type="button" class="btn btn-outline" onclick="closeModal('submitLeaveModal')">Cancel</button>
+                                <button type="submit" class="btn btn-primary">📤 Submit Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Set default dates
+            const today = new Date();
+            document.getElementById('leaveFromDate').valueAsDate = today;
+            document.getElementById('leaveToDate').valueAsDate = today;
+        }
+        
+        // Handle employee selection in leave form
+        function onLeaveEmployeeSelect() {
+            const select = document.getElementById('leaveEmployee');
+            const selectedOption = select.options[select.selectedIndex];
+            const name = select.value;
+            const role = selectedOption.dataset.role || '';
+            
+            document.getElementById('leaveEmployeeName').value = name;
+            
+            const deptMap = {
+                'designer': 'Design',
+                'estimator': 'Estimation',
+                'bdm': 'Business Development',
+                'accounts': 'Accounts',
+                'hr': 'Human Resources',
+                'coo': 'Management',
+                'director': 'Management'
+            };
+            
+            document.getElementById('leaveDepartment').value = deptMap[role] || '';
+        }
+        
+        // Calculate leave days
+        function calculateLeaveDays() {
+            const fromDate = document.getElementById('leaveFromDate').value;
+            const toDate = document.getElementById('leaveToDate').value;
+            
+            if (fromDate && toDate) {
+                const from = new Date(fromDate);
+                const to = new Date(toDate);
+                const diffTime = Math.abs(to - from);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                document.getElementById('leaveTotalDays').value = diffDays > 0 ? diffDays : 1;
+            }
+        }
+        
+        // Submit leave request
+        function submitLeaveRequest(event) {
+            event.preventDefault();
+            
+            const request = {
+                id: Date.now(),
+                employeeName: document.getElementById('leaveEmployeeName').value,
+                department: document.getElementById('leaveDepartment').value,
+                leaveType: document.getElementById('leaveType').value,
+                fromDate: document.getElementById('leaveFromDate').value,
+                toDate: document.getElementById('leaveToDate').value,
+                totalDays: parseInt(document.getElementById('leaveTotalDays').value) || 1,
+                reason: document.getElementById('leaveReason').value,
+                status: 'pending',
+                submittedAt: new Date().toISOString(),
+                submittedBy: currentUser ? currentUser.email : 'System'
+            };
+            
+            loadLeaveRequests();
+            leaveRequests.push(request);
+            saveLeaveRequests();
+            
+            closeModal('submitLeaveModal');
+            showHRLeaveApproval();
+            updateHRLeaveRequestsBadge();
+            
+            alert('✅ Leave request submitted successfully!');
+        }
+        
+        // Approve leave request
+        function approveLeaveRequest(index) {
+            const comment = prompt('Add a comment (optional):');
+            
+            loadLeaveRequests();
+            if (leaveRequests[index]) {
+                leaveRequests[index].status = 'approved';
+                leaveRequests[index].hrComment = comment || '';
+                leaveRequests[index].processedAt = new Date().toISOString();
+                leaveRequests[index].processedBy = currentUser ? currentUser.email : 'HR';
+                saveLeaveRequests();
+                
+                showHRLeaveApproval();
+                updateHRLeaveRequestsBadge();
+                
+                alert('✅ Leave request approved!');
+            }
+        }
+        
+        // Reject leave request
+        function rejectLeaveRequest(index) {
+            const comment = prompt('Reason for rejection:');
+            
+            if (!comment) {
+                alert('Please provide a reason for rejection.');
+                return;
+            }
+            
+            loadLeaveRequests();
+            if (leaveRequests[index]) {
+                leaveRequests[index].status = 'rejected';
+                leaveRequests[index].hrComment = comment;
+                leaveRequests[index].processedAt = new Date().toISOString();
+                leaveRequests[index].processedBy = currentUser ? currentUser.email : 'HR';
+                saveLeaveRequests();
+                
+                showHRLeaveApproval();
+                updateHRLeaveRequestsBadge();
+                
+                alert('❌ Leave request rejected.');
+            }
+        }
+        
+        // Make Leave Approval functions globally accessible
+        window.showHRLeaveApproval = showHRLeaveApproval;
+        window.showSubmitLeaveModal = showSubmitLeaveModal;
+        window.onLeaveEmployeeSelect = onLeaveEmployeeSelect;
+        window.calculateLeaveDays = calculateLeaveDays;
+        window.submitLeaveRequest = submitLeaveRequest;
+        window.approveLeaveRequest = approveLeaveRequest;
+        window.rejectLeaveRequest = rejectLeaveRequest;
+        window.updateHRLeaveRequestsBadge = updateHRLeaveRequestsBadge;
 
         // ============================================
         // DIAGNOSTICS
