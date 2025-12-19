@@ -5739,6 +5739,17 @@ window.addEventListener('click', function(event) {
                 day: 'numeric'
             });
         }
+        
+        // Helper function to get local date string in YYYY-MM-DD format (timezone-safe)
+        // This avoids the issue where toISOString() converts to UTC and may shift the date
+        function getLocalDateStr(date) {
+            if (!date) date = new Date();
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
         function formatFileSize(bytes) {
             if (!bytes) return '0 Bytes';
             const k = 1024;
@@ -12769,9 +12780,14 @@ async function markProjectComplete(projectId) {
                     
                 } else if (announcement.type === 'company-news') {
                     icon = '📰';
-                    const todayStr = today.toISOString().split('T')[0];
+                    const todayStr = getLocalDateStr(today);
                     
-                    if (announcement.endDate && announcement.endDate < todayStr) {
+                    // Check if start date is in the future (scheduled)
+                    if (announcement.startDate && announcement.startDate > todayStr) {
+                        const startDate = new Date(announcement.startDate);
+                        const daysUntilStart = Math.floor((startDate - today) / (24 * 60 * 60 * 1000));
+                        statusBadge = `<span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">📅 Starts in ${daysUntilStart}d</span>`;
+                    } else if (announcement.endDate && announcement.endDate < todayStr) {
                         isExpired = true;
                         statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Expired</span>';
                     } else if (announcement.endDate) {
@@ -12780,10 +12796,19 @@ async function markProjectComplete(projectId) {
                         if (daysRemaining <= 3) {
                             statusBadge = `<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">${daysRemaining}d left</span>`;
                         } else {
-                            statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Active</span>`;
+                            statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Active (${daysRemaining}d)</span>`;
                         }
                     } else {
-                        statusBadge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">No Expiry</span>';
+                        // No end date - show as active with 30-day default info
+                        const createdDate = new Date(announcement.createdAt);
+                        const daysSinceCreated = Math.floor((today - createdDate) / (24 * 60 * 60 * 1000));
+                        const daysRemaining = 30 - daysSinceCreated;
+                        if (daysRemaining > 0) {
+                            statusBadge = `<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Active (${daysRemaining}d auto)</span>`;
+                        } else {
+                            isExpired = true;
+                            statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Expired (30d)</span>';
+                        }
                     }
                     subtitle = `${announcement.category || 'General'} • ${formatDate(announcement.createdAt)}`;
                 }
@@ -13773,12 +13798,13 @@ async function markProjectComplete(projectId) {
             loadAnnouncementsSync();
             const today = new Date();
             today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
-            const todayStr = today.toISOString().split('T')[0];
+            const todayStr = getLocalDateStr(today);  // Use local date, not UTC
             const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
             const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
             const fiveDaysFromNow = new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
             
-            // Debug: Log all announcements
+            // Debug: Log today's date for verification
+            console.log('📅 Today (local):', todayStr);
             console.log('📢 All announcements:', hrAnnouncements.length, hrAnnouncements.map(a => ({type: a.type, title: a.title || a.name, startDate: a.startDate, endDate: a.endDate})));
             
             return hrAnnouncements.filter(a => {
@@ -13831,19 +13857,27 @@ async function markProjectComplete(projectId) {
                 if (a.type === 'company-news') {
                     console.log(`📰 Checking company news: "${a.title}", startDate: ${a.startDate}, endDate: ${a.endDate}, today: ${todayStr}`);
                     
-                    // Check start date
+                    // Check start date - if set and in future, don't show yet
                     if (a.startDate && a.startDate > todayStr) {
                         console.log(`📰 Not yet active: startDate ${a.startDate} > today ${todayStr}`);
                         return false; // Not yet active
                     }
-                    // Check end date
+                    
+                    // Check end date - if set and in past, expired
                     if (a.endDate && a.endDate < todayStr) {
                         console.log(`📰 Expired: endDate ${a.endDate} < today ${todayStr}`);
                         return false; // Expired
                     }
-                    // Check if created within last 30 days
+                    
+                    // If endDate is set and valid (in future or today), ALWAYS show it
+                    if (a.endDate && a.endDate >= todayStr) {
+                        console.log(`📰 Company news "${a.title}" is ACTIVE (endDate: ${a.endDate})`);
+                        return true; // Valid end date in future, show it
+                    }
+                    
+                    // If no endDate set, use 30-day default from creation
                     const isRecent = createdAt >= thirtyDaysAgo;
-                    console.log(`📰 Company news "${a.title}" isRecent: ${isRecent}, createdAt: ${a.createdAt}`);
+                    console.log(`📰 Company news "${a.title}" no endDate, using 30-day rule: ${isRecent}`);
                     return isRecent;
                 }
                 
