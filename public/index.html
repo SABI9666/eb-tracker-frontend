@@ -12374,14 +12374,14 @@ async function markProjectComplete(projectId) {
                             <div class="hr-card birthday" onclick="showBirthdayModal()">
                                 <div class="hr-card-icon birthday">🎂</div>
                                 <h3>Birthday Announcement</h3>
-                                <p>Celebrate birthdays. <strong>Auto-expires day after birthday</strong>.</p>
+                                <p>Celebrate birthdays. <strong>Shows 5 days before</strong>, expires day after.</p>
                                 <button class="btn btn-warning">+ Add Birthday</button>
                             </div>
                             
                             <div class="hr-card company-news" onclick="showCompanyNewsModal()">
                                 <div class="hr-card-icon company-news">📰</div>
                                 <h3>Company News Update</h3>
-                                <p>Share updates. Set custom start/end dates or <strong>default 30 days</strong>.</p>
+                                <p>Share updates with <strong>event images</strong>. Set custom dates or default 30 days.</p>
                                 <button class="btn btn-primary">+ Add Company News</button>
                             </div>
                         </div>
@@ -12482,8 +12482,11 @@ async function markProjectComplete(projectId) {
                         statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Expired</span>';
                     } else if (daysUntilBirthday === 0) {
                         statusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">🎉 TODAY!</span>';
+                    } else if (daysUntilBirthday <= 5) {
+                        statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">🎂 In ${daysUntilBirthday}d (Visible)</span>`;
                     } else {
-                        statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">In ${daysUntilBirthday}d</span>`;
+                        // More than 5 days away - scheduled but not yet visible to employees
+                        statusBadge = `<span style="background: #e0e7ff; color: #4338ca; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">📅 Scheduled (${daysUntilBirthday}d)</span>`;
                     }
                     subtitle = `Birthday: ${formatDate(announcement.birthdayDate)}`;
                     
@@ -12953,7 +12956,7 @@ async function markProjectComplete(projectId) {
         function showCompanyNewsModal() {
             const modalHtml = `
                 <div id="companyNewsModal" class="modal" style="display: flex;">
-                    <div class="modal-content large">
+                    <div class="modal-content large" style="max-height: 90vh; overflow-y: auto;">
                         <span class="close-button" onclick="closeModal('companyNewsModal')">&times;</span>
                         <h2 style="margin-bottom: 1.5rem;">📰 Add Company News Update</h2>
                         
@@ -12985,6 +12988,28 @@ async function markProjectComplete(projectId) {
                                         <option value="medium">🟡 Medium - Important Update</option>
                                         <option value="high">🔴 High - Urgent / Action Required</option>
                                     </select>
+                                </div>
+                            </div>
+                            
+                            <div class="hr-form-section">
+                                <h4>🖼️ Event Image (Optional)</h4>
+                                <p style="font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem;">Upload a large banner image for events, announcements, or promotions. Recommended size: 1200x600px</p>
+                                <div class="form-group">
+                                    <label for="newsImage" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; padding: 1rem; border: 2px dashed #d1d5db; border-radius: 12px; text-align: center; justify-content: center; background: #f9fafb; transition: all 0.2s;" onmouseover="this.style.borderColor='#3b82f6'; this.style.background='#eff6ff';" onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb';">
+                                        <span style="font-size: 2rem;">📷</span>
+                                        <span>Click to upload event banner image</span>
+                                    </label>
+                                    <input type="file" id="newsImage" accept="image/*" style="display: none;" onchange="previewNewsImage(event)">
+                                </div>
+                                <div id="newsImagePreview" style="margin-top: 1rem; text-align: center; display: none;">
+                                    <img id="newsImagePreviewImg" style="max-width: 100%; max-height: 300px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                                    <button type="button" onclick="removeNewsImage()" class="btn btn-danger btn-sm" style="margin-top: 0.5rem;">🗑️ Remove Image</button>
+                                </div>
+                                <div id="newsImageUploadProgress" style="display: none; margin-top: 0.5rem;">
+                                    <div style="background: #e5e7eb; border-radius: 8px; height: 8px; overflow: hidden;">
+                                        <div id="newsImageProgressBar" style="background: linear-gradient(90deg, #3b82f6, #8b5cf6); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                                    </div>
+                                    <span id="newsImageProgressText" style="font-size: 0.8rem; color: #6b7280;">Uploading...</span>
                                 </div>
                             </div>
                             
@@ -13028,7 +13053,7 @@ async function markProjectComplete(projectId) {
                             
                             <div class="modal-actions" style="margin-top: 1.5rem;">
                                 <button type="button" class="btn btn-outline" onclick="closeModal('companyNewsModal')">Cancel</button>
-                                <button type="submit" class="btn btn-primary">📢 Publish News</button>
+                                <button type="submit" class="btn btn-primary" id="publishNewsBtn">📢 Publish News</button>
                             </div>
                         </form>
                     </div>
@@ -13039,9 +13064,100 @@ async function markProjectComplete(projectId) {
             document.getElementById('newsStartDate').valueAsDate = new Date();
         }
         
+        // Store the uploaded image URL
+        let newsImageUrl = null;
+        
+        // Preview news image
+        async function previewNewsImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const preview = document.getElementById('newsImagePreview');
+            const previewImg = document.getElementById('newsImagePreviewImg');
+            const progressDiv = document.getElementById('newsImageUploadProgress');
+            const progressBar = document.getElementById('newsImageProgressBar');
+            const progressText = document.getElementById('newsImageProgressText');
+            
+            // Show preview immediately (local)
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImg.src = e.target.result;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            
+            // Upload to Firebase Storage
+            try {
+                progressDiv.style.display = 'block';
+                progressBar.style.width = '10%';
+                progressText.textContent = 'Uploading to cloud...';
+                
+                // Check if Firebase Storage is available
+                if (typeof firebase !== 'undefined' && firebase.storage) {
+                    const storageRef = firebase.storage().ref();
+                    const fileName = `news-images/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
+                    const uploadTask = storageRef.child(fileName).put(file);
+                    
+                    uploadTask.on('state_changed', 
+                        (snapshot) => {
+                            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            progressBar.style.width = progress + '%';
+                            progressText.textContent = `Uploading: ${Math.round(progress)}%`;
+                        },
+                        (error) => {
+                            console.error('Upload error:', error);
+                            progressText.textContent = '❌ Upload failed - image will be embedded';
+                            progressDiv.style.display = 'none';
+                            // Fall back to embedded base64
+                            newsImageUrl = previewImg.src;
+                        },
+                        async () => {
+                            // Upload complete
+                            const downloadURL = await uploadTask.snapshot.ref.getDownloadURL();
+                            newsImageUrl = downloadURL;
+                            progressBar.style.width = '100%';
+                            progressText.textContent = '✅ Uploaded successfully!';
+                            setTimeout(() => {
+                                progressDiv.style.display = 'none';
+                            }, 1500);
+                            console.log('✅ Image uploaded to Firebase Storage:', downloadURL);
+                        }
+                    );
+                } else {
+                    // Firebase Storage not available, compress and use base64
+                    progressText.textContent = 'Processing image...';
+                    const compressedImage = await compressImage(file, 800, 0.8);
+                    newsImageUrl = compressedImage;
+                    progressBar.style.width = '100%';
+                    progressText.textContent = '✅ Image ready!';
+                    setTimeout(() => {
+                        progressDiv.style.display = 'none';
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Image processing error:', error);
+                progressDiv.style.display = 'none';
+            }
+        }
+        
+        // Remove news image
+        function removeNewsImage() {
+            newsImageUrl = null;
+            document.getElementById('newsImagePreview').style.display = 'none';
+            document.getElementById('newsImage').value = '';
+        }
+        
+        // Make functions globally accessible
+        window.previewNewsImage = previewNewsImage;
+        window.removeNewsImage = removeNewsImage;
+        
         // Submit company news
         async function submitCompanyNews(event) {
             event.preventDefault();
+            
+            const publishBtn = document.getElementById('publishNewsBtn');
+            publishBtn.disabled = true;
+            publishBtn.textContent = '⏳ Publishing...';
             
             const announcement = {
                 id: Date.now().toString(),
@@ -13051,6 +13167,7 @@ async function markProjectComplete(projectId) {
                 priority: document.getElementById('newsPriority').value,
                 summary: document.getElementById('newsSummary').value,
                 content: document.getElementById('newsContent').value,
+                image: newsImageUrl || null,  // Include uploaded image URL
                 startDate: document.getElementById('newsStartDate').value || null,
                 endDate: document.getElementById('newsEndDate').value || null,
                 link: document.getElementById('newsLink').value || null,
@@ -13072,7 +13189,14 @@ async function markProjectComplete(projectId) {
                 localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
             } catch (error) {
                 console.error('Error saving company news:', error);
+                publishBtn.disabled = false;
+                publishBtn.textContent = '📢 Publish News';
+                alert('❌ Error saving: ' + error.message);
+                return;
             }
+            
+            // Reset the image URL for next use
+            newsImageUrl = null;
             
             closeModal('companyNewsModal');
             await showHRDashboard();
@@ -13202,9 +13326,18 @@ async function markProjectComplete(projectId) {
                 };
                 const priority = priorityColors[announcement.priority] || priorityColors.low;
                 
+                // Image section (if image exists)
+                const imageHtml = announcement.image ? `
+                    <div class="announcement-image" style="width: 100%; max-height: 300px; overflow: hidden;">
+                        <img src="${announcement.image}" alt="${announcement.title}" style="width: 100%; height: auto; object-fit: cover; display: block;" onerror="this.parentElement.style.display='none';">
+                    </div>
+                ` : '';
+                
                 return `
                     <div class="announcement-card company-news news-priority-${announcement.priority || 'low'}" style="${cardBaseStyle} border-top: 5px solid #3b82f6;">
-                        <span class="announcement-badge company-news" style="position: absolute; top: 0.75rem; right: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; background: #3b82f6; color: white;">${announcement.category || 'Company Update'}</span>
+                        <span class="announcement-badge company-news" style="position: absolute; top: 0.75rem; right: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; background: #3b82f6; color: white; z-index: 10;">${announcement.category || 'Company Update'}</span>
+                        
+                        ${imageHtml}
                         
                         <div class="announcement-header company-news" style="padding: 1rem; display: flex; align-items: center; gap: 0.75rem; background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
                             <div class="announcement-avatar" style="width: 50px; height: 50px; min-width: 50px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white;">📰</div>
@@ -13325,24 +13458,35 @@ async function markProjectComplete(projectId) {
             const todayStr = today.toISOString().split('T')[0];
             const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
             const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const fiveDaysFromNow = new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
             
             return hrAnnouncements.filter(a => {
                 const createdAt = new Date(a.createdAt);
                 
-                // BIRTHDAY: Show only on birthday date, remove the next day
+                // BIRTHDAY: Show 5 days BEFORE birthday until the end of birthday day
                 if (a.type === 'birthday') {
                     if (a.birthdayDate) {
                         const birthdayDate = new Date(a.birthdayDate);
                         birthdayDate.setHours(0, 0, 0, 0);
                         
-                        // Show if birthday is today or in the future (within reasonable range)
+                        // Calculate days until birthday
+                        const daysUntilBirthday = Math.floor((birthdayDate - today) / (24 * 60 * 60 * 1000));
+                        
                         // Hide if birthday has passed (today > birthdayDate)
                         if (today > birthdayDate) {
                             console.log(`🎂 Birthday expired for ${a.name}: ${a.birthdayDate}`);
                             return false; // Birthday has passed, hide it
                         }
+                        
+                        // Show only if birthday is within next 5 days (or today)
+                        if (daysUntilBirthday > 5) {
+                            console.log(`🎂 Birthday too far for ${a.name}: ${daysUntilBirthday} days away`);
+                            return false; // More than 5 days away, don't show yet
+                        }
+                        
+                        return true; // Show birthday (within 5 days)
                     }
-                    return true; // Show upcoming birthdays
+                    return false; // No birthday date set
                 }
                 
                 // NEW JOINEE: Show for 7 days from joining date, then auto-remove
