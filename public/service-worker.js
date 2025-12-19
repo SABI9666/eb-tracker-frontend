@@ -1,11 +1,11 @@
 // ============================================
 // EBTracker Service Worker - FULL FEATURED
-// Version: 4.0.0 - Cache Version 24 (Professional News Carousel)
+// Version: 4.2.0 - Cache Version 26 (Fixed Syntax Error)
 // ============================================
 
-const CACHE_NAME = 'ebtracker-v24';
-const STATIC_CACHE = 'ebtracker-static-v24';
-const DYNAMIC_CACHE = 'ebtracker-dynamic-v24';
+const CACHE_NAME = 'ebtracker-v26';
+const STATIC_CACHE = 'ebtracker-static-v26';
+const DYNAMIC_CACHE = 'ebtracker-dynamic-v26';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
