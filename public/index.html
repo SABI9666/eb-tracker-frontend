@@ -618,274 +618,454 @@
     text-transform: uppercase;
 }
 
-/* ========== BEAUTIFUL NEWS TICKER STYLES ========== */
-.news-ticker-container {
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
-    border-radius: 16px;
+/* ========== PROFESSIONAL NEWS CAROUSEL STYLES ========== */
+.news-carousel-container {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    border-radius: 20px;
     padding: 0;
     margin-bottom: 2rem;
     overflow: hidden;
-    box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.news-ticker-header {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 0.75rem 1.5rem;
+.news-carousel-header {
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.3) 0%, rgba(139, 92, 246, 0.3) 100%);
+    padding: 1rem 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.news-ticker-title {
+.news-carousel-title {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     color: white;
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
-.news-ticker-live {
+.news-carousel-title-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.news-carousel-badge {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(239, 68, 68, 0.9);
+}
+
+.news-carousel-live {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
     color: white;
-    padding: 0.25rem 0.75rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.news-carousel-live::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: white;
+    border-radius: 50%;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.news-carousel-count {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    padding: 0.35rem 0.85rem;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
-    animation: pulse-live 2s infinite;
 }
 
-@keyframes pulse-live {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.7; }
-}
-
-.news-ticker-live::before {
-    content: '';
-    width: 8px;
-    height: 8px;
-    background: white;
-    border-radius: 50%;
-    animation: blink 1s infinite;
-}
-
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-}
-
-.news-ticker-wrapper {
-    position: relative;
-    overflow: hidden;
-    height: 60px;
-}
-
-.news-ticker-track {
-    display: flex;
-    position: absolute;
-    white-space: nowrap;
-    animation: ticker-scroll 30s linear infinite;
-    padding: 0.75rem 0;
-}
-
-.news-ticker-track:hover {
-    animation-play-state: paused;
-}
-
-@keyframes ticker-scroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-}
-
-.news-ticker-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.5rem 2rem;
-    margin-right: 3rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 30px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.news-ticker-item:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.02);
-}
-
-.news-ticker-icon {
-    font-size: 1.5rem;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-}
-
-.news-ticker-content {
+.news-carousel-body {
+    padding: 1.25rem;
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 1rem;
 }
 
-.news-ticker-category {
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.7);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-}
-
-.news-ticker-text {
-    font-size: 0.95rem;
-    color: white;
-    font-weight: 600;
-    max-width: 400px;
+.news-carousel-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 16px;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
     overflow: hidden;
-    text-overflow: ellipsis;
 }
 
-.news-ticker-priority {
+.news-carousel-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+}
+
+.news-carousel-item.priority-high::before {
+    background: linear-gradient(180deg, #ef4444, #dc2626);
+}
+
+.news-carousel-item.priority-medium::before {
+    background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.news-carousel-item.priority-low::before {
+    background: linear-gradient(180deg, #10b981, #059669);
+}
+
+.news-carousel-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.news-carousel-item-icon {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.3));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.news-carousel-item-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.news-carousel-item-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.news-carousel-item-category {
+    background: rgba(59, 130, 246, 0.3);
+    color: #93c5fd;
     padding: 0.2rem 0.6rem;
-    border-radius: 12px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.news-carousel-item-priority {
+    padding: 0.2rem 0.6rem;
+    border-radius: 6px;
     font-size: 0.65rem;
     font-weight: 700;
     text-transform: uppercase;
 }
 
-.news-ticker-priority.high {
-    background: #ef4444;
+.news-carousel-item-priority.high {
+    background: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.news-carousel-item-priority.medium {
+    background: rgba(245, 158, 11, 0.3);
+    color: #fcd34d;
+}
+
+.news-carousel-item-priority.low {
+    background: rgba(16, 185, 129, 0.3);
+    color: #6ee7b7;
+}
+
+.news-carousel-item-title {
     color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    line-height: 1.4;
 }
 
-.news-ticker-priority.medium {
-    background: #f59e0b;
-    color: #1f2937;
+.news-carousel-item-summary {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.news-ticker-priority.low {
-    background: #10b981;
-    color: white;
+.news-carousel-item-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.5rem;
 }
 
-.news-ticker-divider {
-    width: 6px;
-    height: 6px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 50%;
-    margin: 0 1rem;
+.news-carousel-item-date {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
-/* News ticker expanded card */
-.news-ticker-expanded {
+.news-carousel-item-action {
+    color: #93c5fd;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.news-carousel-item:hover .news-carousel-item-action {
+    opacity: 1;
+}
+
+/* Expanded News Card */
+.news-expanded-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.news-expanded-card {
     background: white;
-    margin: 0 1rem 1rem 1rem;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    animation: slideDown 0.3s ease;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.3s ease;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
 }
 
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-.news-ticker-expanded-header {
+.news-expanded-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 1rem;
 }
 
-.news-ticker-expanded-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1f2937;
+.news-expanded-badges {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
 }
 
-.news-ticker-expanded-close {
-    background: #f3f4f6;
-    border: none;
-    width: 32px;
-    height: 32px;
+.news-expanded-badge {
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.news-expanded-close {
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
     cursor: pointer;
     font-size: 1.2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
-}
-
-.news-ticker-expanded-close:hover {
-    background: #e5e7eb;
-}
-
-.news-ticker-expanded-image {
-    width: 100%;
-    max-height: 300px;
-    object-fit: cover;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
-
-.news-ticker-expanded-content {
-    color: #4b5563;
-    line-height: 1.6;
-    font-size: 0.95rem;
-}
-
-.news-ticker-expanded-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid #e5e7eb;
-    font-size: 0.8rem;
     color: #6b7280;
 }
 
-/* Mobile responsive */
+.news-expanded-close:hover {
+    background: #e5e7eb;
+    color: #1f2937;
+}
+
+.news-expanded-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+}
+
+.news-expanded-body {
+    padding: 1.5rem;
+}
+
+.news-expanded-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+}
+
+.news-expanded-summary {
+    font-size: 1.1rem;
+    color: #4b5563;
+    font-weight: 500;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.news-expanded-content {
+    color: #4b5563;
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.news-expanded-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.75rem 1.25rem;
+    background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.news-expanded-link:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+}
+
+.news-expanded-footer {
+    padding: 1rem 1.5rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #6b7280;
+    border-radius: 0 0 20px 20px;
+}
+
+.news-expanded-brand {
+    color: #3b82f6;
+    font-weight: 700;
+}
+
+/* Mobile Responsive */
 @media screen and (max-width: 768px) {
-    .news-ticker-container {
-        border-radius: 12px;
+    .news-carousel-container {
+        border-radius: 16px;
         margin: 0 -0.5rem 1.5rem -0.5rem;
     }
     
-    .news-ticker-header {
-        padding: 0.5rem 1rem;
+    .news-carousel-header {
+        padding: 0.75rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
     
-    .news-ticker-title {
-        font-size: 0.85rem;
+    .news-carousel-title {
+        font-size: 0.95rem;
     }
     
-    .news-ticker-wrapper {
-        height: 50px;
+    .news-carousel-title-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
     }
     
-    .news-ticker-item {
-        padding: 0.4rem 1.25rem;
-        margin-right: 2rem;
-    }
-    
-    .news-ticker-text {
-        font-size: 0.85rem;
-        max-width: 250px;
-    }
-    
-    .news-ticker-expanded {
-        margin: 0 0.5rem 0.5rem 0.5rem;
+    .news-carousel-body {
         padding: 1rem;
     }
+    
+    .news-carousel-item {
+        padding: 0.85rem 1rem;
+    }
+    
+    .news-carousel-item-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        font-size: 1.2rem;
+    }
+    
+    .news-carousel-item-title {
+        font-size: 0.9rem;
+    }
+    
+    .news-carousel-item-summary {
+        font-size: 0.8rem;
+        -webkit-line-clamp: 1;
+    }
+    
+    .news-expanded-card {
+        margin: 0.5rem;
+        max-height: 85vh;
+    }
+    
+    .news-expanded-title {
+        font-size: 1.25rem;
+    }
 }
-/* ========== END NEWS TICKER STYLES ========== */
+/* ========== END NEWS CAROUSEL STYLES ========== */
 
 
 .priority-badge.high {
@@ -13930,55 +14110,53 @@ async function markProjectComplete(projectId) {
                 return icons[category] || '📰';
             };
             
-            // Create ticker items (duplicate for seamless scroll)
-            const tickerItems = [...companyNews, ...companyNews].map((news, idx) => `
-                <div class="news-ticker-item" onclick="expandNewsItem('${news.id}')">
-                    <span class="news-ticker-icon">${getCategoryIcon(news.category)}</span>
-                    <div class="news-ticker-content">
-                        <span class="news-ticker-category">${news.category || 'Update'}</span>
-                        <span class="news-ticker-text">${news.title}</span>
+            // Create news items (proper card layout - no overlapping)
+            const newsItems = companyNews.map((news) => `
+                <div class="news-carousel-item priority-${news.priority || 'low'}" onclick="expandNewsItem('${news.id}')">
+                    <div class="news-carousel-item-icon">
+                        ${getCategoryIcon(news.category)}
                     </div>
-                    <span class="news-ticker-priority ${news.priority || 'low'}">${news.priority === 'high' ? '🔴 Urgent' : news.priority === 'medium' ? '🟡 Important' : '🟢 Info'}</span>
+                    <div class="news-carousel-item-content">
+                        <div class="news-carousel-item-meta">
+                            <span class="news-carousel-item-category">${news.category || 'Update'}</span>
+                            <span class="news-carousel-item-priority ${news.priority || 'low'}">${news.priority === 'high' ? 'Urgent' : news.priority === 'medium' ? 'Important' : 'Info'}</span>
+                        </div>
+                        <div class="news-carousel-item-title">${news.title}</div>
+                        <div class="news-carousel-item-summary">${news.summary || ''}</div>
+                        <div class="news-carousel-item-footer">
+                            <span class="news-carousel-item-date">📅 ${formatDate(news.createdAt)}</span>
+                            <span class="news-carousel-item-action">Click to read →</span>
+                        </div>
+                    </div>
                 </div>
-                <span class="news-ticker-divider"></span>
             `).join('');
             
             return `
-                <div class="news-ticker-container" id="newsTickerContainer">
-                    <div class="news-ticker-header">
-                        <div class="news-ticker-title">
-                            <span>📰</span>
+                <div class="news-carousel-container" id="newsCarouselContainer">
+                    <div class="news-carousel-header">
+                        <div class="news-carousel-title">
+                            <div class="news-carousel-title-icon">📰</div>
                             <span>EDANBROOK NEWS</span>
                         </div>
-                        <div class="news-ticker-live">
-                            LIVE
+                        <div class="news-carousel-badge">
+                            <span class="news-carousel-count">${companyNews.length} Update${companyNews.length > 1 ? 's' : ''}</span>
+                            <span class="news-carousel-live">LIVE</span>
                         </div>
                     </div>
-                    <div class="news-ticker-wrapper">
-                        <div class="news-ticker-track" id="newsTickerTrack">
-                            ${tickerItems}
-                        </div>
+                    <div class="news-carousel-body">
+                        ${newsItems}
                     </div>
-                    <div id="newsTickerExpanded"></div>
                 </div>
+                <div id="newsExpandedOverlay"></div>
             `;
         }
         
-        // Expand news item when clicked
+        // Expand news item when clicked - opens as fullscreen modal
         function expandNewsItem(newsId) {
             const companyNews = getActiveCompanyNews();
             const news = companyNews.find(n => n.id == newsId);
             
             if (!news) return;
-            
-            const expandedDiv = document.getElementById('newsTickerExpanded');
-            
-            // Toggle if same item clicked
-            if (expandedNewsId === newsId) {
-                expandedDiv.innerHTML = '';
-                expandedNewsId = null;
-                return;
-            }
             
             expandedNewsId = newsId;
             
@@ -13989,40 +14167,54 @@ async function markProjectComplete(projectId) {
             };
             const priority = priorityColors[news.priority] || priorityColors.low;
             
-            expandedDiv.innerHTML = `
-                <div class="news-ticker-expanded">
-                    <div class="news-ticker-expanded-header">
-                        <div>
-                            <span style="background: ${priority.bg}; color: ${priority.text}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${priority.label}</span>
-                            <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">${news.category || 'Update'}</span>
+            // Create overlay modal
+            const overlay = document.createElement('div');
+            overlay.id = 'newsModalOverlay';
+            overlay.className = 'news-expanded-overlay';
+            overlay.onclick = function(e) {
+                if (e.target === overlay) closeExpandedNews();
+            };
+            
+            overlay.innerHTML = `
+                <div class="news-expanded-card">
+                    <div class="news-expanded-header">
+                        <div class="news-expanded-badges">
+                            <span class="news-expanded-badge" style="background: ${priority.bg}; color: ${priority.text};">${priority.label}</span>
+                            <span class="news-expanded-badge" style="background: #dbeafe; color: #1e40af;">${news.category || 'Update'}</span>
                         </div>
-                        <button class="news-ticker-expanded-close" onclick="closeExpandedNews()">✕</button>
+                        <button class="news-expanded-close" onclick="closeExpandedNews()">✕</button>
                     </div>
-                    <h3 class="news-ticker-expanded-title">${news.title}</h3>
-                    ${news.image ? `<img src="${news.image}" alt="${news.title}" class="news-ticker-expanded-image" onerror="this.style.display='none'">` : ''}
-                    <p style="color: #1f2937; font-weight: 500; margin-bottom: 0.75rem;">${news.summary || ''}</p>
-                    <div class="news-ticker-expanded-content">${news.content || ''}</div>
-                    ${news.link ? `
-                        <div style="margin-top: 1rem;">
-                            <a href="${news.link}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                    ${news.image ? `<img src="${news.image}" alt="${news.title}" class="news-expanded-image" onerror="this.style.display='none'">` : ''}
+                    <div class="news-expanded-body">
+                        <h2 class="news-expanded-title">${news.title}</h2>
+                        ${news.summary ? `<p class="news-expanded-summary">${news.summary}</p>` : ''}
+                        <div class="news-expanded-content">${news.content || ''}</div>
+                        ${news.link ? `
+                            <a href="${news.link}" target="_blank" class="news-expanded-link">
                                 🔗 ${news.linkText || 'Read More'}
                             </a>
-                        </div>
-                    ` : ''}
-                    <div class="news-ticker-expanded-meta">
+                        ` : ''}
+                    </div>
+                    <div class="news-expanded-footer">
                         <span>📅 Posted: ${formatDate(news.createdAt)}</span>
-                        <span style="color: #667eea; font-weight: 600;">EDANBROOK HR</span>
+                        <span class="news-expanded-brand">EDANBROOK HR</span>
                     </div>
                 </div>
             `;
+            
+            document.body.appendChild(overlay);
+            document.body.style.overflow = 'hidden'; // Prevent background scroll
         }
         
-        // Close expanded news
+        // Close expanded news modal
         function closeExpandedNews() {
-            const expandedDiv = document.getElementById('newsTickerExpanded');
-            if (expandedDiv) {
-                expandedDiv.innerHTML = '';
+            const overlay = document.getElementById('newsModalOverlay');
+            if (overlay) {
+                overlay.remove();
             }
+            document.body.style.overflow = ''; // Restore scroll
+            expandedNewsId = null;
+        }
             expandedNewsId = null;
         }
         
