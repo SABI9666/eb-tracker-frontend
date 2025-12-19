@@ -12338,9 +12338,22 @@ async function markProjectComplete(projectId) {
             try {
                 await loadAnnouncements();
                 
+                // Get today's date for active/expired calculation
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Calculate active vs expired counts
+                const activeAnnouncements = getActiveAnnouncements();
+                const expiredCount = hrAnnouncements.length - activeAnnouncements.length;
+                
                 const newJoineesCount = hrAnnouncements.filter(a => a.type === 'new-joinee').length;
                 const birthdaysCount = hrAnnouncements.filter(a => a.type === 'birthday').length;
                 const companyNewsCount = hrAnnouncements.filter(a => a.type === 'company-news').length;
+                
+                // Count active only
+                const activeNewJoinees = activeAnnouncements.filter(a => a.type === 'new-joinee').length;
+                const activeBirthdays = activeAnnouncements.filter(a => a.type === 'birthday').length;
+                const activeCompanyNews = activeAnnouncements.filter(a => a.type === 'company-news').length;
                 
                 main.innerHTML = `
                     <div class="page-header">
@@ -12354,47 +12367,56 @@ async function markProjectComplete(projectId) {
                             <div class="hr-card new-joinee" onclick="showNewJoineeModal()">
                                 <div class="hr-card-icon new-joinee">👋</div>
                                 <h3>New Joinee Announcement</h3>
-                                <p>Welcome a new team member to the organization. Add their details and introduce them to everyone.</p>
+                                <p>Welcome a new team member. <strong>Auto-expires after 7 days</strong> from joining date.</p>
                                 <button class="btn btn-success">+ Add New Joinee</button>
                             </div>
                             
                             <div class="hr-card birthday" onclick="showBirthdayModal()">
                                 <div class="hr-card-icon birthday">🎂</div>
                                 <h3>Birthday Announcement</h3>
-                                <p>Celebrate team member birthdays. Send warm wishes and make their day special.</p>
+                                <p>Celebrate birthdays. <strong>Auto-expires day after birthday</strong>.</p>
                                 <button class="btn btn-warning">+ Add Birthday</button>
                             </div>
                             
                             <div class="hr-card company-news" onclick="showCompanyNewsModal()">
                                 <div class="hr-card-icon company-news">📰</div>
                                 <h3>Company News Update</h3>
-                                <p>Share important company updates, policy changes, events, and news with all employees.</p>
+                                <p>Share updates. Set custom start/end dates or <strong>default 30 days</strong>.</p>
                                 <button class="btn btn-primary">+ Add Company News</button>
                             </div>
                         </div>
                     </div>
                     
                     <div class="dashboard-stats" style="margin: 2rem 0;">
-                        <div class="stat-card">
-                            <div class="stat-number">${hrAnnouncements.length}</div>
-                            <div class="stat-label">Total Announcements</div>
+                        <div class="stat-card" style="background: linear-gradient(135deg, #e0e7ff, #c7d2fe);">
+                            <div class="stat-number">${activeAnnouncements.length}</div>
+                            <div class="stat-label">Active (Visible)</div>
                         </div>
                         <div class="stat-card" style="background: linear-gradient(135deg, #d1fae5, #a7f3d0);">
-                            <div class="stat-number">${newJoineesCount}</div>
-                            <div class="stat-label">New Joinees</div>
+                            <div class="stat-number">${activeNewJoinees}</div>
+                            <div class="stat-label">New Joinees (7d)</div>
                         </div>
                         <div class="stat-card" style="background: linear-gradient(135deg, #fef3c7, #fde68a);">
-                            <div class="stat-number">${birthdaysCount}</div>
+                            <div class="stat-number">${activeBirthdays}</div>
                             <div class="stat-label">Birthdays</div>
                         </div>
                         <div class="stat-card" style="background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
-                            <div class="stat-number">${companyNewsCount}</div>
+                            <div class="stat-number">${activeCompanyNews}</div>
                             <div class="stat-label">Company News</div>
                         </div>
+                        ${expiredCount > 0 ? `
+                        <div class="stat-card" style="background: linear-gradient(135deg, #fee2e2, #fecaca); cursor: pointer;" onclick="cleanupExpiredAnnouncements()">
+                            <div class="stat-number">${expiredCount}</div>
+                            <div class="stat-label">🗑️ Expired (Click to Clean)</div>
+                        </div>
+                        ` : ''}
                     </div>
                     
                     <div class="announcements-list">
-                        <h3 style="margin-bottom: 1rem; color: #1f2937;">📋 Recent Announcements</h3>
+                        <h3 style="margin-bottom: 1rem; color: #1f2937; display: flex; justify-content: space-between; align-items: center;">
+                            📋 All Announcements
+                            ${expiredCount > 0 ? `<button class="btn btn-danger btn-sm" onclick="cleanupExpiredAnnouncements()">🗑️ Remove ${expiredCount} Expired</button>` : ''}
+                        </h3>
                         ${renderAnnouncementsList()}
                     </div>
                 `;
@@ -12419,31 +12441,82 @@ async function markProjectComplete(projectId) {
                 `;
             }
             
+            // Get today's date for status calculation
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
             // Sort by date (newest first)
             const sortedAnnouncements = [...hrAnnouncements].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             
             return sortedAnnouncements.map((announcement, index) => {
                 let icon = '👋';
                 let subtitle = '';
+                let statusBadge = '';
+                let isExpired = false;
                 
                 if (announcement.type === 'new-joinee') {
                     icon = '👋';
+                    const joiningDate = new Date(announcement.joiningDate);
+                    joiningDate.setHours(0, 0, 0, 0);
+                    const daysSinceJoining = Math.floor((today - joiningDate) / (24 * 60 * 60 * 1000));
+                    const daysRemaining = 7 - daysSinceJoining;
+                    
+                    if (daysSinceJoining > 7) {
+                        isExpired = true;
+                        statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Expired</span>';
+                    } else if (daysRemaining <= 2) {
+                        statusBadge = `<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">${daysRemaining}d left</span>`;
+                    } else {
+                        statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Active (${daysRemaining}d)</span>`;
+                    }
                     subtitle = `Joined: ${announcement.department} • ${formatDate(announcement.joiningDate)}`;
+                    
                 } else if (announcement.type === 'birthday') {
                     icon = '🎂';
+                    const birthdayDate = new Date(announcement.birthdayDate);
+                    birthdayDate.setHours(0, 0, 0, 0);
+                    const daysUntilBirthday = Math.floor((birthdayDate - today) / (24 * 60 * 60 * 1000));
+                    
+                    if (today > birthdayDate) {
+                        isExpired = true;
+                        statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Expired</span>';
+                    } else if (daysUntilBirthday === 0) {
+                        statusBadge = '<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">🎉 TODAY!</span>';
+                    } else {
+                        statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">In ${daysUntilBirthday}d</span>`;
+                    }
                     subtitle = `Birthday: ${formatDate(announcement.birthdayDate)}`;
+                    
                 } else if (announcement.type === 'company-news') {
                     icon = '📰';
+                    const todayStr = today.toISOString().split('T')[0];
+                    
+                    if (announcement.endDate && announcement.endDate < todayStr) {
+                        isExpired = true;
+                        statusBadge = '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Expired</span>';
+                    } else if (announcement.endDate) {
+                        const endDate = new Date(announcement.endDate);
+                        const daysRemaining = Math.floor((endDate - today) / (24 * 60 * 60 * 1000));
+                        if (daysRemaining <= 3) {
+                            statusBadge = `<span style="background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">${daysRemaining}d left</span>`;
+                        } else {
+                            statusBadge = `<span style="background: #d1fae5; color: #065f46; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">Active</span>`;
+                        }
+                    } else {
+                        statusBadge = '<span style="background: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; margin-left: 8px;">No Expiry</span>';
+                    }
                     subtitle = `${announcement.category || 'General'} • ${formatDate(announcement.createdAt)}`;
                 }
                 
+                const rowStyle = isExpired ? 'opacity: 0.6; background: #f9fafb;' : '';
+                
                 return `
-                    <div class="announcement-list-item ${announcement.type === 'company-news' ? 'news-priority-' + (announcement.priority || 'low') : ''}">
+                    <div class="announcement-list-item ${announcement.type === 'company-news' ? 'news-priority-' + (announcement.priority || 'low') : ''}" style="${rowStyle}">
                         <div class="announcement-list-avatar ${announcement.type}">
                             ${icon}
                         </div>
                         <div class="announcement-list-info">
-                            <h4>${announcement.type === 'company-news' ? announcement.title : announcement.name}</h4>
+                            <h4>${announcement.type === 'company-news' ? announcement.title : announcement.name} ${statusBadge}</h4>
                             <p>${subtitle}</p>
                         </div>
                         <div class="announcement-list-actions">
@@ -13059,6 +13132,58 @@ async function markProjectComplete(projectId) {
             alert('✅ Announcement deleted successfully!');
         }
         
+        // Cleanup all expired announcements
+        async function cleanupExpiredAnnouncements() {
+            const activeAnnouncements = getActiveAnnouncements();
+            const expiredCount = hrAnnouncements.length - activeAnnouncements.length;
+            
+            if (expiredCount === 0) {
+                alert('✅ No expired announcements to clean up!');
+                return;
+            }
+            
+            if (!confirm(`Are you sure you want to delete ${expiredCount} expired announcement(s)?\n\nThis will permanently remove:\n- Birthdays that have passed\n- New joinees older than 7 days\n- Company news past end date`)) {
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // Get IDs of expired announcements
+                const activeIds = new Set(activeAnnouncements.map(a => a.id?.toString()));
+                const expiredAnnouncements = hrAnnouncements.filter(a => !activeIds.has(a.id?.toString()));
+                
+                // Delete from Firestore
+                if (typeof db !== 'undefined' && db.collection) {
+                    for (const expired of expiredAnnouncements) {
+                        if (expired.id) {
+                            await db.collection('hrAnnouncements').doc(expired.id.toString()).delete();
+                            console.log('🗑️ Deleted expired:', expired.id);
+                        }
+                    }
+                }
+                
+                // Update local array to only active announcements
+                hrAnnouncements = [...activeAnnouncements];
+                
+                // Update localStorage
+                localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+                
+                console.log(`✅ Cleaned up ${expiredCount} expired announcements`);
+                await showHRDashboard();
+                alert(`✅ Successfully removed ${expiredCount} expired announcement(s)!`);
+                
+            } catch (error) {
+                console.error('Error cleaning up announcements:', error);
+                alert('❌ Error cleaning up announcements: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+        
+        // Make cleanup function globally accessible
+        window.cleanupExpiredAnnouncements = cleanupExpiredAnnouncements;
+        
         // Render a single announcement card
         function renderAnnouncementCard(announcement) {
             const isNewJoinee = announcement.type === 'new-joinee';
@@ -13196,13 +13321,48 @@ async function markProjectComplete(projectId) {
         function getActiveAnnouncements() {
             loadAnnouncementsSync();
             const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset to start of day for accurate comparison
             const todayStr = today.toISOString().split('T')[0];
             const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
             
             return hrAnnouncements.filter(a => {
                 const createdAt = new Date(a.createdAt);
                 
-                // For company news, check validity dates
+                // BIRTHDAY: Show only on birthday date, remove the next day
+                if (a.type === 'birthday') {
+                    if (a.birthdayDate) {
+                        const birthdayDate = new Date(a.birthdayDate);
+                        birthdayDate.setHours(0, 0, 0, 0);
+                        
+                        // Show if birthday is today or in the future (within reasonable range)
+                        // Hide if birthday has passed (today > birthdayDate)
+                        if (today > birthdayDate) {
+                            console.log(`🎂 Birthday expired for ${a.name}: ${a.birthdayDate}`);
+                            return false; // Birthday has passed, hide it
+                        }
+                    }
+                    return true; // Show upcoming birthdays
+                }
+                
+                // NEW JOINEE: Show for 7 days from joining date, then auto-remove
+                if (a.type === 'new-joinee') {
+                    if (a.joiningDate) {
+                        const joiningDate = new Date(a.joiningDate);
+                        joiningDate.setHours(0, 0, 0, 0);
+                        
+                        // Calculate days since joining
+                        const daysSinceJoining = Math.floor((today - joiningDate) / (24 * 60 * 60 * 1000));
+                        
+                        if (daysSinceJoining > 7) {
+                            console.log(`👋 New joinee expired for ${a.name}: joined ${daysSinceJoining} days ago`);
+                            return false; // More than 7 days since joining, hide it
+                        }
+                    }
+                    return true; // Show new joinees within 7 days
+                }
+                
+                // COMPANY NEWS: Check validity dates
                 if (a.type === 'company-news') {
                     // Check start date
                     if (a.startDate && a.startDate > todayStr) {
@@ -13212,6 +13372,8 @@ async function markProjectComplete(projectId) {
                     if (a.endDate && a.endDate < todayStr) {
                         return false; // Expired
                     }
+                    // Default: show company news from last 30 days
+                    return createdAt >= thirtyDaysAgo;
                 }
                 
                 // Default: show announcements from last 30 days
