@@ -618,6 +618,276 @@
     text-transform: uppercase;
 }
 
+/* ========== BEAUTIFUL NEWS TICKER STYLES ========== */
+.news-ticker-container {
+    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #1e40af 100%);
+    border-radius: 16px;
+    padding: 0;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+    position: relative;
+}
+
+.news-ticker-header {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.news-ticker-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.news-ticker-live {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    animation: pulse-live 2s infinite;
+}
+
+@keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.news-ticker-live::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: white;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+.news-ticker-wrapper {
+    position: relative;
+    overflow: hidden;
+    height: 60px;
+}
+
+.news-ticker-track {
+    display: flex;
+    position: absolute;
+    white-space: nowrap;
+    animation: ticker-scroll 30s linear infinite;
+    padding: 0.75rem 0;
+}
+
+.news-ticker-track:hover {
+    animation-play-state: paused;
+}
+
+@keyframes ticker-scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+}
+
+.news-ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 2rem;
+    margin-right: 3rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.news-ticker-item:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.02);
+}
+
+.news-ticker-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.news-ticker-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.news-ticker-category {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+.news-ticker-text {
+    font-size: 0.95rem;
+    color: white;
+    font-weight: 600;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.news-ticker-priority {
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.news-ticker-priority.high {
+    background: #ef4444;
+    color: white;
+}
+
+.news-ticker-priority.medium {
+    background: #f59e0b;
+    color: #1f2937;
+}
+
+.news-ticker-priority.low {
+    background: #10b981;
+    color: white;
+}
+
+.news-ticker-divider {
+    width: 6px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    margin: 0 1rem;
+}
+
+/* News ticker expanded card */
+.news-ticker-expanded {
+    background: white;
+    margin: 0 1rem 1rem 1rem;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.news-ticker-expanded-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.news-ticker-expanded-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.news-ticker-expanded-close {
+    background: #f3f4f6;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.news-ticker-expanded-close:hover {
+    background: #e5e7eb;
+}
+
+.news-ticker-expanded-image {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.news-ticker-expanded-content {
+    color: #4b5563;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+.news-ticker-expanded-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+/* Mobile responsive */
+@media screen and (max-width: 768px) {
+    .news-ticker-container {
+        border-radius: 12px;
+        margin: 0 -0.5rem 1.5rem -0.5rem;
+    }
+    
+    .news-ticker-header {
+        padding: 0.5rem 1rem;
+    }
+    
+    .news-ticker-title {
+        font-size: 0.85rem;
+    }
+    
+    .news-ticker-wrapper {
+        height: 50px;
+    }
+    
+    .news-ticker-item {
+        padding: 0.4rem 1.25rem;
+        margin-right: 2rem;
+    }
+    
+    .news-ticker-text {
+        font-size: 0.85rem;
+        max-width: 250px;
+    }
+    
+    .news-ticker-expanded {
+        margin: 0 0.5rem 0.5rem 0.5rem;
+        padding: 1rem;
+    }
+}
+/* ========== END NEWS TICKER STYLES ========== */
+
+
 .priority-badge.high {
     background: #fee2e2;
     color: #991b1b;
@@ -12239,19 +12509,23 @@ async function markProjectComplete(projectId) {
         async function loadAnnouncements() {
             // First load from localStorage for immediate data
             loadAnnouncementsSync();
+            console.log('📢 After localStorage load:', hrAnnouncements.length, 'announcements');
             
             // Then try to sync from Firestore
             try {
                 if (typeof db !== 'undefined' && db.collection) {
                     console.log('📢 Syncing announcements from Firestore...');
                     const snapshot = await db.collection('hrAnnouncements').get();
+                    console.log('📢 Firestore snapshot empty:', snapshot.empty, 'size:', snapshot.size);
                     
                     if (!snapshot.empty) {
                         hrAnnouncements = [];
                         snapshot.forEach(doc => {
+                            const data = doc.data();
+                            console.log('📢 Loading announcement:', doc.id, data.type, data.title || data.name);
                             hrAnnouncements.push({
                                 id: doc.id,
-                                ...doc.data()
+                                ...data
                             });
                         });
                         console.log('✅ Synced', hrAnnouncements.length, 'announcements from Firestore');
@@ -12260,12 +12534,15 @@ async function markProjectComplete(projectId) {
                         // Update localStorage cache
                         try {
                             localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+                            console.log('💾 Cached to localStorage');
                         } catch (e) {
                             console.log('Could not cache to localStorage');
                         }
                     } else {
                         console.log('📢 No announcements in Firestore, using localStorage data');
                     }
+                } else {
+                    console.log('⚠️ Firestore db not available');
                 }
             } catch (error) {
                 console.log('Firestore sync failed:', error.message);
@@ -13064,8 +13341,9 @@ async function markProjectComplete(projectId) {
             document.getElementById('newsStartDate').valueAsDate = new Date();
         }
         
-        // Store the uploaded image URL
+        // Store the uploaded image URL and upload state
         let newsImageUrl = null;
+        let isImageUploading = false;
         
         // Preview news image
         async function previewNewsImage(event) {
@@ -13077,6 +13355,12 @@ async function markProjectComplete(projectId) {
             const progressDiv = document.getElementById('newsImageUploadProgress');
             const progressBar = document.getElementById('newsImageProgressBar');
             const progressText = document.getElementById('newsImageProgressText');
+            const publishBtn = document.getElementById('publishNewsBtn');
+            
+            // Disable publish button while uploading
+            isImageUploading = true;
+            publishBtn.disabled = true;
+            publishBtn.textContent = '⏳ Uploading image...';
             
             // Show preview immediately (local)
             const reader = new FileReader();
@@ -13110,6 +13394,10 @@ async function markProjectComplete(projectId) {
                             progressDiv.style.display = 'none';
                             // Fall back to embedded base64
                             newsImageUrl = previewImg.src;
+                            // Re-enable publish button
+                            isImageUploading = false;
+                            publishBtn.disabled = false;
+                            publishBtn.textContent = '📢 Publish News';
                         },
                         async () => {
                             // Upload complete
@@ -13117,6 +13405,10 @@ async function markProjectComplete(projectId) {
                             newsImageUrl = downloadURL;
                             progressBar.style.width = '100%';
                             progressText.textContent = '✅ Uploaded successfully!';
+                            // Re-enable publish button
+                            isImageUploading = false;
+                            publishBtn.disabled = false;
+                            publishBtn.textContent = '📢 Publish News';
                             setTimeout(() => {
                                 progressDiv.style.display = 'none';
                             }, 1500);
@@ -13130,6 +13422,10 @@ async function markProjectComplete(projectId) {
                     newsImageUrl = compressedImage;
                     progressBar.style.width = '100%';
                     progressText.textContent = '✅ Image ready!';
+                    // Re-enable publish button
+                    isImageUploading = false;
+                    publishBtn.disabled = false;
+                    publishBtn.textContent = '📢 Publish News';
                     setTimeout(() => {
                         progressDiv.style.display = 'none';
                     }, 1000);
@@ -13137,14 +13433,25 @@ async function markProjectComplete(projectId) {
             } catch (error) {
                 console.error('Image processing error:', error);
                 progressDiv.style.display = 'none';
+                // Re-enable publish button on error
+                isImageUploading = false;
+                publishBtn.disabled = false;
+                publishBtn.textContent = '📢 Publish News';
             }
         }
         
         // Remove news image
         function removeNewsImage() {
             newsImageUrl = null;
+            isImageUploading = false;
             document.getElementById('newsImagePreview').style.display = 'none';
             document.getElementById('newsImage').value = '';
+            // Re-enable publish button
+            const publishBtn = document.getElementById('publishNewsBtn');
+            if (publishBtn) {
+                publishBtn.disabled = false;
+                publishBtn.textContent = '📢 Publish News';
+            }
         }
         
         // Make functions globally accessible
@@ -13155,9 +13462,18 @@ async function markProjectComplete(projectId) {
         async function submitCompanyNews(event) {
             event.preventDefault();
             
+            // Check if image is still uploading
+            if (isImageUploading) {
+                alert('⏳ Please wait for image upload to complete!');
+                return;
+            }
+            
             const publishBtn = document.getElementById('publishNewsBtn');
             publishBtn.disabled = true;
             publishBtn.textContent = '⏳ Publishing...';
+            
+            // Log image URL for debugging
+            console.log('📷 News image URL:', newsImageUrl ? 'Set (' + newsImageUrl.substring(0, 50) + '...)' : 'None');
             
             const announcement = {
                 id: Date.now().toString(),
@@ -13175,6 +13491,8 @@ async function markProjectComplete(projectId) {
                 createdAt: new Date().toISOString(),
                 createdBy: currentUser ? currentUser.email : 'HR'
             };
+            
+            console.log('📰 Saving announcement with image:', announcement.image ? 'Yes' : 'No');
             
             // Add to local array
             hrAnnouncements.push(announcement);
@@ -13460,6 +13778,9 @@ async function markProjectComplete(projectId) {
             const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
             const fiveDaysFromNow = new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000);
             
+            // Debug: Log all announcements
+            console.log('📢 All announcements:', hrAnnouncements.length, hrAnnouncements.map(a => ({type: a.type, title: a.title || a.name, startDate: a.startDate, endDate: a.endDate})));
+            
             return hrAnnouncements.filter(a => {
                 const createdAt = new Date(a.createdAt);
                 
@@ -13508,16 +13829,22 @@ async function markProjectComplete(projectId) {
                 
                 // COMPANY NEWS: Check validity dates
                 if (a.type === 'company-news') {
+                    console.log(`📰 Checking company news: "${a.title}", startDate: ${a.startDate}, endDate: ${a.endDate}, today: ${todayStr}`);
+                    
                     // Check start date
                     if (a.startDate && a.startDate > todayStr) {
+                        console.log(`📰 Not yet active: startDate ${a.startDate} > today ${todayStr}`);
                         return false; // Not yet active
                     }
                     // Check end date
                     if (a.endDate && a.endDate < todayStr) {
+                        console.log(`📰 Expired: endDate ${a.endDate} < today ${todayStr}`);
                         return false; // Expired
                     }
-                    // Default: show company news from last 30 days
-                    return createdAt >= thirtyDaysAgo;
+                    // Check if created within last 30 days
+                    const isRecent = createdAt >= thirtyDaysAgo;
+                    console.log(`📰 Company news "${a.title}" isRecent: ${isRecent}, createdAt: ${a.createdAt}`);
+                    return isRecent;
                 }
                 
                 // Default: show announcements from last 30 days
@@ -13533,35 +13860,172 @@ async function markProjectComplete(projectId) {
             });
         }
         
-        // Render announcements section for dashboard (visible to all users)
-        function renderDashboardAnnouncements() {
-            const announcements = getActiveAnnouncements();
+        // Get only company news for the ticker
+        function getActiveCompanyNews() {
+            return getActiveAnnouncements().filter(a => a.type === 'company-news');
+        }
+        
+        // Get birthdays and new joinees (non-news announcements)
+        function getActivePeopleAnnouncements() {
+            return getActiveAnnouncements().filter(a => a.type === 'birthday' || a.type === 'new-joinee');
+        }
+        
+        // Store expanded news ID
+        let expandedNewsId = null;
+        
+        // Render beautiful scrolling news ticker for Company News
+        function renderNewsTicker() {
+            const companyNews = getActiveCompanyNews();
             
-            if (announcements.length === 0) {
+            if (companyNews.length === 0) {
                 return '';
             }
             
-            // Always use flex column on mobile-sized content for reliability
-            const containerStyle = "display: flex; flex-direction: column; gap: 1rem; width: 100%;";
+            // Get category icon
+            const getCategoryIcon = (category) => {
+                const icons = {
+                    'Company Update': '🏢',
+                    'Policy Change': '📜',
+                    'Event': '🎉',
+                    'Achievement': '🏆',
+                    'Holiday Notice': '🎄',
+                    'Training': '📚',
+                    'Health & Safety': '🏥',
+                    'General': '📰'
+                };
+                return icons[category] || '📰';
+            };
+            
+            // Create ticker items (duplicate for seamless scroll)
+            const tickerItems = [...companyNews, ...companyNews].map((news, idx) => `
+                <div class="news-ticker-item" onclick="expandNewsItem('${news.id}')">
+                    <span class="news-ticker-icon">${getCategoryIcon(news.category)}</span>
+                    <div class="news-ticker-content">
+                        <span class="news-ticker-category">${news.category || 'Update'}</span>
+                        <span class="news-ticker-text">${news.title}</span>
+                    </div>
+                    <span class="news-ticker-priority ${news.priority || 'low'}">${news.priority === 'high' ? '🔴 Urgent' : news.priority === 'medium' ? '🟡 Important' : '🟢 Info'}</span>
+                </div>
+                <span class="news-ticker-divider"></span>
+            `).join('');
             
             return `
-                <div class="announcements-section" id="announcementsSectionMobile" style="display: block !important; visibility: visible !important; width: 100% !important; margin-bottom: 2rem; overflow: visible !important; padding: 0 !important;">
-                    <div style="margin-bottom: 1rem; padding: 0;">
-                        <h3 style="color: #1f2937; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 1.1rem; margin: 0;">
-                            📢 Company Announcements
-                            <span style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;">${announcements.length} New</span>
-                        </h3>
-                    </div>
-                    <div id="announcementsContainerMobile" style="${containerStyle}">
-                        ${announcements.slice(0, 4).map(a => renderAnnouncementCard(a)).join('')}
-                    </div>
-                    ${announcements.length > 4 ? `
-                        <div style="text-align: center; margin-top: 1.5rem;">
-                            <button class="btn btn-outline" onclick="showAllAnnouncements()">View All Announcements (${announcements.length})</button>
+                <div class="news-ticker-container" id="newsTickerContainer">
+                    <div class="news-ticker-header">
+                        <div class="news-ticker-title">
+                            <span>📰</span>
+                            <span>EDANBROOK NEWS</span>
                         </div>
-                    ` : ''}
+                        <div class="news-ticker-live">
+                            LIVE
+                        </div>
+                    </div>
+                    <div class="news-ticker-wrapper">
+                        <div class="news-ticker-track" id="newsTickerTrack">
+                            ${tickerItems}
+                        </div>
+                    </div>
+                    <div id="newsTickerExpanded"></div>
                 </div>
             `;
+        }
+        
+        // Expand news item when clicked
+        function expandNewsItem(newsId) {
+            const companyNews = getActiveCompanyNews();
+            const news = companyNews.find(n => n.id == newsId);
+            
+            if (!news) return;
+            
+            const expandedDiv = document.getElementById('newsTickerExpanded');
+            
+            // Toggle if same item clicked
+            if (expandedNewsId === newsId) {
+                expandedDiv.innerHTML = '';
+                expandedNewsId = null;
+                return;
+            }
+            
+            expandedNewsId = newsId;
+            
+            const priorityColors = {
+                high: { bg: '#fee2e2', text: '#991b1b', label: '🔴 Urgent' },
+                medium: { bg: '#fef3c7', text: '#92400e', label: '🟡 Important' },
+                low: { bg: '#d1fae5', text: '#065f46', label: '🟢 Info' }
+            };
+            const priority = priorityColors[news.priority] || priorityColors.low;
+            
+            expandedDiv.innerHTML = `
+                <div class="news-ticker-expanded">
+                    <div class="news-ticker-expanded-header">
+                        <div>
+                            <span style="background: ${priority.bg}; color: ${priority.text}; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">${priority.label}</span>
+                            <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">${news.category || 'Update'}</span>
+                        </div>
+                        <button class="news-ticker-expanded-close" onclick="closeExpandedNews()">✕</button>
+                    </div>
+                    <h3 class="news-ticker-expanded-title">${news.title}</h3>
+                    ${news.image ? `<img src="${news.image}" alt="${news.title}" class="news-ticker-expanded-image" onerror="this.style.display='none'">` : ''}
+                    <p style="color: #1f2937; font-weight: 500; margin-bottom: 0.75rem;">${news.summary || ''}</p>
+                    <div class="news-ticker-expanded-content">${news.content || ''}</div>
+                    ${news.link ? `
+                        <div style="margin-top: 1rem;">
+                            <a href="${news.link}" target="_blank" class="btn btn-primary btn-sm" style="text-decoration: none;">
+                                🔗 ${news.linkText || 'Read More'}
+                            </a>
+                        </div>
+                    ` : ''}
+                    <div class="news-ticker-expanded-meta">
+                        <span>📅 Posted: ${formatDate(news.createdAt)}</span>
+                        <span style="color: #667eea; font-weight: 600;">EDANBROOK HR</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Close expanded news
+        function closeExpandedNews() {
+            const expandedDiv = document.getElementById('newsTickerExpanded');
+            if (expandedDiv) {
+                expandedDiv.innerHTML = '';
+            }
+            expandedNewsId = null;
+        }
+        
+        // Make functions global
+        window.expandNewsItem = expandNewsItem;
+        window.closeExpandedNews = closeExpandedNews;
+        
+        // Render announcements section for dashboard (visible to all users)
+        function renderDashboardAnnouncements() {
+            const companyNews = getActiveCompanyNews();
+            const peopleAnnouncements = getActivePeopleAnnouncements();
+            
+            // Return empty if no announcements at all
+            if (companyNews.length === 0 && peopleAnnouncements.length === 0) {
+                return '';
+            }
+            
+            // News ticker for company news
+            const newsTickerHtml = renderNewsTicker();
+            
+            // Cards for birthdays and new joinees
+            const containerStyle = "display: flex; flex-direction: column; gap: 1rem; width: 100%;";
+            const peopleCardsHtml = peopleAnnouncements.length > 0 ? `
+                <div class="announcements-section" style="display: block !important; visibility: visible !important; width: 100% !important; margin-bottom: 2rem; overflow: visible !important; padding: 0 !important;">
+                    <div style="margin-bottom: 1rem; padding: 0;">
+                        <h3 style="color: #1f2937; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 1.1rem; margin: 0;">
+                            🎉 Team Celebrations
+                            <span style="background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;">${peopleAnnouncements.length}</span>
+                        </h3>
+                    </div>
+                    <div style="${containerStyle}">
+                        ${peopleAnnouncements.slice(0, 4).map(a => renderAnnouncementCard(a)).join('')}
+                    </div>
+                </div>
+            ` : '';
+            
+            return newsTickerHtml + peopleCardsHtml;
         }
         
         // Show all announcements page
