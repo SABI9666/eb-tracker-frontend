@@ -5546,29 +5546,30 @@ body.is-ios .nav-menu {
             });
 
             auth.onAuthStateChanged(async (user) => {
-                console.log('Auth state changed:', user ? 'User logged in' : 'No user');
+                console.log('🔐 Auth state changed:', user ? `User logged in (${user.email})` : 'No user');
 
                 if (user) {
                     currentUser = user;
                     try {
-                        console.log('Getting fresh auth token...');
+                        console.log('🔐 Getting fresh auth token...');
                         authToken = await user.getIdToken(true);
-                        console.log('Auth token obtained successfully');
+                        console.log('✅ Auth token obtained successfully');
 
-                        console.log('Fetching user document from Firestore...');
+                        console.log('📂 Fetching user document from Firestore...');
                         const userDoc = await db.collection('users').doc(user.uid).get();
 
                         if (userDoc.exists) {
                             currentUserRole = userDoc.data().role;
-                            console.log('User role:', currentUserRole);
+                            console.log('✅ User role:', currentUserRole);
+                            console.log('🚀 Calling showApp()...');
                             showApp();
                         } else {
-                            console.error('User document not found in Firestore');
+                            console.error('❌ User document not found in Firestore for UID:', user.uid);
                             await auth.signOut();
-                            showMessage('Your user account was not found.', 'error');
+                            showMessage('Your user account was not found. Please contact admin.', 'error');
                         }
                     } catch (error) {
-                        console.error('Auth initialization error:', error);
+                        console.error('❌ Auth initialization error:', error);
                         showMessage('Failed to initialize session: ' + error.message, 'error');
                         await auth.signOut();
                     }
@@ -5576,7 +5577,7 @@ body.is-ios .nav-menu {
                     currentUser = null;
                     currentUserRole = '';
                     authToken = '';
-                    console.log('User logged out');
+                    console.log('👤 User logged out, showing login page');
                     showLogin();
                 }
             });
@@ -5608,21 +5609,41 @@ body.is-ios .nav-menu {
 
         async function handleLogin(e) {
             e.preventDefault();
+            console.log('🔐 handleLogin triggered');
             try {
                 clearMessages();
                 showMessage('Logging in...', 'info');
                 const email = document.getElementById('loginEmail').value;
                 const password = document.getElementById('loginPassword').value;
-                console.log('Attempting login for:', email);
+                
+                if (!email || !password) {
+                    console.error('❌ Email or password is empty');
+                    showMessage('Please enter email and password', 'error');
+                    return;
+                }
+                
+                console.log('🔐 Attempting login for:', email);
+                
+                // Check if auth is available
+                if (!auth) {
+                    console.error('❌ Firebase auth not initialized');
+                    showMessage('Authentication service not ready. Please refresh.', 'error');
+                    return;
+                }
+                
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                console.log('Login successful, user:', userCredential.user.uid);
+                console.log('✅ Login successful, user:', userCredential.user.uid);
                 authToken = await userCredential.user.getIdToken(true);
-                console.log('Fresh token obtained');
+                console.log('✅ Fresh token obtained');
             } catch (error) {
-                console.error('Login error:', error);
+                console.error('❌ Login error:', error.code, error.message);
                 showMessage(
                     error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found'
                         ? 'Invalid email or password.'
+                        : error.code === 'auth/invalid-email'
+                        ? 'Invalid email format.'
+                        : error.code === 'auth/too-many-requests'
+                        ? 'Too many failed attempts. Please try again later.'
                         : 'Login failed: ' + error.message,
                     'error'
                 );
@@ -14213,8 +14234,6 @@ async function markProjectComplete(projectId) {
                 overlay.remove();
             }
             document.body.style.overflow = ''; // Restore scroll
-            expandedNewsId = null;
-        }
             expandedNewsId = null;
         }
         
