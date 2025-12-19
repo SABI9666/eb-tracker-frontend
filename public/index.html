@@ -194,21 +194,29 @@
 /* ============================== */
 .announcements-section {
     margin-bottom: 2rem;
+    width: 100%;
+    overflow: visible;
 }
 
 .announcements-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 1.5rem;
+    width: 100%;
 }
 
+/* Ensure cards are visible */
 .announcement-card {
     background: white;
     border-radius: 20px;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 10px 40px rgba(0,0,0,0.1);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
+    display: block;
+    visibility: visible;
+    opacity: 1;
+    min-height: 200px;
 }
 
 .announcement-card:hover {
@@ -2170,6 +2178,47 @@ body.modal-open {
         font-size: 2rem;
     }
     
+    /* Announcements for small phones */
+    .announcements-section {
+        margin: 0.75rem 0 !important;
+    }
+    
+    .announcements-container {
+        display: block !important;
+        width: 100% !important;
+    }
+    
+    .announcement-card {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 1rem !important;
+        border-radius: 12px !important;
+    }
+    
+    .announcement-header {
+        padding: 0.75rem !important;
+    }
+    
+    .announcement-avatar {
+        width: 45px !important;
+        height: 45px !important;
+        min-width: 45px !important;
+        font-size: 1.25rem !important;
+    }
+    
+    .announcement-info h3 {
+        font-size: 0.95rem !important;
+    }
+    
+    .announcement-body {
+        padding: 0.75rem !important;
+    }
+    
+    .announcement-message {
+        font-size: 0.85rem !important;
+        padding: 0.5rem !important;
+    }
+    
     .modal {
         padding: 0.5rem;
     }
@@ -2465,8 +2514,12 @@ body.modal-open {
     
     /* Announcements Mobile */
     .announcements-section {
-        margin: 1rem 0;
-        padding: 0;
+        margin: 1rem 0 !important;
+        padding: 0 !important;
+        display: block !important;
+        visibility: visible !important;
+        width: 100% !important;
+        overflow: visible !important;
     }
     
     .announcements-section .page-header {
@@ -2479,15 +2532,25 @@ body.modal-open {
     }
     
     .announcements-container {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-        padding: 0;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 1rem !important;
+        padding: 0 !important;
+        width: 100% !important;
+        visibility: visible !important;
     }
     
     .announcement-card {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
         border-radius: 16px;
-        margin: 0;
+        margin: 0 0 1rem 0;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden;
     }
     
     .announcement-card.company-news {
@@ -3135,6 +3198,114 @@ body.is-ios .nav-menu {
     input[type="datetime-local"] {
         -webkit-appearance: none;
         appearance: none;
+    }
+}
+
+/* ============================== */
+/* CRITICAL MOBILE ANNOUNCEMENT FIX */
+/* Forces announcements to be visible on all mobile devices */
+/* ============================== */
+@media screen and (max-width: 768px) {
+    /* Force announcements section visibility */
+    .announcements-section,
+    #announcementsSectionMobile,
+    [class*="announcements"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        position: relative !important;
+        z-index: 1 !important;
+        margin: 1rem 0 !important;
+    }
+    
+    /* Force announcements container */
+    .announcements-container,
+    #announcementsContainerMobile {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 1rem !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* Force announcement cards */
+    .announcement-card,
+    [class*="announcement-card"] {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        margin-bottom: 1rem !important;
+        background: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important;
+        overflow: hidden !important;
+    }
+    
+    /* Ensure all card parts are visible */
+    .announcement-header,
+    .announcement-body,
+    .announcement-footer,
+    .announcement-avatar,
+    .announcement-info,
+    .announcement-detail,
+    .announcement-message,
+    .announcement-badge {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .announcement-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.75rem !important;
+        padding: 1rem !important;
+    }
+    
+    .announcement-avatar {
+        width: 50px !important;
+        height: 50px !important;
+        min-width: 50px !important;
+        flex-shrink: 0 !important;
+    }
+    
+    .announcement-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+    
+    .announcement-detail {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+    }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+    @media screen and (max-width: 768px) {
+        .announcement-card {
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+    }
+}
+
+/* Android Chrome fixes */
+@media screen and (max-width: 768px) {
+    .announcement-card * {
+        -webkit-backface-visibility: hidden;
+        backface-visibility: hidden;
     }
 }
 
@@ -4434,8 +4605,55 @@ body.is-ios .nav-menu {
         // Setup PWA install prompt
         setupPWAInstallPrompt();
         
+        // Fix mobile announcements visibility
+        if (isMobile) {
+            fixMobileAnnouncementsVisibility();
+            // Also run after a delay to catch dynamically loaded content
+            setTimeout(fixMobileAnnouncementsVisibility, 1000);
+            setTimeout(fixMobileAnnouncementsVisibility, 3000);
+        }
+        
         console.log('✅ Mobile support initialized');
     }
+    
+    // Fix announcements visibility on mobile devices
+    function fixMobileAnnouncementsVisibility() {
+        const sections = document.querySelectorAll('.announcements-section, #announcementsSectionMobile');
+        sections.forEach(section => {
+            if (section) {
+                section.style.display = 'block';
+                section.style.visibility = 'visible';
+                section.style.opacity = '1';
+                section.style.width = '100%';
+            }
+        });
+        
+        const containers = document.querySelectorAll('.announcements-container, #announcementsContainerMobile');
+        containers.forEach(container => {
+            if (container) {
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.gap = '1rem';
+                container.style.width = '100%';
+            }
+        });
+        
+        const cards = document.querySelectorAll('.announcement-card');
+        cards.forEach(card => {
+            if (card) {
+                card.style.display = 'block';
+                card.style.visibility = 'visible';
+                card.style.opacity = '1';
+                card.style.width = '100%';
+                card.style.marginBottom = '1rem';
+            }
+        });
+        
+        console.log('📢 Fixed mobile announcements visibility:', cards.length, 'cards found');
+    }
+    
+    // Make function globally accessible
+    window.fixMobileAnnouncementsVisibility = fixMobileAnnouncementsVisibility;
     
     // Fix iOS 100vh issue
     function setIOSViewportHeight() {
@@ -4839,6 +5057,34 @@ body.is-ios .nav-menu {
             
             // Register Service Worker
             registerServiceWorker();
+            
+            // Setup MutationObserver to fix announcements when they're added
+            if (isMobileDevice()) {
+                const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                        if (mutation.addedNodes.length) {
+                            mutation.addedNodes.forEach((node) => {
+                                if (node.nodeType === 1) { // Element node
+                                    if (node.classList && (
+                                        node.classList.contains('announcements-section') ||
+                                        node.classList.contains('announcement-card') ||
+                                        node.querySelector && node.querySelector('.announcement-card')
+                                    )) {
+                                        setTimeout(fixMobileAnnouncementsVisibility, 100);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+                
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+                
+                console.log('👀 MutationObserver for announcements set up');
+            }
             
             setupEventListeners();
             testBackendConnection().then(connected => {
@@ -12615,6 +12861,9 @@ async function markProjectComplete(projectId) {
             const isBirthday = announcement.type === 'birthday';
             const isCompanyNews = announcement.type === 'company-news';
             
+            // Base card styles for mobile visibility
+            const cardBaseStyle = "display: block; visibility: visible; opacity: 1; width: 100%; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 1rem;";
+            
             // Company News Card
             if (isCompanyNews) {
                 const priorityColors = {
@@ -12625,43 +12874,43 @@ async function markProjectComplete(projectId) {
                 const priority = priorityColors[announcement.priority] || priorityColors.low;
                 
                 return `
-                    <div class="announcement-card company-news news-priority-${announcement.priority || 'low'}">
-                        <span class="announcement-badge company-news">${announcement.category || 'Company Update'}</span>
+                    <div class="announcement-card company-news news-priority-${announcement.priority || 'low'}" style="${cardBaseStyle} border-top: 5px solid #3b82f6;">
+                        <span class="announcement-badge company-news" style="position: absolute; top: 0.75rem; right: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; background: #3b82f6; color: white;">${announcement.category || 'Company Update'}</span>
                         
-                        <div class="announcement-header company-news">
-                            <div class="announcement-avatar">📰</div>
-                            <div class="announcement-info">
-                                <h3>${announcement.title}</h3>
-                                <p style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <span class="priority-badge ${announcement.priority || 'low'}">${priority.label}</span>
+                        <div class="announcement-header company-news" style="padding: 1rem; display: flex; align-items: center; gap: 0.75rem; background: linear-gradient(135deg, #dbeafe, #bfdbfe);">
+                            <div class="announcement-avatar" style="width: 50px; height: 50px; min-width: 50px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white;">📰</div>
+                            <div class="announcement-info" style="flex: 1; min-width: 0;">
+                                <h3 style="margin: 0; font-size: 1rem; color: #1f2937; word-break: break-word;">${announcement.title}</h3>
+                                <p style="margin: 0.25rem 0 0 0; display: flex; align-items: center; gap: 0.5rem;">
+                                    <span class="priority-badge ${announcement.priority || 'low'}" style="padding: 0.2rem 0.5rem; border-radius: 12px; font-size: 0.65rem; font-weight: 600; background: ${priority.bg}; color: ${priority.text};">${priority.label}</span>
                                 </p>
                             </div>
                         </div>
                         
-                        <div class="announcement-body">
-                            <div class="announcement-detail">
-                                <div class="announcement-detail-icon company-news">📋</div>
-                                <div class="announcement-detail-text">
-                                    <div class="announcement-detail-label">Summary</div>
-                                    <div class="announcement-detail-value">${announcement.summary || ''}</div>
+                        <div class="announcement-body" style="padding: 0.75rem 1rem;">
+                            <div class="announcement-detail" style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.75rem;">
+                                <div class="announcement-detail-icon company-news" style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: #dbeafe; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">📋</div>
+                                <div class="announcement-detail-text" style="flex: 1; min-width: 0;">
+                                    <div class="announcement-detail-label" style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 600;">Summary</div>
+                                    <div class="announcement-detail-value" style="font-size: 0.85rem; color: #374151; word-break: break-word;">${announcement.summary || ''}</div>
                                 </div>
                             </div>
                             
-                            <div class="announcement-message" style="border-left-color: #3b82f6; text-align: left; font-style: normal;">
+                            <div class="announcement-message" style="padding: 0.75rem; background: #f0f9ff; border-radius: 8px; border-left: 3px solid #3b82f6; font-size: 0.85rem; color: #374151; line-height: 1.5; word-break: break-word;">
                                 ${announcement.content || ''}
                             </div>
                             
                             ${announcement.link ? `
-                                <div style="margin-top: 1rem; text-align: center;">
-                                    <a href="${announcement.link}" target="_blank" class="btn btn-outline btn-sm" style="text-decoration: none;">
+                                <div style="margin-top: 0.75rem; text-align: center;">
+                                    <a href="${announcement.link}" target="_blank" class="btn btn-outline btn-sm" style="text-decoration: none; display: inline-block; padding: 0.5rem 1rem; font-size: 0.8rem;">
                                         🔗 ${announcement.linkText || 'Read More'}
                                     </a>
                                 </div>
                             ` : ''}
                         </div>
                         
-                        <div class="announcement-footer">
-                            <span class="announcement-date">Posted: ${formatDate(announcement.createdAt)}</span>
+                        <div class="announcement-footer" style="padding: 0.5rem 1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem;">
+                            <span class="announcement-date" style="color: #6b7280;">Posted: ${formatDate(announcement.createdAt)}</span>
                             <span style="color: #667eea; font-weight: 600;">EDANBROOK HR</span>
                         </div>
                     </div>
@@ -12669,65 +12918,70 @@ async function markProjectComplete(projectId) {
             }
             
             // New Joinee and Birthday Cards
+            const headerBg = isNewJoinee ? 'linear-gradient(135deg, #d1fae5, #a7f3d0)' : 'linear-gradient(135deg, #fef3c7, #fde68a)';
+            const borderColor = isNewJoinee ? '#10b981' : '#f59e0b';
+            const badgeBg = isNewJoinee ? '#10b981' : '#f59e0b';
+            const detailIconBg = isNewJoinee ? '#d1fae5' : '#fef3c7';
+            
             return `
-                <div class="announcement-card ${announcement.type}">
-                    <span class="announcement-badge ${announcement.type}">${isNewJoinee ? 'New Team Member' : 'Happy Birthday!'}</span>
+                <div class="announcement-card ${announcement.type}" style="${cardBaseStyle} border-top: 5px solid ${borderColor};">
+                    <span class="announcement-badge ${announcement.type}" style="position: absolute; top: 0.75rem; right: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.7rem; background: ${badgeBg}; color: white;">${isNewJoinee ? 'New Team Member' : 'Happy Birthday!'}</span>
                     
-                    <div class="announcement-header ${announcement.type}">
-                        <div class="announcement-avatar">
+                    <div class="announcement-header ${announcement.type}" style="padding: 1rem; display: flex; align-items: center; gap: 0.75rem; background: ${headerBg};">
+                        <div class="announcement-avatar" style="width: 50px; height: 50px; min-width: 50px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.15); background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: white; overflow: hidden;">
                             ${announcement.photo 
-                                ? `<img src="${announcement.photo}" alt="${announcement.name}">`
+                                ? `<img src="${announcement.photo}" alt="${announcement.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`
                                 : (isNewJoinee ? '👋' : '🎂')
                             }
                         </div>
-                        <div class="announcement-info">
-                            <h3>${announcement.name}</h3>
-                            <p>${announcement.department || 'EDANBROOK Team'}</p>
+                        <div class="announcement-info" style="flex: 1; min-width: 0;">
+                            <h3 style="margin: 0; font-size: 1rem; color: #1f2937; word-break: break-word;">${announcement.name}</h3>
+                            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: #4b5563;">${announcement.department || 'EDANBROOK Team'}</p>
                         </div>
                     </div>
                     
-                    <div class="announcement-body">
+                    <div class="announcement-body" style="padding: 0.75rem 1rem;">
                         ${isNewJoinee ? `
-                            <div class="announcement-detail">
-                                <div class="announcement-detail-icon new-joinee">💼</div>
-                                <div class="announcement-detail-text">
-                                    <div class="announcement-detail-label">Designation</div>
-                                    <div class="announcement-detail-value">${announcement.designation || 'Team Member'}</div>
+                            <div class="announcement-detail" style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <div class="announcement-detail-icon new-joinee" style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: ${detailIconBg}; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">💼</div>
+                                <div class="announcement-detail-text" style="flex: 1; min-width: 0;">
+                                    <div class="announcement-detail-label" style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 600;">Designation</div>
+                                    <div class="announcement-detail-value" style="font-size: 0.85rem; color: #374151;">${announcement.designation || 'Team Member'}</div>
                                 </div>
                             </div>
-                            <div class="announcement-detail">
-                                <div class="announcement-detail-icon new-joinee">📅</div>
-                                <div class="announcement-detail-text">
-                                    <div class="announcement-detail-label">Joining Date</div>
-                                    <div class="announcement-detail-value">${formatDate(announcement.joiningDate)}</div>
+                            <div class="announcement-detail" style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <div class="announcement-detail-icon new-joinee" style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: ${detailIconBg}; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">📅</div>
+                                <div class="announcement-detail-text" style="flex: 1; min-width: 0;">
+                                    <div class="announcement-detail-label" style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 600;">Joining Date</div>
+                                    <div class="announcement-detail-value" style="font-size: 0.85rem; color: #374151;">${formatDate(announcement.joiningDate)}</div>
                                 </div>
                             </div>
                             ${announcement.email ? `
-                                <div class="announcement-detail">
-                                    <div class="announcement-detail-icon new-joinee">📧</div>
-                                    <div class="announcement-detail-text">
-                                        <div class="announcement-detail-label">Email</div>
-                                        <div class="announcement-detail-value">${announcement.email}</div>
+                                <div class="announcement-detail" style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.5rem;">
+                                    <div class="announcement-detail-icon new-joinee" style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: ${detailIconBg}; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">📧</div>
+                                    <div class="announcement-detail-text" style="flex: 1; min-width: 0;">
+                                        <div class="announcement-detail-label" style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 600;">Email</div>
+                                        <div class="announcement-detail-value" style="font-size: 0.85rem; color: #374151; word-break: break-all;">${announcement.email}</div>
                                     </div>
                                 </div>
                             ` : ''}
                         ` : `
-                            <div class="announcement-detail">
-                                <div class="announcement-detail-icon birthday">🎂</div>
-                                <div class="announcement-detail-text">
-                                    <div class="announcement-detail-label">Birthday</div>
-                                    <div class="announcement-detail-value">${formatDate(announcement.birthdayDate)}</div>
+                            <div class="announcement-detail" style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.5rem; background: #f9fafb; border-radius: 8px; margin-bottom: 0.5rem;">
+                                <div class="announcement-detail-icon birthday" style="width: 28px; height: 28px; min-width: 28px; border-radius: 8px; background: ${detailIconBg}; display: flex; align-items: center; justify-content: center; font-size: 0.9rem;">🎂</div>
+                                <div class="announcement-detail-text" style="flex: 1; min-width: 0;">
+                                    <div class="announcement-detail-label" style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; font-weight: 600;">Birthday</div>
+                                    <div class="announcement-detail-value" style="font-size: 0.85rem; color: #374151;">${formatDate(announcement.birthdayDate)}</div>
                                 </div>
                             </div>
                         `}
                         
-                        <div class="announcement-message">
+                        <div class="announcement-message" style="padding: 0.75rem; margin-top: 0.5rem; background: linear-gradient(135deg, #f8f9fa, #f1f3f4); border-radius: 8px; border-left: 3px solid ${borderColor}; font-style: italic; color: #4b5563; font-size: 0.85rem; line-height: 1.5; word-break: break-word;">
                             "${announcement.message}"
                         </div>
                     </div>
                     
-                    <div class="announcement-footer">
-                        <span class="announcement-date">Posted: ${formatDate(announcement.createdAt)}</span>
+                    <div class="announcement-footer" style="padding: 0.5rem 1rem; background: #f9fafb; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem; flex-wrap: wrap; gap: 0.25rem;">
+                        <span class="announcement-date" style="color: #6b7280;">Posted: ${formatDate(announcement.createdAt)}</span>
                         <span style="color: #667eea; font-weight: 600;">EDANBROOK HR</span>
                     </div>
                 </div>
@@ -12777,15 +13031,21 @@ async function markProjectComplete(projectId) {
                 return '';
             }
             
+            // Check if mobile
+            const isMobile = window.innerWidth <= 768;
+            const gridStyle = isMobile 
+                ? "display: flex; flex-direction: column; gap: 1rem; width: 100%;"
+                : "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; width: 100%;";
+            
             return `
-                <div class="announcements-section">
-                    <div class="page-header" style="margin-bottom: 1.5rem;">
-                        <h3 style="color: #1f2937; display: flex; align-items: center; gap: 0.5rem;">
+                <div class="announcements-section" id="announcementsSectionMobile" style="display: block !important; visibility: visible !important; width: 100% !important; margin-bottom: 2rem; overflow: visible !important;">
+                    <div style="margin-bottom: 1rem; padding: 0;">
+                        <h3 style="color: #1f2937; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 1.1rem; margin: 0;">
                             📢 Company Announcements
-                            <span style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem;">${announcements.length} New</span>
+                            <span style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;">${announcements.length} New</span>
                         </h3>
                     </div>
-                    <div class="announcements-container">
+                    <div id="announcementsContainerMobile" style="${gridStyle}">
                         ${announcements.slice(0, 4).map(a => renderAnnouncementCard(a)).join('')}
                     </div>
                     ${announcements.length > 4 ? `
