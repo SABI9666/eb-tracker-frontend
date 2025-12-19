@@ -1,11 +1,11 @@
 // ============================================
 // EBTracker Service Worker - FULL FEATURED
-// Version: 3.9.0 - Cache Version 23 (Fixed Company News Date Logic)
+// Version: 4.0.0 - Cache Version 24 (Professional News Carousel)
 // ============================================
 
-const CACHE_NAME = 'ebtracker-v23';
-const STATIC_CACHE = 'ebtracker-static-v23';
-const DYNAMIC_CACHE = 'ebtracker-dynamic-v23';
+const CACHE_NAME = 'ebtracker-v24';
+const STATIC_CACHE = 'ebtracker-static-v24';
+const DYNAMIC_CACHE = 'ebtracker-dynamic-v24';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
