@@ -5211,9 +5211,12 @@ body.is-ios .nav-menu {
 
        function showApp() {
     // Use a small timeout to ensure DOM elements are ready
-    setTimeout(() => {
+    setTimeout(async () => {
         console.log('--- showApp() EXECUTING ---');
         try {
+            // Preload announcements from Firestore
+            await preloadAnnouncements();
+            
             const loginPage = document.getElementById('loginPage');
             const appContainer = document.getElementById('appContainer');
             const userWelcome = document.getElementById('userWelcome');
@@ -5566,7 +5569,7 @@ async function triggerEmailNotification(eventName, data = {}) {
             }
         }
 
-        function renderDashboard(data) {
+        async function renderDashboard(data) {
             console.log('🎨 Rendering dashboard with data:', data);
             
             // Handle different data formats
@@ -5644,12 +5647,15 @@ async function triggerEmailNotification(eventName, data = {}) {
                 </div>
             ` : '';
 
+            // Pre-render announcements
+            const announcementsHtml = renderDashboardAnnouncements();
+
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>Dashboard</h2>
                     <div class="subtitle">✅ Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>
                 </div>
-                ${renderDashboardAnnouncements()}
+                ${announcementsHtml}
                 <div class="dashboard-stats">${statsHtml}</div>
                 ${executiveHtml}
                 <div class="action-section">${actionsHtml}</div>
@@ -12210,17 +12216,113 @@ async function markProjectComplete(projectId) {
         // ============================================
         
         let hrAnnouncements = [];
+        let announcementsLoaded = false;
         
-        // Load announcements from localStorage (simulating database)
-        function loadAnnouncements() {
-            const stored = localStorage.getItem('hrAnnouncements');
-            hrAnnouncements = stored ? JSON.parse(stored) : [];
+        // Synchronous load from localStorage (for immediate use)
+        function loadAnnouncementsSync() {
+            try {
+                const stored = localStorage.getItem('hrAnnouncements');
+                if (stored) {
+                    hrAnnouncements = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.log('localStorage load failed');
+                hrAnnouncements = [];
+            }
             return hrAnnouncements;
         }
         
-        // Save announcements to localStorage
-        function saveAnnouncements() {
-            localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+        // Async load from Firebase Firestore (shared across all devices)
+        async function loadAnnouncements() {
+            // First load from localStorage for immediate data
+            loadAnnouncementsSync();
+            
+            // Then try to sync from Firestore
+            try {
+                if (typeof db !== 'undefined' && db.collection) {
+                    console.log('📢 Syncing announcements from Firestore...');
+                    const snapshot = await db.collection('hrAnnouncements').get();
+                    
+                    if (!snapshot.empty) {
+                        hrAnnouncements = [];
+                        snapshot.forEach(doc => {
+                            hrAnnouncements.push({
+                                id: doc.id,
+                                ...doc.data()
+                            });
+                        });
+                        console.log('✅ Synced', hrAnnouncements.length, 'announcements from Firestore');
+                        announcementsLoaded = true;
+                        
+                        // Update localStorage cache
+                        try {
+                            localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+                        } catch (e) {
+                            console.log('Could not cache to localStorage');
+                        }
+                    } else {
+                        console.log('📢 No announcements in Firestore, using localStorage data');
+                    }
+                }
+            } catch (error) {
+                console.log('Firestore sync failed:', error.message);
+            }
+            
+            return hrAnnouncements;
+        }
+        
+        // Save announcements to both localStorage and Firebase Firestore
+        async function saveAnnouncements() {
+            // Always save to localStorage first (instant)
+            try {
+                localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+                console.log('💾 Saved to localStorage');
+            } catch (e) {
+                console.log('localStorage save failed');
+            }
+            
+            // Then save to Firestore for cross-device sync
+            try {
+                if (typeof db !== 'undefined' && db.collection) {
+                    console.log('📢 Saving announcements to Firestore...');
+                    
+                    // Get existing docs to handle deletions
+                    const existingDocs = await db.collection('hrAnnouncements').get();
+                    const existingIds = new Set();
+                    existingDocs.forEach(doc => existingIds.add(doc.id));
+                    
+                    // Save/update each announcement
+                    const currentIds = new Set();
+                    for (const announcement of hrAnnouncements) {
+                        const docId = announcement.id ? announcement.id.toString() : Date.now().toString();
+                        currentIds.add(docId);
+                        await db.collection('hrAnnouncements').doc(docId).set({
+                            ...announcement,
+                            id: docId,
+                            updatedAt: new Date().toISOString()
+                        });
+                    }
+                    
+                    // Delete removed announcements
+                    for (const existingId of existingIds) {
+                        if (!currentIds.has(existingId)) {
+                            await db.collection('hrAnnouncements').doc(existingId).delete();
+                            console.log('🗑️ Deleted announcement:', existingId);
+                        }
+                    }
+                    
+                    console.log('✅ Synced', hrAnnouncements.length, 'announcements to Firestore');
+                }
+            } catch (error) {
+                console.error('Firestore save failed:', error.message);
+            }
+        }
+        
+        // Preload announcements when app starts
+        async function preloadAnnouncements() {
+            console.log('📢 Preloading announcements...');
+            await loadAnnouncements();
+            console.log('📢 Announcements preloaded:', hrAnnouncements.length);
         }
         
         // Show HR Dashboard
@@ -12231,7 +12333,7 @@ async function markProjectComplete(projectId) {
             showLoading();
             
             try {
-                loadAnnouncements();
+                await loadAnnouncements();
                 
                 const newJoineesCount = hrAnnouncements.filter(a => a.type === 'new-joinee').length;
                 const birthdaysCount = hrAnnouncements.filter(a => a.type === 'birthday').length;
@@ -12990,7 +13092,7 @@ async function markProjectComplete(projectId) {
         
         // Get announcements for all users (called from dashboard)
         function getActiveAnnouncements() {
-            loadAnnouncements();
+            loadAnnouncementsSync();
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
             const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -13031,21 +13133,18 @@ async function markProjectComplete(projectId) {
                 return '';
             }
             
-            // Check if mobile
-            const isMobile = window.innerWidth <= 768;
-            const gridStyle = isMobile 
-                ? "display: flex; flex-direction: column; gap: 1rem; width: 100%;"
-                : "display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; width: 100%;";
+            // Always use flex column on mobile-sized content for reliability
+            const containerStyle = "display: flex; flex-direction: column; gap: 1rem; width: 100%;";
             
             return `
-                <div class="announcements-section" id="announcementsSectionMobile" style="display: block !important; visibility: visible !important; width: 100% !important; margin-bottom: 2rem; overflow: visible !important;">
+                <div class="announcements-section" id="announcementsSectionMobile" style="display: block !important; visibility: visible !important; width: 100% !important; margin-bottom: 2rem; overflow: visible !important; padding: 0 !important;">
                     <div style="margin-bottom: 1rem; padding: 0;">
                         <h3 style="color: #1f2937; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; font-size: 1.1rem; margin: 0;">
                             📢 Company Announcements
                             <span style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem;">${announcements.length} New</span>
                         </h3>
                     </div>
-                    <div id="announcementsContainerMobile" style="${gridStyle}">
+                    <div id="announcementsContainerMobile" style="${containerStyle}">
                         ${announcements.slice(0, 4).map(a => renderAnnouncementCard(a)).join('')}
                     </div>
                     ${announcements.length > 4 ? `
