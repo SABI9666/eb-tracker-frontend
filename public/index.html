@@ -12545,14 +12545,14 @@ async function markProjectComplete(projectId) {
         }
         
         // Submit new joinee
-        function submitNewJoinee(event) {
+        async function submitNewJoinee(event) {
             event.preventDefault();
             
             const photoPreview = document.getElementById('joineePhotoPreview');
             const photoImg = photoPreview.querySelector('img');
             
             const announcement = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 type: 'new-joinee',
                 name: document.getElementById('joineeName').value,
                 email: document.getElementById('joineeEmail').value,
@@ -12565,12 +12565,23 @@ async function markProjectComplete(projectId) {
                 createdBy: currentUser ? currentUser.email : 'HR'
             };
             
-            loadAnnouncements();
+            // Add to local array
             hrAnnouncements.push(announcement);
-            saveAnnouncements();
+            
+            // Save to Firestore directly
+            try {
+                if (typeof db !== 'undefined' && db.collection) {
+                    await db.collection('hrAnnouncements').doc(announcement.id).set(announcement);
+                    console.log('✅ New joinee saved to Firestore');
+                }
+                // Also save to localStorage
+                localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+            } catch (error) {
+                console.error('Error saving new joinee:', error);
+            }
             
             closeModal('newJoineeModal');
-            showHRDashboard();
+            await showHRDashboard();
             
             alert('✅ New joinee announcement created successfully!');
         }
@@ -12771,14 +12782,14 @@ async function markProjectComplete(projectId) {
         }
         
         // Submit birthday
-        function submitBirthday(event) {
+        async function submitBirthday(event) {
             event.preventDefault();
             
             const photoPreview = document.getElementById('birthdayPhotoPreview');
             const photoImg = photoPreview.querySelector('img');
             
             const announcement = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 type: 'birthday',
                 name: document.getElementById('birthdayName').value,
                 department: document.getElementById('birthdayDepartment').value,
@@ -12789,12 +12800,23 @@ async function markProjectComplete(projectId) {
                 createdBy: currentUser ? currentUser.email : 'HR'
             };
             
-            loadAnnouncements();
+            // Add to local array
             hrAnnouncements.push(announcement);
-            saveAnnouncements();
+            
+            // Save to Firestore directly (simpler approach)
+            try {
+                if (typeof db !== 'undefined' && db.collection) {
+                    await db.collection('hrAnnouncements').doc(announcement.id).set(announcement);
+                    console.log('✅ Birthday saved to Firestore');
+                }
+                // Also save to localStorage
+                localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+            } catch (error) {
+                console.error('Error saving birthday:', error);
+            }
             
             closeModal('birthdayModal');
-            showHRDashboard();
+            await showHRDashboard();
             
             alert('✅ Birthday announcement created successfully!');
         }
@@ -12890,11 +12912,11 @@ async function markProjectComplete(projectId) {
         }
         
         // Submit company news
-        function submitCompanyNews(event) {
+        async function submitCompanyNews(event) {
             event.preventDefault();
             
             const announcement = {
-                id: Date.now(),
+                id: Date.now().toString(),
                 type: 'company-news',
                 title: document.getElementById('newsTitle').value,
                 category: document.getElementById('newsCategory').value,
@@ -12909,19 +12931,30 @@ async function markProjectComplete(projectId) {
                 createdBy: currentUser ? currentUser.email : 'HR'
             };
             
-            loadAnnouncements();
+            // Add to local array
             hrAnnouncements.push(announcement);
-            saveAnnouncements();
+            
+            // Save to Firestore directly
+            try {
+                if (typeof db !== 'undefined' && db.collection) {
+                    await db.collection('hrAnnouncements').doc(announcement.id).set(announcement);
+                    console.log('✅ Company news saved to Firestore');
+                }
+                // Also save to localStorage
+                localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+            } catch (error) {
+                console.error('Error saving company news:', error);
+            }
             
             closeModal('companyNewsModal');
-            showHRDashboard();
+            await showHRDashboard();
             
             alert('✅ Company news published successfully!');
         }
         
         // View announcement preview
         function viewAnnouncementPreview(index) {
-            loadAnnouncements();
+            loadAnnouncementsSync();
             const announcement = hrAnnouncements[index];
             if (!announcement) return;
             
@@ -12946,14 +12979,28 @@ async function markProjectComplete(projectId) {
         }
         
         // Delete announcement
-        function deleteAnnouncement(index) {
+        async function deleteAnnouncement(index) {
             if (!confirm('Are you sure you want to delete this announcement?')) return;
             
-            loadAnnouncements();
-            hrAnnouncements.splice(index, 1);
-            saveAnnouncements();
-            showHRDashboard();
+            loadAnnouncementsSync();
+            const announcement = hrAnnouncements[index];
+            const announcementId = announcement ? announcement.id : null;
             
+            hrAnnouncements.splice(index, 1);
+            
+            // Delete from Firestore
+            try {
+                if (announcementId && typeof db !== 'undefined' && db.collection) {
+                    await db.collection('hrAnnouncements').doc(announcementId.toString()).delete();
+                    console.log('🗑️ Deleted from Firestore:', announcementId);
+                }
+                // Update localStorage
+                localStorage.setItem('hrAnnouncements', JSON.stringify(hrAnnouncements));
+            } catch (error) {
+                console.error('Error deleting announcement:', error);
+            }
+            
+            await showHRDashboard();
             alert('✅ Announcement deleted successfully!');
         }
         
