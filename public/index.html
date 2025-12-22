@@ -2989,11 +2989,19 @@ body.modal-open {
     .nav-menu {
         display: flex;
         overflow-x: auto;
-        padding: 0.5rem;
+        padding: 0.5rem 1rem;
+        gap: 0.5rem;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .nav-menu::-webkit-scrollbar {
+        display: none;
     }
     
     .nav-menu li {
-        margin: 0 0.25rem;
+        margin: 0;
+        flex-shrink: 0;
     }
     
     .nav-menu a {
@@ -3327,11 +3335,16 @@ body.modal-open {
         flex-direction: row;
         overflow-x: auto;
         overflow-y: hidden;
-        padding: 0.5rem;
-        gap: 0.25rem;
+        padding: 0.5rem 1rem;
+        padding-left: max(1rem, env(safe-area-inset-left));
+        padding-right: max(1rem, env(safe-area-inset-right));
+        gap: 0.5rem;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        scroll-behavior: smooth;
+        /* Ensure scroll starts from left */
+        scroll-snap-type: x proximity;
     }
     
     .nav-menu::-webkit-scrollbar {
@@ -3341,17 +3354,67 @@ body.modal-open {
     .nav-menu li {
         flex-shrink: 0;
         margin: 0;
+        scroll-snap-align: start;
+    }
+    
+    .nav-menu li:first-child {
+        margin-left: 0;
+    }
+    
+    .nav-menu li:last-child {
+        margin-right: 0;
+        padding-right: 1rem;
     }
     
     .nav-menu a {
-        padding: 0.625rem 0.875rem;
+        padding: 0.75rem 1rem;
         font-size: 0.8rem;
         white-space: nowrap;
         border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
     }
     
     .nav-icon {
         margin-right: 0.25rem;
+        flex-shrink: 0;
+    }
+    
+    /* Mobile sidebar scroll shadow indicators */
+    .sidebar {
+        position: relative;
+    }
+    
+    .sidebar::before,
+    .sidebar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 20px;
+        pointer-events: none;
+        z-index: 10;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .sidebar::before {
+        left: 0;
+        background: linear-gradient(to right, rgba(255,255,255,0.95), transparent);
+    }
+    
+    .sidebar::after {
+        right: 0;
+        background: linear-gradient(to left, rgba(255,255,255,0.95), transparent);
+    }
+    
+    .sidebar.scroll-left::before {
+        opacity: 1;
+    }
+    
+    .sidebar.scroll-right::after {
+        opacity: 1;
     }
     
     /* Main Content Mobile */
@@ -5519,6 +5582,80 @@ body.is-ios .nav-menu {
         console.log('✅ Mobile support initialized');
     }
     
+    // Initialize Mobile Navigation - ensure proper scrolling and visibility
+    function initMobileNavigation() {
+        const navMenu = document.querySelector('.nav-menu');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (!navMenu || !sidebar) {
+            // Elements not yet in DOM, try again later
+            setTimeout(initMobileNavigation, 500);
+            return;
+        }
+        
+        // Function to update scroll indicators
+        function updateScrollIndicators() {
+            const scrollLeft = navMenu.scrollLeft;
+            const maxScroll = navMenu.scrollWidth - navMenu.clientWidth;
+            
+            // Add/remove classes for scroll shadow indicators
+            if (scrollLeft > 10) {
+                sidebar.classList.add('scroll-left');
+            } else {
+                sidebar.classList.remove('scroll-left');
+            }
+            
+            if (scrollLeft < maxScroll - 10) {
+                sidebar.classList.add('scroll-right');
+            } else {
+                sidebar.classList.remove('scroll-right');
+            }
+        }
+        
+        // Reset scroll to start on page load
+        navMenu.scrollLeft = 0;
+        
+        // Listen for scroll events to update indicators
+        navMenu.addEventListener('scroll', updateScrollIndicators, { passive: true });
+        
+        // Initial check for scroll indicators
+        setTimeout(updateScrollIndicators, 100);
+        
+        // Also update on window resize
+        window.addEventListener('resize', () => {
+            setTimeout(updateScrollIndicators, 100);
+        });
+        
+        // Scroll active nav item into view
+        function scrollActiveIntoView() {
+            const activeItem = navMenu.querySelector('a.active');
+            if (activeItem) {
+                const li = activeItem.parentElement;
+                if (li) {
+                    li.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }
+        }
+        
+        // MutationObserver to scroll to active item when it changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    if (mutation.target.classList.contains('active')) {
+                        scrollActiveIntoView();
+                    }
+                }
+            });
+        });
+        
+        // Observe all nav links for class changes
+        navMenu.querySelectorAll('a').forEach(link => {
+            observer.observe(link, { attributes: true, attributeFilter: ['class'] });
+        });
+        
+        console.log('✅ Mobile navigation initialized');
+    }
+    
     // Fix announcements visibility on mobile devices
     function fixMobileAnnouncementsVisibility() {
         const sections = document.querySelectorAll('.announcements-section, #announcementsSectionMobile');
@@ -5957,6 +6094,9 @@ body.is-ios .nav-menu {
             
             // Mobile Detection and Setup
             initMobileSupport();
+            
+            // Initialize Mobile Navigation Scroll
+            initMobileNavigation();
             
             // Register Service Worker
             registerServiceWorker();
