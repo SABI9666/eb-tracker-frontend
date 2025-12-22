@@ -4746,20 +4746,6 @@ body.is-ios .nav-menu {
                 <div class="logo-circle">EB</div>
                 <h1 class="company-title">EDANBROOK</h1>
                 <p class="company-subtitle">Project Management System</p>
-                <div class="info-box">
-                    <h4>✅ Updated Workflow Process</h4>
-                    <ul>
-                        <li><strong>Step 1:</strong> BDM creates proposal (DRAFT) & uploads files</li>
-                        <li><strong>Step 2:</strong> Estimator adds manhours (ESTIMATED) & BOQ</li>
-                        <li><strong>Step 3:</strong> COO sets pricing (PRICED)</li>
-                        <li><strong>Step 4:</strong> Director approves (APPROVED) or rejects (REJECTED)</li>
-                        <li><strong>Step 5:</strong> BDM submits to client (SUBMITTED)</li>
-                        <li><strong>Step 6:</strong> BDM marks as WON/LOST → Project created</li>
-                        <li><strong>Step 7:</strong> COO allocates → Design Lead assigns tasks</li>
-                        <li><strong>Step 8:</strong> Designer uploads → Design sent to client</li>
-                        <li><strong>Step 9:</strong> Accounts prepares invoice → Payment tracking</li>
-                    </ul>
-                </div>
             </div>
             <div class="login-right">
                 <div class="auth-tabs">
@@ -6731,7 +6717,7 @@ async function triggerEmailNotification(eventName, data = {}) {
             document.getElementById('mainContent').innerHTML = `
                 <div class="page-header">
                     <h2>Dashboard</h2>
-                    <div class="subtitle">✅ Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>
+                    <div class="subtitle">Welcome to EDANBROOK Project Management System</div>
                 </div>
                 ${announcementsHtml}
                 <div class="dashboard-stats">${statsHtml}</div>
@@ -7163,7 +7149,7 @@ function renderProposals(proposals) {
 
     const filterInfo = currentUserRole === 'director' && currentProposalFilter !== 'all' ? 
         `<div class="subtitle" style="color: var(--primary-blue); font-weight: 600;">Filtered: ${currentProposalFilter.replace(/_/g, ' ').toUpperCase()}</div>` : 
-        `<div class="subtitle">Workflow: DRAFT → ESTIMATED → PRICED → APPROVED/REJECTED → SUBMITTED → WON/LOST</div>`;
+        `<div class="subtitle">Manage and track all project proposals</div>`;
 
     document.getElementById('mainContent').innerHTML = `
         <div class="page-header">
