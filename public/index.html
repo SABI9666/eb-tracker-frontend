@@ -15891,7 +15891,10 @@ async function saveProjectNumber() {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                projectNumber: newProjectNumber
+                action: 'update_project_number',
+                data: {
+                    projectNumber: newProjectNumber
+                }
             })
         });
         
