@@ -6411,7 +6411,7 @@ body.is-ios .nav-menu {
             setDisplay('tasksNavItem', isDesigner);
             setDisplay('timesheetNavItem', isDesigner);
             setDisplay('myAnalyticsNavItem', isDesigner); // Designer sees their own analytics
-            setDisplay('designerAnalyticsNavItem', isManagement || isHR || isBDM); // Designer Hours Analytics for COO/Director/HR/BDM
+            setDisplay('designerAnalyticsNavItem', isManagement || isHR); // Designer Hours Analytics for COO/Director/HR
             setDisplay('designerAllocationsNavItem', isDesigner); // SHOW New Menu
 
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck) && !isHR);
@@ -25203,6 +25203,15 @@ async function downloadMyAnalyticsExcel() {
         hideLoading();
     }
 }
+
+// Expose analytics functions to window for onclick handlers
+window.showDesignerWeeklyAnalytics = showDesignerWeeklyAnalytics;
+window.showMyAnalytics = showMyAnalytics;
+window.showAnalyticsTab = showAnalyticsTab;
+window.showMyAnalyticsTab = showMyAnalyticsTab;
+window.downloadDesignerWeeklyExcel = downloadDesignerWeeklyExcel;
+window.downloadDesignerMonthlyExcel = downloadDesignerMonthlyExcel;
+window.downloadMyAnalyticsExcel = downloadMyAnalyticsExcel;
 
 console.log('✅ Designer Analytics Module v3.0.0 loaded');
 console.log('   - Director/HR Portal: showDesignerWeeklyAnalytics()');
