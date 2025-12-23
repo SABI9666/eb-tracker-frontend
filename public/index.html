@@ -80,6 +80,8 @@
     <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/1.3.8/FileSaver.js"></script>
     <script src="https://unpkg.com/pizzip@3.1.4/dist/pizzip-utils.js"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
      * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -4909,6 +4911,11 @@ body.is-ios .nav-menu {
                         <span class="nav-icon">⏱️</span>My Timesheet
                     </a>
                 </li>
+                <li id="designerAnalyticsNavItem" style="display: none;">
+                    <a href="#" onclick="showDesignerWeeklyAnalytics()" id="nav-designer-analytics">
+                        <span class="nav-icon">📊</span>Designer Hours
+                    </a>
+                </li>
                 <li id="hrAnnouncementsNavItem" style="display: none;">
                     <a href="#" onclick="showHRDashboard()" id="nav-hr-announcements">
                         <span class="nav-icon">📢</span>HR Announcements
@@ -6319,6 +6326,7 @@ body.is-ios .nav-menu {
             setDisplay('projectsNavItem', isManagement && !isHR); // Designers use "My Tasks" or "Allocations"
             setDisplay('tasksNavItem', isDesigner);
             setDisplay('timesheetNavItem', isDesigner);
+            setDisplay('designerAnalyticsNavItem', isManagement); // Designer Hours Analytics for COO/Director
             setDisplay('designerAllocationsNavItem', isDesigner); // SHOW New Menu
 
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck) && !isHR);
@@ -24156,6 +24164,424 @@ async function updateDirectorRequestsBadge() {
 // Example: Add to your setDisplay calls in the dashboard init:
 // setDisplay('allocationRequestsNavItem', currentUserRole === 'director');
 // if (currentUserRole === 'director') { updateDirectorRequestsBadge(); }
+// ============================================
+// DESIGNER WEEKLY HOURS ANALYTICS
+// Version: 1.0.0
+// ============================================
+
+/**
+ * Show Designer Weekly Hours Analytics Dashboard
+ */
+async function showDesignerWeeklyAnalytics() {
+    setActiveNav('nav-designer-analytics');
+    const main = document.getElementById('mainContent');
+    main.style.display = 'block';
+    showLoading();
+
+    try {
+        // Fetch designer weekly report from API
+        const response = await apiCall('timesheets?action=designer_weekly_report');
+        
+        if (!response.success) {
+            throw new Error(response.error || 'Failed to load designer weekly report');
+        }
+
+        const { designers, weeklyTotals, summary } = response.data;
+        
+        // Render the dashboard
+        main.innerHTML = renderDesignerWeeklyDashboard(designers, weeklyTotals, summary);
+        
+        // Initialize charts after a short delay
+        setTimeout(() => renderDesignerWeeklyCharts(designers, weeklyTotals), 100);
+
+    } catch (error) {
+        console.error('❌ Error loading designer weekly analytics:', error);
+        main.innerHTML = `
+            <div class="error-message" style="background: #fee; padding: 2rem; border-radius: 12px; text-align: center;">
+                <h3>⚠️ Error Loading Designer Analytics</h3>
+                <p>${error.message}</p>
+                <button onclick="showDesignerWeeklyAnalytics()" class="btn btn-primary" style="margin-top: 1rem;">Retry</button>
+            </div>
+        `;
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Render the Designer Weekly Analytics Dashboard
+ */
+function renderDesignerWeeklyDashboard(designers, weeklyTotals, summary) {
+    return `
+        <div class="page-header">
+            <h2>📊 Designer Weekly Hours Analytics</h2>
+            <p class="subtitle">Comprehensive breakdown of designer working hours per week</p>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-number">${summary.totalDesigners}</div>
+                <div class="stat-label">👥 Total Designers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${summary.totalHoursAllTime.toFixed(1)}h</div>
+                <div class="stat-label">⏱️ Total Hours (All Time)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${summary.avgHoursPerDesigner.toFixed(1)}h</div>
+                <div class="stat-label">📈 Avg Hours/Designer</div>
+            </div>
+            <div class="stat-card" style="border-top-color: var(--success);">
+                <div class="stat-number" style="color: var(--success);">${summary.weeksTracked || weeklyTotals.length}</div>
+                <div class="stat-label">📅 Weeks Tracked</div>
+            </div>
+        </div>
+        
+        <!-- Export Button -->
+        <div style="margin: 2rem 0; text-align: right;">
+            <button onclick="downloadDesignerWeeklyExcel()" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+                📥 Download Excel Report
+            </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="auth-tabs" style="display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 0;">
+                <button class="auth-tab active" onclick="showDesignerAnalyticsSection('table', this)" style="padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 500; position: relative;">Designer Table</button>
+                <button class="auth-tab" onclick="showDesignerAnalyticsSection('weekly', this)" style="padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 500; position: relative;">Weekly Breakdown</button>
+                <button class="auth-tab" onclick="showDesignerAnalyticsSection('chart', this)" style="padding: 0.75rem 1.5rem; background: transparent; border: none; cursor: pointer; font-weight: 500; position: relative;">Charts</button>
+            </div>
+        </div>
+        
+        <!-- Section: Designer Table -->
+        <div id="designer-section-table" class="designer-analytics-section">
+            ${renderDesignerTable(designers)}
+        </div>
+        
+        <!-- Section: Weekly Breakdown -->
+        <div id="designer-section-weekly" class="designer-analytics-section" style="display: none;">
+            ${renderWeeklyBreakdownTable(designers, weeklyTotals)}
+        </div>
+        
+        <!-- Section: Charts -->
+        <div id="designer-section-chart" class="designer-analytics-section" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">📈 Weekly Hours Trend</h3>
+                    <div style="position: relative; height: 350px;">
+                        <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">👥 Designer Workload Distribution</h3>
+                    <div style="position: relative; height: 350px;">
+                        <canvas id="designerDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render the main designer table with weekly averages
+ */
+function renderDesignerTable(designers) {
+    if (!designers || designers.length === 0) {
+        return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No designer data found.</div>';
+    }
+    
+    const rows = designers.map((d, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>
+                <strong>${d.name}</strong><br>
+                <small style="color: var(--text-light);">${d.email || ''}</small>
+            </td>
+            <td><strong>${d.totalHours.toFixed(1)}h</strong></td>
+            <td>${d.weeksActive}</td>
+            <td style="color: var(--primary-blue); font-weight: 600;">${d.avgWeeklyHours.toFixed(1)}h</td>
+            <td style="color: var(--success); font-weight: 600;">${d.avgDailyHours.toFixed(2)}h</td>
+            <td>${d.projectsWorked}</td>
+            <td>${d.uniqueWorkingDays}</td>
+        </tr>
+    `).join('');
+    
+    return `
+        <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">Designer Hours Summary</h3>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem;">
+                    <thead>
+                        <tr style="background: var(--light-blue);">
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">#</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Designer</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Total Hours</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Weeks Active</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Avg Hours/Week</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Avg Hours/Day</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Projects</th>
+                            <th style="padding: 0.75rem 1rem; text-align: left; font-weight: 600;">Working Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render weekly breakdown table with each designer's hours per week
+ */
+function renderWeeklyBreakdownTable(designers, weeklyTotals) {
+    if (!weeklyTotals || weeklyTotals.length === 0) {
+        return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No weekly data found.</div>';
+    }
+    
+    const weekHeaders = weeklyTotals.map(w => `<th style="min-width: 80px; text-align: center; padding: 0.75rem; background: var(--light-blue);">${w.weekLabel}</th>`).join('');
+    
+    const designerRows = designers.slice(0, 15).map(d => {
+        const weekCells = weeklyTotals.map(w => {
+            const hours = (d.weeklyHours && d.weeklyHours[w.week]) || 0;
+            const cellColor = hours > 40 ? 'var(--danger)' : (hours > 30 ? 'var(--warning)' : 'var(--text-dark)');
+            return `<td style="text-align: center; padding: 0.5rem; color: ${cellColor}; font-weight: ${hours > 0 ? '600' : '400'}; border-bottom: 1px solid var(--border);">${hours > 0 ? hours.toFixed(1) : '-'}</td>`;
+        }).join('');
+        
+        return `
+            <tr>
+                <td style="position: sticky; left: 0; background: white; z-index: 1; padding: 0.75rem; border-bottom: 1px solid var(--border);">
+                    <strong>${d.name}</strong>
+                </td>
+                ${weekCells}
+                <td style="background: #f3f4f6; font-weight: 700; text-align: center; padding: 0.5rem;">${d.avgWeeklyHours.toFixed(1)}h</td>
+            </tr>
+        `;
+    }).join('');
+    
+    const totalCells = weeklyTotals.map(w => `<td style="text-align: center; font-weight: 700; padding: 0.5rem;">${w.total.toFixed(1)}</td>`).join('');
+    
+    return `
+        <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">Weekly Hours Breakdown by Designer</h3>
+            <div style="overflow-x: auto; max-width: 100%;">
+                <table style="min-width: max-content; border-collapse: collapse; font-size: 0.9rem;">
+                    <thead>
+                        <tr>
+                            <th style="position: sticky; left: 0; background: var(--light-blue); z-index: 2; min-width: 150px; padding: 0.75rem;">Designer</th>
+                            ${weekHeaders}
+                            <th style="background: #e5e7eb; min-width: 80px; padding: 0.75rem;">Avg/Week</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${designerRows}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f3f4f6;">
+                            <td style="position: sticky; left: 0; background: #e5e7eb; z-index: 1; padding: 0.75rem;"><strong>Weekly Total</strong></td>
+                            ${totalCells}
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Switch between designer analytics sections
+ */
+function showDesignerAnalyticsSection(section, clickedTab) {
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+        tab.classList.remove('active');
+        tab.style.color = 'var(--text-light)';
+        tab.style.borderBottom = 'none';
+    });
+    if (clickedTab) {
+        clickedTab.classList.add('active');
+        clickedTab.style.color = 'var(--primary-blue)';
+        clickedTab.style.borderBottom = '2px solid var(--primary-blue)';
+    }
+    
+    document.querySelectorAll('.designer-analytics-section').forEach(sec => sec.style.display = 'none');
+    
+    const selectedSection = document.getElementById(`designer-section-${section}`);
+    if (selectedSection) {
+        selectedSection.style.display = 'block';
+        
+        if (section === 'chart') {
+            apiCall('timesheets?action=designer_weekly_report').then(response => {
+                if (response.success) {
+                    renderDesignerWeeklyCharts(response.data.designers, response.data.weeklyTotals);
+                }
+            });
+        }
+    }
+}
+
+/**
+ * Render charts for designer weekly analytics
+ */
+function renderDesignerWeeklyCharts(designers, weeklyTotals) {
+    const trendCtx = document.getElementById('weeklyTrendChart');
+    if (trendCtx && typeof Chart !== 'undefined') {
+        const existingChart = Chart.getChart(trendCtx);
+        if (existingChart) existingChart.destroy();
+        
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: weeklyTotals.map(w => w.weekLabel),
+                datasets: [{
+                    label: 'Total Hours',
+                    data: weeklyTotals.map(w => w.total),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }, {
+                    label: 'Avg Per Designer',
+                    data: weeklyTotals.map(w => w.avgPerDesigner),
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Hours' } }
+                },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+    
+    const distCtx = document.getElementById('designerDistributionChart');
+    if (distCtx && typeof Chart !== 'undefined') {
+        const existingChart = Chart.getChart(distCtx);
+        if (existingChart) existingChart.destroy();
+        
+        const topDesigners = designers.slice(0, 10);
+        
+        new Chart(distCtx, {
+            type: 'bar',
+            data: {
+                labels: topDesigners.map(d => d.name.split(' ')[0]),
+                datasets: [{
+                    label: 'Total Hours',
+                    data: topDesigners.map(d => d.totalHours),
+                    backgroundColor: '#3b82f6'
+                }, {
+                    label: 'Avg Weekly',
+                    data: topDesigners.map(d => d.avgWeeklyHours),
+                    backgroundColor: '#10b981'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Hours' } }
+                },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+}
+
+/**
+ * Download Designer Weekly Hours as Excel Report
+ */
+async function downloadDesignerWeeklyExcel() {
+    try {
+        showLoading();
+        
+        const response = await apiCall('timesheets?action=designer_weekly_report');
+        
+        if (!response.success) {
+            throw new Error('Failed to fetch data');
+        }
+        
+        const { designers, weeklyTotals, summary } = response.data;
+        
+        if (typeof XLSX === 'undefined') {
+            alert('Excel library not loaded. Please refresh the page and try again.');
+            return;
+        }
+        
+        const wb = XLSX.utils.book_new();
+        
+        // Sheet 1: Designer Summary
+        const summaryData = [
+            ['Designer Weekly Hours Report', '', '', '', '', '', ''],
+            ['Generated: ' + new Date().toLocaleString(), '', '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['#', 'Designer Name', 'Email', 'Total Hours', 'Weeks Active', 'Avg Hours/Week', 'Avg Hours/Day', 'Projects', 'Working Days']
+        ];
+        
+        designers.forEach((d, i) => {
+            summaryData.push([
+                i + 1, d.name, d.email || '', d.totalHours, d.weeksActive,
+                d.avgWeeklyHours, d.avgDailyHours, d.projectsWorked, d.uniqueWorkingDays
+            ]);
+        });
+        
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        summarySheet['!cols'] = [
+            { wch: 5 }, { wch: 25 }, { wch: 30 }, { wch: 12 },
+            { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 14 }
+        ];
+        XLSX.utils.book_append_sheet(wb, summarySheet, 'Designer Summary');
+        
+        // Sheet 2: Weekly Breakdown
+        const weeklyHeaders = ['Designer Name'].concat(weeklyTotals.map(w => w.weekLabel)).concat(['Average/Week']);
+        const weeklyData = [
+            ['Weekly Hours Breakdown', '', '', '', ''],
+            ['Generated: ' + new Date().toLocaleString(), '', '', '', ''],
+            [''],
+            weeklyHeaders
+        ];
+        
+        designers.forEach(d => {
+            const row = [d.name];
+            weeklyTotals.forEach(w => {
+                row.push((d.weeklyHours && d.weeklyHours[w.week]) || 0);
+            });
+            row.push(d.avgWeeklyHours);
+            weeklyData.push(row);
+        });
+        
+        const totalsRow = ['TOTAL'];
+        weeklyTotals.forEach(w => totalsRow.push(w.total));
+        totalsRow.push('');
+        weeklyData.push(totalsRow);
+        
+        const weeklySheet = XLSX.utils.aoa_to_sheet(weeklyData);
+        XLSX.utils.book_append_sheet(wb, weeklySheet, 'Weekly Breakdown');
+        
+        const fileName = 'Designer_Weekly_Hours_' + new Date().toISOString().split('T')[0] + '.xlsx';
+        XLSX.writeFile(wb, fileName);
+        
+        console.log('✅ Excel report downloaded:', fileName);
+        
+    } catch (error) {
+        console.error('Error downloading Excel:', error);
+        alert('❌ Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+console.log('✅ Designer Weekly Analytics module loaded');
+
+
 
 </script>
 </body>
