@@ -6397,7 +6397,7 @@ body.is-ios .nav-menu {
 
             // --- Menu Visibility ---
             setDisplay('newProposalNavItem', isBDM);
-            setDisplay('analyticsNavItem', (isBDM || isManagement) && !isHR);
+            setDisplay('analyticsNavItem', false); // Disabled - using designerAnalyticsNavItem instead
             setDisplay('workflowNavItem', ['estimator', 'coo'].includes(roleForCheck) && !isHR);
             setDisplay('settingsNavItem', roleForCheck === 'director');
             
