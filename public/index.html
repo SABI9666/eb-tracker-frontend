@@ -6411,7 +6411,7 @@ body.is-ios .nav-menu {
             setDisplay('tasksNavItem', isDesigner);
             setDisplay('timesheetNavItem', isDesigner);
             setDisplay('myAnalyticsNavItem', isDesigner); // Designer sees their own analytics
-            setDisplay('designerAnalyticsNavItem', isManagement || isHR); // Designer Hours Analytics for COO/Director/HR
+            setDisplay('designerAnalyticsNavItem', isManagement || isHR || isBDM); // Designer Hours Analytics for COO/Director/HR/BDM
             setDisplay('designerAllocationsNavItem', isDesigner); // SHOW New Menu
 
             setDisplay('paymentsNavItem', ['accounts', 'coo', 'director', 'bdm'].includes(roleForCheck) && !isHR);
