@@ -1,7 +1,6 @@
 // ============================================
-// EBTRACKER ANALYTICS DASHBOARD (V2)
-// This file is loaded by index.html
-// It provides analytics for BDM, COO, and Director roles.
+// EBTRACKER ANALYTICS DASHBOARD (V3)
+// Updated with Designer Weekly Hours Analytics
 // ============================================
 
 // Chart.js Global Colors
@@ -18,31 +17,20 @@ const CHART_COLORS = {
 
 /**
  * Main function to show the Analytics Dashboard.
- * This is called by the 'Analytics' link in the nav menu.
  */
 async function showAnalyticsDashboard() {
-    setActiveNav('nav-analytics'); // Assumes setActiveNav is global in index.html
+    setActiveNav('nav-analytics');
     const main = document.getElementById('mainContent');
     main.style.display = 'block';
-    showLoading(); // Assumes showLoading is global
+    showLoading();
 
     try {
-        // 1. Render the dashboard UI skeleton
-        // The HTML skeleton is now dynamic based on role
         main.innerHTML = getAnalyticsHTML(currentUserRole);
-
-        // 2. Fetch and process the data
-        // Assumes apiCall and currentUser are global
         const analyticsData = await loadAnalyticsData(currentUserRole);
-
-        // 3. Render the KPI cards
         renderKpiCards(analyticsData.kpis, currentUserRole);
-
-        // 4. Render the base charts (Monthly Revenue & Status)
         renderMonthlyRevenueChart(analyticsData.monthlyRevenue);
         renderStatusPieChart(analyticsData.statusCounts);
 
-        // 5. Render COO/Director charts if data exists for them
         if (currentUserRole !== 'bdm') {
             if (analyticsData.bdmPerformance) {
                 renderBdmPerformanceChart(analyticsData.bdmPerformance);
@@ -59,19 +47,17 @@ async function showAnalyticsDashboard() {
         console.error('❌ Error loading analytics:', error);
         main.innerHTML = `<div class="error-message"><h3>Error Loading Analytics</h3><p>${error.message}</p></div>`;
     } finally {
-        hideLoading(); // Assumes hideLoading is global
+        hideLoading();
     }
 }
 
 /**
- * Returns the HTML skeleton for the analytics dashboard,
- * dynamically adding chart containers for COO/Director.
+ * Returns the HTML skeleton for the analytics dashboard.
  */
 function getAnalyticsHTML(role) {
     const isDirectorView = role === 'coo' || role === 'director';
     const title = isDirectorView ? '📊 Company Analytics Dashboard' : '📈 My BDM Analytics';
 
-    // Add extra containers for director charts
     const directorCharts = `
         <div class="action-section">
             <h3>BDM Performance (Won Revenue)</h3>
@@ -102,7 +88,7 @@ function getAnalyticsHTML(role) {
         </div>
         
         <div class="dashboard-stats" id="bdm-kpi-cards">
-            </div>
+        </div>
 
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-top: 3rem;">
             
@@ -127,8 +113,6 @@ function getAnalyticsHTML(role) {
 
 /**
  * Fetches and processes all proposal data.
- * - If role is 'bdm', it filters for their proposals.
- * - If role is 'coo' or 'director', it processes all proposals.
  */
 async function loadAnalyticsData(role) {
     const response = await apiCall('proposals');
@@ -138,14 +122,11 @@ async function loadAnalyticsData(role) {
 
     let proposals;
     if (role === 'bdm') {
-        // BDM view: Filter for their own proposals
         proposals = response.data.filter(p => p.createdByUid === currentUser.uid);
     } else {
-        // COO/Director view: Use all proposals
         proposals = response.data;
     }
 
-    // --- Process KPIs ---
     const wonProposals = proposals.filter(p => p.status === 'won');
     const lostProposals = proposals.filter(p => p.status === 'lost');
     
@@ -165,7 +146,6 @@ async function loadAnalyticsData(role) {
         totalLost
     };
 
-    // --- Process Monthly Revenue (Bar Chart) ---
     const monthlyRevenue = {};
     const labels = [];
     const now = new Date();
@@ -182,7 +162,6 @@ async function loadAnalyticsData(role) {
     wonProposals.forEach(p => {
         let date = null;
         
-        // Safely parse wonDate (Firebase timestamp or ISO string)
         if (p.wonDate) {
             if (p.wonDate.seconds !== undefined && p.wonDate.seconds !== null) {
                 date = new Date(Number(p.wonDate.seconds) * 1000);
@@ -195,7 +174,6 @@ async function loadAnalyticsData(role) {
             }
         }
         
-        // Fallback to updatedAt if wonDate didn't work
         if (!date || isNaN(date.getTime())) {
             if (p.updatedAt) {
                 if (p.updatedAt.seconds !== undefined && p.updatedAt.seconds !== null) {
@@ -210,7 +188,6 @@ async function loadAnalyticsData(role) {
             }
         }
 
-        // FIX 1: Check if date is a valid Date object before processing
         if (date && !isNaN(date.getTime())) {
             const year = date.getFullYear();
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -221,185 +198,115 @@ async function loadAnalyticsData(role) {
         }
     });
 
-    // --- Process Status Counts (Pie Chart) ---
     const statusCounts = {
-        Won: 0,
-        Lost: 0,
-        Pending: 0, // Submitted, Approved
-        Pricing: 0, // Estimated, Pricing
-        Draft: 0    // Draft, Rejected
+        won: wonProposals.length,
+        lost: lostProposals.length,
+        submitted: proposals.filter(p => p.status === 'submitted').length,
+        pending: proposals.filter(p => p.status === 'pending' || p.status === 'estimation_completed' || p.status === 'pricing_pending').length,
+        draft: proposals.filter(p => p.status === 'draft').length
     };
 
-    proposals.forEach(p => {
-        switch (p.status) {
-            case 'won':
-                statusCounts.Won++;
-                break;
-            case 'lost':
-                statusCounts.Lost++;
-                break;
-            case 'submitted_to_client':
-            case 'approved':
-                statusCounts.Pending++;
-                break;
-            case 'estimated':
-            case 'pricing_complete':
-            case 'pending_director_approval':
-                statusCounts.Pricing++;
-                break;
-            case 'draft':
-            case 'rejected':
-            default:
-                statusCounts.Draft++;
-                break;
-        }
-    });
+    let bdmPerformance = null;
+    let weeklyRevenue = null;
+    let regionalData = null;
 
-    // --- Process COO/Director Data ---
-    let bdmPerformance = null, weeklyRevenue = null, regionalData = null;
-
-    if (role !== 'bdm') {
-        // 1. BDM Performance
+    if (role === 'coo' || role === 'director') {
         bdmPerformance = {};
         wonProposals.forEach(p => {
             const bdmName = p.createdByName || 'Unknown';
-            if (!bdmPerformance[bdmName]) {
-                bdmPerformance[bdmName] = 0;
-            }
-            bdmPerformance[bdmName] += (p.pricing?.quoteValue || 0);
+            bdmPerformance[bdmName] = (bdmPerformance[bdmName] || 0) + (p.pricing?.quoteValue || 0);
         });
 
-        // 2. Weekly Revenue
         weeklyRevenue = {};
-        const weekLabels = [];
-        const today = new Date();
-        for (let i = 15; i >= 0; i--) { // Last 16 weeks
-            const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (i * 7));
-            const weekStart = getWeekStartDate(d);
-            if (!weekLabels.includes(weekStart)) {
-                weekLabels.push(weekStart);
-                weeklyRevenue[weekStart] = 0;
-            }
+        for (let i = 15; i >= 0; i--) {
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - (weekStart.getDay() || 7) + 1 - (i * 7));
+            const label = weekStart.toISOString().split('T')[0];
+            weeklyRevenue[label] = 0;
         }
+
         wonProposals.forEach(p => {
             let date = null;
-            
-            // Safely parse wonDate for weekly revenue
             if (p.wonDate) {
-                if (p.wonDate.seconds !== undefined && p.wonDate.seconds !== null) {
+                if (p.wonDate.seconds !== undefined) {
                     date = new Date(Number(p.wonDate.seconds) * 1000);
-                } else if (p.wonDate._seconds !== undefined && p.wonDate._seconds !== null) {
-                    date = new Date(Number(p.wonDate._seconds) * 1000);
                 } else if (typeof p.wonDate === 'string') {
-                    date = new Date(p.wonDate);
-                } else if (typeof p.wonDate === 'number') {
                     date = new Date(p.wonDate);
                 }
             }
-            
-            // FIX 2: Check if date is a valid Date object before calling getWeekStartDate (RangeError fix)
             if (date && !isNaN(date.getTime())) {
-                const weekStart = getWeekStartDate(date);
-                if (weeklyRevenue.hasOwnProperty(weekStart)) {
-                    weeklyRevenue[weekStart] += (p.pricing?.quoteValue || 0);
+                const weekLabel = getWeekStartDate(date);
+                if (weeklyRevenue.hasOwnProperty(weekLabel)) {
+                    weeklyRevenue[weekLabel] += (p.pricing?.quoteValue || 0);
                 }
             }
         });
-        
-        // 3. Regional Data
+
         regionalData = {};
         wonProposals.forEach(p => {
-            let region = p.country || 'Unknown';
-            if (region === "") {
-                region = "Unknown";
-            }
-            if (!regionalData[region]) {
-                regionalData[region] = 0;
-            }
-            regionalData[region] += (p.pricing?.quoteValue || 0);
+            const region = p.region || p.clientLocation || 'Other';
+            regionalData[region] = (regionalData[region] || 0) + (p.pricing?.quoteValue || 0);
         });
     }
 
-    return { kpis, monthlyRevenue, statusCounts, bdmPerformance, weeklyRevenue, regionalData };
+    return {
+        kpis,
+        monthlyRevenue: { labels, data: labels.map(l => monthlyRevenue[l]) },
+        statusCounts,
+        bdmPerformance,
+        weeklyRevenue,
+        regionalData
+    };
 }
 
 /**
- * Renders the KPI cards with processed data
+ * Renders KPI Cards
  */
 function renderKpiCards(kpis, role) {
     const container = document.getElementById('bdm-kpi-cards');
-    const currencyFormat = { style: 'currency', currency: 'USD', maximumFractionDigits: 0 };
+    if (!container) return;
     
-    // BDM-specific KPIs
-    let bdmCards = `
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalProposals}</div>
-            <div class="stat-label">Total Proposals</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" style="color: ${CHART_COLORS.green}">${kpis.totalWon}</div>
-            <div class="stat-label">Proposals Won</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number" style="color: ${CHART_COLORS.red}">${kpis.totalLost}</div>
-            <div class="stat-label">Proposals Lost</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.winRate.toFixed(1)}%</div>
-            <div class="stat-label">Win Rate</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalRevenue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Total Revenue (Won)</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.avgDealValue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Avg. Revenue (Won)</div>
-        </div>
-    `;
+    const cards = [
+        { label: 'Total Revenue', value: formatCurrency(kpis.totalRevenue), icon: '💰', color: 'var(--success)' },
+        { label: 'Total Proposals', value: kpis.totalProposals, icon: '📄', color: 'var(--primary-blue)' },
+        { label: 'Win Rate', value: kpis.winRate.toFixed(1) + '%', icon: '🎯', color: 'var(--warning)' },
+        { label: 'Avg Deal Value', value: formatCurrency(kpis.avgDealValue), icon: '📊', color: 'var(--purple)' },
+    ];
 
-    // COO/Director has a slightly different focus
-    let directorCards = `
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalRevenue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Total Revenue (Won)</div>
+    container.innerHTML = cards.map(card => `
+        <div class="stat-card" style="border-top-color: ${card.color};">
+            <div class="stat-number" style="color: ${card.color};">${card.value}</div>
+            <div class="stat-label">${card.icon} ${card.label}</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.avgDealValue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Avg. Revenue (Won)</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.winRate.toFixed(1)}%</div>
-            <div class="stat-label">Company Win Rate</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalProposals}</div>
-            <div class="stat-label">Total Proposals</div>
-        </div>
-    `;
+    `).join('');
+}
 
-    container.innerHTML = (role === 'bdm') ? bdmCards : directorCards;
+function formatCurrency(value) {
+    if (value >= 1000000) {
+        return '$' + (value / 1000000).toFixed(2) + 'M';
+    } else if (value >= 1000) {
+        return '$' + (value / 1000).toFixed(1) + 'K';
+    }
+    return '$' + value.toLocaleString();
 }
 
 /**
  * Renders the Monthly Revenue bar chart
  */
-function renderMonthlyRevenueChart(monthlyRevenue) {
-    const ctx = document.getElementById('monthlyRevenueChart').getContext('2d');
+function renderMonthlyRevenueChart(data) {
+    const ctx = document.getElementById('monthlyRevenueChart');
+    if (!ctx) return;
     
-    const displayLabels = Object.keys(monthlyRevenue).map(label => {
-        const [year, month] = label.split('-');
-        const date = new Date(year, month - 1, 1);
-        return date.toLocaleString('default', { month: 'short', year: '2-digit' });
-    });
-
     new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: displayLabels,
+            labels: data.labels.map(l => {
+                const [year, month] = l.split('-');
+                return new Date(year, month - 1).toLocaleDateString('en-US', { month: 'short' });
+            }),
             datasets: [{
                 label: 'Revenue',
-                data: Object.values(monthlyRevenue),
+                data: data.data,
                 backgroundColor: CHART_COLORS.blue,
                 borderColor: CHART_COLORS.darkBlue,
                 borderWidth: 1,
@@ -414,16 +321,9 @@ function renderMonthlyRevenueChart(monthlyRevenue) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            // Smart formatting based on value size
-                            if (value >= 1000000) {
-                                return '$' + (value / 1000000).toFixed(1) + 'M';
-                            } else if (value >= 10000) {
-                                return '$' + (value / 1000).toFixed(0) + 'k';
-                            } else if (value >= 1000) {
-                                return '$' + (value / 1000).toFixed(1) + 'k';
-                            } else {
-                                return '$' + value.toLocaleString();
-                            }
+                            if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+                            if (value >= 1000) return '$' + (value / 1000).toFixed(0) + 'k';
+                            return '$' + value;
                         }
                     }
                 },
@@ -438,15 +338,16 @@ function renderMonthlyRevenueChart(monthlyRevenue) {
 }
 
 /**
- * Renders the Proposal Status pie chart
+ * Renders the Status Pie Chart
  */
 function renderStatusPieChart(statusCounts) {
-    const ctx = document.getElementById('statusPieChart').getContext('2d');
+    const ctx = document.getElementById('statusPieChart');
+    if (!ctx) return;
     
     new Chart(ctx, {
-        type: 'pie',
+        type: 'doughnut',
         data: {
-            labels: Object.keys(statusCounts),
+            labels: Object.keys(statusCounts).map(s => s.charAt(0).toUpperCase() + s.slice(1)),
             datasets: [{
                 label: 'Proposal Status',
                 data: Object.values(statusCounts),
@@ -469,9 +370,7 @@ function renderStatusPieChart(statusCounts) {
                 tooltip: {
                     callbacks: {
                         label: function(context) {
-                            let label = context.label || '';
-                            let value = context.raw || 0;
-                            return ` ${label}: ${value}`;
+                            return ` ${context.label}: ${context.raw}`;
                         }
                     }
                 }
@@ -481,12 +380,12 @@ function renderStatusPieChart(statusCounts) {
 }
 
 /**
- * Renders the BDM Performance bar chart (COO/Director only)
+ * Renders the BDM Performance bar chart
  */
 function renderBdmPerformanceChart(bdmData) {
-    const ctx = document.getElementById('bdmPerformanceChart').getContext('2d');
+    const ctx = document.getElementById('bdmPerformanceChart');
+    if (!ctx) return;
     
-    // Sort BDMs by performance
     const sortedData = Object.entries(bdmData).sort(([, a], [, b]) => b - a);
     const labels = sortedData.map(item => item[0]);
     const data = sortedData.map(item => item[1]);
@@ -498,22 +397,17 @@ function renderBdmPerformanceChart(bdmData) {
             datasets: [{
                 label: 'Revenue Won',
                 data: data,
-                backgroundColor: [ // Using an array of colors
-                    CHART_COLORS.green,
-                    CHART_COLORS.blue,
-                    CHART_COLORS.yellow,
-                    CHART_COLORS.purple,
-                    CHART_COLORS.orange,
-                    CHART_COLORS.red,
-                    CHART_COLORS.grey
+                backgroundColor: [
+                    CHART_COLORS.green, CHART_COLORS.blue, CHART_COLORS.yellow,
+                    CHART_COLORS.purple, CHART_COLORS.orange, CHART_COLORS.red, CHART_COLORS.grey
                 ],
-                borderColor: '#ffffff', // Matching pie chart style
-                borderWidth: 2,         // Matching pie chart style
+                borderColor: '#ffffff',
+                borderWidth: 2,
                 borderRadius: 5
             }]
         },
         options: {
-            indexAxis: 'y', // Horizontal bar chart
+            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             scales: {
@@ -521,16 +415,10 @@ function renderBdmPerformanceChart(bdmData) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            // Smart formatting based on value size
-                            if (value >= 1000000) {
-                                return '$' + (value / 1000000).toFixed(1) + 'M';
-                            } else if (value >= 10000) {
-                                return '$' + (value / 1000).toFixed(0) + 'k';
-                            } else if (value >= 1000) {
-                                return '$' + (value / 1000).toFixed(1) + 'k';
-                            } else {
-                                return '$' + value.toLocaleString();
-                            }
+                            if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+                            if (value >= 10000) return '$' + (value / 1000).toFixed(0) + 'k';
+                            if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'k';
+                            return '$' + value.toLocaleString();
                         }
                     }
                 },
@@ -545,14 +433,15 @@ function renderBdmPerformanceChart(bdmData) {
 }
 
 /**
- * Renders the Weekly Revenue line chart (COO/Director only)
+ * Renders the Weekly Revenue line chart
  */
 function renderWeeklyRevenueChart(weeklyData) {
-    const ctx = document.getElementById('weeklyRevenueChart').getContext('2d');
+    const ctx = document.getElementById('weeklyRevenueChart');
+    if (!ctx) return;
     
     const displayLabels = Object.keys(weeklyData).map(label => {
         const [year, month, day] = label.split('-');
-        return `${month}/${day}`; // Short format e.g., 10/28
+        return `${month}/${day}`;
     });
 
     new Chart(ctx, {
@@ -576,16 +465,10 @@ function renderWeeklyRevenueChart(weeklyData) {
                     beginAtZero: true,
                     ticks: {
                         callback: function(value) {
-                            // Smart formatting based on value size
-                            if (value >= 1000000) {
-                                return '$' + (value / 1000000).toFixed(1) + 'M';
-                            } else if (value >= 10000) {
-                                return '$' + (value / 1000).toFixed(0) + 'k';
-                            } else if (value >= 1000) {
-                                return '$' + (value / 1000).toFixed(1) + 'k';
-                            } else {
-                                return '$' + value.toLocaleString();
-                            }
+                            if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M';
+                            if (value >= 10000) return '$' + (value / 1000).toFixed(0) + 'k';
+                            if (value >= 1000) return '$' + (value / 1000).toFixed(1) + 'k';
+                            return '$' + value.toLocaleString();
                         }
                     }
                 },
@@ -600,10 +483,11 @@ function renderWeeklyRevenueChart(weeklyData) {
 }
 
 /**
- * Renders the Regional Business pie chart (COO/Director only)
+ * Renders the Regional Business pie chart
  */
 function renderRegionalPieChart(regionalData) {
-    const ctx = document.getElementById('regionalPieChart').getContext('2d');
+    const ctx = document.getElementById('regionalPieChart');
+    if (!ctx) return;
     
     new Chart(ctx, {
         type: 'doughnut',
@@ -613,13 +497,8 @@ function renderRegionalPieChart(regionalData) {
                 label: 'Regional Revenue',
                 data: Object.values(regionalData),
                 backgroundColor: [
-                    CHART_COLORS.blue,
-                    CHART_COLORS.green,
-                    CHART_COLORS.yellow,
-                    CHART_COLORS.purple,
-                    CHART_COLORS.orange,
-                    CHART_COLORS.red,
-                    CHART_COLORS.grey
+                    CHART_COLORS.blue, CHART_COLORS.green, CHART_COLORS.yellow,
+                    CHART_COLORS.purple, CHART_COLORS.orange, CHART_COLORS.red, CHART_COLORS.grey
                 ],
                 borderColor: '#ffffff',
                 borderWidth: 2
@@ -638,6 +517,447 @@ function renderRegionalPieChart(regionalData) {
 
 
 // ============================================
+// DESIGNER WEEKLY HOURS ANALYTICS
+// ============================================
+
+/**
+ * Show Designer Weekly Hours Analytics Dashboard
+ */
+async function showDesignerWeeklyAnalytics() {
+    setActiveNav('nav-designer-analytics');
+    const main = document.getElementById('mainContent');
+    main.style.display = 'block';
+    showLoading();
+
+    try {
+        // Fetch designer weekly report from API
+        const response = await apiCall('timesheets?action=designer_weekly_report');
+        
+        if (!response.success) {
+            throw new Error(response.error || 'Failed to load designer weekly report');
+        }
+
+        const { designers, weeklyTotals, summary } = response.data;
+        
+        // Render the dashboard
+        main.innerHTML = renderDesignerWeeklyDashboard(designers, weeklyTotals, summary);
+        
+        // Initialize charts after a short delay
+        setTimeout(() => renderDesignerWeeklyCharts(designers, weeklyTotals), 100);
+
+    } catch (error) {
+        console.error('❌ Error loading designer weekly analytics:', error);
+        main.innerHTML = `
+            <div class="error-message" style="background: #fee; padding: 2rem; border-radius: 12px; text-align: center;">
+                <h3>⚠️ Error Loading Designer Analytics</h3>
+                <p>${error.message}</p>
+                <button onclick="showDesignerWeeklyAnalytics()" class="btn btn-primary" style="margin-top: 1rem;">Retry</button>
+            </div>
+        `;
+    } finally {
+        hideLoading();
+    }
+}
+
+/**
+ * Render the Designer Weekly Analytics Dashboard
+ */
+function renderDesignerWeeklyDashboard(designers, weeklyTotals, summary) {
+    return `
+        <div class="page-header">
+            <h2>📊 Designer Weekly Hours Analytics</h2>
+            <p class="subtitle">Comprehensive breakdown of designer working hours per week</p>
+        </div>
+        
+        <!-- Summary Cards -->
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-number">${summary.totalDesigners}</div>
+                <div class="stat-label">👥 Total Designers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${summary.totalHoursAllTime.toFixed(1)}h</div>
+                <div class="stat-label">⏱️ Total Hours (All Time)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${summary.avgHoursPerDesigner.toFixed(1)}h</div>
+                <div class="stat-label">📈 Avg Hours/Designer</div>
+            </div>
+            <div class="stat-card" style="border-top-color: var(--success);">
+                <div class="stat-number" style="color: var(--success);">${summary.weeksTracked || weeklyTotals.length}</div>
+                <div class="stat-label">📅 Weeks Tracked</div>
+            </div>
+        </div>
+        
+        <!-- Export Button -->
+        <div style="margin: 2rem 0; text-align: right;">
+            <button onclick="downloadDesignerWeeklyExcel()" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+                📥 Download Excel Report
+            </button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showDesignerAnalyticsSection('table', this)">Designer Table</button>
+                <button class="auth-tab" onclick="showDesignerAnalyticsSection('weekly', this)">Weekly Breakdown</button>
+                <button class="auth-tab" onclick="showDesignerAnalyticsSection('chart', this)">Charts</button>
+            </div>
+        </div>
+        
+        <!-- Section: Designer Table -->
+        <div id="designer-section-table" class="designer-analytics-section">
+            ${renderDesignerTable(designers)}
+        </div>
+        
+        <!-- Section: Weekly Breakdown -->
+        <div id="designer-section-weekly" class="designer-analytics-section" style="display: none;">
+            ${renderWeeklyBreakdownTable(designers, weeklyTotals)}
+        </div>
+        
+        <!-- Section: Charts -->
+        <div id="designer-section-chart" class="designer-analytics-section" style="display: none;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem;">
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">📈 Weekly Hours Trend</h3>
+                    <div style="position: relative; height: 350px;">
+                        <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem;">👥 Designer Workload Distribution</h3>
+                    <div style="position: relative; height: 350px;">
+                        <canvas id="designerDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render the main designer table with weekly averages
+ */
+function renderDesignerTable(designers) {
+    if (!designers || designers.length === 0) {
+        return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No designer data found.</div>';
+    }
+    
+    const rows = designers.map((d, index) => `
+        <tr>
+            <td>${index + 1}</td>
+            <td>
+                <strong>${d.name}</strong><br>
+                <small style="color: var(--text-light);">${d.email || ''}</small>
+            </td>
+            <td><strong>${d.totalHours.toFixed(1)}h</strong></td>
+            <td>${d.weeksActive}</td>
+            <td style="color: var(--primary-blue); font-weight: 600;">${d.avgWeeklyHours.toFixed(1)}h</td>
+            <td style="color: var(--success); font-weight: 600;">${d.avgDailyHours.toFixed(2)}h</td>
+            <td>${d.projectsWorked}</td>
+            <td>${d.uniqueWorkingDays}</td>
+        </tr>
+    `).join('');
+    
+    return `
+        <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">Designer Hours Summary</h3>
+            <div style="overflow-x: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Designer</th>
+                            <th>Total Hours</th>
+                            <th>Weeks Active</th>
+                            <th>Avg Hours/Week</th>
+                            <th>Avg Hours/Day</th>
+                            <th>Projects</th>
+                            <th>Working Days</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Render weekly breakdown table with each designer's hours per week
+ */
+function renderWeeklyBreakdownTable(designers, weeklyTotals) {
+    if (!weeklyTotals || weeklyTotals.length === 0) {
+        return '<div class="card" style="padding: 2rem; text-align: center; color: var(--text-light);">No weekly data found.</div>';
+    }
+    
+    // Create header with week labels
+    const weekHeaders = weeklyTotals.map(w => `<th style="min-width: 80px; text-align: center;">${w.weekLabel}</th>`).join('');
+    
+    // Create rows for each designer (limit to top 15)
+    const designerRows = designers.slice(0, 15).map(d => {
+        const weekCells = weeklyTotals.map(w => {
+            const hours = (d.weeklyHours && d.weeklyHours[w.week]) || 0;
+            const cellColor = hours > 40 ? 'var(--danger)' : (hours > 30 ? 'var(--warning)' : 'var(--text-dark)');
+            return `<td style="text-align: center; color: ${cellColor}; font-weight: ${hours > 0 ? '600' : '400'};">${hours > 0 ? hours.toFixed(1) : '-'}</td>`;
+        }).join('');
+        
+        return `
+            <tr>
+                <td style="position: sticky; left: 0; background: white; z-index: 1;">
+                    <strong>${d.name}</strong>
+                </td>
+                ${weekCells}
+                <td style="background: #f3f4f6; font-weight: 700; text-align: center;">${d.avgWeeklyHours.toFixed(1)}h</td>
+            </tr>
+        `;
+    }).join('');
+    
+    // Create totals row
+    const totalCells = weeklyTotals.map(w => `<td style="text-align: center; font-weight: 700;">${w.total.toFixed(1)}</td>`).join('');
+    
+    return `
+        <div class="card">
+            <h3 style="margin-bottom: 1.5rem;">Weekly Hours Breakdown by Designer</h3>
+            <div style="overflow-x: auto; max-width: 100%;">
+                <table class="data-table" style="min-width: max-content;">
+                    <thead>
+                        <tr>
+                            <th style="position: sticky; left: 0; background: var(--light-blue); z-index: 2; min-width: 150px;">Designer</th>
+                            ${weekHeaders}
+                            <th style="background: #e5e7eb; min-width: 80px;">Avg/Week</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${designerRows}
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f3f4f6;">
+                            <td style="position: sticky; left: 0; background: #e5e7eb; z-index: 1;"><strong>Weekly Total</strong></td>
+                            ${totalCells}
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Switch between designer analytics sections
+ */
+function showDesignerAnalyticsSection(section, clickedTab) {
+    // Update tab active states
+    document.querySelectorAll('.auth-tab').forEach(tab => tab.classList.remove('active'));
+    if (clickedTab) clickedTab.classList.add('active');
+    
+    // Hide all sections
+    document.querySelectorAll('.designer-analytics-section').forEach(sec => sec.style.display = 'none');
+    
+    // Show selected section
+    const selectedSection = document.getElementById(`designer-section-${section}`);
+    if (selectedSection) {
+        selectedSection.style.display = 'block';
+        
+        // Render charts when chart section is shown
+        if (section === 'chart') {
+            apiCall('timesheets?action=designer_weekly_report').then(response => {
+                if (response.success) {
+                    renderDesignerWeeklyCharts(response.data.designers, response.data.weeklyTotals);
+                }
+            });
+        }
+    }
+}
+
+/**
+ * Render charts for designer weekly analytics
+ */
+function renderDesignerWeeklyCharts(designers, weeklyTotals) {
+    // Weekly Trend Line Chart
+    const trendCtx = document.getElementById('weeklyTrendChart');
+    if (trendCtx && typeof Chart !== 'undefined') {
+        // Destroy existing chart if any
+        const existingChart = Chart.getChart(trendCtx);
+        if (existingChart) existingChart.destroy();
+        
+        new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: weeklyTotals.map(w => w.weekLabel),
+                datasets: [{
+                    label: 'Total Hours',
+                    data: weeklyTotals.map(w => w.total),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }, {
+                    label: 'Avg Per Designer',
+                    data: weeklyTotals.map(w => w.avgPerDesigner),
+                    borderColor: '#10b981',
+                    backgroundColor: 'transparent',
+                    borderDash: [5, 5],
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Hours' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+    
+    // Designer Distribution Bar Chart
+    const distCtx = document.getElementById('designerDistributionChart');
+    if (distCtx && typeof Chart !== 'undefined') {
+        const existingChart = Chart.getChart(distCtx);
+        if (existingChart) existingChart.destroy();
+        
+        const topDesigners = designers.slice(0, 10);
+        
+        new Chart(distCtx, {
+            type: 'bar',
+            data: {
+                labels: topDesigners.map(d => d.name.split(' ')[0]),
+                datasets: [{
+                    label: 'Total Hours',
+                    data: topDesigners.map(d => d.totalHours),
+                    backgroundColor: '#3b82f6'
+                }, {
+                    label: 'Avg Weekly',
+                    data: topDesigners.map(d => d.avgWeeklyHours),
+                    backgroundColor: '#10b981'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: { display: true, text: 'Hours' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+}
+
+/**
+ * Download Designer Weekly Hours as Excel Report
+ */
+async function downloadDesignerWeeklyExcel() {
+    try {
+        showLoading();
+        
+        // Fetch data
+        const response = await apiCall('timesheets?action=designer_weekly_report');
+        
+        if (!response.success) {
+            throw new Error('Failed to fetch data');
+        }
+        
+        const { designers, weeklyTotals, summary } = response.data;
+        
+        // Check if XLSX library is available
+        if (typeof XLSX === 'undefined') {
+            alert('Excel library not loaded. Please add SheetJS library to your page.\n\nAdd this to your HTML:\n<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>');
+            return;
+        }
+        
+        // Create workbook
+        const wb = XLSX.utils.book_new();
+        
+        // Sheet 1: Designer Summary
+        const summaryData = [
+            ['Designer Weekly Hours Report', '', '', '', '', '', ''],
+            [`Generated: ${new Date().toLocaleString()}`, '', '', '', '', '', ''],
+            ['', '', '', '', '', '', ''],
+            ['#', 'Designer Name', 'Email', 'Total Hours', 'Weeks Active', 'Avg Hours/Week', 'Avg Hours/Day', 'Projects', 'Working Days']
+        ];
+        
+        designers.forEach((d, i) => {
+            summaryData.push([
+                i + 1,
+                d.name,
+                d.email || '',
+                d.totalHours,
+                d.weeksActive,
+                d.avgWeeklyHours,
+                d.avgDailyHours,
+                d.projectsWorked,
+                d.uniqueWorkingDays
+            ]);
+        });
+        
+        const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+        summarySheet['!cols'] = [
+            { wch: 5 }, { wch: 25 }, { wch: 30 }, { wch: 12 },
+            { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 10 }, { wch: 14 }
+        ];
+        XLSX.utils.book_append_sheet(wb, summarySheet, 'Designer Summary');
+        
+        // Sheet 2: Weekly Breakdown
+        const weeklyHeaders = ['Designer Name', ...weeklyTotals.map(w => w.weekLabel), 'Average/Week'];
+        const weeklyData = [
+            ['Weekly Hours Breakdown', '', '', '', ''],
+            [`Generated: ${new Date().toLocaleString()}`, '', '', '', ''],
+            [''],
+            weeklyHeaders
+        ];
+        
+        designers.forEach(d => {
+            const row = [d.name];
+            weeklyTotals.forEach(w => {
+                row.push((d.weeklyHours && d.weeklyHours[w.week]) || 0);
+            });
+            row.push(d.avgWeeklyHours);
+            weeklyData.push(row);
+        });
+        
+        // Add totals row
+        const totalsRow = ['TOTAL'];
+        weeklyTotals.forEach(w => {
+            totalsRow.push(w.total);
+        });
+        totalsRow.push('');
+        weeklyData.push(totalsRow);
+        
+        const weeklySheet = XLSX.utils.aoa_to_sheet(weeklyData);
+        XLSX.utils.book_append_sheet(wb, weeklySheet, 'Weekly Breakdown');
+        
+        // Download file
+        const fileName = `Designer_Weekly_Hours_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+        
+        console.log('✅ Excel report downloaded:', fileName);
+        
+    } catch (error) {
+        console.error('Error downloading Excel:', error);
+        alert('❌ Error: ' + error.message);
+    } finally {
+        hideLoading();
+    }
+}
+
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 
@@ -647,7 +967,7 @@ function renderRegionalPieChart(regionalData) {
 function getWeekStartDate(d) {
     const date = new Date(d);
     const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // 0 = Sunday, 1 = Monday
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
     const monday = new Date(date.setDate(diff));
     return monday.toISOString().split('T')[0];
 }
@@ -667,3 +987,5 @@ function formatTooltipAsCurrency(context, labelPrefix = '') {
     }
     return label;
 }
+
+console.log('✅ Analytics module loaded with Designer Weekly Hours Analytics');
