@@ -1,5 +1,5 @@
 // ============================================
-// EBTRACKER ANALYTICS DASHBOARD (V2)
+// EBTRACKER ANALYTICS DASHBOARD (V3 - Apple Style)
 // This file is loaded by index.html
 // It provides analytics for BDM, COO, and Director roles.
 // ============================================
@@ -17,6 +17,30 @@ const CHART_COLORS = {
 };
 
 /**
+ * Format number in compact Apple-style (e.g., $66.5K, $1.2M)
+ */
+function formatCompactCurrency(value) {
+    if (value >= 1000000) {
+        return '$' + (value / 1000000).toFixed(1) + 'M';
+    } else if (value >= 1000) {
+        return '$' + (value / 1000).toFixed(1) + 'K';
+    } else {
+        return '$' + value.toFixed(0);
+    }
+}
+
+/**
+ * Format full currency for tooltips
+ */
+function formatFullCurrency(value) {
+    return new Intl.NumberFormat('en-US', { 
+        style: 'currency', 
+        currency: 'USD', 
+        maximumFractionDigits: 0 
+    }).format(value);
+}
+
+/**
  * Main function to show the Analytics Dashboard.
  * This is called by the 'Analytics' link in the nav menu.
  */
@@ -28,21 +52,22 @@ async function showAnalyticsDashboard() {
 
     try {
         // 1. Render the dashboard UI skeleton
-        // The HTML skeleton is now dynamic based on role
         main.innerHTML = getAnalyticsHTML(currentUserRole);
 
-        // 2. Fetch and process the data
-        // Assumes apiCall and currentUser are global
+        // 2. Inject Apple-style CSS
+        injectAnalyticsStyles();
+
+        // 3. Fetch and process the data
         const analyticsData = await loadAnalyticsData(currentUserRole);
 
-        // 3. Render the KPI cards
+        // 4. Render the KPI cards with animation
         renderKpiCards(analyticsData.kpis, currentUserRole);
 
-        // 4. Render the base charts (Monthly Revenue & Status)
+        // 5. Render the base charts (Monthly Revenue & Status)
         renderMonthlyRevenueChart(analyticsData.monthlyRevenue);
         renderStatusPieChart(analyticsData.statusCounts);
 
-        // 5. Render COO/Director charts if data exists for them
+        // 6. Render COO/Director charts if data exists for them
         if (currentUserRole !== 'bdm') {
             if (analyticsData.bdmPerformance) {
                 renderBdmPerformanceChart(analyticsData.bdmPerformance);
@@ -61,6 +86,207 @@ async function showAnalyticsDashboard() {
     } finally {
         hideLoading(); // Assumes hideLoading is global
     }
+}
+
+/**
+ * Inject Apple-style CSS for analytics cards
+ */
+function injectAnalyticsStyles() {
+    // Remove existing style if present
+    const existingStyle = document.getElementById('analytics-apple-style');
+    if (existingStyle) existingStyle.remove();
+
+    const style = document.createElement('style');
+    style.id = 'analytics-apple-style';
+    style.textContent = `
+        /* ============================== */
+        /* APPLE-STYLE KPI CARDS */
+        /* ============================== */
+        
+        .analytics-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2.5rem;
+        }
+        
+        .kpi-card {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+            border-radius: 20px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            position: relative;
+            overflow: visible;
+            backdrop-filter: blur(10px);
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+        }
+        
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--card-accent, #3b82f6), var(--card-accent-end, #60a5fa));
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 1rem;
+            background: linear-gradient(135deg, var(--icon-bg, #dbeafe) 0%, var(--icon-bg-end, #bfdbfe) 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .kpi-value {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: var(--value-color, #1e3a8a);
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+            white-space: nowrap;
+        }
+        
+        .kpi-value-full {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+            margin-bottom: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .kpi-card:hover .kpi-value-full {
+            opacity: 1;
+        }
+        
+        .kpi-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        /* Color variants */
+        .kpi-card.revenue {
+            --card-accent: #3b82f6;
+            --card-accent-end: #60a5fa;
+            --icon-bg: #dbeafe;
+            --icon-bg-end: #bfdbfe;
+            --value-color: #1e40af;
+        }
+        
+        .kpi-card.avg-revenue {
+            --card-accent: #8b5cf6;
+            --card-accent-end: #a78bfa;
+            --icon-bg: #ede9fe;
+            --icon-bg-end: #ddd6fe;
+            --value-color: #6d28d9;
+        }
+        
+        .kpi-card.win-rate {
+            --card-accent: #10b981;
+            --card-accent-end: #34d399;
+            --icon-bg: #d1fae5;
+            --icon-bg-end: #a7f3d0;
+            --value-color: #047857;
+        }
+        
+        .kpi-card.total {
+            --card-accent: #f59e0b;
+            --card-accent-end: #fbbf24;
+            --icon-bg: #fef3c7;
+            --icon-bg-end: #fde68a;
+            --value-color: #b45309;
+        }
+        
+        .kpi-card.won {
+            --card-accent: #10b981;
+            --card-accent-end: #34d399;
+            --icon-bg: #d1fae5;
+            --icon-bg-end: #a7f3d0;
+            --value-color: #047857;
+        }
+        
+        .kpi-card.lost {
+            --card-accent: #ef4444;
+            --card-accent-end: #f87171;
+            --icon-bg: #fee2e2;
+            --icon-bg-end: #fecaca;
+            --value-color: #b91c1c;
+        }
+        
+        /* Animation */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .kpi-card {
+            animation: slideUp 0.5s ease forwards;
+        }
+        
+        .kpi-card:nth-child(1) { animation-delay: 0.05s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.1s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.15s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+        .kpi-card:nth-child(5) { animation-delay: 0.25s; }
+        .kpi-card:nth-child(6) { animation-delay: 0.3s; }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .analytics-kpi-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .analytics-kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .kpi-value {
+                font-size: clamp(1.5rem, 5vw, 2rem);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .analytics-kpi-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .kpi-card {
+                padding: 1.25rem;
+            }
+            
+            .kpi-value {
+                font-size: 1.75rem;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 }
 
 /**
@@ -101,10 +327,10 @@ function getAnalyticsHTML(role) {
             <div class="subtitle">Insights on proposals and revenue</div>
         </div>
         
-        <div class="dashboard-stats" id="bdm-kpi-cards">
-            </div>
+        <div class="analytics-kpi-grid" id="bdm-kpi-cards">
+        </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-top: 3rem;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 2rem; margin-top: 2rem;">
             
             <div class="action-section">
                 <h3>Monthly Revenue (Last 12 Months)</h3>
@@ -290,57 +516,70 @@ async function loadAnalyticsData(role) {
 }
 
 /**
- * Renders the KPI cards with processed data
+ * Renders the KPI cards with Apple-style design
  */
 function renderKpiCards(kpis, role) {
     const container = document.getElementById('bdm-kpi-cards');
-    const currencyFormat = { style: 'currency', currency: 'USD', maximumFractionDigits: 0 };
     
     // BDM-specific KPIs
     let bdmCards = `
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalProposals}</div>
-            <div class="stat-label">Total Proposals</div>
+        <div class="kpi-card total">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-value">${kpis.totalProposals}</div>
+            <div class="kpi-label">Total Proposals</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number" style="color: ${CHART_COLORS.green}">${kpis.totalWon}</div>
-            <div class="stat-label">Proposals Won</div>
+        <div class="kpi-card won">
+            <div class="kpi-icon">🏆</div>
+            <div class="kpi-value">${kpis.totalWon}</div>
+            <div class="kpi-label">Proposals Won</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number" style="color: ${CHART_COLORS.red}">${kpis.totalLost}</div>
-            <div class="stat-label">Proposals Lost</div>
+        <div class="kpi-card lost">
+            <div class="kpi-icon">📉</div>
+            <div class="kpi-value">${kpis.totalLost}</div>
+            <div class="kpi-label">Proposals Lost</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.winRate.toFixed(1)}%</div>
-            <div class="stat-label">Win Rate</div>
+        <div class="kpi-card win-rate">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-value">${kpis.winRate.toFixed(1)}%</div>
+            <div class="kpi-label">Win Rate</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalRevenue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Total Revenue (Won)</div>
+        <div class="kpi-card revenue">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-value">${formatCompactCurrency(kpis.totalRevenue)}</div>
+            <div class="kpi-value-full">${formatFullCurrency(kpis.totalRevenue)}</div>
+            <div class="kpi-label">Total Revenue (Won)</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.avgDealValue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Avg. Revenue (Won)</div>
+        <div class="kpi-card avg-revenue">
+            <div class="kpi-icon">💵</div>
+            <div class="kpi-value">${formatCompactCurrency(kpis.avgDealValue)}</div>
+            <div class="kpi-value-full">${formatFullCurrency(kpis.avgDealValue)}</div>
+            <div class="kpi-label">Avg. Revenue (Won)</div>
         </div>
     `;
 
     // COO/Director has a slightly different focus
     let directorCards = `
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalRevenue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Total Revenue (Won)</div>
+        <div class="kpi-card revenue">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-value">${formatCompactCurrency(kpis.totalRevenue)}</div>
+            <div class="kpi-value-full">${formatFullCurrency(kpis.totalRevenue)}</div>
+            <div class="kpi-label">Total Revenue (Won)</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.avgDealValue.toLocaleString('en-US', currencyFormat)}</div>
-            <div class="stat-label">Avg. Revenue (Won)</div>
+        <div class="kpi-card avg-revenue">
+            <div class="kpi-icon">💵</div>
+            <div class="kpi-value">${formatCompactCurrency(kpis.avgDealValue)}</div>
+            <div class="kpi-value-full">${formatFullCurrency(kpis.avgDealValue)}</div>
+            <div class="kpi-label">Avg. Revenue (Won)</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.winRate.toFixed(1)}%</div>
-            <div class="stat-label">Company Win Rate</div>
+        <div class="kpi-card win-rate">
+            <div class="kpi-icon">📊</div>
+            <div class="kpi-value">${kpis.winRate.toFixed(1)}%</div>
+            <div class="kpi-label">Company Win Rate</div>
         </div>
-        <div class="stat-card">
-            <div class="stat-number">${kpis.totalProposals}</div>
-            <div class="stat-label">Total Proposals</div>
+        <div class="kpi-card total">
+            <div class="kpi-icon">📋</div>
+            <div class="kpi-value">${kpis.totalProposals}</div>
+            <div class="kpi-label">Total Proposals</div>
         </div>
     `;
 
