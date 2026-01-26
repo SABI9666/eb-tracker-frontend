@@ -5347,28 +5347,31 @@ body.is-ios .nav-menu {
       console.log('🚀 EBTracker v1.0.3-final loaded at:', new Date().toISOString());
       console.log('💾 Script timestamp: 2025-11-25T18:40:00Z');
       
-       const firebaseConfig = {
-            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
-            authDomain: "eb-tracker-42881.firebaseapp.com",
-            projectId: "eb-tracker-42881",
-            storageBucket: "eb-tracker-42881.firebasestorage.app",
-            messagingSenderId: "922340749018",
-            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+       
+        const firebaseConfig = {
+            apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U", // Replace with your actual config
+            authDomain: "eb-tracker-ff945.firebaseapp.com",
+            projectId: "eb-tracker-ff945",
+            storageBucket: "eb-tracker-ff945.firebasestorage.app",
+            messagingSenderId: "854824137821",
+            appId: "1:854824137821:web:7a408282c2f7c1816c89b4"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        var storage = firebase.storage(); // Initialize Firebase Storage (global scope)
+        window.storage = storage; // Also attach to window for guaranteed global access
 
         // ============================================
         // API & AUTH CONFIGURATION
         // ============================================
 
         // FIXED: Direct backend URL configuration
-        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        const API_BASE = 'https://eb-backend-rxu6.onrender.com';
+
 
         console.log('🔧 Backend URL configured:', API_BASE);
-
 
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
@@ -12632,6 +12635,92 @@ async function showDesignerAllocations() {
             </div>
         `;
 
+        // Fetch designer's design files for tracking
+        let designFilesHtml = '';
+        try {
+            const designFilesResponse = await apiCall('projects?action=get_design_files');
+            if (designFilesResponse.success && designFilesResponse.data && designFilesResponse.data.length > 0) {
+                const designFiles = designFilesResponse.data;
+                
+                const getStatusBadge = (status) => {
+                    const badges = {
+                        'uploaded': '<span class="design-file-status status-uploaded">📤 Uploaded</span>',
+                        'pending_approval': '<span class="design-file-status status-pending_approval">⏳ Pending Approval</span>',
+                        'approved': '<span class="design-file-status status-approved">✅ Approved</span>',
+                        'rejected': '<span class="design-file-status status-rejected">❌ Rejected</span>',
+                        'sent': '<span class="design-file-status status-sent">📧 Sent to Client</span>'
+                    };
+                    return badges[status] || '<span class="design-file-status">Unknown</span>';
+                };
+                
+                const getActionButton = (file) => {
+                    if (file.status === 'uploaded') {
+                        return `<button class="btn btn-primary btn-sm" onclick="submitDesignForApproval('${file.id}', '${file.projectId}')">📤 Submit for Approval</button>`;
+                    } else if (file.status === 'approved') {
+                        return `<button class="btn btn-success btn-sm" onclick="openSendToClientModal('${file.id}', '${file.projectId}')">📧 Send to Client</button>`;
+                    } else if (file.status === 'rejected') {
+                        return `<button class="btn btn-warning btn-sm" onclick="openDesignUploadModal('${file.projectId}', '${file.projectName.replace(/'/g, "\\'")}')">🔄 Upload Revised</button>`;
+                    }
+                    return '';
+                };
+                
+                const fileRows = designFiles.map(file => {
+                    const uploadDate = file.uploadedAt ? new Date(file.uploadedAt.seconds ? file.uploadedAt.seconds * 1000 : file.uploadedAt).toLocaleDateString() : 'N/A';
+                    return `
+                        <tr>
+                            <td><strong>${file.projectName || 'Unknown'}</strong></td>
+                            <td>
+                                <a href="${file.fileUrl}" target="_blank" style="color: var(--primary-blue); text-decoration: none;">
+                                    📄 ${file.fileName}
+                                </a>
+                            </td>
+                            <td>${file.clientEmail || 'N/A'}</td>
+                            <td>${uploadDate}</td>
+                            <td>${getStatusBadge(file.status)}</td>
+                            <td>
+                                <a href="${file.fileUrl}" target="_blank" class="btn btn-secondary btn-sm">👁️ View</a>
+                                ${getActionButton(file)}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                designFilesHtml = `
+                    <div class="card" style="margin-bottom: 1.5rem; border: 2px solid #e2e8f0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0; color: #1e3a5f;">📐 My Design Files</h3>
+                            <span style="background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">${designFiles.length} file(s)</span>
+                        </div>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Project</th>
+                                        <th>File</th>
+                                        <th>Client Email</th>
+                                        <th>Uploaded</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${fileRows}
+                                </tbody>
+                            </table>
+                        </div>
+                        ${designFiles.some(f => f.status === 'rejected') ? `
+                            <div style="margin-top: 1rem; padding: 12px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444;">
+                                <strong style="color: #991b1b;">⚠️ Rejected Files:</strong>
+                                <span style="color: #7f1d1d;"> Please review COO feedback and upload revised versions.</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.log('Could not fetch design files:', e);
+        }
+
         main.innerHTML = `
             <div class="page-header">
                 <h2>⏳ Project Allocations</h2>
@@ -12639,6 +12728,9 @@ async function showDesignerAllocations() {
             </div>
             
             ${renderDashboardAnnouncements()}
+            
+            <!-- My Design Files Section -->
+            ${designFilesHtml}
             
             <!-- Non-Project Hours Section -->
             ${nonProjectHoursSection}
