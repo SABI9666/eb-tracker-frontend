@@ -5347,28 +5347,31 @@ body.is-ios .nav-menu {
       console.log('🚀 EBTracker v1.0.3-final loaded at:', new Date().toISOString());
       console.log('💾 Script timestamp: 2025-11-25T18:40:00Z');
       
-       const firebaseConfig = {
-            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
-            authDomain: "eb-tracker-42881.firebaseapp.com",
-            projectId: "eb-tracker-42881",
-            storageBucket: "eb-tracker-42881.firebasestorage.app",
-            messagingSenderId: "922340749018",
-            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+       
+        const firebaseConfig = {
+            apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U", // Replace with your actual config
+            authDomain: "eb-tracker-ff945.firebaseapp.com",
+            projectId: "eb-tracker-ff945",
+            storageBucket: "eb-tracker-ff945.firebasestorage.app",
+            messagingSenderId: "854824137821",
+            appId: "1:854824137821:web:7a408282c2f7c1816c89b4"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        var storage = firebase.storage(); // Initialize Firebase Storage (global scope)
+        window.storage = storage; // Also attach to window for guaranteed global access
 
         // ============================================
         // API & AUTH CONFIGURATION
         // ============================================
 
         // FIXED: Direct backend URL configuration
-        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        const API_BASE = 'https://eb-backend-rxu6.onrender.com';
+
 
         console.log('🔧 Backend URL configured:', API_BASE);
-
 
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
@@ -12635,7 +12638,10 @@ async function showDesignerAllocations() {
         // Fetch designer's design files for tracking
         let designFilesHtml = '';
         try {
+            console.log('📐 Fetching design files...');
             const designFilesResponse = await apiCall('projects?action=get_design_files');
+            console.log('📐 Design files response:', designFilesResponse);
+            
             if (designFilesResponse.success && designFilesResponse.data && designFilesResponse.data.length > 0) {
                 const designFiles = designFilesResponse.data;
                 
@@ -12713,9 +12719,31 @@ async function showDesignerAllocations() {
                         ` : ''}
                     </div>
                 `;
+            } else {
+                // Show empty state
+                designFilesHtml = `
+                    <div class="card" style="margin-bottom: 1.5rem; border: 2px dashed #cbd5e1; background: #f8fafc;">
+                        <div style="text-align: center; padding: 2rem;">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">📐</div>
+                            <h3 style="margin: 0 0 0.5rem 0; color: #1e3a5f;">My Design Files</h3>
+                            <p style="color: #64748b; margin-bottom: 1rem;">No design files uploaded yet.</p>
+                            <p style="color: #94a3b8; font-size: 0.9rem;">Use the "📐 Upload Design" button on your projects below to upload design files for client approval.</p>
+                        </div>
+                    </div>
+                `;
             }
         } catch (e) {
-            console.log('Could not fetch design files:', e);
+            console.error('❌ Could not fetch design files:', e);
+            designFilesHtml = `
+                <div class="card" style="margin-bottom: 1.5rem; border: 2px dashed #fca5a5; background: #fef2f2;">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                        <h3 style="margin: 0 0 0.5rem 0; color: #991b1b;">Could not load design files</h3>
+                        <p style="color: #7f1d1d; margin-bottom: 1rem;">${e.message || 'Unknown error'}</p>
+                        <button class="btn btn-secondary btn-sm" onclick="showDesignerAllocations()">🔄 Retry</button>
+                    </div>
+                </div>
+            `;
         }
 
         main.innerHTML = `
@@ -28912,8 +28940,13 @@ async function uploadDesignFile() {
         });
         
         if (response.success) {
-            showNotification('Design file uploaded successfully!', 'success');
+            showNotification('✅ Design file uploaded! You can now submit it for COO approval.', 'success');
             closeDesignUploadModal();
+            
+            // Alert user about next step
+            setTimeout(() => {
+                alert('✅ File uploaded successfully!\n\n📋 Next Step:\nFind your file in "My Design Files" section and click "Submit for Approval" to send it to COO for review.');
+            }, 500);
             
             // Refresh the designer portal view
             if (typeof showDesignerAllocations === 'function') {
