@@ -5347,28 +5347,31 @@ body.is-ios .nav-menu {
       console.log('🚀 EBTracker v1.0.3-final loaded at:', new Date().toISOString());
       console.log('💾 Script timestamp: 2025-11-25T18:40:00Z');
       
-       const firebaseConfig = {
-            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
-            authDomain: "eb-tracker-42881.firebaseapp.com",
-            projectId: "eb-tracker-42881",
-            storageBucket: "eb-tracker-42881.firebasestorage.app",
-            messagingSenderId: "922340749018",
-            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+       
+        const firebaseConfig = {
+            apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U", // Replace with your actual config
+            authDomain: "eb-tracker-ff945.firebaseapp.com",
+            projectId: "eb-tracker-ff945",
+            storageBucket: "eb-tracker-ff945.firebasestorage.app",
+            messagingSenderId: "854824137821",
+            appId: "1:854824137821:web:7a408282c2f7c1816c89b4"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        var storage = firebase.storage(); // Initialize Firebase Storage (global scope)
+        window.storage = storage; // Also attach to window for guaranteed global access
 
         // ============================================
         // API & AUTH CONFIGURATION
         // ============================================
 
         // FIXED: Direct backend URL configuration
-        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        const API_BASE = 'https://eb-backend-rxu6.onrender.com';
+
 
         console.log('🔧 Backend URL configured:', API_BASE);
-
 
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
@@ -12725,13 +12728,17 @@ async function showDesignerAllocations() {
                 
                 const fileRows = designFiles.map(file => {
                     const uploadDate = file.uploadedAt ? new Date(file.uploadedAt.seconds ? file.uploadedAt.seconds * 1000 : file.uploadedAt).toLocaleDateString() : 'N/A';
+                    const isLink = file.isExternalLink || file.uploadType === 'link';
+                    const fileIcon = isLink ? '🔗' : '📄';
+                    const typeLabel = isLink ? 'Link' : 'PDF';
                     return `
                         <tr>
                             <td><strong>${file.projectName || 'Unknown'}</strong></td>
                             <td>
                                 <a href="${file.fileUrl}" target="_blank" style="color: var(--primary-blue); text-decoration: none;">
-                                    📄 ${file.fileName}
+                                    ${fileIcon} ${file.fileName}
                                 </a>
+                                <br><small style="color: #64748b;">${typeLabel}</small>
                             </td>
                             <td>${file.clientEmail || 'N/A'}</td>
                             <td>${uploadDate}</td>
@@ -28880,6 +28887,7 @@ console.log('✅ HR Candidate Screening Module loaded');
 // Global variables for design files
 let currentDesignFile = null;
 let pendingDesignApprovals = [];
+let currentUploadType = 'file'; // 'file' or 'link'
 
 // ============================================
 // UPLOAD MODAL FUNCTIONS
@@ -28895,15 +28903,47 @@ function openDesignUploadModal(projectId, projectName) {
     document.getElementById('designClientEmail').value = '';
     document.getElementById('designClientName').value = '';
     document.getElementById('designNotes').value = '';
+    document.getElementById('designExternalLink').value = '';
+    document.getElementById('designLinkTitle').value = '';
     clearSelectedFile();
+    
+    // Reset to file upload type
+    setUploadType('file');
     
     document.getElementById('designFileUploadModal').style.display = 'flex';
 }
 window.openDesignUploadModal = openDesignUploadModal;
 
+// Toggle between file and link upload
+function setUploadType(type) {
+    currentUploadType = type;
+    
+    const fileSection = document.getElementById('fileUploadSection');
+    const linkSection = document.getElementById('linkUploadSection');
+    const fileBtnEl = document.getElementById('uploadTypeFile');
+    const linkBtnEl = document.getElementById('uploadTypeLink');
+    const uploadBtn = document.getElementById('designUploadBtn');
+    
+    if (type === 'file') {
+        fileSection.style.display = 'block';
+        linkSection.style.display = 'none';
+        fileBtnEl.className = 'btn btn-primary';
+        linkBtnEl.className = 'btn btn-secondary';
+        uploadBtn.innerHTML = '📤 Upload File';
+    } else {
+        fileSection.style.display = 'none';
+        linkSection.style.display = 'block';
+        fileBtnEl.className = 'btn btn-secondary';
+        linkBtnEl.className = 'btn btn-primary';
+        uploadBtn.innerHTML = '🔗 Submit Link';
+    }
+}
+window.setUploadType = setUploadType;
+
 function closeDesignUploadModal() {
     document.getElementById('designFileUploadModal').style.display = 'none';
     currentDesignFile = null;
+    currentUploadType = 'file';
 }
 window.closeDesignUploadModal = closeDesignUploadModal;
 
@@ -28955,53 +28995,89 @@ async function uploadDesignFile() {
     const clientName = document.getElementById('designClientName').value.trim();
     const notes = document.getElementById('designNotes').value.trim();
     
-    // Validation
-    if (!currentDesignFile) {
-        showNotification('Please select a PDF file to upload', 'error');
-        return;
-    }
-    
+    // Common validation
     if (!clientEmail || !clientEmail.includes('@')) {
         showNotification('Please enter a valid client email', 'error');
         return;
     }
     
+    // Validate based on upload type
+    if (currentUploadType === 'file') {
+        if (!currentDesignFile) {
+            showNotification('Please select a PDF file to upload', 'error');
+            return;
+        }
+    } else {
+        // Link validation
+        const externalLink = document.getElementById('designExternalLink').value.trim();
+        const linkTitle = document.getElementById('designLinkTitle').value.trim();
+        
+        if (!externalLink) {
+            showNotification('Please enter the external link', 'error');
+            return;
+        }
+        
+        if (!externalLink.startsWith('http://') && !externalLink.startsWith('https://')) {
+            showNotification('Please enter a valid URL starting with http:// or https://', 'error');
+            return;
+        }
+        
+        if (!linkTitle) {
+            showNotification('Please enter a title/name for the link', 'error');
+            return;
+        }
+    }
+    
     showLoading();
     
     try {
-        // 1. Upload file to Firebase Storage
-        const storageInstance = window.storage || firebase.storage();
-        const storageRef = storageInstance.ref();
-        const timestamp = Date.now();
-        const fileName = `design_files/${projectId}/${timestamp}_${currentDesignFile.name}`;
-        const fileRef = storageRef.child(fileName);
+        let fileUrl, fileName, fileSize;
         
-        const uploadTask = await fileRef.put(currentDesignFile);
-        const fileUrl = await uploadTask.ref.getDownloadURL();
+        if (currentUploadType === 'file') {
+            // Upload file to Firebase Storage
+            const storageInstance = window.storage || firebase.storage();
+            const storageRef = storageInstance.ref();
+            const timestamp = Date.now();
+            const storagePath = `design_files/${projectId}/${timestamp}_${currentDesignFile.name}`;
+            const fileRef = storageRef.child(storagePath);
+            
+            const uploadTask = await fileRef.put(currentDesignFile);
+            fileUrl = await uploadTask.ref.getDownloadURL();
+            fileName = currentDesignFile.name;
+            fileSize = currentDesignFile.size;
+        } else {
+            // Use external link
+            fileUrl = document.getElementById('designExternalLink').value.trim();
+            fileName = document.getElementById('designLinkTitle').value.trim();
+            fileSize = 0;
+        }
         
-        // 2. Create design file record in database
+        // Create design file record in database
         const response = await apiCall(`projects?id=${projectId}`, {
             method: 'PUT',
             body: JSON.stringify({
                 action: 'upload_design_file',
                 data: {
-                    fileName: currentDesignFile.name,
+                    fileName: fileName,
                     fileUrl: fileUrl,
-                    fileSize: currentDesignFile.size,
+                    fileSize: fileSize,
                     clientEmail: clientEmail,
                     clientName: clientName,
-                    notes: notes
+                    notes: notes,
+                    uploadType: currentUploadType, // 'file' or 'link'
+                    isExternalLink: currentUploadType === 'link'
                 }
             })
         });
         
         if (response.success) {
-            showNotification('✅ Design file uploaded! You can now submit it for COO approval.', 'success');
+            const typeLabel = currentUploadType === 'file' ? 'File' : 'Link';
+            showNotification(`✅ Design ${typeLabel.toLowerCase()} uploaded! You can now submit it for COO approval.`, 'success');
             closeDesignUploadModal();
             
             // Alert user about next step
             setTimeout(() => {
-                alert('✅ File uploaded successfully!\n\n📋 Next Step:\nFind your file in "My Design Files" section and click "Submit for Approval" to send it to COO for review.');
+                alert(`✅ ${typeLabel} uploaded successfully!\n\n📋 Next Step:\nFind your file in "My Design Files" section and click "Submit for Approval" to send it to COO for review.`);
             }, 500);
             
             // Refresh the designer portal view
@@ -29102,12 +29178,17 @@ async function showDesignFileApprovals() {
                 </div>
             `;
         } else {
-            const items = pendingDesignApprovals.map(file => `
+            const items = pendingDesignApprovals.map(file => {
+                const isLink = file.isExternalLink || file.uploadType === 'link';
+                const fileIcon = isLink ? '🔗' : '📄';
+                const typeLabel = isLink ? 'External Link' : 'PDF File';
+                return `
                 <div class="approval-item">
                     <div class="approval-item-header">
                         <div>
                             <div class="approval-item-project">${file.projectName}</div>
-                            <div class="approval-item-file">📄 ${file.fileName}</div>
+                            <div class="approval-item-file">${fileIcon} ${file.fileName}</div>
+                            <small style="color: #64748b; font-size: 0.8rem;">${typeLabel}</small>
                         </div>
                         <a href="${file.fileUrl}" target="_blank" class="btn btn-secondary btn-sm">👁️ Preview</a>
                     </div>
@@ -29122,7 +29203,7 @@ async function showDesignFileApprovals() {
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
             
             content = `
                 <div class="approval-queue-section" style="background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); border: 1px solid #e2e8f0;">
@@ -29173,6 +29254,19 @@ function openDesignApprovalModal(designFileId, projectId) {
     document.getElementById('approvalSubmittedBy').textContent = file.uploadedByName;
     document.getElementById('approvalClientEmail').textContent = file.clientEmail;
     document.getElementById('approvalPreviewLink').href = file.fileUrl;
+    
+    // Show file type (PDF or External Link)
+    const isLink = file.isExternalLink || file.uploadType === 'link';
+    const fileTypeEl = document.getElementById('approvalFileType');
+    if (isLink) {
+        fileTypeEl.innerHTML = '<span style="color: #0891b2;">🔗 External Link</span>';
+    } else {
+        fileTypeEl.innerHTML = '<span style="color: #059669;">📄 PDF File</span>';
+    }
+    
+    // Update preview button text
+    const previewBtn = document.getElementById('approvalPreviewLink');
+    previewBtn.textContent = isLink ? '🔗 Open Link' : '👁️ Preview PDF';
     
     // Show designer notes if present
     if (file.designerNotes) {
@@ -29561,22 +29655,51 @@ console.log('✅ Design File Upload & Approval Module loaded');
                 <div class="client-preview-value" id="designUploadProjectDisplay">-</div>
             </div>
             
-            <!-- File Upload Zone -->
+            <!-- Upload Type Toggle -->
             <div class="form-group">
-                <label>Design File (PDF) <span style="color: red;">*</span></label>
-                <div class="upload-dropzone" id="designDropzone" onclick="document.getElementById('designFileInput').click()">
-                    <div class="upload-icon">📄</div>
-                    <div class="upload-text">Click to upload or drag and drop</div>
-                    <div class="upload-hint">PDF files only (Max 50MB)</div>
+                <label>Upload Type <span style="color: red;">*</span></label>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button type="button" id="uploadTypeFile" class="btn btn-primary" onclick="setUploadType('file')" style="flex: 1;">
+                        📄 Upload PDF File
+                    </button>
+                    <button type="button" id="uploadTypeLink" class="btn btn-secondary" onclick="setUploadType('link')" style="flex: 1;">
+                        🔗 Add External Link
+                    </button>
                 </div>
-                <input type="file" id="designFileInput" accept=".pdf" style="display: none;" onchange="handleDesignFileSelect(this)">
-                <div id="selectedFileInfo" class="selected-file-info" style="display: none;">
-                    <span class="selected-file-icon">📄</span>
-                    <div class="selected-file-details">
-                        <div class="selected-file-name" id="selectedFileName">-</div>
-                        <div class="selected-file-size" id="selectedFileSize">-</div>
+            </div>
+            
+            <!-- File Upload Zone (shown by default) -->
+            <div id="fileUploadSection">
+                <div class="form-group">
+                    <label>Design File (PDF) <span style="color: red;">*</span></label>
+                    <div class="upload-dropzone" id="designDropzone" onclick="document.getElementById('designFileInput').click()">
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-text">Click to upload or drag and drop</div>
+                        <div class="upload-hint">PDF files only (Max 50MB)</div>
                     </div>
-                    <button type="button" onclick="clearSelectedFile()" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;">✕</button>
+                    <input type="file" id="designFileInput" accept=".pdf" style="display: none;" onchange="handleDesignFileSelect(this)">
+                    <div id="selectedFileInfo" class="selected-file-info" style="display: none;">
+                        <span class="selected-file-icon">📄</span>
+                        <div class="selected-file-details">
+                            <div class="selected-file-name" id="selectedFileName">-</div>
+                            <div class="selected-file-size" id="selectedFileSize">-</div>
+                        </div>
+                        <button type="button" onclick="clearSelectedFile()" style="background: none; border: none; cursor: pointer; font-size: 1.2rem;">✕</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Link Upload Section (hidden by default) -->
+            <div id="linkUploadSection" style="display: none;">
+                <div class="form-group">
+                    <label>External Link <span style="color: red;">*</span></label>
+                    <input type="url" id="designExternalLink" class="form-control" placeholder="https://drive.google.com/file/d/..." style="margin-bottom: 8px;">
+                    <small style="color: #64748b;">Paste link from Google Drive, Dropbox, OneDrive, or any file sharing service</small>
+                </div>
+                <div class="form-group">
+                    <label>Link Title/File Name <span style="color: red;">*</span></label>
+                    <input type="text" id="designLinkTitle" class="form-control" placeholder="Project_Design_v1.pdf">
+                    <small style="color: #64748b;">A descriptive name for the linked file</small>
                 </div>
             </div>
             
@@ -29601,8 +29724,8 @@ console.log('✅ Design File Upload & Approval Module loaded');
         </div>
         <div class="modal-footer">
             <button class="btn btn-secondary" onclick="closeDesignUploadModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="uploadDesignFile()">
-                📤 Upload File
+            <button class="btn btn-primary" id="designUploadBtn" onclick="uploadDesignFile()">
+                📤 Upload
             </button>
         </div>
     </div>
@@ -29636,11 +29759,15 @@ console.log('✅ Design File Upload & Approval Module loaded');
                         <div class="client-preview-value" id="approvalFileName">-</div>
                     </div>
                     <div>
+                        <div class="client-preview-label">Type</div>
+                        <div class="client-preview-value" id="approvalFileType">-</div>
+                    </div>
+                    <div>
                         <div class="client-preview-label">Submitted By</div>
                         <div class="client-preview-value" id="approvalSubmittedBy">-</div>
                     </div>
-                    <div style="grid-column: span 2;">
-                        <div class="client-preview-label">Client Email (Will receive file)</div>
+                    <div>
+                        <div class="client-preview-label">Client Email</div>
                         <div class="client-preview-value" id="approvalClientEmail" style="color: #2563eb;">-</div>
                     </div>
                 </div>
