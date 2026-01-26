@@ -5349,27 +5349,29 @@ body.is-ios .nav-menu {
       
        
         const firebaseConfig = {
-            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
-            authDomain: "eb-tracker-42881.firebaseapp.com",
-            projectId: "eb-tracker-42881",
-            storageBucket: "eb-tracker-42881.firebasestorage.app",
-            messagingSenderId: "922340749018",
-            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+            apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U", // Replace with your actual config
+            authDomain: "eb-tracker-ff945.firebaseapp.com",
+            projectId: "eb-tracker-ff945",
+            storageBucket: "eb-tracker-ff945.firebasestorage.app",
+            messagingSenderId: "854824137821",
+            appId: "1:854824137821:web:7a408282c2f7c1816c89b4"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        var storage = firebase.storage(); // Initialize Firebase Storage (global scope)
+        window.storage = storage; // Also attach to window for guaranteed global access
 
         // ============================================
         // API & AUTH CONFIGURATION
         // ============================================
 
         // FIXED: Direct backend URL configuration
-        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        const API_BASE = 'https://eb-backend-rxu6.onrender.com';
+
 
         console.log('🔧 Backend URL configured:', API_BASE);
-
 
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
@@ -6657,16 +6659,29 @@ body.is-ios .nav-menu {
 
             // 1. Update User Info - Get role with email fallback
             let roleForCheck = (currentUserRole || '').trim().toLowerCase();
+            const userEmail = (currentUser?.email || '').toLowerCase();
+            
+            // Define COO and Director emails for direct check
+            const COO_EMAILS = ['coo@edanbrook.com', 'coo2@edanbrook.com'];
+            const DIRECTOR_EMAILS = ['director@edanbrook.com', 'ajit@edanbrook.com'];
+            
+            // Check if user is COO or Director by email (highest priority)
+            const isCOOByEmail = COO_EMAILS.includes(userEmail);
+            const isDirectorByEmail = DIRECTOR_EMAILS.includes(userEmail);
+            
+            console.log('👤 User email:', userEmail);
+            console.log('👤 Is COO by email:', isCOOByEmail);
+            console.log('👤 Is Director by email:', isDirectorByEmail);
             
             // If role is empty or 'employee', try to detect from email
             if (!roleForCheck || roleForCheck === 'employee' || roleForCheck === '') {
                 const emailLower = (currentUser?.email || '').toLowerCase();
                 console.log('⚠️ Role is empty/employee, checking email:', emailLower);
                 
-                if (emailLower.startsWith('coo@') || emailLower.includes('.coo@')) {
+                if (emailLower.startsWith('coo@') || emailLower.includes('.coo@') || isCOOByEmail) {
                     roleForCheck = 'coo';
                     currentUserRole = 'coo'; // Update global for consistency
-                } else if (emailLower.startsWith('director@') || emailLower.includes('.director@')) {
+                } else if (emailLower.startsWith('director@') || emailLower.includes('.director@') || isDirectorByEmail) {
                     roleForCheck = 'director';
                     currentUserRole = 'director';
                 } else if (emailLower.startsWith('hr@') || emailLower.includes('.hr@') || emailLower === 'paul.a@edanbrook.com') {
@@ -6686,6 +6701,18 @@ body.is-ios .nav-menu {
                     currentUserRole = 'designer';
                 }
                 console.log('✅ Role after email detection:', roleForCheck);
+            }
+            
+            // Force COO/Director role if email matches (override any Firestore role)
+            if (isCOOByEmail && roleForCheck !== 'coo') {
+                console.log('⚠️ Forcing COO role based on email');
+                roleForCheck = 'coo';
+                currentUserRole = 'coo';
+            }
+            if (isDirectorByEmail && roleForCheck !== 'director') {
+                console.log('⚠️ Forcing Director role based on email');
+                roleForCheck = 'director';
+                currentUserRole = 'director';
             }
             
             userWelcome.textContent = `Welcome back, ${currentUser.displayName || currentUser.email}`;
@@ -6783,12 +6810,46 @@ body.is-ios .nav-menu {
             console.log('✅ Can Approve Leave:', canApproveLeave);
             setDisplay('hrLeaveApprovalNavItem', canApproveLeave);
             
-            // Design Approval nav visible to COO and Director
-            setDisplay('designApprovalNavItem', ['coo', 'director'].includes(roleForCheck));
+            // Design Approval nav visible to COO and Director (also check by email)
+            const canApproveDesign = ['coo', 'director'].includes(roleForCheck) || isCOOByEmail || isDirectorByEmail;
+            console.log('==========================================');
+            console.log('📐 DESIGN APPROVAL NAV DEBUG');
+            console.log('📐 roleForCheck:', roleForCheck);
+            console.log('📐 currentUserRole (raw):', currentUserRole);
+            console.log('📐 isCOOByEmail:', isCOOByEmail);
+            console.log('📐 isDirectorByEmail:', isDirectorByEmail);
+            console.log('📐 canApproveDesign:', canApproveDesign);
+            console.log('==========================================');
             
-            // Update design approval badge
-            if (['coo', 'director'].includes(roleForCheck)) {
+            // Set display
+            setDisplay('designApprovalNavItem', canApproveDesign);
+            
+            // Force show for COO/Director (extra safety)
+            if (canApproveDesign) {
+                const designNavItem = document.getElementById('designApprovalNavItem');
+                if (designNavItem) {
+                    designNavItem.style.display = 'block';
+                    designNavItem.style.visibility = 'visible';
+                    designNavItem.removeAttribute('hidden');
+                    console.log('📐 ✅ Design Approval Nav - FORCED VISIBLE');
+                    console.log('📐 Nav item element:', designNavItem);
+                } else {
+                    console.error('📐 ❌ Design Approval Nav - Element NOT FOUND in DOM!');
+                }
+                
+                // Also update the badge
                 updateDesignApprovalVisibility();
+                
+                // Double-check with delay (in case of render timing)
+                setTimeout(() => {
+                    const navItem = document.getElementById('designApprovalNavItem');
+                    if (navItem && navItem.style.display !== 'block') {
+                        navItem.style.display = 'block';
+                        console.log('📐 ✅ Design Approval Nav - DELAYED FORCE VISIBLE');
+                    }
+                }, 500);
+            } else {
+                console.log('📐 ⚠️ User is NOT COO or Director, hiding Design Approval Nav');
             }
             
             // Show Leave Request for all roles EXCEPT HR, COO, Director
@@ -29346,17 +29407,24 @@ window.sendDesignToClient = sendDesignToClient;
 // ============================================
 
 function updateDesignApprovalVisibility() {
-    const isCOO = currentUser && currentUser.role === 'coo';
-    const isDirector = currentUser && currentUser.role === 'director';
+    const userRole = (currentUser && currentUser.role) ? currentUser.role.toLowerCase().trim() : '';
+    const isCOO = userRole === 'coo';
+    const isDirector = userRole === 'director';
+    
+    console.log('📐 updateDesignApprovalVisibility - userRole:', userRole, 'isCOO:', isCOO, 'isDirector:', isDirector);
     
     const navItem = document.getElementById('designApprovalNavItem');
     if (navItem) {
         navItem.style.display = (isCOO || isDirector) ? 'block' : 'none';
+        console.log('📐 Nav item display set to:', navItem.style.display);
+    } else {
+        console.error('📐 designApprovalNavItem not found!');
     }
     
     // Fetch pending count for badge
     if (isCOO || isDirector) {
         apiCall('projects?action=get_design_files&status=pending_approval').then(response => {
+            console.log('📐 Pending approvals response:', response);
             if (response.success) {
                 const count = (response.data || []).length;
                 const badge = document.getElementById('designApprovalBadge');
@@ -29365,10 +29433,35 @@ function updateDesignApprovalVisibility() {
                     badge.style.display = count > 0 ? 'inline' : 'none';
                 }
             }
-        }).catch(() => {});
+        }).catch((err) => {
+            console.error('📐 Error fetching pending approvals:', err);
+        });
     }
 }
 window.updateDesignApprovalVisibility = updateDesignApprovalVisibility;
+
+// Debug function to manually show design approval menu (call from console: showDesignApprovalMenu())
+window.showDesignApprovalMenu = function() {
+    const navItem = document.getElementById('designApprovalNavItem');
+    if (navItem) {
+        navItem.style.display = 'block';
+        navItem.style.visibility = 'visible';
+        console.log('📐 Design Approval Menu manually shown');
+        alert('Design Approval menu should now be visible. Check the sidebar.');
+    } else {
+        console.error('📐 designApprovalNavItem element not found!');
+        alert('Error: designApprovalNavItem element not found in the page!');
+    }
+};
+
+// Debug function to check current user role
+window.checkUserRole = function() {
+    console.log('=== USER ROLE DEBUG ===');
+    console.log('currentUser:', currentUser);
+    console.log('currentUser.role:', currentUser ? currentUser.role : 'N/A');
+    console.log('currentUserRole:', currentUserRole);
+    alert('Check console for user role details.\n\ncurrentUserRole: ' + currentUserRole + '\ncurrentUser.role: ' + (currentUser ? currentUser.role : 'N/A'));
+};
 
 
 // ============================================
@@ -29662,6 +29755,30 @@ console.log('✅ Design File Upload & Approval Module loaded');
         </div>
     </div>
 </div>
+
+<!-- Safety script to force show Design Approval menu for COO/Director -->
+<script>
+// Run after page is fully loaded
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        // Check if user is logged in and is COO/Director
+        if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
+            const email = currentUser.email.toLowerCase();
+            const COO_EMAILS = ['coo@edanbrook.com', 'coo2@edanbrook.com'];
+            const DIRECTOR_EMAILS = ['director@edanbrook.com', 'ajit@edanbrook.com'];
+            
+            if (COO_EMAILS.includes(email) || DIRECTOR_EMAILS.includes(email)) {
+                const navItem = document.getElementById('designApprovalNavItem');
+                if (navItem) {
+                    navItem.style.display = 'block';
+                    navItem.style.visibility = 'visible';
+                    console.log('📐 SAFETY SCRIPT: Design Approval Nav forced visible for', email);
+                }
+            }
+        }
+    }, 2000); // Wait 2 seconds for login to complete
+});
+</script>
 
 </body>
 </html>
