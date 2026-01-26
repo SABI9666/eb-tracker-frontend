@@ -5336,66 +5336,10 @@ body.is-ios .nav-menu {
     </div>
 </div>
 
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js">
-        function switchDesignerTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.doc-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Update content visibility
-            document.getElementById('designer-drawings-content').style.display = 'none';
-            document.getElementById('designer-specs-content').style.display = 'none';
-            
-            if (tabName === 'drawings') {
-                document.getElementById('designer-drawings-content').style.display = 'block';
-            } else {
-                document.getElementById('designer-specs-content').style.display = 'block';
-            }
-        }
-
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js">
-        function switchDesignerTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.doc-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Update content visibility
-            document.getElementById('designer-drawings-content').style.display = 'none';
-            document.getElementById('designer-specs-content').style.display = 'none';
-            
-            if (tabName === 'drawings') {
-                document.getElementById('designer-drawings-content').style.display = 'block';
-            } else {
-                document.getElementById('designer-specs-content').style.display = 'block';
-            }
-        }
-
-    </script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js">
-        function switchDesignerTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.doc-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Update content visibility
-            document.getElementById('designer-drawings-content').style.display = 'none';
-            document.getElementById('designer-specs-content').style.display = 'none';
-            
-            if (tabName === 'drawings') {
-                document.getElementById('designer-drawings-content').style.display = 'block';
-            } else {
-                document.getElementById('designer-specs-content').style.display = 'block';
-            }
-        }
-
-    </script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-storage-compat.js"></script>
     <script>
       // ============================================
       // CACHE BUSTER - Version 1.0.3-final-20251125
@@ -5404,7 +5348,7 @@ body.is-ios .nav-menu {
       console.log('💾 Script timestamp: 2025-11-25T18:40:00Z');
       
        
-    const firebaseConfig = {
+        const firebaseConfig = {
             apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
             authDomain: "eb-tracker-42881.firebaseapp.com",
             projectId: "eb-tracker-42881",
@@ -14931,8 +14875,8 @@ async function markProjectComplete(projectId) {
                 progressText.textContent = 'Uploading to cloud...';
                 
                 // Check if Firebase Storage is available
-                if (typeof firebase !== 'undefined' && firebase.storage) {
-                    const storageRef = firebase.storage().ref();
+                if (typeof storage !== 'undefined' && storage) {
+                    const storageRef = storage.ref();
                     const fileName = `news-images/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
                     const uploadTask = storageRef.child(fileName).put(file);
                     
@@ -28853,7 +28797,7 @@ async function uploadDesignFile() {
     
     try {
         // 1. Upload file to Firebase Storage
-        const storageRef = firebase.storage().ref();
+        const storageRef = storage.ref();
         const timestamp = Date.now();
         const fileName = `design_files/${projectId}/${timestamp}_${currentDesignFile.name}`;
         const fileRef = storageRef.child(fileName);
