@@ -5349,27 +5349,29 @@ body.is-ios .nav-menu {
       
        
         const firebaseConfig = {
-            apiKey: "AIzaSyAoRjQqAP-3QO9rjoQK7SSZ788lyMmhXmU",
-            authDomain: "eb-tracker-42881.firebaseapp.com",
-            projectId: "eb-tracker-42881",
-            storageBucket: "eb-tracker-42881.firebasestorage.app",
-            messagingSenderId: "922340749018",
-            appId: "1:922340749018:web:68296d8775a79e71b2bfe3"
+            apiKey: "AIzaSyBp7wCYMuM_FND-WnDlH0lrDJFGt4DqK-U", // Replace with your actual config
+            authDomain: "eb-tracker-ff945.firebaseapp.com",
+            projectId: "eb-tracker-ff945",
+            storageBucket: "eb-tracker-ff945.firebasestorage.app",
+            messagingSenderId: "854824137821",
+            appId: "1:854824137821:web:7a408282c2f7c1816c89b4"
         };
 
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
+        var storage = firebase.storage(); // Initialize Firebase Storage (global scope)
+        window.storage = storage; // Also attach to window for guaranteed global access
 
         // ============================================
         // API & AUTH CONFIGURATION
         // ============================================
 
         // FIXED: Direct backend URL configuration
-        const API_BASE = 'https://eb-tracker-backend.onrender.com';
+        const API_BASE = 'https://eb-backend-rxu6.onrender.com';
+
 
         console.log('🔧 Backend URL configured:', API_BASE);
-
 
         const authorizedUsers = {
             estimator: ["estimator@edanbrook.com", "max@edanbrook.com"],
@@ -14875,8 +14877,9 @@ async function markProjectComplete(projectId) {
                 progressText.textContent = 'Uploading to cloud...';
                 
                 // Check if Firebase Storage is available
-                if (typeof storage !== 'undefined' && storage) {
-                    const storageRef = storage.ref();
+                const storageInstance = window.storage || (typeof firebase !== 'undefined' && firebase.storage ? firebase.storage() : null);
+                if (storageInstance) {
+                    const storageRef = storageInstance.ref();
                     const fileName = `news-images/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.]/g, '_')}`;
                     const uploadTask = storageRef.child(fileName).put(file);
                     
@@ -28797,7 +28800,8 @@ async function uploadDesignFile() {
     
     try {
         // 1. Upload file to Firebase Storage
-        const storageRef = storage.ref();
+        const storageInstance = window.storage || firebase.storage();
+        const storageRef = storageInstance.ref();
         const timestamp = Date.now();
         const fileName = `design_files/${projectId}/${timestamp}_${currentDesignFile.name}`;
         const fileRef = storageRef.child(fileName);
