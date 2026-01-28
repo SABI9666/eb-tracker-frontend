@@ -29273,7 +29273,7 @@ function openDesignApprovalModal(designFileId, projectId) {
     document.getElementById('approvalClientCompany').textContent = file.clientCompany || 'N/A';
     document.getElementById('approvalFileName').textContent = file.fileName;
     document.getElementById('approvalSubmittedBy').textContent = file.uploadedByName;
-    document.getElementById('approvalClientEmail').textContent = file.clientEmail;
+    // Client email removed - will be entered by Document Controller when sending
     document.getElementById('approvalPreviewLink').href = file.fileUrl;
     
     // Show file type (PDF or External Link)
