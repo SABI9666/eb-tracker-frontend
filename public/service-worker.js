@@ -1,11 +1,11 @@
 // ============================================
 // EBTracker Service Worker - FULL FEATURED
-// Version: 5.6.0 - Cache Version 46 (Design File Upload & Approval Feature)
+// Version: 5.7.0 - Cache Version 47 (Document Controller Portal)
 // ============================================
 
-const CACHE_NAME = 'ebtracker-v46';
-const STATIC_CACHE = 'ebtracker-static-v46';
-const DYNAMIC_CACHE = 'ebtracker-dynamic-v46';
+const CACHE_NAME = 'ebtracker-v47';
+const STATIC_CACHE = 'ebtracker-static-v47';
+const DYNAMIC_CACHE = 'ebtracker-dynamic-v47';
 
 // Static assets to cache immediately
 const STATIC_ASSETS = [
@@ -39,20 +39,20 @@ const NETWORK_ONLY = [
 // INSTALL EVENT
 // ==============================
 self.addEventListener('install', (event) => {
-  console.log('🔧 Service Worker v46: Installing...');
+  console.log('🔧 Service Worker v47: Installing...');
   
   event.waitUntil(
     Promise.all([
       // Cache static assets
       caches.open(STATIC_CACHE)
         .then((cache) => {
-          console.log('📦 Service Worker v46: Caching static assets');
+          console.log('📦 Service Worker v47: Caching static assets');
           return cache.addAll(STATIC_ASSETS);
         }),
       // Cache external scripts (Firebase SDK including Storage)
       caches.open(DYNAMIC_CACHE)
         .then((cache) => {
-          console.log('📦 Service Worker v46: Caching Firebase SDK');
+          console.log('📦 Service Worker v47: Caching Firebase SDK');
           return Promise.all(
             EXTERNAL_SCRIPTS.map(url => 
               cache.add(url).catch(err => {
@@ -63,11 +63,11 @@ self.addEventListener('install', (event) => {
         })
     ])
     .then(() => {
-      console.log('✅ Service Worker v46: All assets cached (including Firebase Storage SDK)');
+      console.log('✅ Service Worker v47: All assets cached (including Firebase Storage SDK)');
       return self.skipWaiting();
     })
     .catch((error) => {
-      console.error('❌ Service Worker v46: Cache failed', error);
+      console.error('❌ Service Worker v47: Cache failed', error);
     })
   );
 });
@@ -76,7 +76,7 @@ self.addEventListener('install', (event) => {
 // ACTIVATE EVENT
 // ==============================
 self.addEventListener('activate', (event) => {
-  console.log('🚀 Service Worker v46: Activating...');
+  console.log('🚀 Service Worker v47: Activating...');
   
   // List of valid cache names to keep
   const validCaches = [STATIC_CACHE, DYNAMIC_CACHE];
@@ -88,14 +88,14 @@ self.addEventListener('activate', (event) => {
           cacheNames.map((cacheName) => {
             // Delete any cache that's not in our valid list
             if (!validCaches.includes(cacheName)) {
-              console.log('🗑️ Service Worker v46: Deleting old cache:', cacheName);
+              console.log('🗑️ Service Worker v47: Deleting old cache:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
       })
       .then(() => {
-        console.log('✅ Service Worker v46: Activated - Old caches cleared');
+        console.log('✅ Service Worker v47: Activated - Old caches cleared');
         return self.clients.claim();
       })
       .then(() => {
@@ -103,12 +103,12 @@ self.addEventListener('activate', (event) => {
         return self.clients.matchAll({ type: 'window' });
       })
       .then((clients) => {
-        console.log('📢 Service Worker v46: Notifying clients to refresh');
+        console.log('📢 Service Worker v47: Notifying clients to refresh');
         clients.forEach(client => {
           client.postMessage({ 
             type: 'CACHE_UPDATED',
-            version: 'v46',
-            message: 'New version available with Design File Upload & Approval! Please refresh.'
+            version: 'v47',
+            message: 'New version available with Document Controller Portal! Please refresh.'
           });
         });
       })
@@ -421,7 +421,7 @@ self.addEventListener('message', (event) => {
       break;
       
     case 'GET_VERSION':
-      event.ports[0]?.postMessage({ version: 'v46', cache: CACHE_NAME });
+      event.ports[0]?.postMessage({ version: 'v47', cache: CACHE_NAME });
       break;
       
     case 'CLEAR_CACHE':
@@ -559,4 +559,4 @@ self.addEventListener('unhandledrejection', (event) => {
   console.error('❌ Unhandled Promise Rejection:', event.reason);
 });
 
-console.log('✅ Service Worker v46: Loaded successfully - Design File Upload & Approval + Firebase Storage SDK');
+console.log('✅ Service Worker v47: Loaded successfully - Document Controller Portal + Firebase Storage SDK');
